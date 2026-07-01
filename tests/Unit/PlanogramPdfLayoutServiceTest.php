@@ -189,6 +189,33 @@ it('does not shrink facings when they fit within the section width', function ()
     expect($cells[0]['width'])->toEqualWithDelta($areaWidth / 100 * 10, 0.5);
 });
 
+it('does not let tall top-shelf products overflow above the module top', function (): void {
+    $service = new PlanogramPdfLayoutService;
+
+    // Prateleira de cima (shelf_position 10, medido a partir do topo) com um
+    // produto ALTO (100cm): sem a folga dinâmica, o topo da pilha ficaria bem
+    // acima do topo do módulo (estouro de ~90cm).
+    $section = pdfFakeSection('a', 1);
+    $section['shelves'][0]['shelf_position'] = 10;
+    $section['shelves'][0]['segments'][0]['layer']['product']['height'] = 100;
+
+    $data = pdfFakeGondolaData([$section]);
+
+    foreach (['row' => $service->buildRowLayout($data)['modules'][0],
+        'col' => $service->buildModulesLayout($data)[0]] as $module) {
+        $shelf = $module['shelves'][0];
+
+        // Topo de cada célula a partir do topo do módulo (célula ancorada pela
+        // base): areaTop + areaHeight - bottom - height. Não pode ser < 0.
+        $minTop = min(array_map(
+            fn ($cell) => $shelf['areaTop'] + $shelf['areaHeight'] - $cell['bottom'] - $cell['height'],
+            $shelf['cells'],
+        ));
+
+        expect($minTop)->toBeGreaterThanOrEqual(-0.5);
+    }
+});
+
 it('computes hole positions consistent with the section geometry', function (): void {
     $service = new PlanogramPdfLayoutService;
 

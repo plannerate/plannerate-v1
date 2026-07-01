@@ -61,10 +61,10 @@ const { t } = useT();
 const orientation = computed(() => indicatorOrientation.value);
 
 /** Diâmetro do círculo da letra, escalonado pelo planograma (mesma fórmula do PDF). */
-const letterSize = computed(() => Math.max(7 * props.scale, 13));
+const letterSize = computed(() => Math.max(6 * props.scale, 11));
 
 /** Tamanho da fonte (letra e label), escalonado como no PDF. */
-const fontSize = computed(() => Math.max(4 * props.scale, 7));
+const fontSize = computed(() => Math.max(3.5 * props.scale, 6));
 
 /**
  * Recomendação efetiva: usa a prop quando fornecida; caso contrário, deriva
@@ -98,8 +98,8 @@ const effectiveRecommendation = computed<AbcRecommendation | undefined>(() => {
 const pillStyle = computed(() => {
     const half = letterSize.value / 2;
     const base: Record<string, string> = {
-        gap: `${Math.max(1 * props.scale, 2)}px`,
-        padding: `${Math.max(0.5 * props.scale, 1)}px ${Math.max(2 * props.scale, 4)}px ${Math.max(0.5 * props.scale, 1)}px ${Math.max(0.5 * props.scale, 1)}px`,
+        gap: `${Math.max(0.75 * props.scale, 1.5)}px`,
+        padding: `${Math.max(0.5 * props.scale, 1)}px ${Math.max(1.5 * props.scale, 3)}px ${Math.max(0.5 * props.scale, 1)}px ${Math.max(0.5 * props.scale, 1)}px`,
     };
 
     if (orientation.value === 'vertical') {

@@ -83,6 +83,7 @@ class GondolaReportController extends Controller
         return [
             'gondola' => $data['gondola'],
             'logo' => $this->brandLogo(),
+            'icons' => $this->pdfIcons(),
             'tenantName' => $this->currentTenantName(),
             'responsavel' => $request->user()?->name ?? '',
             'flowLabel' => $flow === 'right_to_left'
@@ -92,6 +93,37 @@ class GondolaReportController extends Controller
             'observacoes' => $data['gondola']['planogram']['description']
                 ?? __('plannerate.print.preview.default_observations'),
         ];
+    }
+
+    /**
+     * Ícones (lucide) usados nos cabeçalhos/rodapé do PDF, embutidos em base64.
+     *
+     * O dompdf NÃO renderiza SVG inline, então os mesmos ícones usados nos
+     * componentes Vue (PdfGondolaHeader/PdfPageFooter) são pré-rasterizados como
+     * PNG em `resources/views/pdf/icons/` (verde = primary; branco = rodapé) e
+     * embutidos como data-URI, igual à logo. Retorna name => data-URI (ou null).
+     *
+     * @return array<string, string|null>
+     */
+    protected function pdfIcons(): array
+    {
+        $dir = dirname(__DIR__, 4).'/resources/views/pdf/icons';
+
+        $names = [
+            'building-2', 'layout-grid', 'store', 'package', 'layers',
+            'calendar-days', 'user', 'arrow-right', 'clipboard-list-white',
+        ];
+
+        $icons = [];
+
+        foreach ($names as $name) {
+            $path = $dir.'/'.$name.'.png';
+            $icons[$name] = is_file($path)
+                ? 'data:image/png;base64,'.base64_encode((string) file_get_contents($path))
+                : null;
+        }
+
+        return $icons;
     }
 
     /**

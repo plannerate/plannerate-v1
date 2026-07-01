@@ -41,8 +41,14 @@ class PlanogramPdfLayoutService
     /** Altura mínima da área da prateleira (useShelfAreaCalculation.ts). */
     private const MIN_AREA_HEIGHT = 50;
 
-    /** Folga (cm) no topo do módulo p/ produtos altos da prateleira de cima. */
-    private const TOP_HEADROOM_CM = 50;
+    /**
+     * Folga (cm) no topo do módulo p/ produtos altos da prateleira de cima.
+     * Valor ÚNICO para os dois modos (em linha e por módulo), para que a
+     * cremalheira e as prateleiras tenham a MESMA proporção/escala nos dois
+     * PDFs. É apenas o mínimo: {@see calculateRequiredHeadroom()} aumenta a
+     * folga quando o produto mais alto exigir, evitando estouro para cima.
+     */
+    private const TOP_HEADROOM_CM = 15;
 
     // --- Caixas de conteúdo (px @96dpi) usadas para o fit-to-page. Ajustáveis. ---
 
@@ -52,11 +58,17 @@ class PlanogramPdfLayoutService
     /** Altura da faixa de módulos no modo "em linha" (após header/fluxo/rodapé). */
     private const ROW_BAND_HEIGHT = 470;
 
-    /** Largura útil do módulo no modo "por módulo" (A4 portrait). */
-    private const COL_CONTENT_WIDTH = 740;
+    /**
+     * Largura útil do módulo no modo "por módulo" (A4 portrait). O módulo ocupa
+     * quase toda a largura da página (só o indicador de altura fica ao lado).
+     */
+    private const COL_CONTENT_WIDTH = 700;
 
-    /** Altura útil da área do módulo no modo "por módulo". */
-    private const COL_CONTENT_HEIGHT = 820;
+    /**
+     * Altura útil da área do módulo no modo "por módulo". Grande para o módulo
+     * preencher a maior parte da página; o rodapé fica fixo no pé (ver Blade).
+     */
+    private const COL_CONTENT_HEIGHT = 740;
 
     /**
      * Monta o layout do modo "em linha" (todos os módulos lado a lado).
@@ -73,12 +85,21 @@ class PlanogramPdfLayoutService
         $totalWidthCm = 0.0;
         $maxHeightCm = 0.0;
 
+        // Folga de topo uniforme p/ toda a fila: no mínimo TOP_HEADROOM_CM, mas
+        // aumenta o suficiente para que o produto mais alto da prateleira de
+        // cima de QUALQUER módulo não estoure acima do topo. Como os módulos
+        // são alinhados pela base, uma folga única mantém o topo alinhado.
+        $headroomCm = self::TOP_HEADROOM_CM;
+        foreach ($sections as $section) {
+            $headroomCm = max($headroomCm, $this->calculateRequiredHeadroom($section, self::TOP_HEADROOM_CM));
+        }
+
         foreach ($sections as $section) {
             $cremCm = $this->cremalheiraWidth($section);
             $sectionWidthCm = (float) ($section['width'] ?? 0);
             // Largura efetiva por módulo (módulos compartilham a cremalheira).
             $totalWidthCm += $sectionWidthCm + $cremCm;
-            $heightCm = (float) ($section['height'] ?? self::DEFAULT_HEIGHT) + self::TOP_HEADROOM_CM;
+            $heightCm = (float) ($section['height'] ?? self::DEFAULT_HEIGHT) + $headroomCm;
             $maxHeightCm = max($maxHeightCm, $heightCm);
         }
         // Acrescenta a cremalheira esquerda do primeiro módulo (não compartilhada).
@@ -97,7 +118,7 @@ class PlanogramPdfLayoutService
             $cremCm = $this->cremalheiraWidth($section);
             $sectionWidthCm = (float) ($section['width'] ?? 0);
 
-            $module = $this->buildModule($section, $index, $pxPerCm, $alignment, self::TOP_HEADROOM_CM);
+            $module = $this->buildModule($section, $index, $pxPerCm, $alignment, $headroomCm);
             $module['left'] = round($xCursorCm * $pxPerCm, 2);
             $modules[] = $module;
 
@@ -121,30 +142,51 @@ class PlanogramPdfLayoutService
      */
     public function buildModulesLayout(array $data, ?array $sectionIds = null): array
     {
-        $sections = $this->orderSections($data['sections'] ?? [], $data['gondola']['flow'] ?? 'left_to_right');
+        $ordered = $this->orderSections($data['sections'] ?? [], $data['gondola']['flow'] ?? 'left_to_right');
         $alignment = $data['gondola']['alignment'] ?? 'justify';
 
+        // Total e índice visual são calculados sobre a lista COMPLETA (antes do
+        // filtro), para a barra "Posição do Fluxo" mostrar todos os módulos e
+        // destacar o correto — igual ao PdfModulePage.vue (props.total/index).
+        $total = count($ordered);
+
+        $entries = [];
+        foreach ($ordered as $index => $section) {
+            $entries[] = ['index' => $index, 'section' => $section];
+        }
+
         if (! empty($sectionIds)) {
-            $sections = array_values(array_filter(
-                $sections,
-                fn ($section) => in_array($section['id'], $sectionIds, true),
+            $entries = array_values(array_filter(
+                $entries,
+                fn ($entry) => in_array($entry['section']['id'], $sectionIds, true),
             ));
         }
 
         $pages = [];
 
-        foreach ($sections as $index => $section) {
+        foreach ($entries as $entry) {
+            $section = $entry['section'];
+            $index = $entry['index'];
+
             $cremCm = $this->cremalheiraWidth($section);
             $totalWidthCm = (float) ($section['width'] ?? 0) + $cremCm * 2;
-            $heightCm = (float) ($section['height'] ?? self::DEFAULT_HEIGHT) + self::TOP_HEADROOM_CM;
+            // Folga de topo: no mínimo TOP_HEADROOM_CM, aumentada o quanto for
+            // preciso para o produto mais alto da prateleira de cima não
+            // estourar acima do topo do módulo (o fitScale encolhe p/ caber).
+            $headroomCm = $this->calculateRequiredHeadroom($section, self::TOP_HEADROOM_CM);
+            $heightCm = (float) ($section['height'] ?? self::DEFAULT_HEIGHT) + $headroomCm;
 
             $pxPerCm = $this->fitScale($totalWidthCm, $heightCm, self::COL_CONTENT_WIDTH, self::COL_CONTENT_HEIGHT);
 
-            $module = $this->buildModule($section, $index, $pxPerCm, $alignment, self::TOP_HEADROOM_CM);
+            $module = $this->buildModule($section, $index, $pxPerCm, $alignment, $headroomCm);
             $module['left'] = 0.0;
             // No modo "por módulo" cada módulo é uma página isolada, então
             // SEMPRE mostra as duas cremalheiras (não há rail compartilhada).
             $module['showLeftCremalheira'] = true;
+            // Posição no fluxo (1-based) e total, para a barra lateral.
+            $module['index'] = $index;
+            $module['position'] = $index + 1;
+            $module['total'] = $total;
             $pages[] = $module;
         }
 
@@ -240,11 +282,17 @@ class PlanogramPdfLayoutService
             $depthCm = max($depthCm, (float) ($shelf['shelf_depth'] ?? 0));
         }
 
+        // Fonte do rótulo "Prat - N" escalada com o módulo, igual ao PdfShelf.vue
+        // (Math.max(8, Math.min(16, (10 * scale) / 3))). No PDF, pxPerCm é a
+        // escala efetiva, então rótulos ficam maiores no modo "por módulo".
+        $shelfLabelPx = round(max(8, min(16, 10 * $pxPerCm / 3)), 1);
+
         return [
             'ordering' => $section['ordering'] ?? ($index + 1),
             'rawWidthCm' => $sectionWidthCm,
             'rawHeightCm' => $heightCm,
             'rawDepthCm' => $depthCm,
+            'shelfLabelPx' => $shelfLabelPx,
             'width' => round($totalWidthCm * $pxPerCm, 2),
             // O módulo é desenhado dentro de uma caixa com a folga de topo.
             'height' => round(($heightCm + $extraHeightCm) * $pxPerCm, 2),
@@ -258,6 +306,73 @@ class PlanogramPdfLayoutService
             'shelves' => $builtShelves,
             'left' => 0.0,
         ];
+    }
+
+    /**
+     * Calcula a folga de topo (cm) necessária para que NENHUM produto da
+     * prateleira de cima "estoure" acima do topo do módulo.
+     *
+     * Para cada prateleira normal, o topo da pilha de produtos fica em
+     * (areaStart + basePosition) - alturaDaPilha, medido a partir do topo da
+     * seção (mesma geometria de buildShelf/buildCells). Quando esse valor é
+     * negativo o produto ultrapassa o topo da seção; a folga precisa cobrir
+     * esse excedente (+ uma pequena folga estética). Retorna no mínimo
+     * $minHeadroomCm, preservando a aparência atual quando nada estoura.
+     *
+     * @param  array<string, mixed>  $section
+     */
+    private function calculateRequiredHeadroom(array $section, float $minHeadroomCm): float
+    {
+        $holePositions = $this->calculateHolePositions($section);
+
+        // Prateleiras válidas ordenadas por shelf_position asc (igual buildModule).
+        $shelves = array_values(array_filter(
+            $section['shelves'] ?? [],
+            fn ($shelf) => empty($shelf['deleted_at']),
+        ));
+        usort($shelves, fn ($a, $b) => ($a['shelf_position'] ?? 0) <=> ($b['shelf_position'] ?? 0));
+
+        $overflowCm = 0.0;
+        $previousShelf = null;
+
+        foreach ($shelves as $shelf) {
+            $area = $this->calculateShelfArea($shelf, $previousShelf);
+            $previousShelf = $shelf;
+
+            // Gancheiras penduram para baixo — nunca estouram para cima.
+            if (($shelf['product_type'] ?? 'normal') === 'hook') {
+                continue;
+            }
+
+            $basePositionCm = $this->shelfBasePosition($shelf, $section, $holePositions, $area['areaStartCm']);
+            // Posição da barra (onde o produto se apoia) a partir do topo da seção.
+            $barFromTopCm = $area['areaStartCm'] + $basePositionCm;
+
+            // Altura da pilha mais alta da prateleira (empilhamento = rows * altura).
+            $tallestStackCm = 0.0;
+            foreach ($shelf['segments'] ?? [] as $segment) {
+                if (! empty($segment['deleted_at']) || empty($segment['layer']['product'])) {
+                    continue;
+                }
+                $rows = max(1, (int) ($segment['quantity'] ?? 1));
+                $productHeightCm = (float) ($segment['layer']['product']['height'] ?? 15);
+                $tallestStackCm = max($tallestStackCm, $rows * $productHeightCm);
+            }
+
+            // Topo da pilha a partir do topo da seção; se negativo, o excedente
+            // vira necessidade de folga.
+            $stackTopFromSectionTopCm = $barFromTopCm - $tallestStackCm;
+            if ($stackTopFromSectionTopCm < 0) {
+                $overflowCm = max($overflowCm, -$stackTopFromSectionTopCm);
+            }
+        }
+
+        // Pequena folga estética acima do produto mais alto quando há estouro.
+        if ($overflowCm > 0) {
+            $overflowCm += 2.0;
+        }
+
+        return max($minHeadroomCm, $overflowCm);
     }
 
     /**

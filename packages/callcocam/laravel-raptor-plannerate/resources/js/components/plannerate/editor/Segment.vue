@@ -53,7 +53,7 @@
         <StockIndicator :segment="segment" :shelf-depth="shelfDepth" :scale="props.scale" @click="handleSegmentClick" />
 
         <!-- Selo configurável de indicador (Preço, Margem, Estoque, Ruptura) -->
-        <ProductIndicatorBadge :product="layer?.product" />
+        <ProductIndicatorBadge :product="layer?.product" :scale="props.scale" />
 
         <!-- Indicador visual de drop -->
         <div

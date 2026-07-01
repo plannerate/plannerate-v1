@@ -85,12 +85,12 @@ const effectiveRecommendation = computed<AbcRecommendation | undefined>(() => {
  * pisos mínimos para permanecerem legíveis em escalas pequenas.
  */
 /** Diâmetro do círculo da letra (escalonado pelo PDF, com piso mínimo). */
-const letterSize = computed(() => Math.max(7 * props.scale, 13));
+const letterSize = computed(() => Math.max(6 * props.scale, 11));
 
 const pillStyle = computed(() => {
     const base: Record<string, string> = {
-        gap: `${Math.max(1 * props.scale, 2)}px`,
-        padding: `${Math.max(0.5 * props.scale, 1)}px ${Math.max(2 * props.scale, 4)}px ${Math.max(0.5 * props.scale, 1)}px ${Math.max(0.5 * props.scale, 1)}px`,
+        gap: `${Math.max(0.75 * props.scale, 1.5)}px`,
+        padding: `${Math.max(0.5 * props.scale, 1)}px ${Math.max(1.5 * props.scale, 3)}px ${Math.max(0.5 * props.scale, 1)}px ${Math.max(0.5 * props.scale, 1)}px`,
         bottom: `${Math.max(1 * props.scale, 2)}px`,
     };
 
@@ -115,14 +115,14 @@ const pillStyle = computed(() => {
 
 /** Dimensões da letra da classe (círculo colorido) escalonadas pelo PDF. */
 const letterStyle = computed(() => ({
-    fontSize: `${Math.max(4 * props.scale, 7)}px`,
+    fontSize: `${Math.max(3.5 * props.scale, 6)}px`,
     width: `${letterSize.value}px`,
     height: `${letterSize.value}px`,
 }));
 
 /** Tamanho da fonte da label de recomendação escalonado pelo PDF. */
 const labelStyle = computed(() => ({
-    fontSize: `${Math.max(4 * props.scale, 7)}px`,
+    fontSize: `${Math.max(3.5 * props.scale, 6)}px`,
 }));
 
 /**

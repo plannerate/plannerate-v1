@@ -16,26 +16,25 @@
 @endphp
 
 <div style="{{ $moduleStyle }}">
-    {{-- Cremalheira esquerda (apenas no primeiro módulo em modo linha). --}}
+    {{-- Cremalheira esquerda (apenas no primeiro módulo em modo linha).
+         Poste desenhado DIRETO como filho do módulo (sem wrapper): o dompdf não
+         renderiza `position:absolute` aninhado 4 níveis, então os furos precisam
+         ficar no 3º nível (módulo → poste → furo), igual aos produtos. --}}
     @if ($module['showLeftCremalheira'])
-        <div style="position:absolute; top:0; bottom:0; left:0; width:{{ $module['cremalheiraWidth'] }}px;">
-            <div style="position:absolute; bottom:0; width:100%; height:{{ $module['sectionHeight'] }}px; background:#334155; border:1px solid #475569; box-sizing:border-box;">
-                @foreach ($module['holes'] as $hole)
-                    <div style="position:absolute; left:{{ max(0, ($module['cremalheiraWidth'] - $hole['width']) / 2 - 1) }}px; top:{{ $hole['top'] }}px; width:{{ $hole['width'] }}px; height:{{ $hole['height'] }}px; background:#94a3b8; border:1px solid #64748b; box-sizing:border-box;"></div>
-                @endforeach
-                <div style="position:absolute; bottom:0; left:0; width:100%; height:{{ $module['baseHeight'] }}px; background:#334155; border-top:1px solid #475569;"></div>
-            </div>
-        </div>
-    @endif
-
-    {{-- Cremalheira direita (sempre). --}}
-    <div style="position:absolute; top:0; bottom:0; right:0; width:{{ $module['cremalheiraWidth'] }}px;">
-        <div style="position:absolute; bottom:0; width:100%; height:{{ $module['sectionHeight'] }}px; background:#334155; border:1px solid #475569; box-sizing:border-box;">
+        <div style="position:absolute; bottom:0; left:0; width:{{ $module['cremalheiraWidth'] }}px; height:{{ $module['sectionHeight'] }}px; background:#334155; border:1px solid #475569; box-sizing:border-box;">
             @foreach ($module['holes'] as $hole)
                 <div style="position:absolute; left:{{ max(0, ($module['cremalheiraWidth'] - $hole['width']) / 2 - 1) }}px; top:{{ $hole['top'] }}px; width:{{ $hole['width'] }}px; height:{{ $hole['height'] }}px; background:#94a3b8; border:1px solid #64748b; box-sizing:border-box;"></div>
             @endforeach
             <div style="position:absolute; bottom:0; left:0; width:100%; height:{{ $module['baseHeight'] }}px; background:#334155; border-top:1px solid #475569;"></div>
         </div>
+    @endif
+
+    {{-- Cremalheira direita (sempre) — mesma estrutura achatada. --}}
+    <div style="position:absolute; bottom:0; right:0; width:{{ $module['cremalheiraWidth'] }}px; height:{{ $module['sectionHeight'] }}px; background:#334155; border:1px solid #475569; box-sizing:border-box;">
+        @foreach ($module['holes'] as $hole)
+            <div style="position:absolute; left:{{ max(0, ($module['cremalheiraWidth'] - $hole['width']) / 2 - 1) }}px; top:{{ $hole['top'] }}px; width:{{ $hole['width'] }}px; height:{{ $hole['height'] }}px; background:#94a3b8; border:1px solid #64748b; box-sizing:border-box;"></div>
+        @endforeach
+        <div style="position:absolute; bottom:0; left:0; width:100%; height:{{ $module['baseHeight'] }}px; background:#334155; border-top:1px solid #475569;"></div>
     </div>
 
     {{-- Prateleiras (só os produtos aqui). --}}
@@ -66,17 +65,22 @@
          sem fundo próprio — igual ao editor) sem ser cortada pelo box da área
          nem coberta pela área da prateleira vizinha no dompdf. O topo da barra
          permanece na linha onde os produtos se apoiam. --}}
+    @php $labelPx = $module['shelfLabelPx'] ?? 8; @endphp
     @foreach ($module['shelves'] as $shelf)
-        @php $barH = max($shelf['barHeight'], 6); @endphp
-        <div style="position:absolute; top:{{ $shelf['areaTop'] + $shelf['barTop'] }}px; left:{{ $shelf['areaLeft'] }}px; width:{{ $shelf['areaWidth'] }}px; height:{{ $barH }}px; background:#1e293b;  ">
-            <table cellpadding="0" cellspacing="0" style="width:100%; height:{{ $barH }}px;"><tr>
-                <td style="text-align:center; vertical-align:middle; font-size:7px; color:#cbd5e1;margin-bottom: 2px;">{{ __('plannerate.print.preview.shelf_short') }} - {{ $shelf['displayNumber'] }}</td>
+        @php $barH = max($shelf['barHeight'], $labelPx + 2); @endphp
+        {{-- Barra: fundo slate-800 + borda superior slate-700 de 2px (igual ao
+             `bg-slate-800/95 border-t-2 border-slate-700` do PdfShelf.vue). O
+             rótulo "Prat - N" usa a fonte escalada com o módulo (shelfLabelPx). --}}
+        <div style="position:absolute; top:{{ $shelf['areaTop'] + $shelf['barTop'] }}px; left:{{ $shelf['areaLeft'] }}px; width:{{ $shelf['areaWidth'] }}px; height:{{ $barH }}px; background:#1d293d;">
+            <table cellpadding="0" cellspacing="0" style="width:100%; "><tr>
+                <td style="text-align:center; vertical-align:middle; font-size:{{ $labelPx }}px; color:#cbd5e1;">{{ __('plannerate.print.preview.shelf_short') }} - {{ $shelf['displayNumber'] }}</td>
             </tr></table>
         </div>
     @endforeach
 
-    {{-- Rótulo do módulo. --}}
+    {{-- Rótulo do módulo ("Módulo - N", text-muted-foreground) — igual ao
+         PdfSection.vue. Fonte maior no modo "por módulo" (página inteira). --}}
     <div style="position:absolute; bottom:0; left:0; width:100%; text-align:center;">
-        <span style="font-size:8px; color:#94a3b8;">{{ __('plannerate.print.labels.module') }} #{{ $module['ordering'] }}</span>
+        <span style="font-size:{{ $mode === 'column' ? '11' : '8' }}px; color:#64748b;">{{ __('plannerate.print.labels.module') }} - {{ $module['ordering'] }}</span>
     </div>
 </div>

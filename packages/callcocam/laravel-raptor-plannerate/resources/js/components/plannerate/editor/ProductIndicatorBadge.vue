@@ -14,12 +14,13 @@
     -->
     <div
         v-if="config && isVisible"
-        class="pointer-events-none absolute bottom-5 left-1/2 z-[90] flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-md px-1 py-0.5 text-[10px] font-bold shadow-md"
-        :class="[config.badgeClass, orientation === 'vertical' ? '-rotate-90' : '']"
+        class="pointer-events-none absolute left-1/2 z-[90] flex items-center whitespace-nowrap rounded-md font-bold shadow-md"
+        :class="config.badgeClass"
+        :style="pillStyle"
         :title="displayValue"
     >
         <!-- <component :is="config.icon" class="size-3 shrink-0" :class="config.iconClass" /> -->
-        <span>{{ displayValue }}</span>
+        <span :style="labelStyle">{{ displayValue }}</span>
     </div>
 </template>
 
@@ -32,9 +33,13 @@ import type { Product } from '../../../types/planogram';
 
 interface Props {
     product?: Product;
+    /** Fator de escala do planograma (mesma base de AbcBadge/PdfAbcBadge). */
+    scale?: number;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    scale: 3,
+});
 
 const { getIndicators } = useSalesIndicators();
 
@@ -43,6 +48,33 @@ const config = computed(() => getIndicatorConfig(selectedIndicator.value));
 
 /** Orientação atual do selo (vertical = rotacionado 90°, horizontal = normal). */
 const orientation = computed(() => indicatorOrientation.value);
+
+/**
+ * Estilo do pill escalonado pelo planograma, no MESMO padrão compacto de
+ * AbcBadge/PdfAbcBadge (fonte, gap e padding com pisos mínimos). O selo fica
+ * acima da base do produto (bottom escalonado) para não colidir com o selo ABC,
+ * centralizado horizontalmente e rotacionado 90° na orientação vertical.
+ */
+const pillStyle = computed(() => {
+    const padY = Math.max(0.5 * props.scale, 1);
+    const padX = Math.max(1.5 * props.scale, 3);
+    const base: Record<string, string> = {
+        gap: `${Math.max(0.75 * props.scale, 1.5)}px`,
+        padding: `${padY}px ${padX}px`,
+        bottom: `${Math.max(6 * props.scale, 12)}px`,
+        transform:
+            orientation.value === 'vertical'
+                ? 'translateX(-50%) rotate(-90deg)'
+                : 'translateX(-50%)',
+    };
+
+    return base;
+});
+
+/** Tamanho da fonte da label, alinhado ao padrão dos selos ABC. */
+const labelStyle = computed(() => ({
+    fontSize: `${Math.max(3.5 * props.scale, 6)}px`,
+}));
 
 /**
  * Contexto entregue aos callbacks do indicador. Para indicadores de vendas,
