@@ -17,33 +17,37 @@
       $observacoes  — texto de observações
 --}}
 @php
-    $planogram = $gondola['planogram'] ?? null;
-    $title = $planogram['name'] ?? __('plannerate.print.preview.exposure_planogram');
+$planogram = $gondola['planogram'] ?? null;
+$title = $planogram['name'] ?? __('plannerate.print.preview.exposure_planogram');
 
-    // Cada item: [ícone, rótulo, valor]. Ordem e ícones idênticos ao
-    // PdfGondolaHeader.vue (metaItems).
-    $meta = [
-        ['building-2', __('plannerate.print.preview.client'), $tenantName ?: '—'],
-        ['layout-grid', __('plannerate.print.share.module'), $gondola['name'] ?? '—'],
-        ['store', __('plannerate.print.labels.store'), $gondola['location'] ?? '—'],
-        ['package', __('plannerate.print.labels.category'), $planogram['category']['name'] ?? '—'],
-        ['layers', __('plannerate.print.preview.modules'), (string) count($layout['modules'])],
-        ['calendar-days', __('plannerate.print.labels.publication'), $planogram['start_date'] ?? '—'],
-        ['user', __('plannerate.print.labels.responsible'), $responsavel ?: '—'] 
-    ];
+// Cada item: [ícone, rótulo, valor]. Ordem e ícones idênticos ao
+// PdfGondolaHeader.vue (metaItems).
+$meta = [
+['building-2', __('plannerate.print.preview.client'), $tenantName ?: '—'],
+['layout-grid', __('plannerate.print.share.module'), $gondola['name'] ?? '—'],
+['store', __('plannerate.print.labels.store'), $gondola['location'] ?? '—'],
+['package', __('plannerate.print.labels.category'), $planogram['category']['name'] ?? '—'],
+['layers', __('plannerate.print.preview.modules'), (string) count($layout['modules'])],
+['calendar-days', __('plannerate.print.labels.publication'), $planogram['start_date'] ?? '—'],
+['user', __('plannerate.print.labels.responsible'), $responsavel ?: '—']
+];
 
-    // Indicador de fluxo (PdfFlowIndicator.vue): o lado ATIVO é o início do
-    // fluxo. Esquerda→direita ativa a esquerda (★); direita→esquerda ativa a
-    // direita. O lado inativo mostra ☆ e a cor slate.
-    $startLabel = __('plannerate.indicator.start_flow');
-    $endLabel = __('plannerate.indicator.end');
-    $arrow = $isLeftToRight ? '→' : '←';
+// Indicador de fluxo (PdfFlowIndicator.vue): o lado ATIVO é o início do
+// fluxo. Esquerda→direita ativa a esquerda (★); direita→esquerda ativa a
+// direita. O lado inativo mostra ☆ e a cor slate.
+$startLabel = __('plannerate.indicator.start_flow');
+$endLabel = __('plannerate.indicator.end');
+$arrow = $isLeftToRight ? '→' : '←';
 @endphp
 <!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
     <meta charset="utf-8">
+
+    <link rel="icon" href="/img/logo.jpg" sizes="any">
+    <link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/img/logo.jpg">
     <style>
         @page {
             margin: 8px 10px;
@@ -225,19 +229,19 @@
         <table width="100%" cellpadding="0" cellspacing="0">
             <tr>
                 @if (! empty($logo))
-                    <td width="46">
-                        <img src="{{ $logo }}" alt="Plannerate" style="height:38px; width:auto;" />
-                    </td>
+                <td width="46">
+                    <img src="{{ $logo }}" alt="Plannerate" style="height:38px; width:auto;" />
+                </td>
                 @endif
-               
+
                 <td style="border-left:1px solid #e2e8f0; padding-left:12px;">
                     <table width="100%" cellpadding="0" cellspacing="0">
                         <tr>
                             @foreach ($meta as $item)
-                                <td style="text-align:right; vertical-align:top; padding:0 6px;">
-                                    <span class="meta-label">@if (! empty($icons[$item[0]]))<img src="{{ $icons[$item[0]] }}" alt="" style="height:9px; width:9px; vertical-align:middle; margin-right:3px;" />@endif<span style="vertical-align:middle;">{{ $item[1] }}</span></span><br>
-                                    <span class="meta-value">{{ $item[2] }}</span>
-                                </td>
+                            <td style="text-align:right; vertical-align:top; padding:0 6px;">
+                                <span class="meta-label">@if (! empty($icons[$item[0]]))<img src="{{ $icons[$item[0]] }}" alt="" style="height:9px; width:9px; vertical-align:middle; margin-right:3px;" />@endif<span style="vertical-align:middle;">{{ $item[1] }}</span></span><br>
+                                <span class="meta-value">{{ $item[2] }}</span>
+                            </td>
                             @endforeach
                         </tr>
                     </table>
@@ -291,7 +295,7 @@
     {{-- Faixa de módulos --}}
     <div style="position:relative; width:{{ $layout['bandWidth'] }}px; height:{{ $layout['bandHeight'] }}px; margin:10px auto 0;">
         @foreach ($layout['modules'] as $module)
-            @include('plannerate::pdf.partials._module-section', ['module' => $module, 'mode' => 'row'])
+        @include('plannerate::pdf.partials._module-section', ['module' => $module, 'mode' => 'row'])
         @endforeach
     </div>
 
@@ -303,14 +307,14 @@
                     <td width="52" style="vertical-align:middle;">
                         <div style="width:38px; height:38px; border-radius:9999px; background:#64a333; text-align:center;">
                             @if (! empty($icons['clipboard-list-white']))
-                                <img src="{{ $icons['clipboard-list-white'] }}" style="height:19px; width:19px; margin-top:9px;" />
+                            <img src="{{ $icons['clipboard-list-white'] }}" style="height:19px; width:19px; margin-top:9px;" />
                             @endif
                         </div>
                     </td>
                     <td style="vertical-align:middle;">
                         <div class="obs-title">{{ __('plannerate.print.labels.observations') }}:</div>
                         @if ($tenantName)
-                            <div class="tenant">{{ $tenantName }}</div>
+                        <div class="tenant">{{ $tenantName }}</div>
                         @endif
                         <div class="brand-title">{{ $title }}</div>
                     </td>

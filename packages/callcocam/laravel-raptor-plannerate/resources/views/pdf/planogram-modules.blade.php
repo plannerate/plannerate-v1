@@ -13,16 +13,20 @@
       $tenantName, $responsavel, $isLeftToRight, $observacoes
 --}}
 @php
-    $planogram = $gondola['planogram'] ?? null;
+$planogram = $gondola['planogram'] ?? null;
 
-    // Formata uma dimensão (cm) removendo zeros decimais supérfluos.
-    $fmt = fn ($v) => rtrim(rtrim(number_format((float) $v, 1), '0'), '.');
+// Formata uma dimensão (cm) removendo zeros decimais supérfluos.
+$fmt = fn ($v) => rtrim(rtrim(number_format((float) $v, 1), '0'), '.');
 @endphp
 <!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
     <meta charset="utf-8">
+
+    <link rel="icon" href="/img/logo.jpg" sizes="any">
+    <link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/img/logo.jpg">
     <style>
         /* Reserva no rodapé p/ o bloco fixo (obs + aprovação + barra) não
            sobrepor o conteúdo do módulo. */
@@ -301,152 +305,152 @@
     </div>
 
     @foreach ($pages as $module)
-        @php
-            $dims = __('plannerate.print.labels.height_short').': '.$fmt($module['rawHeightCm'])
-                .'  '.__('plannerate.print.labels.width_short').': '.$fmt($module['rawWidthCm'])
-                .'  '.__('plannerate.print.labels.depth_short').': '.$fmt($module['rawDepthCm']).' mm';
-        @endphp
-        <div class="page">
-            {{-- ---------- Cabeçalho ---------- --}}
+    @php
+    $dims = __('plannerate.print.labels.height_short').': '.$fmt($module['rawHeightCm'])
+    .' '.__('plannerate.print.labels.width_short').': '.$fmt($module['rawWidthCm'])
+    .' '.__('plannerate.print.labels.depth_short').': '.$fmt($module['rawDepthCm']).' mm';
+    @endphp
+    <div class="page">
+        {{-- ---------- Cabeçalho ---------- --}}
+        <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+                <td style="vertical-align:middle;">
+                    @if (! empty($logo))
+                    <img src="{{ $logo }}" alt="Plannerate" style="height:40px; width:auto;" />
+                    @endif
+                </td>
+                <td align="right" style="vertical-align:middle;">
+                    <table class="mp-datebox" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td>
+                                <span class="lbl">@if (! empty($icons['calendar-days']))<img src="{{ $icons['calendar-days'] }}" style="height:7px; width:7px; vertical-align:middle;" /> @endif{{ __('plannerate.print.labels.publication_date') }}</span><br>
+                                <span class="val">{{ $planogram['start_date'] ?? '—' }}</span>
+                            </td>
+                            <td>
+                                <span class="lbl">{{ __('plannerate.print.labels.store') }}</span><br>
+                                <span class="val">{{ $gondola['location'] ?? '—' }}</span>
+                            </td>
+                            <td>
+                                <span class="lbl">{{ __('plannerate.print.labels.store_code') }}</span><br>
+                                <span class="val">—</span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        {{-- ---------- Barra de informações ---------- --}}
+        <div class="infobar">
             <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td style="vertical-align:middle;">
-                        @if (! empty($logo))
-                            <img src="{{ $logo }}" alt="Plannerate" style="height:40px; width:auto;" />
-                        @endif
+                    <td>
+                        <span class="lbl">{{ __('plannerate.print.labels.category') }}</span><br>
+                        <span class="val">{{ $planogram['category']['name'] ?? '—' }}</span>
                     </td>
-                    <td align="right" style="vertical-align:middle;">
-                        <table class="mp-datebox" cellpadding="0" cellspacing="0">
-                            <tr>
-                                <td>
-                                    <span class="lbl">@if (! empty($icons['calendar-days']))<img src="{{ $icons['calendar-days'] }}" style="height:7px; width:7px; vertical-align:middle;" /> @endif{{ __('plannerate.print.labels.publication_date') }}</span><br>
-                                    <span class="val">{{ $planogram['start_date'] ?? '—' }}</span>
-                                </td>
-                                <td>
-                                    <span class="lbl">{{ __('plannerate.print.labels.store') }}</span><br>
-                                    <span class="val">{{ $gondola['location'] ?? '—' }}</span>
-                                </td>
-                                <td>
-                                    <span class="lbl">{{ __('plannerate.print.labels.store_code') }}</span><br>
-                                    <span class="val">—</span>
-                                </td>
-                            </tr>
-                        </table>
+                    <td>
+                        <span class="lbl">{{ __('plannerate.print.labels.subcategory') }}</span><br>
+                        <span class="val">{{ $gondola['side'] ?? '—' }}</span>
+                    </td>
+                    <td>
+                        <span class="lbl">{{ __('plannerate.print.labels.gondola_type') }}</span><br>
+                        <span class="val">{{ $gondola['name'] ?? '—' }}</span>
+                    </td>
+                    <td>
+                        <span class="lbl">{{ __('plannerate.print.labels.module') }}</span><br>
+                        <span class="val">{{ $module['ordering'] }} / {{ $module['total'] }}</span>
+                    </td>
+                    <td>
+                        <span class="lbl">{{ __('plannerate.print.labels.module_dimensions') }}</span><br>
+                        <span class="val">{{ $dims }}</span>
+                    </td>
+                    <td>
+                        <span class="lbl">{{ __('plannerate.print.labels.execution_level') }}</span><br>
+                        <span class="val">{{ $planogram['type'] ?? '—' }}</span>
                     </td>
                 </tr>
             </table>
+        </div>
 
-            {{-- ---------- Barra de informações ---------- --}}
-            <div class="infobar">
-                <table width="100%" cellpadding="0" cellspacing="0">
-                    <tr>
-                        <td>
-                            <span class="lbl">{{ __('plannerate.print.labels.category') }}</span><br>
-                            <span class="val">{{ $planogram['category']['name'] ?? '—' }}</span>
-                        </td>
-                        <td>
-                            <span class="lbl">{{ __('plannerate.print.labels.subcategory') }}</span><br>
-                            <span class="val">{{ $gondola['side'] ?? '—' }}</span>
-                        </td>
-                        <td>
-                            <span class="lbl">{{ __('plannerate.print.labels.gondola_type') }}</span><br>
-                            <span class="val">{{ $gondola['name'] ?? '—' }}</span>
-                        </td>
-                        <td>
-                            <span class="lbl">{{ __('plannerate.print.labels.module') }}</span><br>
-                            <span class="val">{{ $module['ordering'] }} / {{ $module['total'] }}</span>
-                        </td>
-                        <td>
-                            <span class="lbl">{{ __('plannerate.print.labels.module_dimensions') }}</span><br>
-                            <span class="val">{{ $dims }}</span>
-                        </td>
-                        <td>
-                            <span class="lbl">{{ __('plannerate.print.labels.execution_level') }}</span><br>
-                            <span class="val">{{ $planogram['type'] ?? '—' }}</span>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-
-            {{-- ---------- Visual do módulo + indicador + tabela de produtos ----------
+        {{-- ---------- Visual do módulo + indicador + tabela de produtos ----------
                  Duas colunas: à esquerda o módulo (encolhido) com o indicador de
                  altura; à direita a tabela de produtos da prateleira (código ERP,
                  EAN e nº de frentes), agrupada por prateleira de cima p/ baixo. --}}
-            @php
-                // Prateleiras ordenadas de cima (Prat - 1) para baixo p/ a tabela.
-                $tableShelves = collect($module['shelves'])
-                    ->filter(fn ($s) => ! empty($s['products']))
-                    ->sortBy('displayNumber')
-                    ->values();
-            @endphp
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;">
-                <tr>
-                    {{-- Coluna esquerda: módulo + indicador de altura --}}
-                    <td style="vertical-align:top;">
-                        <table cellpadding="0" cellspacing="0">
-                            <tr>
-                                <td style="vertical-align:top;">
-                                    @include('plannerate::pdf.partials._module-section', ['module' => $module, 'mode' => 'column'])
-                                </td>
-                                <td width="34" style="vertical-align:top; padding-left:6px;">
-                                    {{-- Indicador de altura (vertical) --}}
-                                    <div style="position:relative; width:28px; height:{{ $module['height'] }}px;">
-                                        <div style="position:absolute; top:0; left:0; width:100%; text-align:center; color:#94a3b8; font-size:9px;">▲</div>
-                                        <div style="position:absolute; top:14px; bottom:14px; left:13px; width:1px; background:#cbd5e1;"></div>
-                                        <div style="position:absolute; top:0; bottom:0; left:0; width:100%;">
-                                            <div style="transform:rotate(-90deg); position:absolute; top:50%; left:-40px; width:120px; text-align:center; color:#64748b; font-size:8px; letter-spacing:0.5px; text-transform:uppercase;">
-                                                {{ __('plannerate.print.module_page.total_height') }}: {{ $fmt($module['rawHeightCm']) }}mm
-                                            </div>
+        @php
+        // Prateleiras ordenadas de cima (Prat - 1) para baixo p/ a tabela.
+        $tableShelves = collect($module['shelves'])
+        ->filter(fn ($s) => ! empty($s['products']))
+        ->sortBy('displayNumber')
+        ->values();
+        @endphp
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;">
+            <tr>
+                {{-- Coluna esquerda: módulo + indicador de altura --}}
+                <td style="vertical-align:top;">
+                    <table cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td style="vertical-align:top;">
+                                @include('plannerate::pdf.partials._module-section', ['module' => $module, 'mode' => 'column'])
+                            </td>
+                            <td width="34" style="vertical-align:top; padding-left:6px;">
+                                {{-- Indicador de altura (vertical) --}}
+                                <div style="position:relative; width:28px; height:{{ $module['height'] }}px;">
+                                    <div style="position:absolute; top:0; left:0; width:100%; text-align:center; color:#94a3b8; font-size:9px;">▲</div>
+                                    <div style="position:absolute; top:14px; bottom:14px; left:13px; width:1px; background:#cbd5e1;"></div>
+                                    <div style="position:absolute; top:0; bottom:0; left:0; width:100%;">
+                                        <div style="transform:rotate(-90deg); position:absolute; top:50%; left:-40px; width:120px; text-align:center; color:#64748b; font-size:8px; letter-spacing:0.5px; text-transform:uppercase;">
+                                            {{ __('plannerate.print.module_page.total_height') }}: {{ $fmt($module['rawHeightCm']) }}mm
                                         </div>
-                                        <div style="position:absolute; bottom:0; left:0; width:100%; text-align:center; color:#94a3b8; font-size:9px;">▼</div>
                                     </div>
-                                </td>
-                            </tr>
-                        </table>
-
-                        {{-- Largura do módulo, alinhada logo abaixo do módulo. --}}
-                        <table cellpadding="0" cellspacing="0" style="margin:5px 0 0; width:{{ $module['width'] }}px;">
-                            <tr>
-                                <td class="flow-line">&nbsp;</td>
-                                <td class="width-label" style="padding:0 6px;">{{ __('plannerate.print.product_detail.width') }}: {{ $fmt($module['rawWidthCm']) }}mm</td>
-                                <td class="flow-line">&nbsp;</td>
-                            </tr>
-                        </table>
-                    </td>
-
-                    {{-- Coluna direita: produtos por prateleira --}}
-                    <td style="vertical-align:top; padding-left:10px;">
-                        @foreach ($tableShelves as $shelf)
-                            <div class="shelf-group">
-                                <div class="shelf-group-title">
-                                    {{ __('plannerate.print.preview.shelf_short') }} - {{ $shelf['displayNumber'] }}
-                                    <span style="color:#94a3b8; font-weight:normal;">({{ __('plannerate.print.labels.height_short') }}: {{ $fmt($shelf['shelfPositionCm']) }}mm)</span>
+                                    <div style="position:absolute; bottom:0; left:0; width:100%; text-align:center; color:#94a3b8; font-size:9px;">▼</div>
                                 </div>
-                                <table class="prod-table">
-                                    <thead>
-                                        <tr>
-                                            <th>{{ __('plannerate.print.share.code') }}</th>
-                                            <th>{{ __('plannerate.print.share.ean') }}</th>
-                                            <th class="num">{{ __('plannerate.print.share.facings') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($shelf['products'] as $product)
-                                            <tr>
-                                                <td class="code">{{ $product['codigo_erp'] ?: '—' }}</td>
-                                                <td>{{ $product['ean'] ?: '—' }}</td>
-                                                <td class="num">{{ $product['frentes'] }}</td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        @endforeach
-                    </td>
-                </tr>
-            </table>
+                            </td>
+                        </tr>
+                    </table>
 
-        </div>
+                    {{-- Largura do módulo, alinhada logo abaixo do módulo. --}}
+                    <table cellpadding="0" cellspacing="0" style="margin:5px 0 0; width:{{ $module['width'] }}px;">
+                        <tr>
+                            <td class="flow-line">&nbsp;</td>
+                            <td class="width-label" style="padding:0 6px;">{{ __('plannerate.print.product_detail.width') }}: {{ $fmt($module['rawWidthCm']) }}mm</td>
+                            <td class="flow-line">&nbsp;</td>
+                        </tr>
+                    </table>
+                </td>
+
+                {{-- Coluna direita: produtos por prateleira --}}
+                <td style="vertical-align:top; padding-left:10px;">
+                    @foreach ($tableShelves as $shelf)
+                    <div class="shelf-group">
+                        <div class="shelf-group-title">
+                            {{ __('plannerate.print.preview.shelf_short') }} - {{ $shelf['displayNumber'] }}
+                            <span style="color:#94a3b8; font-weight:normal;">({{ __('plannerate.print.labels.height_short') }}: {{ $fmt($shelf['shelfPositionCm']) }}mm)</span>
+                        </div>
+                        <table class="prod-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('plannerate.print.share.code') }}</th>
+                                    <th>{{ __('plannerate.print.share.ean') }}</th>
+                                    <th class="num">{{ __('plannerate.print.share.facings') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($shelf['products'] as $product)
+                                <tr>
+                                    <td class="code">{{ $product['codigo_erp'] ?: '—' }}</td>
+                                    <td>{{ $product['ean'] ?: '—' }}</td>
+                                    <td class="num">{{ $product['frentes'] }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @endforeach
+                </td>
+            </tr>
+        </table>
+
+    </div>
     @endforeach
 </body>
 
