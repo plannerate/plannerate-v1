@@ -13,26 +13,26 @@ class PlanogramTemplatePolicy
 
     public function viewAny(User $user): bool
     {
-        return $this->allowByContext($user, PermissionName::TENANT_PLANOGRAMS_VIEW_ANY);
+        return $this->allowByContext($user, PermissionName::TENANT_PLANOGRAM_TEMPLATES_VIEW_ANY);
     }
 
     public function view(User $user, PlanogramTemplate $planogramTemplate): bool
     {
-        return $this->allowByContext($user, PermissionName::TENANT_PLANOGRAMS_VIEW);
+        return $this->allowByContext($user, PermissionName::TENANT_PLANOGRAM_TEMPLATES_VIEW);
     }
 
     public function create(User $user): bool
     {
-        return $this->allowByContext($user, PermissionName::TENANT_PLANOGRAMS_CREATE);
+        return $this->allowByContext($user, PermissionName::TENANT_PLANOGRAM_TEMPLATES_CREATE);
     }
 
     public function update(User $user, PlanogramTemplate $planogramTemplate): bool
     {
-        return $this->allowByContext($user, PermissionName::TENANT_PLANOGRAMS_CREATE);
+        return $this->allowByContext($user, PermissionName::TENANT_PLANOGRAM_TEMPLATES_UPDATE);
     }
 
     public function delete(User $user, PlanogramTemplate $planogramTemplate): bool
     {
-        return $this->allowByContext($user, PermissionName::TENANT_PLANOGRAMS_DELETE);
+        return $this->allowByContext($user, PermissionName::TENANT_PLANOGRAM_TEMPLATES_DELETE);
     }
 }

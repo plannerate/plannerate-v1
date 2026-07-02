@@ -295,17 +295,27 @@ function openSsoSheet(tenant: TenantRow): void {
                                         </Link>
                                     </Button>
 
-                                    <!-- SSO — abre sheet lateral -->
+                                    <!-- Acessos — gestão de usuários do tenant (primeiro passo pós-provisionamento) -->
                                     <Button
                                         variant="secondary"
                                         size="sm"
-                                        :class="tenant.sso_provider ? 'text-primary' : ''"
-                                        @click="openSsoSheet(tenant)"
+                                        as-child
                                     >
-                                        <KeyRound class="size-4" />
-                                        SSO
+                                        <Link
+                                            :href="
+                                                tenantWayfinderPath(TenantUserAccessController.edit.url(
+                                                    tenant.id,
+                                                ))
+                                            "
+                                        >
+                                            <Users class="size-4" />
+                                            {{
+                                                t('app.landlord.common.access')
+                                            }}
+                                        </Link>
                                     </Button>
 
+                                    <!-- Integração API — importação dos dados (produtos/vendas) do cliente -->
                                     <Button
                                         variant="secondary"
                                         size="sm"
@@ -326,24 +336,8 @@ function openSsoSheet(tenant: TenantRow): void {
                                             }}
                                         </Link>
                                     </Button>
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        as-child
-                                    >
-                                        <Link
-                                            :href="
-                                                tenantWayfinderPath(TenantUserAccessController.edit.url(
-                                                    tenant.id,
-                                                ))
-                                            "
-                                        >
-                                            <Users class="size-4" />
-                                            {{
-                                                t('app.landlord.common.access')
-                                            }}
-                                        </Link>
-                                    </Button>
+
+                                    <!-- Padrão de gôndola — defaults usados na montagem dos planogramas -->
                                     <Button
                                         variant="secondary"
                                         size="sm"
@@ -362,6 +356,8 @@ function openSsoSheet(tenant: TenantRow): void {
                                             }}
                                         </Link>
                                     </Button>
+
+                                    <!-- Kanban — módulo de workflow (só se o tenant tiver o módulo ativo) -->
                                     <Button
                                         v-if="tenant.has_kanban"
                                         variant="secondary"
@@ -378,6 +374,17 @@ function openSsoSheet(tenant: TenantRow): void {
                                             <Layers class="size-4" />
                                             Kanban
                                         </Link>
+                                    </Button>
+
+                                    <!-- SSO — login único, configuração opcional (abre sheet lateral) -->
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        :class="tenant.sso_provider ? 'text-primary' : ''"
+                                        @click="openSsoSheet(tenant)"
+                                    >
+                                        <KeyRound class="size-4" />
+                                        SSO
                                     </Button>
                                 </div>
                             </ColumnActions>

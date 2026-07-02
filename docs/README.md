@@ -7,6 +7,7 @@
 
 | Documento | Conteúdo |
 |---|---|
+| [setup-novo-cliente.md](setup-novo-cliente.md) | Passo a passo para provisionar um novo cliente (tenant) do zero — roteiro de vídeo |
 | [PATTERNS.md](PATTERNS.md) | Padrões de código do projeto (controllers, models, Vue, Wayfinder, traduções) |
 | [configuracao.md](configuracao.md) | Configurações do Auto-Planograma: pesos de scoring, matriz de adjacência, preferências de nível de prateleira |
 | [traducoes-planograma.md](traducoes-planograma.md) | Guia de traduções dos componentes de planograma (`lang/pt_BR/planogram-templates.php`) |

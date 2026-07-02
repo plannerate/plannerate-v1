@@ -176,6 +176,16 @@ final class PermissionName
 
     public const TENANT_PLANOGRAMS_DELETE = 'tenant.planograms.delete';
 
+    public const TENANT_PLANOGRAM_TEMPLATES_VIEW_ANY = 'tenant.planogram-templates.viewAny';
+
+    public const TENANT_PLANOGRAM_TEMPLATES_VIEW = 'tenant.planogram-templates.view';
+
+    public const TENANT_PLANOGRAM_TEMPLATES_CREATE = 'tenant.planogram-templates.create';
+
+    public const TENANT_PLANOGRAM_TEMPLATES_UPDATE = 'tenant.planogram-templates.update';
+
+    public const TENANT_PLANOGRAM_TEMPLATES_DELETE = 'tenant.planogram-templates.delete';
+
     public const TENANT_GONDOLAS_VIEW_ANY = 'tenant.gondolas.viewAny';
 
     public const TENANT_GONDOLAS_VIEW = 'tenant.gondolas.view';
@@ -316,6 +326,11 @@ final class PermissionName
             self::TENANT_PLANOGRAMS_CREATE,
             self::TENANT_PLANOGRAMS_UPDATE,
             self::TENANT_PLANOGRAMS_DELETE,
+            self::TENANT_PLANOGRAM_TEMPLATES_VIEW_ANY,
+            self::TENANT_PLANOGRAM_TEMPLATES_VIEW,
+            self::TENANT_PLANOGRAM_TEMPLATES_CREATE,
+            self::TENANT_PLANOGRAM_TEMPLATES_UPDATE,
+            self::TENANT_PLANOGRAM_TEMPLATES_DELETE,
             self::TENANT_GONDOLAS_VIEW_ANY,
             self::TENANT_GONDOLAS_VIEW,
             self::TENANT_GONDOLAS_CREATE,

@@ -185,7 +185,7 @@ class TenantController extends Controller
 
         $createdTenant = Tenant::query()->where('slug', $validated['slug'])->first();
 
-        return $this->toLandlordRoute('landlord.tenants.setup', $createdTenant);
+        return $this->toLandlordRoute('landlord.tenants.setup', ['tenant' => $createdTenant]);
     }
 
     /**
@@ -576,7 +576,7 @@ class TenantController extends Controller
             'message' => __('app.landlord.tenants.messages.provisioning_started'),
         ]);
 
-        return $this->toLandlordRoute('landlord.tenants.setup', $tenant);
+        return $this->toLandlordRoute('landlord.tenants.setup', ['tenant' => $tenant]);
     }
 
     /**

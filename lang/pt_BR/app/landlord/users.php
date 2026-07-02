@@ -9,6 +9,7 @@ return [
         'edit' => 'Editar usuário',
     ],
     'fields' => [
+        'information' => 'Informações',
         'name' => 'Nome',
         'email' => 'E-mail',
         'password' => 'Senha',
