@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
 import { Blocks } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import ClusterController from '@/actions/App/Http/Controllers/Tenant/ClusterController';
 import FormSelectField from '@/components/form/FormSelectField.vue';
+import FormSlugField from '@/components/form/FormSlugField.vue';
 import FormStatusToggleField from '@/components/form/FormStatusToggleField.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
@@ -17,6 +18,7 @@ type ClusterPayload = {
     id: string;
     store_id: string;
     name: string;
+    slug: string | null;
     specification_1: string | null;
     specification_2: string | null;
     specification_3: string | null;
@@ -31,6 +33,7 @@ const props = defineProps<{
 
 const { t } = useT();
 const isEdit = computed(() => props.cluster !== null);
+const name = ref(props.cluster?.name ?? '');
 const clustersIndexPath = ClusterController.index
     .url()
     .replace(/^\/\/[^/]+/, '');
@@ -110,18 +113,16 @@ const pageMeta = useCrudPageMeta({
 
                         <FormTextField
                             id="name"
+                            v-model="name"
                             name="name"
                             :label="t('app.tenant.clusters.fields.name')"
-                            :default-value="props.cluster?.name ?? ''"
                             :error="errors.name"
                             class="md:col-span-5"
                             required
                         />
 
-                        <FormTextField
-                            id="slug"
-                            name="slug"
-                            label="Slug"
+                        <FormSlugField
+                            :source="name"
                             :default-value="props.cluster?.slug ?? ''"
                             :error="errors.slug"
                             class="md:col-span-3"

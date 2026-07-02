@@ -396,12 +396,7 @@ const orderedSections = computed<Section[]>(() => {
             @decrease-scale="decreaseScale"
             @toggle-layout="toggleLayout"
             @download-pdf="handleDownloadPdf"
-        >
-            <PdfFlowIndicator
-                v-if="layoutDirection === 'row'"
-                :is-left-to-right="isLeftToRight"
-            />
-        </PdfPreviewToolbar>
+        />
 
         <!-- MODO ROW: página de visualização completa -->
         <div
@@ -434,7 +429,16 @@ const orderedSections = computed<Section[]>(() => {
         </div>
 
         <!-- MODO COLUMN: uma página por módulo (estilo PdfModulePage) -->
-        <div v-else class="mt-14 pt-6 pb-12">
+        <!--
+            Na Execução em Loja a toolbar compacta ocupa 2 linhas abaixo de xl
+            (infos + controles), então o espaçador precisa ser maior aí para não
+            ficar coberto; volta a mt-14 quando a toolbar cabe em 1 linha (xl+).
+        -->
+        <div
+            v-else
+            class="pt-6 pb-12"
+            :class="executionMode ? 'mt-28 xl:mt-14' : 'mt-14'"
+        >
             <div class="mx-auto flex w-full flex-col gap-10 px-4 lg:max-w-7xl">
                 <PdfModulePage
                     v-for="(section, index) in orderedSections"

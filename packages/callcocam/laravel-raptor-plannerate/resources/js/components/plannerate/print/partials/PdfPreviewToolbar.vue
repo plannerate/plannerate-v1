@@ -9,7 +9,6 @@ import {
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
-import { Separator } from '@/components/ui/separator';
 import { useT } from '@/composables/useT';
 import type { AbcAnalysis, StockAnalysis } from '@/types/planogram';
 import NotificationsDropdown from '@/components/NotificationsDropdown.vue';
@@ -77,14 +76,26 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`);
                 : 'border-b-2 border-primary'
         "
     >
-        <!-- Linha única: infos de execução (teleport) + controles + ações (teleport) -->
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2">
+        <!--
+            Linha única em telas largas; abaixo de `xl` quebra em DUAS linhas
+            determinísticas (infos de execução em cima, controles embaixo) para
+            não deixar o flex quebrar em pontos arbitrários. No modo padrão
+            mantém o comportamento antigo (uma linha que envolve).
+        -->
+        <div
+            class="px-4 py-2"
+            :class="
+                compact
+                    ? 'flex flex-col gap-y-2 xl:flex-row xl:flex-wrap xl:items-center xl:gap-x-4'
+                    : 'flex flex-wrap items-center gap-x-4 gap-y-2'
+            "
+        >
             <!-- Modo execução: alvo p/ as infos da barra (status, SLA, evidências…)
-                 teleportadas de ExecutionBar, na mesma linha dos controles. -->
+                 teleportadas de ExecutionBar. Ocupa a linha inteira abaixo de xl. -->
             <div
                 v-if="compact"
                 id="execution-bar-info"
-                class="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-2"
+                class="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-1 xl:flex-1"
             ></div>
 
             <!-- Branding + metadados (ocultos no modo enxuto p/ não duplicar o cabeçalho da gôndola) -->
@@ -131,116 +142,113 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`);
                 </div>
             </template>
 
-            <!-- Ações -->
-            <div class="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-                <!-- Zoom -->
-                <div
-                    class="flex items-center gap-0.5 rounded-md border bg-background px-0.5 py-0.5"
-                >
+            <!--
+                Ações. Sem separadores verticais soltos (que viravam barrinhas
+                órfãs ao quebrar de linha): os grupos são separados por
+                whitespace. O grupo de controles e o grupo de ações de execução
+                quebram como blocos inteiros, nunca no meio.
+            -->
+            <div
+                class="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 xl:ml-auto xl:shrink-0"
+            >
+                <!-- Controles do preview (zoom, performance, indicadores, layout, PDF, sino) -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Zoom -->
+                    <div
+                        class="flex items-center gap-0.5 rounded-md border bg-background px-0.5 py-0.5"
+                    >
+                        <ButtonWithTooltip
+                            variant="ghost"
+                            size="icon"
+                            class="size-7"
+                            :disabled="localScale <= scaleMin"
+                            :tooltip="t('plannerate.toolbar.zoom_out')"
+                            @click="emit('decrease-scale')"
+                        >
+                            <ZoomOut class="size-4" />
+                        </ButtonWithTooltip>
+                        <span
+                            class="w-10 text-center text-xs font-medium tabular-nums select-none"
+                            >{{ scaleDisplay }}</span
+                        >
+                        <ButtonWithTooltip
+                            variant="ghost"
+                            size="icon"
+                            class="size-7"
+                            :disabled="localScale >= scaleMax"
+                            :tooltip="t('plannerate.toolbar.zoom_in')"
+                            @click="emit('increase-scale')"
+                        >
+                            <ZoomIn class="size-4" />
+                        </ButtonWithTooltip>
+                    </div>
+
+                    <DropdownPerformance
+                        :gondola="gondola as any"
+                        :analysis="analysis"
+                    />
+
+                    <!-- Selos de indicador (Preço, Custo, Margem, Estoque, Ruptura)
+                         na frente dos produtos — mesma seleção do editor. -->
+                    <DropdownIndicators :gondola="gondola as any" />
+
                     <ButtonWithTooltip
-                        variant="ghost"
-                        size="icon"
-                        class="size-7"
-                        :disabled="localScale <= scaleMin"
-                        :tooltip="t('plannerate.toolbar.zoom_out')"
-                        @click="emit('decrease-scale')"
+                        variant="outline"
+                        size="sm"
+                        :tooltip="
+                            layoutDirection === 'column'
+                                ? t('plannerate.print.preview.switch_to_row')
+                                : t('plannerate.print.preview.switch_to_column')
+                        "
+                        @click="emit('toggle-layout')"
                     >
-                        <ZoomOut class="size-4" />
+                        <div
+                            v-if="layoutDirection === 'column'"
+                            class="flex items-center justify-center space-x-1"
+                        >
+                            <Rows class="size-4" />
+                            <span>{{ t('plannerate.print.preview.rows') }}</span>
+                        </div>
+                        <div
+                            v-else
+                            class="flex items-center justify-center space-x-1"
+                        >
+                            <Columns class="size-4" />
+                            <span>{{ t('plannerate.print.preview.columns') }}</span>
+                        </div>
                     </ButtonWithTooltip>
-                    <span
-                        class="w-10 text-center text-xs font-medium tabular-nums select-none"
-                        >{{ scaleDisplay }}</span
-                    >
+
                     <ButtonWithTooltip
-                        variant="ghost"
-                        size="icon"
-                        class="size-7"
-                        :disabled="localScale >= scaleMax"
-                        :tooltip="t('plannerate.toolbar.zoom_in')"
-                        @click="emit('increase-scale')"
+                        variant="outline"
+                        size="sm"
+                        :disabled="isGenerating || isDownloading"
+                        :tooltip="t('plannerate.print.preview.download_pdf')"
+                        @click="emit('download-pdf')"
                     >
-                        <ZoomIn class="size-4" />
+                        <Loader2
+                            v-if="isDownloading"
+                            class="mr-1.5 h-4 w-4 animate-spin"
+                        />
+                        <Download v-else class="mr-1.5 h-4 w-4" />
+                        {{
+                            isDownloading
+                                ? t('plannerate.print.preview.downloading')
+                                : t('plannerate.print.preview.download_pdf')
+                        }}
                     </ButtonWithTooltip>
+
+                    <!-- Sino de notificações (mesmo componente da topbar principal) -->
+                    <NotificationsDropdown />
                 </div>
 
-                <Separator orientation="vertical" class="h-7" />
-
-                <DropdownPerformance
-                    :gondola="gondola as any"
-                    :analysis="analysis"
-                />
-
-                <Separator orientation="vertical" class="h-7" />
-
-                <!-- Selos de indicador (Preço, Custo, Margem, Estoque, Ruptura)
-                     na frente dos produtos — mesma seleção do editor. -->
-                <DropdownIndicators :gondola="gondola as any" />
-
-                <Separator orientation="vertical" class="h-7" />
-
-                <ButtonWithTooltip
-                    variant="outline"
-                    size="sm"
-                    :tooltip="
-                        layoutDirection === 'column'
-                            ? t('plannerate.print.preview.switch_to_row')
-                            : t('plannerate.print.preview.switch_to_column')
-                    "
-                    @click="emit('toggle-layout')"
-                >
-                    <div
-                        v-if="layoutDirection === 'column'"
-                        class="flex items-center justify-center space-x-1"
-                    >
-                        <Rows class="size-4" />
-                        <span>{{ t('plannerate.print.preview.rows') }}</span>
-                    </div>
-                    <div
-                        v-else
-                        class="flex items-center justify-center space-x-1"
-                    >
-                        <Columns class="size-4" />
-                        <span>{{ t('plannerate.print.preview.columns') }}</span>
-                    </div>
-                </ButtonWithTooltip>
-
-                <ButtonWithTooltip
-                    variant="outline"
-                    size="sm"
-                    :disabled="isGenerating || isDownloading"
-                    :tooltip="t('plannerate.print.preview.download_pdf')"
-                    @click="emit('download-pdf')"
-                >
-                    <Loader2
-                        v-if="isDownloading"
-                        class="mr-1.5 h-4 w-4 animate-spin"
-                    />
-                    <Download v-else class="mr-1.5 h-4 w-4" />
-                    {{
-                        isDownloading
-                            ? t('plannerate.print.preview.downloading')
-                            : t('plannerate.print.preview.download_pdf')
-                    }}
-                </ButtonWithTooltip>
-
-                <Separator orientation="vertical" class="h-7" />
-
-                <!-- Sino de notificações (mesmo componente da topbar principal) -->
-                <NotificationsDropdown />
-
-                <!-- Modo execução: separador + alvo p/ os 3 botões de ação
+                <!-- Modo execução: alvo p/ os 3 botões de ação
                      (Adicionar evidência, Apontar divergência, Concluir). -->
-                <template v-if="compact">
-                    <Separator orientation="vertical" class="h-7" />
-                    <div
-                        id="execution-bar-actions"
-                        class="flex items-center gap-2"
-                    ></div>
-                </template>
+                <div
+                    v-if="compact"
+                    id="execution-bar-actions"
+                    class="flex flex-wrap items-center gap-2"
+                ></div>
             </div>
         </div>
-
-        <!-- Slot: indicador de fluxo (oculto no modo enxuto p/ não duplicar) -->
-        <slot v-if="!compact" />
     </div>
 </template>

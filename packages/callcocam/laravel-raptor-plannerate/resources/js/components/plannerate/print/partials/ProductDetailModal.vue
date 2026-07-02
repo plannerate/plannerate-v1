@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useAbcClassification } from '@/composables/plannerate/analysis/useAbcClassification'
+import { useProductOccupation } from '@/composables/plannerate/analysis/useProductOccupation'
 import { useProductSales } from '@/composables/plannerate/products/useProductSales'
 import { useTargetStockAnalysis } from '@/composables/plannerate/analysis/useTargetStockAnalysis'
 import { useT } from '@/composables/useT'
@@ -40,6 +41,7 @@ const emit = defineEmits<{
 
 const { getClassification } = useAbcClassification()
 const { getTargetStockData, calculateSegmentCapacity, getStockStatus, DEFAULT_TOLERANCE } = useTargetStockAnalysis()
+const { getPlanogramStockCapacity } = useProductOccupation()
 const { salesData, isLoading: salesLoading, loadSales, clearSales } = useProductSales()
 const { t } = useT()
 
@@ -60,9 +62,15 @@ const segmentCapacity = computed(() =>
   ),
 )
 
+// Capacidade do produto em todo o planograma (define o status). Cai para o segmento se não localizado.
+const planogramCapacity = computed(() => {
+  const total = getPlanogramStockCapacity(props.product?.id)
+  return total > 0 ? total : segmentCapacity.value
+})
+
 const stockStatus = computed(() => {
   if (!targetStockData.value) return null
-  return getStockStatus(segmentCapacity.value, targetStockData.value.estoque_alvo, DEFAULT_TOLERANCE)
+  return getStockStatus(planogramCapacity.value, targetStockData.value.estoque_alvo, DEFAULT_TOLERANCE)
 })
 
 const totalQuantity = computed(() => (props.segmentQuantity ?? 1) * (props.layerQuantity ?? 1))
@@ -87,8 +95,8 @@ const stockStatusInfo = computed(() => {
 
 // Capacidade atual vs alvo em percentual
 const capacityPercent = computed(() => {
-  if (!targetStockData.value?.estoque_alvo || !segmentCapacity.value) return null
-  return Math.round((segmentCapacity.value / targetStockData.value.estoque_alvo) * 100)
+  if (!targetStockData.value?.estoque_alvo || !planogramCapacity.value) return null
+  return Math.round((planogramCapacity.value / targetStockData.value.estoque_alvo) * 100)
 })
 
 function formatCurrency(value: number): string {
@@ -229,7 +237,7 @@ function handleClose() {
               <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.capacity_target') }}</p>
               <p class="text-sm font-bold mt-0.5" :class="stockStatusInfo?.color ?? 'text-foreground'">
                 <template v-if="targetStockData">
-                  {{ segmentCapacity }} / {{ targetStockData.estoque_alvo }} un.
+                  {{ planogramCapacity }} / {{ targetStockData.estoque_alvo }} un.
                   <span v-if="capacityPercent !== null" class="text-[10px] font-normal text-muted-foreground ml-1">({{ capacityPercent }}%)</span>
                 </template>
                 <span v-else class="text-muted-foreground text-xs">{{ totalQuantity }} un.</span>

@@ -88,8 +88,6 @@ const divergenceCount = computed(() => props.execution?.divergences.length ?? 0)
                 </div>
             </div>
 
-            <div class="h-8 w-px bg-slate-200"></div>
-
             <!-- Iniciado em (Responsável fica no cabeçalho do planograma) -->
             <div class="leading-tight">
                 <p class="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
@@ -97,8 +95,6 @@ const divergenceCount = computed(() => props.execution?.divergences.length ?? 0)
                 </p>
                 <p class="text-sm font-medium text-slate-700">{{ startedAtLabel }}</p>
             </div>
-
-            <div class="h-8 w-px bg-slate-200"></div>
 
             <!-- SLA -->
             <div class="leading-tight">
@@ -109,8 +105,6 @@ const divergenceCount = computed(() => props.execution?.divergences.length ?? 0)
                     {{ slaLabel }}
                 </p>
             </div>
-
-            <div class="h-8 w-px bg-slate-200"></div>
 
             <!-- Evidências + progresso -->
             <div class="leading-tight">
@@ -133,8 +127,6 @@ const divergenceCount = computed(() => props.execution?.divergences.length ?? 0)
                     </span>
                 </div>
             </div>
-
-            <div class="h-8 w-px bg-slate-200"></div>
 
             <!-- Divergências -->
             <div class="leading-tight">

@@ -140,6 +140,19 @@
                                             un.</span
                                         >
                                     </div>
+                                    <div
+                                        class="mt-1 flex items-center justify-between"
+                                    >
+                                        <span
+                                            class="text-[11px] font-medium text-muted-foreground"
+                                            >{{ t('plannerate.editor.stock_indicator.planogram_total') }}:</span
+                                        >
+                                        <span
+                                            class="text-sm font-bold text-emerald-600 dark:text-emerald-400"
+                                            >{{ planogramCapacity || 0 }}
+                                            un.</span
+                                        >
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -341,6 +354,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useT } from '@/composables/useT';
+import { useProductOccupation } from '../../../composables/plannerate/analysis/useProductOccupation';
 import { useTargetStockAnalysis } from '../../../composables/plannerate/analysis/useTargetStockAnalysis';
 import type { Segment } from '../../../types/planogram';
 
@@ -362,6 +376,7 @@ const {
     DEFAULT_TOLERANCE,
     isVisible,
 } = useTargetStockAnalysis();
+const { getPlanogramStockCapacity } = useProductOccupation();
 const { t } = useT();
 
 // Busca dados de target stock pelo EAN do produto
@@ -408,6 +423,17 @@ const segmentCapacity = computed(() => {
     );
 });
 
+/**
+ * Capacidade total do produto em TODO o planograma (soma de todas as frentes/segmentos
+ * do mesmo produto na gôndola). É esse total que define a cor do indicador de estoque alvo.
+ * Cai para a capacidade do segmento quando o produto não é localizado na árvore.
+ */
+const planogramCapacity = computed(() => {
+    const productId = props.segment?.layer?.product?.id;
+    const total = getPlanogramStockCapacity(productId);
+    return total > 0 ? total : segmentCapacity.value;
+});
+
 // Margem de tolerância
 const toleranceMargin = computed(() => {
     if (!stockInfo.value) {
@@ -421,13 +447,14 @@ return 0;
 });
 
 // Status do estoque (increase, decrease, ok, unknown)
+// Compara a capacidade do PLANOGRAMA inteiro (todas as frentes do produto) com o estoque alvo.
 const stockStatus = computed(() => {
     if (!stockInfo.value) {
 return 'unknown';
 }
 
     return getStockStatus(
-        segmentCapacity.value,
+        planogramCapacity.value,
         stockInfo.value.estoque_alvo,
         DEFAULT_TOLERANCE,
     );

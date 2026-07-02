@@ -67,6 +67,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useProductOccupation } from '@/composables/plannerate/analysis/useProductOccupation';
 import { useTargetStockAnalysis } from '@/composables/plannerate/analysis/useTargetStockAnalysis';
 import type { Segment } from '@/types/planogram';
 
@@ -87,6 +88,7 @@ const {
     DEFAULT_TOLERANCE,
     isVisible,
 } = useTargetStockAnalysis();
+const { getPlanogramStockCapacity } = useProductOccupation();
 
 // Busca dados de target stock pelo EAN do produto
 const stockInfo = computed(() => {
@@ -118,6 +120,13 @@ const segmentCapacity = computed(() => {
     );
 });
 
+// Capacidade total do produto em todo o planograma (define a cor do indicador).
+// Cai para a capacidade do segmento quando o produto não é localizado na árvore.
+const planogramCapacity = computed(() => {
+    const total = getPlanogramStockCapacity(props.segment?.layer?.product?.id);
+    return total > 0 ? total : segmentCapacity.value;
+});
+
 const iconSize = computed(() => Math.max(6, Math.min(20, props.scale * 4)));
 const iconPadding = computed(() => Math.max(2, Math.min(8, props.scale * 2)));
 
@@ -126,9 +135,9 @@ const stockStatus = computed(() => {
     if (!stockInfo.value) {
 return 'unknown';
 }
-    
+
     return getStockStatus(
-        segmentCapacity.value,
+        planogramCapacity.value,
         stockInfo.value.estoque_alvo,
         DEFAULT_TOLERANCE
     );

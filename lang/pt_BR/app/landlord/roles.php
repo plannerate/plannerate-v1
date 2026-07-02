@@ -19,6 +19,13 @@ return [
         'permissions' => 'Permissões',
         'permissions_count' => 'Permissões',
     ],
+    'permissions_ui' => [
+        'filter_placeholder' => 'Filtrar permissões...',
+        'select_all' => 'Selecionar todas',
+        'deselect_all' => 'Desmarcar todas',
+        'empty' => 'Nenhuma permissão disponível para este tipo.',
+        'selected_count' => ':count selecionada(s)',
+    ],
     'messages' => [
         'created' => 'Perfil criado com sucesso.',
         'updated' => 'Perfil atualizado com sucesso.',

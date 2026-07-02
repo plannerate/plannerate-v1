@@ -20,8 +20,12 @@ const props = defineProps<Props>()
  * caixa da seção e empurra as prateleiras para baixo, criando o espaço livre
  * no topo — o mesmo efeito do `paddingTop` usado no modo coluna
  * (PdfModulePage).
+ *
+ * Mantido pequeno de propósito: o PDF final é gerado no servidor (dompdf), então
+ * essa folga serve apenas para o preview em tela e para o fallback html2canvas.
+ * Valores altos deixavam um vão enorme e vazio acima dos produtos.
  */
-const TOP_HEADROOM_CM = 50
+const TOP_HEADROOM_CM = 12
 
 const footHeight = computed(() => {
     const baseHeight = props.sections[0]?.base_height ?? 20
@@ -34,7 +38,7 @@ const footHeight = computed(() => {
         <div
             class="w-max min-w-full"
             :style="{
-                paddingTop: `${Math.ceil(localScale * 60)}px`,
+                paddingTop: `${Math.ceil(localScale * 24)}px`,
                 paddingBottom: `${Math.ceil(localScale * 40)}px`,
                 paddingLeft: `${Math.ceil(localScale * 40)}px`,
                 paddingRight: `${Math.ceil(localScale * 40)}px`,

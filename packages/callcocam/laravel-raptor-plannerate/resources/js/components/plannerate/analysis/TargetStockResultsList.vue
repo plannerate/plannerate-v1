@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/table';
 import { useAnalysisExport } from '@/composables/plannerate/analysis/useAnalysisExport';
 import { useAnalysisFilters } from '@/composables/plannerate/analysis/useAnalysisFilters';
+import { useProductOccupation } from '@/composables/plannerate/analysis/useProductOccupation';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
 import { useTargetStockAnalysis } from '@/composables/plannerate/analysis/useTargetStockAnalysis';
@@ -38,6 +39,7 @@ const props = withDefaults(defineProps<Props>(), {
 const editor = usePlanogramEditor();
 const selection = usePlanogramSelection();
 const { calculateSegmentCapacity, getStockStatus, calculateToleranceMargin, DEFAULT_TOLERANCE } = useTargetStockAnalysis();
+const { getPlanogramStockCapacity } = useProductOccupation();
 
 const selectedProductId = ref<string | null>(null);
 const slots = useSlots();
@@ -180,13 +182,22 @@ const toleranceMax = computed(() => {
     return Math.round(selectedResult.value.estoque_alvo + toleranceMargin.value);
 });
 
+/**
+ * Capacidade do produto em TODO o planograma (soma de todas as frentes/segmentos).
+ * É esse total que define o status/cor do estoque alvo. Cai para o segmento se não localizado.
+ */
+const planogramCapacity = computed(() => {
+    const total = getPlanogramStockCapacity(selectedResult.value?.product_id);
+    return total > 0 ? total : segmentCapacity.value;
+});
+
 const stockStatus = computed<'increase' | 'decrease' | 'ok' | 'unknown'>(() => {
     if (!selectedResult.value || !activePlacement.value) {
         return 'unknown';
     }
 
     return getStockStatus(
-        segmentCapacity.value,
+        planogramCapacity.value,
         selectedResult.value.estoque_alvo,
         DEFAULT_TOLERANCE,
     );

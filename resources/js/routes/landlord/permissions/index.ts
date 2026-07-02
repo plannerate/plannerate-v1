@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::sync
-* @see app/Http/Controllers/Landlord/PermissionController.php:168
+* @see app/Http/Controllers/Landlord/PermissionController.php:180
 * @route '//plannerate.localhost/permissions/sync'
 */
 export const sync = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -16,7 +16,7 @@ sync.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::sync
-* @see app/Http/Controllers/Landlord/PermissionController.php:168
+* @see app/Http/Controllers/Landlord/PermissionController.php:180
 * @route '//plannerate.localhost/permissions/sync'
 */
 sync.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ sync.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::sync
-* @see app/Http/Controllers/Landlord/PermissionController.php:168
+* @see app/Http/Controllers/Landlord/PermissionController.php:180
 * @route '//plannerate.localhost/permissions/sync'
 */
 sync.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -35,7 +35,7 @@ sync.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::sync
-* @see app/Http/Controllers/Landlord/PermissionController.php:168
+* @see app/Http/Controllers/Landlord/PermissionController.php:180
 * @route '//plannerate.localhost/permissions/sync'
 */
 const syncForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -45,7 +45,7 @@ const syncForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => (
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::sync
-* @see app/Http/Controllers/Landlord/PermissionController.php:168
+* @see app/Http/Controllers/Landlord/PermissionController.php:180
 * @route '//plannerate.localhost/permissions/sync'
 */
 syncForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -138,7 +138,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::create
-* @see app/Http/Controllers/Landlord/PermissionController.php:87
+* @see app/Http/Controllers/Landlord/PermissionController.php:89
 * @route '//plannerate.localhost/permissions/create'
 */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -153,7 +153,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::create
-* @see app/Http/Controllers/Landlord/PermissionController.php:87
+* @see app/Http/Controllers/Landlord/PermissionController.php:89
 * @route '//plannerate.localhost/permissions/create'
 */
 create.url = (options?: RouteQueryOptions) => {
@@ -162,7 +162,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::create
-* @see app/Http/Controllers/Landlord/PermissionController.php:87
+* @see app/Http/Controllers/Landlord/PermissionController.php:89
 * @route '//plannerate.localhost/permissions/create'
 */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -172,7 +172,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::create
-* @see app/Http/Controllers/Landlord/PermissionController.php:87
+* @see app/Http/Controllers/Landlord/PermissionController.php:89
 * @route '//plannerate.localhost/permissions/create'
 */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -182,7 +182,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::create
-* @see app/Http/Controllers/Landlord/PermissionController.php:87
+* @see app/Http/Controllers/Landlord/PermissionController.php:89
 * @route '//plannerate.localhost/permissions/create'
 */
 const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -192,7 +192,7 @@ const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => 
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::create
-* @see app/Http/Controllers/Landlord/PermissionController.php:87
+* @see app/Http/Controllers/Landlord/PermissionController.php:89
 * @route '//plannerate.localhost/permissions/create'
 */
 createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -202,7 +202,7 @@ createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::create
-* @see app/Http/Controllers/Landlord/PermissionController.php:87
+* @see app/Http/Controllers/Landlord/PermissionController.php:89
 * @route '//plannerate.localhost/permissions/create'
 */
 createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -219,7 +219,7 @@ create.form = createForm
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::store
-* @see app/Http/Controllers/Landlord/PermissionController.php:100
+* @see app/Http/Controllers/Landlord/PermissionController.php:102
 * @route '//plannerate.localhost/permissions'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -234,7 +234,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::store
-* @see app/Http/Controllers/Landlord/PermissionController.php:100
+* @see app/Http/Controllers/Landlord/PermissionController.php:102
 * @route '//plannerate.localhost/permissions'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -243,7 +243,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::store
-* @see app/Http/Controllers/Landlord/PermissionController.php:100
+* @see app/Http/Controllers/Landlord/PermissionController.php:102
 * @route '//plannerate.localhost/permissions'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -253,7 +253,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::store
-* @see app/Http/Controllers/Landlord/PermissionController.php:100
+* @see app/Http/Controllers/Landlord/PermissionController.php:102
 * @route '//plannerate.localhost/permissions'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -263,7 +263,7 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::store
-* @see app/Http/Controllers/Landlord/PermissionController.php:100
+* @see app/Http/Controllers/Landlord/PermissionController.php:102
 * @route '//plannerate.localhost/permissions'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -275,7 +275,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::edit
-* @see app/Http/Controllers/Landlord/PermissionController.php:121
+* @see app/Http/Controllers/Landlord/PermissionController.php:127
 * @route '//plannerate.localhost/permissions/{permission}/edit'
 */
 export const edit = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -290,7 +290,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::edit
-* @see app/Http/Controllers/Landlord/PermissionController.php:121
+* @see app/Http/Controllers/Landlord/PermissionController.php:127
 * @route '//plannerate.localhost/permissions/{permission}/edit'
 */
 edit.url = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -323,7 +323,7 @@ edit.url = (args: { permission: string | { id: string } } | [permission: string 
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::edit
-* @see app/Http/Controllers/Landlord/PermissionController.php:121
+* @see app/Http/Controllers/Landlord/PermissionController.php:127
 * @route '//plannerate.localhost/permissions/{permission}/edit'
 */
 edit.get = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -333,7 +333,7 @@ edit.get = (args: { permission: string | { id: string } } | [permission: string 
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::edit
-* @see app/Http/Controllers/Landlord/PermissionController.php:121
+* @see app/Http/Controllers/Landlord/PermissionController.php:127
 * @route '//plannerate.localhost/permissions/{permission}/edit'
 */
 edit.head = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -343,7 +343,7 @@ edit.head = (args: { permission: string | { id: string } } | [permission: string
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::edit
-* @see app/Http/Controllers/Landlord/PermissionController.php:121
+* @see app/Http/Controllers/Landlord/PermissionController.php:127
 * @route '//plannerate.localhost/permissions/{permission}/edit'
 */
 const editForm = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -353,7 +353,7 @@ const editForm = (args: { permission: string | { id: string } } | [permission: s
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::edit
-* @see app/Http/Controllers/Landlord/PermissionController.php:121
+* @see app/Http/Controllers/Landlord/PermissionController.php:127
 * @route '//plannerate.localhost/permissions/{permission}/edit'
 */
 editForm.get = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -363,7 +363,7 @@ editForm.get = (args: { permission: string | { id: string } } | [permission: str
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::edit
-* @see app/Http/Controllers/Landlord/PermissionController.php:121
+* @see app/Http/Controllers/Landlord/PermissionController.php:127
 * @route '//plannerate.localhost/permissions/{permission}/edit'
 */
 editForm.head = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -380,7 +380,7 @@ edit.form = editForm
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::update
-* @see app/Http/Controllers/Landlord/PermissionController.php:139
+* @see app/Http/Controllers/Landlord/PermissionController.php:147
 * @route '//plannerate.localhost/permissions/{permission}'
 */
 export const update = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -395,7 +395,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::update
-* @see app/Http/Controllers/Landlord/PermissionController.php:139
+* @see app/Http/Controllers/Landlord/PermissionController.php:147
 * @route '//plannerate.localhost/permissions/{permission}'
 */
 update.url = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -428,7 +428,7 @@ update.url = (args: { permission: string | { id: string } } | [permission: strin
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::update
-* @see app/Http/Controllers/Landlord/PermissionController.php:139
+* @see app/Http/Controllers/Landlord/PermissionController.php:147
 * @route '//plannerate.localhost/permissions/{permission}'
 */
 update.put = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -438,7 +438,7 @@ update.put = (args: { permission: string | { id: string } } | [permission: strin
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::update
-* @see app/Http/Controllers/Landlord/PermissionController.php:139
+* @see app/Http/Controllers/Landlord/PermissionController.php:147
 * @route '//plannerate.localhost/permissions/{permission}'
 */
 update.patch = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -448,7 +448,7 @@ update.patch = (args: { permission: string | { id: string } } | [permission: str
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::update
-* @see app/Http/Controllers/Landlord/PermissionController.php:139
+* @see app/Http/Controllers/Landlord/PermissionController.php:147
 * @route '//plannerate.localhost/permissions/{permission}'
 */
 const updateForm = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -463,7 +463,7 @@ const updateForm = (args: { permission: string | { id: string } } | [permission:
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::update
-* @see app/Http/Controllers/Landlord/PermissionController.php:139
+* @see app/Http/Controllers/Landlord/PermissionController.php:147
 * @route '//plannerate.localhost/permissions/{permission}'
 */
 updateForm.put = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -478,7 +478,7 @@ updateForm.put = (args: { permission: string | { id: string } } | [permission: s
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::update
-* @see app/Http/Controllers/Landlord/PermissionController.php:139
+* @see app/Http/Controllers/Landlord/PermissionController.php:147
 * @route '//plannerate.localhost/permissions/{permission}'
 */
 updateForm.patch = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -495,7 +495,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::destroy
-* @see app/Http/Controllers/Landlord/PermissionController.php:232
+* @see app/Http/Controllers/Landlord/PermissionController.php:258
 * @route '//plannerate.localhost/permissions/{permission}'
 */
 export const destroy = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -510,7 +510,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::destroy
-* @see app/Http/Controllers/Landlord/PermissionController.php:232
+* @see app/Http/Controllers/Landlord/PermissionController.php:258
 * @route '//plannerate.localhost/permissions/{permission}'
 */
 destroy.url = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -543,7 +543,7 @@ destroy.url = (args: { permission: string | { id: string } } | [permission: stri
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::destroy
-* @see app/Http/Controllers/Landlord/PermissionController.php:232
+* @see app/Http/Controllers/Landlord/PermissionController.php:258
 * @route '//plannerate.localhost/permissions/{permission}'
 */
 destroy.delete = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -553,7 +553,7 @@ destroy.delete = (args: { permission: string | { id: string } } | [permission: s
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::destroy
-* @see app/Http/Controllers/Landlord/PermissionController.php:232
+* @see app/Http/Controllers/Landlord/PermissionController.php:258
 * @route '//plannerate.localhost/permissions/{permission}'
 */
 const destroyForm = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -568,7 +568,7 @@ const destroyForm = (args: { permission: string | { id: string } } | [permission
 
 /**
 * @see \App\Http\Controllers\Landlord\PermissionController::destroy
-* @see app/Http/Controllers/Landlord/PermissionController.php:232
+* @see app/Http/Controllers/Landlord/PermissionController.php:258
 * @route '//plannerate.localhost/permissions/{permission}'
 */
 destroyForm.delete = (args: { permission: string | { id: string } } | [permission: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

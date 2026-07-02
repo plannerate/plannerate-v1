@@ -1,13 +1,5 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import {
-    BadgeDollarSign,
-    Barcode,
-    CalendarDays,
-    Hash,
-    Package,
-    Store,
-} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import SaleController from '@/actions/App/Http/Controllers/Tenant/SaleController';
 import MonthRangeFilter from '@/components/filters/MonthRangeFilter.vue';
@@ -197,48 +189,22 @@ const pageMeta = useCrudPageMeta({
                 >
                     <tr>
                         <ColumnHeader field="codigo_erp">
-                            <span class="inline-flex items-center gap-1.5">
-                                <Hash class="size-3.5" />
-                                {{ t('app.tenant.sales.fields.codigo_erp') }}
-                            </span>
+                            {{ t('app.tenant.sales.fields.codigo_erp') }}
                         </ColumnHeader>
                         <ColumnHeader field="ean">
-                            <span class="inline-flex items-center gap-1.5">
-                                <Barcode class="size-3.5" />
-                                {{ t('app.tenant.sales.fields.ean') }}
-                            </span>
+                            {{ t('app.tenant.sales.fields.ean') }}
                         </ColumnHeader>
                         <ColumnHeader field="store">
-                            <span class="inline-flex items-center gap-1.5">
-                                <Store class="size-3.5" />
-                                {{ t('app.tenant.sales.fields.store') }}
-                            </span>
+                            {{ t('app.tenant.sales.fields.store') }}
                         </ColumnHeader>
                         <ColumnHeader field="sale_date">
-                            <span class="inline-flex items-center gap-1.5">
-                                <CalendarDays class="size-3.5" />
-                                {{ t('app.tenant.sales.fields.sale_date') }}
-                            </span>
+                            {{ t('app.tenant.sales.fields.sale_date') }}
                         </ColumnHeader>
                         <ColumnHeader field="total_sale_quantity">
-                            <span class="inline-flex items-center gap-1.5">
-                                <Package class="size-3.5" />
-                                {{
-                                    t(
-                                        'app.tenant.sales.fields.total_sale_quantity',
-                                    )
-                                }}
-                            </span>
+                            {{ t('app.tenant.sales.fields.total_sale_quantity') }}
                         </ColumnHeader>
                         <ColumnHeader field="total_sale_value">
-                            <span class="inline-flex items-center gap-1.5">
-                                <BadgeDollarSign class="size-3.5" />
-                                {{
-                                    t(
-                                        'app.tenant.sales.fields.total_sale_value',
-                                    )
-                                }}
-                            </span>
+                            {{ t('app.tenant.sales.fields.total_sale_value') }}
                         </ColumnHeader>
                         <th class="px-4 py-3  font-medium">
                             {{ t('app.tenant.common.actions') }}

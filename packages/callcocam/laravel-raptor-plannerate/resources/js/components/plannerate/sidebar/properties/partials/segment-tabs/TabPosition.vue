@@ -1,5 +1,5 @@
 <template>
-    <div class="space-y-4">
+    <div class="space-y-3">
         <!-- Cabeçalho da aba -->
         <div>
             <h3 class="text-xl font-bold leading-tight text-foreground">
@@ -10,37 +10,96 @@
             </p>
         </div>
 
-        <!-- Card: Ocupação no Planograma -->
+        <!-- Card: Ocupação do Segmento (configuração física do segmento selecionado) -->
         <SegmentCard
+            dense
             :icon="LayoutGrid"
             color="blue"
-            :title="t('plannerate.sidebar.segment_details.cards.occupation')"
+            :title="t('plannerate.sidebar.segment_details.cards.occupation_segment')"
         >
-            <div class="grid grid-cols-2 gap-2">
-                <div class="space-y-1 rounded-lg border border-border p-3">
-                    <p class="text-xs text-muted-foreground">
+            <div class="grid grid-cols-4 gap-1.5">
+                <div class="rounded-md border border-border px-2 py-1.5">
+                    <p class="text-[10px] leading-none text-muted-foreground">
                         {{ t('plannerate.sidebar.segment_details.position.facings') }}
                     </p>
-                    <p class="text-2xl font-bold tabular-nums text-foreground">{{ facings }}</p>
+                    <p class="mt-1 text-lg font-bold leading-none tabular-nums text-foreground">{{ facings }}</p>
                 </div>
-                <div class="space-y-1 rounded-lg border border-border p-3">
-                    <p class="text-xs text-muted-foreground">
+                <div class="rounded-md border border-border px-2 py-1.5">
+                    <p class="text-[10px] leading-none text-muted-foreground">
                         {{ t('plannerate.sidebar.segment_details.position.stacking') }}
                     </p>
-                    <p class="text-2xl font-bold tabular-nums text-foreground">{{ stacking }}</p>
+                    <p class="mt-1 text-lg font-bold leading-none tabular-nums text-foreground">{{ stacking }}</p>
                 </div>
-                <div class="space-y-1 rounded-lg border border-border p-3">
-                    <p class="text-xs text-muted-foreground">
+                <div class="rounded-md border border-border px-2 py-1.5">
+                    <p class="text-[10px] leading-none text-muted-foreground">
                         {{ t('plannerate.sidebar.segment_details.position.depth_units') }}
                     </p>
-                    <p class="text-2xl font-bold tabular-nums text-foreground">{{ itemsInDepth }}</p>
+                    <p class="mt-1 text-lg font-bold leading-none tabular-nums text-foreground">{{ itemsInDepth }}</p>
                 </div>
-                <div class="space-y-1 rounded-lg border border-border p-3">
-                    <p class="text-xs text-muted-foreground">
+                <div class="rounded-md border border-border px-2 py-1.5">
+                    <p class="text-[10px] leading-none text-muted-foreground">
                         {{ t('plannerate.sidebar.segment_details.position.total_units') }}
                     </p>
-                    <p class="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-                        {{ totalUnits }}
+                    <p class="mt-1 text-lg font-bold leading-none tabular-nums text-foreground">{{ totalUnits }}</p>
+                </div>
+            </div>
+        </SegmentCard>
+
+        <!-- Card: Ocupação na Prateleira (soma dos segmentos deste produto na prateleira) -->
+        <SegmentCard
+            dense
+            :icon="Rows3"
+            color="blue"
+            :title="t('plannerate.sidebar.segment_details.cards.occupation_shelf')"
+        >
+            <div class="grid grid-cols-3 gap-1.5">
+                <div class="rounded-md border border-border px-2 py-1.5">
+                    <p class="text-[10px] leading-none text-muted-foreground">
+                        {{ t('plannerate.sidebar.segment_details.position.segments') }}
+                    </p>
+                    <p class="mt-1 text-lg font-bold leading-none tabular-nums text-foreground">{{ shelfOccupation.segments }}</p>
+                </div>
+                <div class="rounded-md border border-border px-2 py-1.5">
+                    <p class="text-[10px] leading-none text-muted-foreground">
+                        {{ t('plannerate.sidebar.segment_details.position.facings') }}
+                    </p>
+                    <p class="mt-1 text-lg font-bold leading-none tabular-nums text-foreground">{{ shelfOccupation.facings }}</p>
+                </div>
+                <div class="rounded-md border border-border px-2 py-1.5">
+                    <p class="text-[10px] leading-none text-muted-foreground">
+                        {{ t('plannerate.sidebar.segment_details.position.total_units') }}
+                    </p>
+                    <p class="mt-1 text-lg font-bold leading-none tabular-nums text-foreground">{{ shelfOccupation.units }}</p>
+                </div>
+            </div>
+        </SegmentCard>
+
+        <!-- Card: Ocupação no Planograma (soma do produto em toda a gôndola) -->
+        <SegmentCard
+            dense
+            :icon="LayoutGrid"
+            color="emerald"
+            :title="t('plannerate.sidebar.segment_details.cards.occupation')"
+        >
+            <div class="grid grid-cols-3 gap-1.5">
+                <div class="rounded-md border border-border px-2 py-1.5">
+                    <p class="text-[10px] leading-none text-muted-foreground">
+                        {{ t('plannerate.sidebar.segment_details.position.segments') }}
+                    </p>
+                    <p class="mt-1 text-lg font-bold leading-none tabular-nums text-foreground">{{ planogramOccupation.segments }}</p>
+                </div>
+                <div class="rounded-md border border-border px-2 py-1.5">
+                    <p class="text-[10px] leading-none text-muted-foreground">
+                        {{ t('plannerate.sidebar.segment_details.position.facings') }}
+                    </p>
+                    <p class="mt-1 text-lg font-bold leading-none tabular-nums text-foreground">{{ planogramOccupation.facings }}</p>
+                </div>
+                <div class="rounded-md border border-border px-2 py-1.5">
+                    <p class="text-[10px] leading-none text-muted-foreground">
+                        {{ t('plannerate.sidebar.segment_details.position.total_units') }}
+                    </p>
+                    <p class="mt-1 text-lg font-bold leading-none tabular-nums text-emerald-600 dark:text-emerald-400">
+                        {{ planogramOccupation.units }}
                     </p>
                 </div>
             </div>
@@ -105,10 +164,11 @@
 </template>
 
 <script setup lang="ts">
-import { Info, LayoutGrid, Ruler } from 'lucide-vue-next';
+import { Info, LayoutGrid, Rows3, Ruler } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useProductOccupation } from '@/composables/plannerate/analysis/useProductOccupation';
 import { useT } from '@/composables/useT';
 import type { Product, Segment, Shelf } from '@/types/planogram';
 import SegmentCard from './SegmentCard.vue';
@@ -154,5 +214,17 @@ const itemsInDepth = computed(() => {
 /** Total de unidades = frentes × empilhamento × profundidade */
 const totalUnits = computed(
     () => facings.value * stacking.value * itemsInDepth.value,
+);
+
+const { getShelfOccupation, getPlanogramOccupation } = useProductOccupation();
+
+/** Ocupação do produto somada em todos os segmentos da prateleira atual. */
+const shelfOccupation = computed(() =>
+    getShelfOccupation(props.product?.id, props.shelf ?? null),
+);
+
+/** Ocupação do produto somada em toda a gôndola (planograma). */
+const planogramOccupation = computed(() =>
+    getPlanogramOccupation(props.product?.id),
 );
 </script>

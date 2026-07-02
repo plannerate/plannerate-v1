@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { Layers, Plus } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import PlanController from '@/actions/App/Http/Controllers/Landlord/PlanController';
+import FormSlugField from '@/components/form/FormSlugField.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,7 @@ const props = defineProps<{
 const { t } = useT();
 const isEdit = computed(() => props.plan !== null);
 const plansIndexPath = PlanController.index.url().replace(/^\/\/[^/]+/, '');
+const name = ref(props.plan?.name ?? '');
 
 const items = ref<PlanItem[]>(
     props.plan?.items?.map((item) => ({ ...item })) ?? [],
@@ -85,8 +87,12 @@ function removeItem(index: number): void {
 }
 
 const pageMeta = useCrudPageMeta({
-    headTitle: isEdit.value ? t('app.landlord.plans.actions.edit') : t('app.landlord.plans.actions.new'),
-    title: isEdit.value ? t('app.landlord.plans.actions.edit') : t('app.landlord.plans.actions.new'),
+    headTitle: isEdit.value
+        ? t('app.landlord.plans.actions.edit')
+        : t('app.landlord.plans.actions.new'),
+    title: isEdit.value
+        ? t('app.landlord.plans.actions.edit')
+        : t('app.landlord.plans.actions.new'),
     description: t('app.landlord.plans.description'),
     breadcrumbs: [
         {
@@ -94,24 +100,46 @@ const pageMeta = useCrudPageMeta({
             href: plansIndexPath,
         },
         {
-            title: isEdit.value ? t('app.landlord.common.edit') : t('app.landlord.common.create'),
-            href: isEdit.value ? tenantWayfinderPath(PlanController.edit.url(props.plan!.id)) : tenantWayfinderPath(PlanController.create.url()),
+            title: isEdit.value
+                ? t('app.landlord.common.edit')
+                : t('app.landlord.common.create'),
+            href: isEdit.value
+                ? tenantWayfinderPath(PlanController.edit.url(props.plan!.id))
+                : tenantWayfinderPath(PlanController.create.url()),
         },
     ],
 });
 </script>
 
 <template>
-
     <Head :title="pageMeta.headTitle" />
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <div class="p-4">
-            <Form v-bind="isEdit
-                ? { ...PlanController.update.form(props.plan!.id), action: tenantWayfinderPath(PlanController.update.form(props.plan!.id).action) }
-                : { ...PlanController.store.form(), action: tenantWayfinderPath(PlanController.store.form().action) }"
-                v-slot="{ errors, processing }">
-                <FormCard :processing="processing" :cancel-href="plansIndexPath" :title="pageMeta.title"
-                    :description="pageMeta.description">
+            <Form
+                v-bind="
+                    isEdit
+                        ? {
+                              ...PlanController.update.form(props.plan!.id),
+                              action: tenantWayfinderPath(
+                                  PlanController.update.form(props.plan!.id)
+                                      .action,
+                              ),
+                          }
+                        : {
+                              ...PlanController.store.form(),
+                              action: tenantWayfinderPath(
+                                  PlanController.store.form().action,
+                              ),
+                          }
+                "
+                v-slot="{ errors, processing }"
+            >
+                <FormCard
+                    :processing="processing"
+                    :cancel-href="plansIndexPath"
+                    :title="pageMeta.title"
+                    :description="pageMeta.description"
+                >
                     <template #icon>
                         <Layers class="size-5" />
                     </template>
@@ -119,57 +147,105 @@ const pageMeta = useCrudPageMeta({
                     <div class="grid gap-6 md:grid-cols-2">
                         <!-- Name -->
                         <div class="grid gap-2">
-                            <Label for="name">{{ t('app.landlord.plans.fields.name') }}</Label>
-                            <Input id="name" name="name" :default-value="props.plan?.name ?? ''" required />
+                            <Label for="name">{{
+                                t('app.landlord.plans.fields.name')
+                            }}</Label>
+                            <Input
+                                id="name"
+                                v-model="name"
+                                name="name"
+                                required
+                            />
                             <InputError :message="errors.name" />
                         </div>
 
-                        <!-- Slug -->
-                        <div class="grid gap-2">
-                            <Label for="slug">Slug</Label>
-                            <Input id="slug" name="slug" :default-value="props.plan?.slug ?? ''" required />
-                            <InputError :message="errors.slug" />
-                        </div>
+                        <!-- Slug (gerado a partir do nome) -->
+                        <FormSlugField
+                            :source="name"
+                            :default-value="props.plan?.slug ?? ''"
+                            :error="errors.slug"
+                            required
+                        />
                     </div>
 
                     <div class="grid gap-6 md:grid-cols-2">
                         <!-- Price (reais) -->
                         <div class="grid gap-2">
-                            <Label for="price">{{ t('app.landlord.plans.fields.price_cents') }} (R$)</Label>
-                            <Input id="price" v-model="priceReais" type="number" min="0" step="0.01" required />
-                            <input type="hidden" name="price_cents" :value="priceCents" />
+                            <Label for="price"
+                                >{{
+                                    t('app.landlord.plans.fields.price_cents')
+                                }}
+                                (R$)</Label
+                            >
+                            <Input
+                                id="price"
+                                v-model="priceReais"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                required
+                            />
+                            <input
+                                type="hidden"
+                                name="price_cents"
+                                :value="priceCents"
+                            />
                             <InputError :message="errors.price_cents" />
                         </div>
 
                         <!-- User limit -->
                         <div class="grid gap-2">
-                            <Label for="user_limit">{{ t('app.landlord.plans.fields.user_limit') }}</Label>
-                            <Input id="user_limit" name="user_limit" type="number" min="1"
+                            <Label for="user_limit">{{
+                                t('app.landlord.plans.fields.user_limit')
+                            }}</Label>
+                            <Input
+                                id="user_limit"
+                                name="user_limit"
+                                type="number"
+                                min="1"
                                 :default-value="props.plan?.user_limit ?? ''"
-                                placeholder="Em branco = ilimitado" />
+                                placeholder="Em branco = ilimitado"
+                            />
                             <InputError :message="errors.user_limit" />
                         </div>
                     </div>
 
                     <!-- Description -->
                     <div class="grid gap-2">
-                        <Label for="description">{{ t('app.landlord.plans.fields.description') }}</Label>
-                        <textarea id="description" name="description" rows="3"
-                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                            :value="props.plan?.description ?? ''"></textarea>
+                        <Label for="description">{{
+                            t('app.landlord.plans.fields.description')
+                        }}</Label>
+                        <textarea
+                            id="description"
+                            name="description"
+                            rows="3"
+                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                            :value="props.plan?.description ?? ''"
+                        ></textarea>
                         <InputError :message="errors.description" />
                     </div>
 
                     <!-- Active -->
                     <label
-                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50 has-checked:border-primary/50 has-checked:bg-primary/5">
+                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50 has-checked:border-primary/50 has-checked:bg-primary/5"
+                    >
                         <input type="hidden" name="is_active" value="0" />
-                        <input id="is_active" name="is_active" type="checkbox" value="1"
-                            :checked="props.plan?.is_active ?? true" class="accent-primary" />
+                        <input
+                            id="is_active"
+                            name="is_active"
+                            type="checkbox"
+                            value="1"
+                            :checked="props.plan?.is_active ?? true"
+                            class="accent-primary"
+                        />
                         <div>
-                            <span class="text-sm font-medium">{{ t('app.landlord.plans.fields.is_active') }}</span>
-                            <p class="text-xs text-muted-foreground">Planos inativos não aparecem para seleção de novos
-                                tenants.</p>
+                            <span class="text-sm font-medium">{{
+                                t('app.landlord.plans.fields.is_active')
+                            }}</span>
+                            <p class="text-xs text-muted-foreground">
+                                Planos inativos não aparecem para seleção de
+                                novos tenants.
+                            </p>
                         </div>
                         <InputError :message="errors.is_active" />
                     </label>
@@ -178,24 +254,47 @@ const pageMeta = useCrudPageMeta({
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-semibold text-foreground">Itens do plano</p>
-                                <p class="text-xs text-muted-foreground">Features e limites configuráveis para este
-                                    plano.</p>
+                                <p
+                                    class="text-sm font-semibold text-foreground"
+                                >
+                                    Itens do plano
+                                </p>
+                                <p class="text-xs text-muted-foreground">
+                                    Features e limites configuráveis para este
+                                    plano.
+                                </p>
                             </div>
-                            <Button type="button" variant="outline" size="sm" @click="addItem">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                @click="addItem"
+                            >
                                 <Plus class="mr-1 size-4" />
                                 Adicionar item
                             </Button>
                         </div>
 
-                        <div v-if="items.length === 0"
-                            class="flex items-center justify-center rounded-lg border border-dashed border-border px-4 py-8 text-sm text-muted-foreground">
-                            Nenhum item adicionado. Clique em "Adicionar item" para começar.
+                        <div
+                            v-if="items.length === 0"
+                            class="flex items-center justify-center rounded-lg border border-dashed border-border px-4 py-8 text-sm text-muted-foreground"
+                        >
+                            Nenhum item adicionado. Clique em "Adicionar item"
+                            para começar.
                         </div>
 
-                        <div v-else class="divide-y divide-border rounded-lg border border-border">
-                            <PlanItemRow v-for="(_, index) in items" :key="index" v-model="items[index]" :index="index"
-                                :errors="errors" @remove="removeItem(index)" />
+                        <div
+                            v-else
+                            class="divide-y divide-border rounded-lg border border-border"
+                        >
+                            <PlanItemRow
+                                v-for="(_, index) in items"
+                                :key="index"
+                                v-model="items[index]"
+                                :index="index"
+                                :errors="errors"
+                                @remove="removeItem(index)"
+                            />
                         </div>
                     </div>
                 </FormCard>

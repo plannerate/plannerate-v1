@@ -5,6 +5,7 @@ import { computed, ref } from 'vue';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
 import CepLookupField from '@/components/form/CepLookupField.vue';
 import FormMapField from '@/components/form/FormMapField.vue';
+import FormSlugField from '@/components/form/FormSlugField.vue';
 import FormStatusToggleField from '@/components/form/FormStatusToggleField.vue';
 import FormTabsBar from '@/components/form/FormTabsBar.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
@@ -23,6 +24,7 @@ type StorePayload = {
     email: string | null;
     status: 'draft' | 'published';
     description: string | null;
+    slug: string | null;
 };
 
 type AddressPayload = {
@@ -71,10 +73,9 @@ const props = defineProps<{
 
 const { t } = useT();
 const isEdit = computed(() => props.store !== null);
-const storesIndexPath = StoreController.index
-    .url()
-    .replace(/^\/\/[^/]+/, '');
+const storesIndexPath = StoreController.index.url().replace(/^\/\/[^/]+/, '');
 const activeTab = ref<TabKey>('identificacao');
+const name = ref(props.store?.name ?? '');
 const storeMap = ref<MapData | null>(props.store?.map ?? null);
 const addressZipCode = ref(props.address?.zip_code ?? '');
 const addressStreet = ref(props.address?.street ?? '');
@@ -189,18 +190,17 @@ const pageMeta = useCrudPageMeta({
 
                         <FormTextField
                             id="name"
+                            v-model="name"
                             name="name"
                             label="Nome da loja"
-                            :default-value="props.store?.name ?? ''"
                             :error="errors.name"
                             class="md:col-span-5"
                             required
                         />
 
-                        <FormTextField
-                            id="slug"
-                            name="slug"
+                        <FormSlugField
                             label="Cluster"
+                            :source="name"
                             :default-value="props.store?.slug ?? ''"
                             :error="errors.slug"
                             class="md:col-span-4"

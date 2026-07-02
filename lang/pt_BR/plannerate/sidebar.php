@@ -240,6 +240,8 @@ return [
         'cards' => [
             'quick_summary' => 'Resumo Rápido',
             'occupation' => 'Ocupação no Planograma',
+            'occupation_segment' => 'Ocupação do Segmento',
+            'occupation_shelf' => 'Ocupação na Prateleira',
             'product_dimensions' => 'Dimensões do Produto',
             'main_classification' => 'Classificação Principal',
             'complementary_levels' => 'Níveis Complementares',
@@ -264,6 +266,7 @@ return [
             'stacking' => 'Empilhamento',
             'depth_units' => 'Profundidade',
             'total_units' => 'Total de unidades',
+            'segments' => 'Segmentos',
             'physical_title' => 'Dimensões Físicas',
             'orientation' => 'Orientação',
             'dim_height' => 'A (Altura)',

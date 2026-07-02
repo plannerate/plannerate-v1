@@ -16,6 +16,7 @@ return [
     'stock_indicator' => [
         'product' => 'Produto',
         'segment_capacity' => 'Capacidade deste segmento',
+        'planogram_total' => 'Total no planograma',
         'stock' => 'Estoque',
         'target' => 'Alvo',
         'current' => 'Atual',

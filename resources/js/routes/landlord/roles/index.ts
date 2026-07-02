@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::index
-* @see app/Http/Controllers/Landlord/RoleController.php:30
+* @see app/Http/Controllers/Landlord/RoleController.php:31
 * @route '//plannerate.localhost/roles'
 */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::index
-* @see app/Http/Controllers/Landlord/RoleController.php:30
+* @see app/Http/Controllers/Landlord/RoleController.php:31
 * @route '//plannerate.localhost/roles'
 */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::index
-* @see app/Http/Controllers/Landlord/RoleController.php:30
+* @see app/Http/Controllers/Landlord/RoleController.php:31
 * @route '//plannerate.localhost/roles'
 */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +35,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::index
-* @see app/Http/Controllers/Landlord/RoleController.php:30
+* @see app/Http/Controllers/Landlord/RoleController.php:31
 * @route '//plannerate.localhost/roles'
 */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -45,7 +45,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::index
-* @see app/Http/Controllers/Landlord/RoleController.php:30
+* @see app/Http/Controllers/Landlord/RoleController.php:31
 * @route '//plannerate.localhost/roles'
 */
 const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -55,7 +55,7 @@ const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => (
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::index
-* @see app/Http/Controllers/Landlord/RoleController.php:30
+* @see app/Http/Controllers/Landlord/RoleController.php:31
 * @route '//plannerate.localhost/roles'
 */
 indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -65,7 +65,7 @@ indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::index
-* @see app/Http/Controllers/Landlord/RoleController.php:30
+* @see app/Http/Controllers/Landlord/RoleController.php:31
 * @route '//plannerate.localhost/roles'
 */
 indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::create
-* @see app/Http/Controllers/Landlord/RoleController.php:76
+* @see app/Http/Controllers/Landlord/RoleController.php:77
 * @route '//plannerate.localhost/roles/create'
 */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -97,7 +97,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::create
-* @see app/Http/Controllers/Landlord/RoleController.php:76
+* @see app/Http/Controllers/Landlord/RoleController.php:77
 * @route '//plannerate.localhost/roles/create'
 */
 create.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::create
-* @see app/Http/Controllers/Landlord/RoleController.php:76
+* @see app/Http/Controllers/Landlord/RoleController.php:77
 * @route '//plannerate.localhost/roles/create'
 */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -116,7 +116,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::create
-* @see app/Http/Controllers/Landlord/RoleController.php:76
+* @see app/Http/Controllers/Landlord/RoleController.php:77
 * @route '//plannerate.localhost/roles/create'
 */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -126,7 +126,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::create
-* @see app/Http/Controllers/Landlord/RoleController.php:76
+* @see app/Http/Controllers/Landlord/RoleController.php:77
 * @route '//plannerate.localhost/roles/create'
 */
 const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -136,7 +136,7 @@ const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => 
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::create
-* @see app/Http/Controllers/Landlord/RoleController.php:76
+* @see app/Http/Controllers/Landlord/RoleController.php:77
 * @route '//plannerate.localhost/roles/create'
 */
 createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -146,7 +146,7 @@ createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::create
-* @see app/Http/Controllers/Landlord/RoleController.php:76
+* @see app/Http/Controllers/Landlord/RoleController.php:77
 * @route '//plannerate.localhost/roles/create'
 */
 createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -163,7 +163,7 @@ create.form = createForm
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::store
-* @see app/Http/Controllers/Landlord/RoleController.php:90
+* @see app/Http/Controllers/Landlord/RoleController.php:91
 * @route '//plannerate.localhost/roles'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -178,7 +178,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::store
-* @see app/Http/Controllers/Landlord/RoleController.php:90
+* @see app/Http/Controllers/Landlord/RoleController.php:91
 * @route '//plannerate.localhost/roles'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -187,7 +187,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::store
-* @see app/Http/Controllers/Landlord/RoleController.php:90
+* @see app/Http/Controllers/Landlord/RoleController.php:91
 * @route '//plannerate.localhost/roles'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -197,7 +197,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::store
-* @see app/Http/Controllers/Landlord/RoleController.php:90
+* @see app/Http/Controllers/Landlord/RoleController.php:91
 * @route '//plannerate.localhost/roles'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -207,7 +207,7 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::store
-* @see app/Http/Controllers/Landlord/RoleController.php:90
+* @see app/Http/Controllers/Landlord/RoleController.php:91
 * @route '//plannerate.localhost/roles'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -219,7 +219,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::edit
-* @see app/Http/Controllers/Landlord/RoleController.php:116
+* @see app/Http/Controllers/Landlord/RoleController.php:117
 * @route '//plannerate.localhost/roles/{role}/edit'
 */
 export const edit = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -234,7 +234,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::edit
-* @see app/Http/Controllers/Landlord/RoleController.php:116
+* @see app/Http/Controllers/Landlord/RoleController.php:117
 * @route '//plannerate.localhost/roles/{role}/edit'
 */
 edit.url = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -267,7 +267,7 @@ edit.url = (args: { role: string | { id: string } } | [role: string | { id: stri
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::edit
-* @see app/Http/Controllers/Landlord/RoleController.php:116
+* @see app/Http/Controllers/Landlord/RoleController.php:117
 * @route '//plannerate.localhost/roles/{role}/edit'
 */
 edit.get = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -277,7 +277,7 @@ edit.get = (args: { role: string | { id: string } } | [role: string | { id: stri
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::edit
-* @see app/Http/Controllers/Landlord/RoleController.php:116
+* @see app/Http/Controllers/Landlord/RoleController.php:117
 * @route '//plannerate.localhost/roles/{role}/edit'
 */
 edit.head = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -287,7 +287,7 @@ edit.head = (args: { role: string | { id: string } } | [role: string | { id: str
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::edit
-* @see app/Http/Controllers/Landlord/RoleController.php:116
+* @see app/Http/Controllers/Landlord/RoleController.php:117
 * @route '//plannerate.localhost/roles/{role}/edit'
 */
 const editForm = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -297,7 +297,7 @@ const editForm = (args: { role: string | { id: string } } | [role: string | { id
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::edit
-* @see app/Http/Controllers/Landlord/RoleController.php:116
+* @see app/Http/Controllers/Landlord/RoleController.php:117
 * @route '//plannerate.localhost/roles/{role}/edit'
 */
 editForm.get = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -307,7 +307,7 @@ editForm.get = (args: { role: string | { id: string } } | [role: string | { id: 
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::edit
-* @see app/Http/Controllers/Landlord/RoleController.php:116
+* @see app/Http/Controllers/Landlord/RoleController.php:117
 * @route '//plannerate.localhost/roles/{role}/edit'
 */
 editForm.head = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -324,7 +324,7 @@ edit.form = editForm
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::update
-* @see app/Http/Controllers/Landlord/RoleController.php:141
+* @see app/Http/Controllers/Landlord/RoleController.php:142
 * @route '//plannerate.localhost/roles/{role}'
 */
 export const update = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -339,7 +339,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::update
-* @see app/Http/Controllers/Landlord/RoleController.php:141
+* @see app/Http/Controllers/Landlord/RoleController.php:142
 * @route '//plannerate.localhost/roles/{role}'
 */
 update.url = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -372,7 +372,7 @@ update.url = (args: { role: string | { id: string } } | [role: string | { id: st
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::update
-* @see app/Http/Controllers/Landlord/RoleController.php:141
+* @see app/Http/Controllers/Landlord/RoleController.php:142
 * @route '//plannerate.localhost/roles/{role}'
 */
 update.put = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -382,7 +382,7 @@ update.put = (args: { role: string | { id: string } } | [role: string | { id: st
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::update
-* @see app/Http/Controllers/Landlord/RoleController.php:141
+* @see app/Http/Controllers/Landlord/RoleController.php:142
 * @route '//plannerate.localhost/roles/{role}'
 */
 update.patch = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -392,7 +392,7 @@ update.patch = (args: { role: string | { id: string } } | [role: string | { id: 
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::update
-* @see app/Http/Controllers/Landlord/RoleController.php:141
+* @see app/Http/Controllers/Landlord/RoleController.php:142
 * @route '//plannerate.localhost/roles/{role}'
 */
 const updateForm = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -407,7 +407,7 @@ const updateForm = (args: { role: string | { id: string } } | [role: string | { 
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::update
-* @see app/Http/Controllers/Landlord/RoleController.php:141
+* @see app/Http/Controllers/Landlord/RoleController.php:142
 * @route '//plannerate.localhost/roles/{role}'
 */
 updateForm.put = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -422,7 +422,7 @@ updateForm.put = (args: { role: string | { id: string } } | [role: string | { id
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::update
-* @see app/Http/Controllers/Landlord/RoleController.php:141
+* @see app/Http/Controllers/Landlord/RoleController.php:142
 * @route '//plannerate.localhost/roles/{role}'
 */
 updateForm.patch = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -439,7 +439,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::destroy
-* @see app/Http/Controllers/Landlord/RoleController.php:177
+* @see app/Http/Controllers/Landlord/RoleController.php:178
 * @route '//plannerate.localhost/roles/{role}'
 */
 export const destroy = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -454,7 +454,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::destroy
-* @see app/Http/Controllers/Landlord/RoleController.php:177
+* @see app/Http/Controllers/Landlord/RoleController.php:178
 * @route '//plannerate.localhost/roles/{role}'
 */
 destroy.url = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -487,7 +487,7 @@ destroy.url = (args: { role: string | { id: string } } | [role: string | { id: s
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::destroy
-* @see app/Http/Controllers/Landlord/RoleController.php:177
+* @see app/Http/Controllers/Landlord/RoleController.php:178
 * @route '//plannerate.localhost/roles/{role}'
 */
 destroy.delete = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -497,7 +497,7 @@ destroy.delete = (args: { role: string | { id: string } } | [role: string | { id
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::destroy
-* @see app/Http/Controllers/Landlord/RoleController.php:177
+* @see app/Http/Controllers/Landlord/RoleController.php:178
 * @route '//plannerate.localhost/roles/{role}'
 */
 const destroyForm = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -512,7 +512,7 @@ const destroyForm = (args: { role: string | { id: string } } | [role: string | {
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::destroy
-* @see app/Http/Controllers/Landlord/RoleController.php:177
+* @see app/Http/Controllers/Landlord/RoleController.php:178
 * @route '//plannerate.localhost/roles/{role}'
 */
 destroyForm.delete = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

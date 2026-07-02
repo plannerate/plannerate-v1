@@ -167,7 +167,7 @@ function shelvesWithProducts(section: Section) {
                 <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-3">
                     <div class="flex items-center gap-2">
                         <span class="rounded bg-slate-800 px-2.5 py-1 text-xs font-black text-white uppercase tracking-wider">
-                            {{ t('plannerate.print.share.module') }} #{{ section.ordering }}
+                            {{ t('plannerate.print.share.module') }} {{ section.ordering }}
                         </span>
                         <span class="text-xs text-slate-400">
                             {{ index + 1 }} {{ t('plannerate.print.share.of') }} {{ totalModules }}

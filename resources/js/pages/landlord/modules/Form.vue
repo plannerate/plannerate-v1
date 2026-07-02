@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
 import { Blocks } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import ModuleController from '@/actions/App/Http/Controllers/Landlord/ModuleController';
+import FormSlugField from '@/components/form/FormSlugField.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
@@ -27,10 +28,15 @@ const props = defineProps<{
 const { t } = useT();
 const isEdit = computed(() => props.module !== null);
 const modulesIndexPath = ModuleController.index.url().replace(/^\/\/[^/]+/, '');
+const name = ref(props.module?.name ?? '');
 
 const pageMeta = useCrudPageMeta({
-    headTitle: isEdit.value ? t('app.landlord.modules.actions.edit') : t('app.landlord.modules.actions.new'),
-    title: isEdit.value ? t('app.landlord.modules.actions.edit') : t('app.landlord.modules.actions.new'),
+    headTitle: isEdit.value
+        ? t('app.landlord.modules.actions.edit')
+        : t('app.landlord.modules.actions.new'),
+    title: isEdit.value
+        ? t('app.landlord.modules.actions.edit')
+        : t('app.landlord.modules.actions.new'),
     description: t('app.landlord.modules.description'),
     breadcrumbs: [
         {
@@ -38,8 +44,14 @@ const pageMeta = useCrudPageMeta({
             href: modulesIndexPath,
         },
         {
-            title: isEdit.value ? t('app.landlord.common.edit') : t('app.landlord.common.create'),
-            href: isEdit.value ? tenantWayfinderPath(ModuleController.edit.url(props.module!.id)) : tenantWayfinderPath(ModuleController.create.url()),
+            title: isEdit.value
+                ? t('app.landlord.common.edit')
+                : t('app.landlord.common.create'),
+            href: isEdit.value
+                ? tenantWayfinderPath(
+                      ModuleController.edit.url(props.module!.id),
+                  )
+                : tenantWayfinderPath(ModuleController.create.url()),
         },
     ],
 });
@@ -50,9 +62,22 @@ const pageMeta = useCrudPageMeta({
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <div class="p-4">
             <Form
-                v-bind="isEdit
-                    ? { ...ModuleController.update.form(props.module!.id), action: tenantWayfinderPath(ModuleController.update.form(props.module!.id).action) }
-                    : { ...ModuleController.store.form(), action: tenantWayfinderPath(ModuleController.store.form().action) }"
+                v-bind="
+                    isEdit
+                        ? {
+                              ...ModuleController.update.form(props.module!.id),
+                              action: tenantWayfinderPath(
+                                  ModuleController.update.form(props.module!.id)
+                                      .action,
+                              ),
+                          }
+                        : {
+                              ...ModuleController.store.form(),
+                              action: tenantWayfinderPath(
+                                  ModuleController.store.form().action,
+                              ),
+                          }
+                "
                 v-slot="{ errors, processing }"
             >
                 <FormCard
@@ -66,34 +91,55 @@ const pageMeta = useCrudPageMeta({
                     </template>
 
                     <div class="grid gap-2">
-                        <Label for="name">{{ t('app.landlord.modules.fields.name') }}</Label>
-                        <Input id="name" name="name" :default-value="props.module?.name ?? ''" required />
+                        <Label for="name">{{
+                            t('app.landlord.modules.fields.name')
+                        }}</Label>
+                        <Input id="name" v-model="name" name="name" required />
                         <InputError :message="errors.name" />
                     </div>
 
-                    <div class="grid gap-2">
-                        <Label for="slug">Slug</Label>
-                        <Input id="slug" name="slug" :default-value="props.module?.slug ?? ''" required />
-                        <InputError :message="errors.slug" />
-                    </div>
+                    <!-- Slug (gerado a partir do nome) -->
+                    <FormSlugField
+                        :source="name"
+                        :default-value="props.module?.slug ?? ''"
+                        :error="errors.slug"
+                        required
+                    />
 
                     <div class="grid gap-2">
-                        <Label for="description">{{ t('app.landlord.modules.fields.description') }}</Label>
+                        <Label for="description">{{
+                            t('app.landlord.modules.fields.description')
+                        }}</Label>
                         <textarea
                             id="description"
                             name="description"
                             rows="3"
-                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                        :value="props.module?.description ?? ''"></textarea>
+                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                            :value="props.module?.description ?? ''"
+                        ></textarea>
                         <InputError :message="errors.description" />
                     </div>
 
-                    <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50 has-checked:border-primary/50 has-checked:bg-primary/5">
+                    <label
+                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50 has-checked:border-primary/50 has-checked:bg-primary/5"
+                    >
                         <input type="hidden" name="is_active" value="0" />
-                        <input id="is_active" name="is_active" type="checkbox" value="1" :checked="props.module?.is_active ?? true" class="accent-primary" />
+                        <input
+                            id="is_active"
+                            name="is_active"
+                            type="checkbox"
+                            value="1"
+                            :checked="props.module?.is_active ?? true"
+                            class="accent-primary"
+                        />
                         <div>
-                            <span class="text-sm font-medium">{{ t('app.landlord.modules.fields.is_active') }}</span>
-                            <p class="text-xs text-muted-foreground">Modulos inativos nao aparecem para ativacao em tenants.</p>
+                            <span class="text-sm font-medium">{{
+                                t('app.landlord.modules.fields.is_active')
+                            }}</span>
+                            <p class="text-xs text-muted-foreground">
+                                Modulos inativos nao aparecem para ativacao em
+                                tenants.
+                            </p>
                         </div>
                         <InputError :message="errors.is_active" />
                     </label>
