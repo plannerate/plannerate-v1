@@ -76,6 +76,8 @@ class PermissionController extends Controller
                 'id' => $permission->id,
                 'name' => $permission->name,
                 'type' => $permission->type,
+                'short_name' => $permission->short_name,
+                'description' => $permission->description,
                 'is_protected' => in_array($permission->name, self::PROTECTED_PERMISSIONS, true),
                 'created_at' => $permission->created_at?->toDateTimeString(),
             ]);
@@ -101,9 +103,13 @@ class PermissionController extends Controller
     {
         $this->authorize('create', Permission::class);
 
+        $name = $request->string('name')->toString();
+
         Permission::query()->create([
-            'name' => $request->string('name')->toString(),
+            'name' => $name,
             'type' => $request->string('type')->toString(),
+            'short_name' => $this->resolveShortName($request->input('short_name'), $name),
+            'description' => $this->resolveDescription($request->input('description'), $name),
             'guard_name' => 'web',
         ]);
 
@@ -127,6 +133,8 @@ class PermissionController extends Controller
                 'id' => $permission->id,
                 'name' => $permission->name,
                 'type' => $permission->type,
+                'short_name' => $permission->short_name,
+                'description' => $permission->description,
                 'is_protected' => in_array($permission->name, self::PROTECTED_PERMISSIONS, true),
             ],
             'types' => $this->typesForSelect(),
@@ -149,9 +157,13 @@ class PermissionController extends Controller
             return back();
         }
 
+        $name = $request->string('name')->toString();
+
         $permission->update([
-            'name' => $request->string('name')->toString(),
+            'name' => $name,
             'type' => $request->string('type')->toString(),
+            'short_name' => $this->resolveShortName($request->input('short_name'), $name),
+            'description' => $this->resolveDescription($request->input('description'), $name),
         ]);
 
         Inertia::flash('toast', [
@@ -176,15 +188,6 @@ class PermissionController extends Controller
             fn (string $name): bool => ! in_array($name, $existing, true),
         );
 
-        if (empty($missing)) {
-            Inertia::flash('toast', [
-                'type' => 'info',
-                'message' => 'Todas as permissões já estão registradas.',
-            ]);
-
-            return $this->toLandlordRoute('landlord.permissions.index');
-        }
-
         $currentTeamId = getPermissionsTeamId();
         setPermissionsTeamId(null);
 
@@ -195,6 +198,8 @@ class PermissionController extends Controller
             $created->push(Permission::query()->create([
                 'name' => $name,
                 'type' => PermissionName::typeFor($name) ?? RbacType::TENANT,
+                'short_name' => PermissionName::shortNameFor($name),
+                'description' => PermissionName::descriptionFor($name),
                 'guard_name' => 'web',
             ]));
         }
@@ -213,14 +218,35 @@ class PermissionController extends Controller
             }
         }
 
+        $backfilled = $this->backfillPermissionMetadata();
+
         setPermissionsTeamId($currentTeamId);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $count = $created->count();
 
+        if ($count === 0 && $backfilled === 0) {
+            Inertia::flash('toast', [
+                'type' => 'info',
+                'message' => 'Todas as permissões já estão registradas e descritas.',
+            ]);
+
+            return $this->toLandlordRoute('landlord.permissions.index');
+        }
+
+        $parts = [];
+
+        if ($count > 0) {
+            $parts[] = "{$count} nova(s) permissão(ões) cadastrada(s) e atribuída(s)";
+        }
+
+        if ($backfilled > 0) {
+            $parts[] = "{$backfilled} descrição(ões) preenchida(s)";
+        }
+
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => "{$count} nova(s) permissão(ões) cadastrada(s) e atribuída(s) com sucesso.",
+            'message' => ucfirst(implode(' e ', $parts)).'.',
         ]);
 
         return $this->toLandlordRoute('landlord.permissions.index');
@@ -250,6 +276,72 @@ class PermissionController extends Controller
         ]);
 
         return $this->toLandlordRoute('landlord.permissions.index');
+    }
+
+    /**
+     * Resolve o nome curto: usa o valor informado ou cai para a descrição base do PermissionName.
+     */
+    private function resolveShortName(mixed $input, string $name): ?string
+    {
+        $value = is_string($input) ? trim($input) : '';
+
+        return $value !== '' ? $value : PermissionName::shortNameFor($name);
+    }
+
+    /**
+     * Resolve a descrição: usa o valor informado ou cai para a descrição base do PermissionName.
+     */
+    private function resolveDescription(mixed $input, string $name): ?string
+    {
+        $value = is_string($input) ? trim($input) : '';
+
+        return $value !== '' ? $value : PermissionName::descriptionFor($name);
+    }
+
+    /**
+     * Preenche nome curto/descrição das permissões existentes que estão vazias,
+     * usando os metadados base do PermissionName. Retorna a quantidade atualizada.
+     */
+    private function backfillPermissionMetadata(): int
+    {
+        $permissions = Permission::query()
+            ->where('guard_name', 'web')
+            ->where(function ($query): void {
+                $query->whereNull('short_name')
+                    ->orWhere('short_name', '')
+                    ->orWhereNull('description')
+                    ->orWhere('description', '');
+            })
+            ->get();
+
+        $updated = 0;
+
+        foreach ($permissions as $permission) {
+            $changes = [];
+
+            if ($permission->short_name === null || trim((string) $permission->short_name) === '') {
+                $shortName = PermissionName::shortNameFor($permission->name);
+
+                if ($shortName !== null) {
+                    $changes['short_name'] = $shortName;
+                }
+            }
+
+            if ($permission->description === null || trim((string) $permission->description) === '') {
+                $description = PermissionName::descriptionFor($permission->name);
+
+                if ($description !== null) {
+                    $changes['description'] = $description;
+                }
+            }
+
+            if ($changes !== []) {
+                $permission->update($changes);
+                $updated++;
+            }
+        }
+
+        return $updated;
     }
 
     /**

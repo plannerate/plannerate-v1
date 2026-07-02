@@ -362,4 +362,184 @@ final class PermissionName
     {
         return RbacType::fromName($permissionName);
     }
+
+    /**
+     * Mapa de recursos usado para gerar nome curto e descrição das permissões CRUD.
+     *
+     * Cada entrada define:
+     *  - label:    rótulo humano no plural (usado no nome curto)
+     *  - singular: forma singular com artigo (usada nas descrições de item único)
+     *  - plural:   forma plural com artigo (usada nas descrições de listagem)
+     *
+     * @var array<string, array{label: string, singular: string, plural: string}>
+     */
+    private const RESOURCES = [
+        'landlord.users' => ['label' => 'Usuários da Plataforma', 'singular' => 'um usuário administrador da plataforma', 'plural' => 'os usuários administradores da plataforma'],
+        'landlord.permissions' => ['label' => 'Permissões', 'singular' => 'uma permissão', 'plural' => 'as permissões de acesso do sistema'],
+        'landlord.plans' => ['label' => 'Planos', 'singular' => 'um plano de assinatura', 'plural' => 'os planos de assinatura'],
+        'landlord.tenants' => ['label' => 'Clientes (Tenants)', 'singular' => 'um cliente (tenant)', 'plural' => 'os clientes (tenants) da plataforma'],
+        'landlord.roles' => ['label' => 'Perfis de Acesso', 'singular' => 'um perfil de acesso', 'plural' => 'os perfis de acesso (papéis)'],
+        'landlord.modules' => ['label' => 'Módulos', 'singular' => 'um módulo do sistema', 'plural' => 'os módulos do sistema'],
+        'landlord.integration-apis' => ['label' => 'APIs de Integração', 'singular' => 'uma API de integração', 'plural' => 'as APIs de integração externas'],
+        'landlord.useful-links' => ['label' => 'Links Úteis', 'singular' => 'um link útil', 'plural' => 'os links úteis'],
+        'landlord.kanban.templates' => ['label' => 'Templates de Kanban', 'singular' => 'um template de fluxo Kanban', 'plural' => 'os templates de fluxo Kanban'],
+        'tenant.ean-references' => ['label' => 'Referências EAN', 'singular' => 'uma referência de código EAN', 'plural' => 'as referências de códigos EAN'],
+        'tenant.categories' => ['label' => 'Categorias', 'singular' => 'uma categoria de produtos', 'plural' => 'as categorias de produtos'],
+        'tenant.products' => ['label' => 'Produtos', 'singular' => 'um produto do catálogo', 'plural' => 'os produtos do catálogo'],
+        'tenant.stores' => ['label' => 'Lojas', 'singular' => 'uma loja', 'plural' => 'as lojas'],
+        'tenant.sales' => ['label' => 'Vendas', 'singular' => 'um registro de vendas', 'plural' => 'os dados de vendas'],
+        'tenant.clusters' => ['label' => 'Clusters', 'singular' => 'um cluster (agrupamento de lojas)', 'plural' => 'os clusters (agrupamentos de lojas)'],
+        'tenant.providers' => ['label' => 'Fornecedores', 'singular' => 'um fornecedor', 'plural' => 'os fornecedores'],
+        'tenant.users' => ['label' => 'Usuários', 'singular' => 'um usuário do cliente', 'plural' => 'os usuários do cliente'],
+        'tenant.planograms' => ['label' => 'Planogramas', 'singular' => 'um planograma', 'plural' => 'os planogramas'],
+        'tenant.planogram-templates' => ['label' => 'Templates de Planograma', 'singular' => 'um template de planograma', 'plural' => 'os templates de planograma'],
+        'tenant.gondolas' => ['label' => 'Gôndolas', 'singular' => 'uma gôndola', 'plural' => 'as gôndolas'],
+        'tenant.similar-groups' => ['label' => 'Grupos de Similares', 'singular' => 'um grupo de produtos similares', 'plural' => 'os grupos de produtos similares'],
+    ];
+
+    /**
+     * Templates de nome curto por ação CRUD. `{label}` é substituído pelo rótulo do recurso.
+     *
+     * @var array<string, string>
+     */
+    private const ACTION_SHORT = [
+        'viewAny' => 'Listar {label}',
+        'view' => 'Visualizar {label}',
+        'create' => 'Criar {label}',
+        'update' => 'Editar {label}',
+        'delete' => 'Excluir {label}',
+    ];
+
+    /**
+     * Templates de descrição por ação CRUD. `{singular}` e `{plural}` vêm do recurso.
+     *
+     * @var array<string, string>
+     */
+    private const ACTION_DESCRIPTION = [
+        'viewAny' => 'Permite listar e consultar {plural}.',
+        'view' => 'Permite visualizar os detalhes de {singular}.',
+        'create' => 'Permite cadastrar {singular}.',
+        'update' => 'Permite editar {singular}.',
+        'delete' => 'Permite excluir {singular}.',
+    ];
+
+    /**
+     * Metadados explícitos para permissões que não seguem o padrão CRUD.
+     *
+     * @var array<string, array{short_name: string, description: string}>
+     */
+    private const OVERRIDES = [
+        self::TENANT_DASHBOARD_VIEW => [
+            'short_name' => 'Acessar Painel',
+            'description' => 'Permite acessar o painel principal (dashboard) do cliente com os indicadores gerais.',
+        ],
+        self::TENANT_GONDOLAS_AUTOGENERATE => [
+            'short_name' => 'Gerar Gôndola Automaticamente',
+            'description' => 'Permite gerar automaticamente a disposição dos produtos na gôndola com base em regras.',
+        ],
+        self::TENANT_GONDOLAS_AUTOGENERATE_IA => [
+            'short_name' => 'Gerar Gôndola com IA',
+            'description' => 'Permite gerar automaticamente a gôndola utilizando inteligência artificial.',
+        ],
+        self::TENANT_DIMENSIONS_VIEW_ANY => [
+            'short_name' => 'Listar Dimensões',
+            'description' => 'Permite consultar as dimensões (altura, largura e profundidade) cadastradas dos produtos.',
+        ],
+        self::TENANT_DIMENSIONS_UPDATE => [
+            'short_name' => 'Editar Dimensões',
+            'description' => 'Permite editar as dimensões (altura, largura e profundidade) dos produtos.',
+        ],
+        self::TENANT_EDITOR_PLANOGRAMS_VIEW_ANY => [
+            'short_name' => 'Acessar Editor de Planogramas',
+            'description' => 'Permite abrir o editor visual para montar e ajustar planogramas.',
+        ],
+        self::TENANT_KANBAN_VIEW_ANY => [
+            'short_name' => 'Acessar Kanban',
+            'description' => 'Permite visualizar o quadro Kanban de execução de planogramas nas lojas.',
+        ],
+        self::TENANT_KANBAN_EXECUTIONS_START => [
+            'short_name' => 'Iniciar Execução (Kanban)',
+            'description' => 'Permite iniciar a execução de um planograma no fluxo Kanban.',
+        ],
+        self::TENANT_KANBAN_EXECUTIONS_MOVE => [
+            'short_name' => 'Mover Cartão (Kanban)',
+            'description' => 'Permite mover os cartões entre as colunas (etapas) do Kanban.',
+        ],
+        self::TENANT_KANBAN_EXECUTIONS_MANAGE => [
+            'short_name' => 'Gerenciar Execuções (Kanban)',
+            'description' => 'Permite gerenciar as execuções do Kanban, configurando e ajustando as etapas.',
+        ],
+        self::TENANT_KANBAN_EXECUTIONS_RESTORE => [
+            'short_name' => 'Restaurar Execução (Kanban)',
+            'description' => 'Permite restaurar uma execução arquivada ou cancelada no Kanban.',
+        ],
+    ];
+
+    /**
+     * Retorna o mapa completo de metadados (nome curto e descrição) de todas as permissões.
+     *
+     * @return array<string, array{short_name: string, description: string}>
+     */
+    public static function metadata(): array
+    {
+        $metadata = [];
+
+        foreach (self::all() as $name) {
+            $metadata[$name] = self::buildMetadata($name);
+        }
+
+        return $metadata;
+    }
+
+    /**
+     * Nome curto (rótulo amigável) para uma permissão, ou null se desconhecida.
+     */
+    public static function shortNameFor(string $name): ?string
+    {
+        return self::buildMetadata($name)['short_name'] ?: null;
+    }
+
+    /**
+     * Descrição (conceito) para uma permissão, ou null se desconhecida.
+     */
+    public static function descriptionFor(string $name): ?string
+    {
+        return self::buildMetadata($name)['description'] ?: null;
+    }
+
+    /**
+     * Deriva nome curto e descrição de uma permissão a partir dos overrides ou do padrão CRUD.
+     *
+     * @return array{short_name: string, description: string}
+     */
+    private static function buildMetadata(string $name): array
+    {
+        if (isset(self::OVERRIDES[$name])) {
+            return self::OVERRIDES[$name];
+        }
+
+        $lastDot = strrpos($name, '.');
+
+        if ($lastDot === false) {
+            return ['short_name' => '', 'description' => ''];
+        }
+
+        $action = substr($name, $lastDot + 1);
+        $resource = substr($name, 0, $lastDot);
+
+        $definition = self::RESOURCES[$resource] ?? null;
+
+        if ($definition === null || ! isset(self::ACTION_SHORT[$action])) {
+            return ['short_name' => '', 'description' => ''];
+        }
+
+        return [
+            'short_name' => str_replace('{label}', $definition['label'], self::ACTION_SHORT[$action]),
+            'description' => str_replace(
+                ['{singular}', '{plural}'],
+                [$definition['singular'], $definition['plural']],
+                self::ACTION_DESCRIPTION[$action],
+            ),
+        ];
+    }
 }

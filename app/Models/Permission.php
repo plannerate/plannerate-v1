@@ -24,6 +24,8 @@ class Permission extends SpatiePermission
     protected $fillable = [
         'type',
         'name',
+        'short_name',
+        'description',
         'guard_name',
     ];
 }

@@ -71,3 +71,36 @@ test('authenticated user can create update and delete permission', function () {
         'id' => $permission->id,
     ], 'landlord');
 });
+
+test('store persists provided short name and description', function () {
+    $this->post(route('landlord.permissions.store'), [
+        'type' => 'tenant',
+        'name' => 'tenant.projects.viewAny',
+        'short_name' => 'Listar Projetos',
+        'description' => 'Permite listar os projetos.',
+    ])->assertRedirect(route('landlord.permissions.index'));
+
+    $this->assertDatabaseHas('permissions', [
+        'name' => 'tenant.projects.viewAny',
+        'short_name' => 'Listar Projetos',
+        'description' => 'Permite listar os projetos.',
+    ], 'landlord');
+});
+
+test('sync backfills short name and description for existing permissions', function () {
+    // O seeder cria as permissões sem nome curto/descrição.
+    $permission = Permission::query()
+        ->where('name', 'landlord.plans.create')
+        ->firstOrFail();
+
+    expect($permission->short_name)->toBeNull();
+    expect($permission->description)->toBeNull();
+
+    $this->post(route('landlord.permissions.sync'))
+        ->assertRedirect(route('landlord.permissions.index'));
+
+    $permission->refresh();
+
+    expect($permission->short_name)->toBe('Criar Planos');
+    expect($permission->description)->toBe('Permite cadastrar um plano de assinatura.');
+});

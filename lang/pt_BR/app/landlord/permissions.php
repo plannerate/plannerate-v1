@@ -10,6 +10,8 @@ return [
     ],
     'fields' => [
         'name' => 'Nome',
+        'short_name' => 'Nome curto',
+        'description' => 'Descrição',
         'type' => 'Tipo',
     ],
     'messages' => [

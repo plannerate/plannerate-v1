@@ -49,6 +49,23 @@ const items = ref<PlanItem[]>(
     props.plan?.items?.map((item) => ({ ...item })) ?? [],
 );
 
+/**
+ * Preço exibido em reais para o admin. O backend armazena em centavos
+ * (`price_cents`), então convertemos no envio via input hidden.
+ */
+const priceReais = ref<string>(
+    props.plan ? (props.plan.price_cents / 100).toFixed(2) : '0.00',
+);
+
+/**
+ * Valor inteiro em centavos derivado do preço em reais, enviado no form.
+ */
+const priceCents = computed<number>(() => {
+    const parsed = Number.parseFloat(priceReais.value.replace(',', '.'));
+
+    return Number.isFinite(parsed) ? Math.round(parsed * 100) : 0;
+});
+
 function addItem(): void {
     items.value.push({
         id: null,
@@ -112,6 +129,25 @@ const pageMeta = useCrudPageMeta({
                             <Label for="slug">Slug</Label>
                             <Input id="slug" name="slug" :default-value="props.plan?.slug ?? ''" required />
                             <InputError :message="errors.slug" />
+                        </div>
+                    </div>
+
+                    <div class="grid gap-6 md:grid-cols-2">
+                        <!-- Price (reais) -->
+                        <div class="grid gap-2">
+                            <Label for="price">{{ t('app.landlord.plans.fields.price_cents') }} (R$)</Label>
+                            <Input id="price" v-model="priceReais" type="number" min="0" step="0.01" required />
+                            <input type="hidden" name="price_cents" :value="priceCents" />
+                            <InputError :message="errors.price_cents" />
+                        </div>
+
+                        <!-- User limit -->
+                        <div class="grid gap-2">
+                            <Label for="user_limit">{{ t('app.landlord.plans.fields.user_limit') }}</Label>
+                            <Input id="user_limit" name="user_limit" type="number" min="1"
+                                :default-value="props.plan?.user_limit ?? ''"
+                                placeholder="Em branco = ilimitado" />
+                            <InputError :message="errors.user_limit" />
                         </div>
                     </div>
 

@@ -38,6 +38,8 @@ class StorePermissionRequest extends FormRequest
                         ->where('guard_name', 'web')
                         ->where('type', $type)),
             ],
+            'short_name' => ['nullable', 'string', 'max:150'],
+            'description' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

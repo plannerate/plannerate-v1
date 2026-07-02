@@ -17,6 +17,8 @@ type PermissionPayload = {
     id: string;
     type: string;
     name: string;
+    short_name: string | null;
+    description: string | null;
     is_protected: boolean;
 };
 
@@ -117,6 +119,37 @@ const pageMeta = useCrudPageMeta({
                         required
                     />
                     <InputError :message="errors.name" />
+                </div>
+
+                <!-- Short name field -->
+                <div class="grid gap-2">
+                    <Label for="short_name">{{ t('app.landlord.permissions.fields.short_name') }}</Label>
+                    <Input
+                        id="short_name"
+                        name="short_name"
+                        :default-value="props.permission?.short_name ?? ''"
+                        :disabled="isProtected"
+                        placeholder="Ex: Listar Produtos"
+                    />
+                    <p class="text-xs text-muted-foreground">
+                        Se ficar em branco, será preenchido automaticamente ao sincronizar.
+                    </p>
+                    <InputError :message="errors.short_name" />
+                </div>
+
+                <!-- Description field -->
+                <div class="grid gap-2">
+                    <Label for="description">{{ t('app.landlord.permissions.fields.description') }}</Label>
+                    <textarea
+                        id="description"
+                        name="description"
+                        rows="3"
+                        :value="props.permission?.description ?? ''"
+                        :disabled="isProtected"
+                        placeholder="Explique o que esta permissão libera."
+                        class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    ></textarea>
+                    <InputError :message="errors.description" />
                 </div>
             </FormCard>
         </Form>

@@ -3,7 +3,7 @@
 return [
     'navigation' => 'Planos',
     'title' => 'Planos',
-    'description' => 'Gerencie os planos disponíveis para os tenants.',
+    'description' => 'Gerencie os planos disponíveis para os clientes.',
     'actions' => [
         'new' => 'Novo plano',
         'edit' => 'Editar plano',
@@ -14,12 +14,12 @@ return [
         'price_cents' => 'Preço',
         'user_limit' => 'Limite de usuários',
         'is_active' => 'Ativo',
-        'tenants_count' => 'Tenants',
+        'clients_count' => 'Clientes associados',
     ],
     'messages' => [
         'created' => 'Plano criado com sucesso.',
         'updated' => 'Plano atualizado com sucesso.',
         'deleted' => 'Plano removido com sucesso.',
-        'in_use' => 'Não é possível excluir um plano que possui tenants vinculados.',
+        'in_use' => 'Não é possível excluir um plano que possui clientes vinculados.',
     ],
 ];

@@ -96,7 +96,7 @@ function formatPrice(cents: number): string {
                     <th class="px-4 py-3 font-medium">{{ t('app.landlord.plans.fields.price_cents') }}</th>
                     <th class="px-4 py-3 font-medium">{{ t('app.landlord.plans.fields.user_limit') }}</th>
                     <th class="px-4 py-3 font-medium">{{ t('app.landlord.plans.fields.is_active') }}</th>
-                    <th class="px-4 py-3 font-medium">{{ t('app.landlord.plans.fields.tenants_count') }}</th>
+                    <th class="px-4 py-3 font-medium">{{ t('app.landlord.plans.fields.clients_count') }}</th>
                     <th class="px-4 py-3 font-medium ">{{ t('app.landlord.common.actions') }}</th>
                 </tr>
             </thead>

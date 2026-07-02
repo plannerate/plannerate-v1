@@ -32,7 +32,7 @@ const emit = defineEmits<{
         <!-- Hidden fields -->
         <input v-if="item.id" type="hidden" :name="`items[${index}][id]`" :value="item.id" />
         <input type="hidden" :name="`items[${index}][sort_order]`" :value="item.sort_order" />
-        <input type="hidden" name="`items[${index}][is_active]`" value="0" />
+        <input type="hidden" :name="`items[${index}][is_active]`" value="0" />
         <input type="checkbox" class="sr-only" :name="`items[${index}][is_active]`" value="1" :checked="item.is_active" />
 
         <!-- Primary row: Label / Key / Value / Type / Remove -->

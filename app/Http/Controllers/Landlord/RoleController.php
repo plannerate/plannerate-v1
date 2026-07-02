@@ -8,6 +8,7 @@ use App\Http\Requests\Landlord\StoreRoleRequest;
 use App\Http\Requests\Landlord\UpdateRoleRequest;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Support\Authorization\PermissionName;
 use App\Support\Authorization\RbacType;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
@@ -222,10 +223,12 @@ class RoleController extends Controller
             ->where('guard_name', 'web')
             ->orderBy('type')
             ->orderBy('name')
-            ->get(['name', 'type'])
+            ->get(['name', 'type', 'short_name', 'description'])
             ->map(fn (Permission $permission): array => [
                 'name' => $permission->name,
                 'type' => (string) $permission->type,
+                'short_name' => $permission->short_name ?: PermissionName::shortNameFor($permission->name),
+                'description' => $permission->description ?: PermissionName::descriptionFor($permission->name),
             ])
             ->all();
     }

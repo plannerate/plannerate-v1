@@ -25,6 +25,8 @@ type RolePayload = {
 type PermissionOption = {
     name: string;
     type: string;
+    short_name: string | null;
+    description: string | null;
 };
 
 type TypeOption = {
@@ -49,7 +51,12 @@ const filteredPermissions = computed(() =>
     props.permissions.filter((p) => {
         if (p.type !== selectedType.value) return false;
         if (!permissionSearch.value) return true;
-        return p.name.toLowerCase().includes(permissionSearch.value.toLowerCase());
+        const term = permissionSearch.value.toLowerCase();
+        return (
+            p.name.toLowerCase().includes(term) ||
+            (p.short_name?.toLowerCase().includes(term) ?? false) ||
+            (p.description?.toLowerCase().includes(term) ?? false)
+        );
     }),
 );
 
@@ -150,7 +157,8 @@ const pageMeta = useCrudPageMeta({
                         <label
                             v-for="permission in filteredPermissions"
                             :key="permission.name"
-                            class="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/40 has-checked:border-primary/50 has-checked:bg-primary/5"
+                            class="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/40 has-checked:border-primary/50 has-checked:bg-primary/5"
+                            :title="permission.description ?? permission.name"
                         >
                             <input
                                 type="checkbox"
@@ -158,9 +166,19 @@ const pageMeta = useCrudPageMeta({
                                 :value="permission.name"
                                 :checked="props.role?.permissions.includes(permission.name) ?? false"
                                 :disabled="isProtected"
-                                class="accent-primary"
+                                class="mt-0.5 accent-primary"
                             />
-                            <span>{{ permission.name }}</span>
+                            <span class="min-w-0 flex-1 space-y-0.5">
+                                <span class="block font-medium text-foreground">
+                                    {{ permission.short_name || permission.name }}
+                                </span>
+                                <span v-if="permission.description" class="block text-xs text-muted-foreground">
+                                    {{ permission.description }}
+                                </span>
+                                <span class="block font-mono text-[10px] text-muted-foreground/70">
+                                    {{ permission.name }}
+                                </span>
+                            </span>
                         </label>
                     </div>
                     <p v-if="filteredPermissions.length === 0" class="text-sm text-muted-foreground">

@@ -17,6 +17,7 @@ import type { Paginator } from '@/types';
 type PermissionRow = {
     id: string;
     name: string;
+    short_name: string | null;
     type: string;
     is_protected: boolean;
 };
@@ -104,6 +105,7 @@ const pageMeta = useCrudPageMeta({
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
+                        <th class="px-4 py-3 font-medium">{{ t('app.landlord.permissions.fields.short_name') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.landlord.permissions.fields.name') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.landlord.permissions.fields.type') }}</th>
                         <th class="px-4 py-3 font-medium ">{{ t('app.landlord.common.actions') }}</th>
@@ -111,10 +113,10 @@ const pageMeta = useCrudPageMeta({
                 </thead>
                 <tbody>
                     <template v-if="permissionsLoading">
-                        <TableLoadingSkeleton :columns="3" :rows="6" />
+                        <TableLoadingSkeleton :columns="4" :rows="6" />
                     </template>
                     <tr v-else-if="permissionsRows.length === 0">
-                        <td class="px-4 py-6 text-muted-foreground" colspan="3">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="4">
                             {{ t('app.landlord.common.empty') }}
                         </td>
                     </tr>
@@ -123,7 +125,8 @@ const pageMeta = useCrudPageMeta({
                         :key="permission.id"
                         class="border-t border-sidebar-border/60 transition-colors odd:bg-transparent even:bg-muted/30 hover:bg-muted/50 dark:border-sidebar-border"
                     >
-                        <td class="px-4 py-3 font-medium">{{ permission.name }}</td>
+                        <td class="px-4 py-3 font-medium">{{ permission.short_name || '—' }}</td>
+                        <td class="px-4 py-3 font-mono text-xs text-muted-foreground">{{ permission.name }}</td>
                         <td class="px-4 py-3">{{ t(`app.landlord.roles.types.${permission.type}`) }}</td>
                         <td class="px-4 py-3 ">
                             <div class="inline-flex items-center gap-2">
