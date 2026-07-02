@@ -13,7 +13,9 @@ use App\Models\Cluster;
 use App\Models\Gondola;
 use App\Models\Planogram;
 use App\Models\Store;
+use App\Models\User;
 use App\Models\WorkflowGondolaExecution;
+use App\Services\WorkflowPlanogramStepService;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
@@ -63,6 +65,7 @@ class PlanogramController extends Controller
                 'stores' => $this->storesForSelect(),
             ],
             'can_create_gondola' => $request->user()?->can('create', Gondola::class) ?? false,
+            'can_view_orphans' => $this->userIsAdmin($request->user()),
             'can' => $this->resolveCanCreate(Planogram::class, 'planogram_limit', Planogram::count()),
         ]);
     }
@@ -149,12 +152,16 @@ class PlanogramController extends Controller
             'filter_options' => [
                 'stores' => $this->mapStoresForSelect(),
             ],
+            'can_create' => $request->user()?->can('create', Planogram::class) ?? false,
         ]);
     }
 
     public function orphanLayers(Request $request): Response
     {
         $this->authorize('viewAny', Planogram::class);
+
+        // Ferramenta de manutenção: restrita a administradores.
+        abort_unless($this->userIsAdmin($request->user()), 403);
 
         $search = $this->requestString($request, 'search');
         $perPage = $this->resolvePerPage($request, 10);
@@ -361,21 +368,29 @@ class PlanogramController extends Controller
             ->all();
     }
 
-    public function store(PlanogramStoreRequest $request): RedirectResponse
+    public function store(PlanogramStoreRequest $request, WorkflowPlanogramStepService $stepService): RedirectResponse
     {
         $this->authorize('create', Planogram::class);
 
-        Planogram::query()->create([
+        $planogram = Planogram::query()->create([
             ...$request->validated(),
             'user_id' => $request->user()?->getAuthIdentifier(),
         ]);
 
+        // Gera o workflow do planograma já na criação, a partir dos templates publicados,
+        // para o cliente configurar as etapas imediatamente na aba de workflow.
+        $stepService->syncForPlanogram($planogram);
+
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __('app.tenant.planograms.messages.created'),
+            'message' => __('app.tenant.planograms.messages.created_configure_workflow'),
         ]);
 
-        return $this->toTenantRoute('tenant.planograms.index');
+        // Redireciona para a edição com a aba de workflow ativa, forçando a configuração.
+        return $this->toTenantRoute('tenant.planograms.edit', [
+            'planogram' => $planogram->id,
+            'tab' => 'workflow',
+        ]);
     }
 
     public function edit(Planogram $planogram): Response
@@ -421,6 +436,19 @@ class PlanogramController extends Controller
     {
         $this->authorize('delete', $planogram);
 
+        // Planograma já na lixeira: exclui definitivamente (força a exclusão).
+        // Caso contrário, apenas envia para a lixeira (soft delete).
+        if ($planogram->trashed()) {
+            $planogram->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.tenant.planograms.messages.force_deleted'),
+            ]);
+
+            return back();
+        }
+
         $planogram->delete();
 
         Inertia::flash('toast', [
@@ -429,6 +457,17 @@ class PlanogramController extends Controller
         ]);
 
         return $this->toTenantRoute('tenant.planograms.index');
+    }
+
+    /**
+     * Verdadeiro quando o usuário é administrador (super-admin ou tenant-admin).
+     * Usado para restringir ferramentas de manutenção como as layers órfãs.
+     */
+    private function userIsAdmin(?User $user): bool
+    {
+        return $user?->roles()
+            ->whereIn('system_name', ['super-admin', 'tenant-admin'])
+            ->exists() ?? false;
     }
 
     /**

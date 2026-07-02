@@ -78,6 +78,48 @@ test('authenticated user can create update and delete a role', function () {
     ], 'landlord');
 });
 
+test('protected role can update its display name without changing slug or permissions', function () {
+    setPermissionsTeamId(null);
+
+    $role = Role::query()->where('system_name', 'tenant-admin')->firstOrFail();
+    $originalPermissions = $role->permissions->pluck('name')->sort()->values()->all();
+
+    $response = $this->put(route('landlord.roles.update', $role), [
+        'type' => $role->type,
+        'name' => 'Administrador do Tenant',
+        // slug (system_name) não é enviado e permissões não devem ser tocadas
+    ]);
+
+    $response->assertRedirect(route('landlord.roles.index'));
+
+    $role->refresh();
+
+    expect($role->name)->toBe('Administrador do Tenant');
+    expect($role->system_name)->toBe('tenant-admin');
+    expect($role->permissions->pluck('name')->sort()->values()->all())->toBe($originalPermissions);
+});
+
+test('role slug is immutable on update', function () {
+    $this->post(route('landlord.roles.store'), [
+        'type' => 'landlord',
+        'name' => 'supervisor',
+    ])->assertRedirect(route('landlord.roles.index'));
+
+    $role = Role::query()->whereNull('tenant_id')->where('name', 'supervisor')->firstOrFail();
+    $originalSlug = $role->system_name;
+
+    $this->put(route('landlord.roles.update', $role), [
+        'type' => 'landlord',
+        'name' => 'supervisor-geral',
+        'system_name' => 'slug-alterado', // deve ser ignorado
+    ])->assertRedirect(route('landlord.roles.index'));
+
+    $role->refresh();
+
+    expect($role->name)->toBe('supervisor-geral');
+    expect($role->system_name)->toBe($originalSlug);
+});
+
 test('role cannot be deleted when role is assigned to users', function () {
     $role = Role::query()->where('system_name', 'tenant-admin')->firstOrFail();
 

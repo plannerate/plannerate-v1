@@ -3,7 +3,7 @@ import gondolas from './gondolas'
 import workflowSettings from './workflow-settings'
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::index
-* @see app/Http/Controllers/Tenant/PlanogramController.php:34
+* @see app/Http/Controllers/Tenant/PlanogramController.php:36
 * @route '/planograms'
 */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -18,7 +18,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::index
-* @see app/Http/Controllers/Tenant/PlanogramController.php:34
+* @see app/Http/Controllers/Tenant/PlanogramController.php:36
 * @route '/planograms'
 */
 index.url = (options?: RouteQueryOptions) => {
@@ -27,7 +27,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::index
-* @see app/Http/Controllers/Tenant/PlanogramController.php:34
+* @see app/Http/Controllers/Tenant/PlanogramController.php:36
 * @route '/planograms'
 */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -37,7 +37,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::index
-* @see app/Http/Controllers/Tenant/PlanogramController.php:34
+* @see app/Http/Controllers/Tenant/PlanogramController.php:36
 * @route '/planograms'
 */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -47,7 +47,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::index
-* @see app/Http/Controllers/Tenant/PlanogramController.php:34
+* @see app/Http/Controllers/Tenant/PlanogramController.php:36
 * @route '/planograms'
 */
 const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -57,7 +57,7 @@ const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => (
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::index
-* @see app/Http/Controllers/Tenant/PlanogramController.php:34
+* @see app/Http/Controllers/Tenant/PlanogramController.php:36
 * @route '/planograms'
 */
 indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -67,7 +67,7 @@ indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::index
-* @see app/Http/Controllers/Tenant/PlanogramController.php:34
+* @see app/Http/Controllers/Tenant/PlanogramController.php:36
 * @route '/planograms'
 */
 indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -84,7 +84,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::create
-* @see app/Http/Controllers/Tenant/PlanogramController.php:116
+* @see app/Http/Controllers/Tenant/PlanogramController.php:119
 * @route '/planograms/create'
 */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -99,7 +99,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::create
-* @see app/Http/Controllers/Tenant/PlanogramController.php:116
+* @see app/Http/Controllers/Tenant/PlanogramController.php:119
 * @route '/planograms/create'
 */
 create.url = (options?: RouteQueryOptions) => {
@@ -108,7 +108,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::create
-* @see app/Http/Controllers/Tenant/PlanogramController.php:116
+* @see app/Http/Controllers/Tenant/PlanogramController.php:119
 * @route '/planograms/create'
 */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -118,7 +118,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::create
-* @see app/Http/Controllers/Tenant/PlanogramController.php:116
+* @see app/Http/Controllers/Tenant/PlanogramController.php:119
 * @route '/planograms/create'
 */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -128,7 +128,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::create
-* @see app/Http/Controllers/Tenant/PlanogramController.php:116
+* @see app/Http/Controllers/Tenant/PlanogramController.php:119
 * @route '/planograms/create'
 */
 const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -138,7 +138,7 @@ const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => 
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::create
-* @see app/Http/Controllers/Tenant/PlanogramController.php:116
+* @see app/Http/Controllers/Tenant/PlanogramController.php:119
 * @route '/planograms/create'
 */
 createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -148,7 +148,7 @@ createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::create
-* @see app/Http/Controllers/Tenant/PlanogramController.php:116
+* @see app/Http/Controllers/Tenant/PlanogramController.php:119
 * @route '/planograms/create'
 */
 createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -165,7 +165,7 @@ create.form = createForm
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::store
-* @see app/Http/Controllers/Tenant/PlanogramController.php:364
+* @see app/Http/Controllers/Tenant/PlanogramController.php:371
 * @route '/planograms'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -180,7 +180,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::store
-* @see app/Http/Controllers/Tenant/PlanogramController.php:364
+* @see app/Http/Controllers/Tenant/PlanogramController.php:371
 * @route '/planograms'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -189,7 +189,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::store
-* @see app/Http/Controllers/Tenant/PlanogramController.php:364
+* @see app/Http/Controllers/Tenant/PlanogramController.php:371
 * @route '/planograms'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -199,7 +199,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::store
-* @see app/Http/Controllers/Tenant/PlanogramController.php:364
+* @see app/Http/Controllers/Tenant/PlanogramController.php:371
 * @route '/planograms'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -209,7 +209,7 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::store
-* @see app/Http/Controllers/Tenant/PlanogramController.php:364
+* @see app/Http/Controllers/Tenant/PlanogramController.php:371
 * @route '/planograms'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -221,7 +221,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::edit
-* @see app/Http/Controllers/Tenant/PlanogramController.php:381
+* @see app/Http/Controllers/Tenant/PlanogramController.php:396
 * @route '/planograms/{planogram}/edit'
 */
 export const edit = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -236,7 +236,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::edit
-* @see app/Http/Controllers/Tenant/PlanogramController.php:381
+* @see app/Http/Controllers/Tenant/PlanogramController.php:396
 * @route '/planograms/{planogram}/edit'
 */
 edit.url = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -269,7 +269,7 @@ edit.url = (args: { planogram: string | { id: string } } | [planogram: string | 
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::edit
-* @see app/Http/Controllers/Tenant/PlanogramController.php:381
+* @see app/Http/Controllers/Tenant/PlanogramController.php:396
 * @route '/planograms/{planogram}/edit'
 */
 edit.get = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -279,7 +279,7 @@ edit.get = (args: { planogram: string | { id: string } } | [planogram: string | 
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::edit
-* @see app/Http/Controllers/Tenant/PlanogramController.php:381
+* @see app/Http/Controllers/Tenant/PlanogramController.php:396
 * @route '/planograms/{planogram}/edit'
 */
 edit.head = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -289,7 +289,7 @@ edit.head = (args: { planogram: string | { id: string } } | [planogram: string |
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::edit
-* @see app/Http/Controllers/Tenant/PlanogramController.php:381
+* @see app/Http/Controllers/Tenant/PlanogramController.php:396
 * @route '/planograms/{planogram}/edit'
 */
 const editForm = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -299,7 +299,7 @@ const editForm = (args: { planogram: string | { id: string } } | [planogram: str
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::edit
-* @see app/Http/Controllers/Tenant/PlanogramController.php:381
+* @see app/Http/Controllers/Tenant/PlanogramController.php:396
 * @route '/planograms/{planogram}/edit'
 */
 editForm.get = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -309,7 +309,7 @@ editForm.get = (args: { planogram: string | { id: string } } | [planogram: strin
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::edit
-* @see app/Http/Controllers/Tenant/PlanogramController.php:381
+* @see app/Http/Controllers/Tenant/PlanogramController.php:396
 * @route '/planograms/{planogram}/edit'
 */
 editForm.head = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -326,7 +326,7 @@ edit.form = editForm
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::update
-* @see app/Http/Controllers/Tenant/PlanogramController.php:406
+* @see app/Http/Controllers/Tenant/PlanogramController.php:421
 * @route '/planograms/{planogram}'
 */
 export const update = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -341,7 +341,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::update
-* @see app/Http/Controllers/Tenant/PlanogramController.php:406
+* @see app/Http/Controllers/Tenant/PlanogramController.php:421
 * @route '/planograms/{planogram}'
 */
 update.url = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -374,7 +374,7 @@ update.url = (args: { planogram: string | { id: string } } | [planogram: string 
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::update
-* @see app/Http/Controllers/Tenant/PlanogramController.php:406
+* @see app/Http/Controllers/Tenant/PlanogramController.php:421
 * @route '/planograms/{planogram}'
 */
 update.put = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -384,7 +384,7 @@ update.put = (args: { planogram: string | { id: string } } | [planogram: string 
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::update
-* @see app/Http/Controllers/Tenant/PlanogramController.php:406
+* @see app/Http/Controllers/Tenant/PlanogramController.php:421
 * @route '/planograms/{planogram}'
 */
 update.patch = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -394,7 +394,7 @@ update.patch = (args: { planogram: string | { id: string } } | [planogram: strin
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::update
-* @see app/Http/Controllers/Tenant/PlanogramController.php:406
+* @see app/Http/Controllers/Tenant/PlanogramController.php:421
 * @route '/planograms/{planogram}'
 */
 const updateForm = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -409,7 +409,7 @@ const updateForm = (args: { planogram: string | { id: string } } | [planogram: s
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::update
-* @see app/Http/Controllers/Tenant/PlanogramController.php:406
+* @see app/Http/Controllers/Tenant/PlanogramController.php:421
 * @route '/planograms/{planogram}'
 */
 updateForm.put = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -424,7 +424,7 @@ updateForm.put = (args: { planogram: string | { id: string } } | [planogram: str
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::update
-* @see app/Http/Controllers/Tenant/PlanogramController.php:406
+* @see app/Http/Controllers/Tenant/PlanogramController.php:421
 * @route '/planograms/{planogram}'
 */
 updateForm.patch = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -441,7 +441,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::destroy
-* @see app/Http/Controllers/Tenant/PlanogramController.php:420
+* @see app/Http/Controllers/Tenant/PlanogramController.php:435
 * @route '/planograms/{planogram}'
 */
 export const destroy = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -456,7 +456,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::destroy
-* @see app/Http/Controllers/Tenant/PlanogramController.php:420
+* @see app/Http/Controllers/Tenant/PlanogramController.php:435
 * @route '/planograms/{planogram}'
 */
 destroy.url = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -489,7 +489,7 @@ destroy.url = (args: { planogram: string | { id: string } } | [planogram: string
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::destroy
-* @see app/Http/Controllers/Tenant/PlanogramController.php:420
+* @see app/Http/Controllers/Tenant/PlanogramController.php:435
 * @route '/planograms/{planogram}'
 */
 destroy.delete = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -499,7 +499,7 @@ destroy.delete = (args: { planogram: string | { id: string } } | [planogram: str
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::destroy
-* @see app/Http/Controllers/Tenant/PlanogramController.php:420
+* @see app/Http/Controllers/Tenant/PlanogramController.php:435
 * @route '/planograms/{planogram}'
 */
 const destroyForm = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -514,7 +514,7 @@ const destroyForm = (args: { planogram: string | { id: string } } | [planogram: 
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::destroy
-* @see app/Http/Controllers/Tenant/PlanogramController.php:420
+* @see app/Http/Controllers/Tenant/PlanogramController.php:435
 * @route '/planograms/{planogram}'
 */
 destroyForm.delete = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -531,7 +531,7 @@ destroy.form = destroyForm
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::maps
-* @see app/Http/Controllers/Tenant/PlanogramController.php:132
+* @see app/Http/Controllers/Tenant/PlanogramController.php:135
 * @route '/planograms/maps'
 */
 export const maps = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -546,7 +546,7 @@ maps.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::maps
-* @see app/Http/Controllers/Tenant/PlanogramController.php:132
+* @see app/Http/Controllers/Tenant/PlanogramController.php:135
 * @route '/planograms/maps'
 */
 maps.url = (options?: RouteQueryOptions) => {
@@ -555,7 +555,7 @@ maps.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::maps
-* @see app/Http/Controllers/Tenant/PlanogramController.php:132
+* @see app/Http/Controllers/Tenant/PlanogramController.php:135
 * @route '/planograms/maps'
 */
 maps.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -565,7 +565,7 @@ maps.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::maps
-* @see app/Http/Controllers/Tenant/PlanogramController.php:132
+* @see app/Http/Controllers/Tenant/PlanogramController.php:135
 * @route '/planograms/maps'
 */
 maps.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -575,7 +575,7 @@ maps.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::maps
-* @see app/Http/Controllers/Tenant/PlanogramController.php:132
+* @see app/Http/Controllers/Tenant/PlanogramController.php:135
 * @route '/planograms/maps'
 */
 const mapsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -585,7 +585,7 @@ const mapsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::maps
-* @see app/Http/Controllers/Tenant/PlanogramController.php:132
+* @see app/Http/Controllers/Tenant/PlanogramController.php:135
 * @route '/planograms/maps'
 */
 mapsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -595,7 +595,7 @@ mapsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::maps
-* @see app/Http/Controllers/Tenant/PlanogramController.php:132
+* @see app/Http/Controllers/Tenant/PlanogramController.php:135
 * @route '/planograms/maps'
 */
 mapsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -612,7 +612,7 @@ maps.form = mapsForm
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::orphanLayers
-* @see app/Http/Controllers/Tenant/PlanogramController.php:155
+* @see app/Http/Controllers/Tenant/PlanogramController.php:159
 * @route '/planograms/orphan-layers'
 */
 export const orphanLayers = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -627,7 +627,7 @@ orphanLayers.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::orphanLayers
-* @see app/Http/Controllers/Tenant/PlanogramController.php:155
+* @see app/Http/Controllers/Tenant/PlanogramController.php:159
 * @route '/planograms/orphan-layers'
 */
 orphanLayers.url = (options?: RouteQueryOptions) => {
@@ -636,7 +636,7 @@ orphanLayers.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::orphanLayers
-* @see app/Http/Controllers/Tenant/PlanogramController.php:155
+* @see app/Http/Controllers/Tenant/PlanogramController.php:159
 * @route '/planograms/orphan-layers'
 */
 orphanLayers.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -646,7 +646,7 @@ orphanLayers.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::orphanLayers
-* @see app/Http/Controllers/Tenant/PlanogramController.php:155
+* @see app/Http/Controllers/Tenant/PlanogramController.php:159
 * @route '/planograms/orphan-layers'
 */
 orphanLayers.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -656,7 +656,7 @@ orphanLayers.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::orphanLayers
-* @see app/Http/Controllers/Tenant/PlanogramController.php:155
+* @see app/Http/Controllers/Tenant/PlanogramController.php:159
 * @route '/planograms/orphan-layers'
 */
 const orphanLayersForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -666,7 +666,7 @@ const orphanLayersForm = (options?: RouteQueryOptions): RouteFormDefinition<'get
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::orphanLayers
-* @see app/Http/Controllers/Tenant/PlanogramController.php:155
+* @see app/Http/Controllers/Tenant/PlanogramController.php:159
 * @route '/planograms/orphan-layers'
 */
 orphanLayersForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -676,7 +676,7 @@ orphanLayersForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'>
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::orphanLayers
-* @see app/Http/Controllers/Tenant/PlanogramController.php:155
+* @see app/Http/Controllers/Tenant/PlanogramController.php:159
 * @route '/planograms/orphan-layers'
 */
 orphanLayersForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -693,7 +693,7 @@ orphanLayers.form = orphanLayersForm
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::kanban
-* @see app/Http/Controllers/Tenant/PlanogramController.php:127
+* @see app/Http/Controllers/Tenant/PlanogramController.php:130
 * @route '/planograms/kanban'
 */
 export const kanban = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -708,7 +708,7 @@ kanban.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::kanban
-* @see app/Http/Controllers/Tenant/PlanogramController.php:127
+* @see app/Http/Controllers/Tenant/PlanogramController.php:130
 * @route '/planograms/kanban'
 */
 kanban.url = (options?: RouteQueryOptions) => {
@@ -717,7 +717,7 @@ kanban.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::kanban
-* @see app/Http/Controllers/Tenant/PlanogramController.php:127
+* @see app/Http/Controllers/Tenant/PlanogramController.php:130
 * @route '/planograms/kanban'
 */
 kanban.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -727,7 +727,7 @@ kanban.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::kanban
-* @see app/Http/Controllers/Tenant/PlanogramController.php:127
+* @see app/Http/Controllers/Tenant/PlanogramController.php:130
 * @route '/planograms/kanban'
 */
 kanban.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -737,7 +737,7 @@ kanban.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::kanban
-* @see app/Http/Controllers/Tenant/PlanogramController.php:127
+* @see app/Http/Controllers/Tenant/PlanogramController.php:130
 * @route '/planograms/kanban'
 */
 const kanbanForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -747,7 +747,7 @@ const kanbanForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => 
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::kanban
-* @see app/Http/Controllers/Tenant/PlanogramController.php:127
+* @see app/Http/Controllers/Tenant/PlanogramController.php:130
 * @route '/planograms/kanban'
 */
 kanbanForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -757,7 +757,7 @@ kanbanForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\PlanogramController::kanban
-* @see app/Http/Controllers/Tenant/PlanogramController.php:127
+* @see app/Http/Controllers/Tenant/PlanogramController.php:130
 * @route '/planograms/kanban'
 */
 kanbanForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

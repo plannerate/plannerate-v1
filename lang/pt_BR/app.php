@@ -169,7 +169,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'documentation' => 'Documentação',
         'navigation_menu' => 'Menu de navegação',
         'plans' => 'Planos',
-        'tenants' => 'Tenants',
+        'tenants' => 'Clientes',
         'modules' => 'Módulos',
         'ean_references' => 'Referências EAN',
         'roles' => 'Perfis de acesso',

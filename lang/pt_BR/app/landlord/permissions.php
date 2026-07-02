@@ -10,10 +10,12 @@ return [
     ],
     'fields' => [
         'name' => 'Nome',
+        'name_hint' => 'O identificador (slug) não pode ser alterado após a criação.',
         'short_name' => 'Nome curto',
         'description' => 'Descrição',
         'type' => 'Tipo',
     ],
+    'protected' => 'Esta permissão é protegida e não pode ser alterada.',
     'messages' => [
         'created' => 'Permissão criada com sucesso.',
         'updated' => 'Permissão atualizada com sucesso.',

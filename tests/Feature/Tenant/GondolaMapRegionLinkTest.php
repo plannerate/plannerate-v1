@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\ProvisionTenantDatabaseJob;
+use App\Models\Category;
 use App\Models\Gondola;
 use App\Models\Planogram;
 use App\Models\Role;
@@ -132,10 +133,12 @@ test('não permite trocar a loja do planograma enquanto houver gôndolas vincula
     $regionId = (string) Str::ulid();
     $storeAtual = makeStoreWithRegion($context['tenant']->id, $regionId);
     $outraLoja = Store::factory()->create(['tenant_id' => $context['tenant']->id]);
+    $category = Category::factory()->create(['tenant_id' => $context['tenant']->id]);
 
     $planogram = Planogram::factory()->create([
         'tenant_id' => $context['tenant']->id,
         'store_id' => $storeAtual->id,
+        'category_id' => $category->id,
     ]);
 
     Gondola::factory()->create([
@@ -159,10 +162,12 @@ test('permite trocar a loja do planograma quando nenhuma gôndola está vinculad
 
     $storeAtual = Store::factory()->create(['tenant_id' => $context['tenant']->id]);
     $outraLoja = Store::factory()->create(['tenant_id' => $context['tenant']->id]);
+    $category = Category::factory()->create(['tenant_id' => $context['tenant']->id]);
 
     $planogram = Planogram::factory()->create([
         'tenant_id' => $context['tenant']->id,
         'store_id' => $storeAtual->id,
+        'category_id' => $category->id,
     ]);
 
     Gondola::factory()->create([
@@ -228,6 +233,9 @@ function planogramUpdatePayload(Planogram $planogram, array $overrides = []): ar
         'type' => $planogram->type ?? 'planograma',
         'status' => 'published',
         'store_id' => $planogram->store_id,
+        'category_id' => $planogram->category_id,
+        'start_date' => '2026-01-01',
+        'end_date' => '2026-01-31',
     ], $overrides);
 }
 

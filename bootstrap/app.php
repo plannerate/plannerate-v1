@@ -10,10 +10,13 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
+use Inertia\Inertia;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -72,5 +75,36 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        /*
+         * Renderiza páginas de erro personalizadas do Plannerate (Inertia) no lugar
+         * das telas padrão do Laravel/Symfony.
+         *
+         * - 419 (sessão/CSRF expirado): volta à página anterior com uma flash message,
+         *   comportamento recomendado pelo Inertia (evita prender o usuário numa tela morta).
+         * - 500 em modo debug: preserva a página de debug do Laravel (stack trace) para
+         *   desenvolvimento; os demais status sempre usam a página de erro estilizada.
+         * - Só intercepta requisições que esperam HTML (navegação); JSON/API seguem o
+         *   fluxo padrão para não quebrar respostas de mutação/endpoints.
+         */
+        $exceptions->respond(function (Response $response, Throwable $exception, Request $request): Response|RedirectResponse {
+            $status = $response->getStatusCode();
+
+            $handledStatuses = [403, 404, 419, 429, 500, 503];
+
+            if ($request->expectsJson() || ! in_array($status, $handledStatuses, true)) {
+                return $response;
+            }
+
+            if ($status === 419) {
+                return back()->with('message', trans('errors.419.description'));
+            }
+
+            if ($status === 500 && config('app.debug')) {
+                return $response;
+            }
+
+            return Inertia::render('Error', ['status' => $status])
+                ->toResponse($request)
+                ->setStatusCode($status);
+        });
     })->create();

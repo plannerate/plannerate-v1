@@ -126,6 +126,7 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
         // ── Planograms ────────────────────────────────────────
         Route::resource('planograms', Tenant\PlanogramController::class)
             ->except(['show'])
+            ->withTrashed(['destroy'])
             ->names('planograms');
         Route::get('planograms/maps', [Tenant\PlanogramController::class, 'maps'])
             ->name('planograms.maps');

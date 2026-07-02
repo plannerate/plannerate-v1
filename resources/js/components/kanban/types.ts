@@ -161,4 +161,5 @@ export type KanbanPageProps = {
     } | null;
     can_initiate: boolean;
     can_create_gondola: boolean;
+    can_create: boolean;
 };

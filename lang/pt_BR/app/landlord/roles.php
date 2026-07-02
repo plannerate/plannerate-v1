@@ -15,10 +15,12 @@ return [
     'fields' => [
         'name' => 'Nome',
         'system_name' => 'Nome do sistema',
+        'system_name_hint' => 'O identificador do sistema não pode ser alterado após a criação.',
         'type' => 'Tipo',
         'permissions' => 'Permissões',
         'permissions_count' => 'Permissões',
     ],
+    'protected' => 'Este perfil é protegido: apenas o nome de exibição pode ser alterado.',
     'permissions_ui' => [
         'filter_placeholder' => 'Filtrar permissões...',
         'select_all' => 'Selecionar todas',

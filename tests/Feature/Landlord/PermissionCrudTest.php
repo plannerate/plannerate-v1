@@ -55,13 +55,18 @@ test('authenticated user can create update and delete permission', function () {
 
     $updateResponse = $this->put(route('landlord.permissions.update', $permission), [
         'type' => 'tenant',
-        'name' => 'tenant.projects.view',
+        'name' => 'tenant.projects.view', // slug imutável: deve ser ignorado
+        'short_name' => 'Ver Projetos',
+        'description' => 'Permite ver projetos.',
     ]);
 
     $updateResponse->assertRedirect(route('landlord.permissions.index'));
 
     $permission->refresh();
-    expect($permission->name)->toBe('tenant.projects.view');
+    // O slug (name) não pode ser alterado na edição.
+    expect($permission->name)->toBe('tenant.projects.viewAny');
+    expect($permission->short_name)->toBe('Ver Projetos');
+    expect($permission->description)->toBe('Permite ver projetos.');
 
     $deleteResponse = $this->delete(route('landlord.permissions.destroy', $permission));
 

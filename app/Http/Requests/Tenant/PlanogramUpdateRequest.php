@@ -41,14 +41,14 @@ class PlanogramUpdateRequest extends FormRequest
 
         return [
             'template_id' => ['nullable', 'string', 'max:255'],
-            'store_id' => ['nullable', 'ulid', Rule::exists($storesTable, 'id')->where('tenant_id', $tenantId), $this->storeChangeNotBlockedByMapLinksRule($planogram)],
+            'store_id' => ['required', 'ulid', Rule::exists($storesTable, 'id')->where('tenant_id', $tenantId), $this->storeChangeNotBlockedByMapLinksRule($planogram)],
             'cluster_id' => ['nullable', 'ulid', Rule::exists($clustersTable, 'id')->where('tenant_id', $tenantId)],
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique($planogramsTable, 'slug')->where('tenant_id', $tenantId)->ignore($planogram)],
             'type' => ['required', Rule::in(['realograma', 'planograma'])],
-            'category_id' => ['nullable', 'ulid', Rule::exists($categoriesTable, 'id')->where('tenant_id', $tenantId)],
-            'start_date' => ['nullable', 'date'],
-            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'category_id' => ['required', 'ulid', Rule::exists($categoriesTable, 'id')->where('tenant_id', $tenantId)],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'order' => ['nullable', 'integer', 'min:0'],
             'description' => ['nullable', 'string', 'max:255'],
             'status' => ['required', Rule::in(['draft', 'published'])],

@@ -51,6 +51,7 @@ const props = defineProps<{
     filter_options: {
         stores: Array<{ id: string; name: string }>;
     };
+    can_create: boolean;
 }>();
 
 const { t } = useT();
@@ -268,7 +269,10 @@ onBeforeUnmount(() => {
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton :href="PlanogramController.create.url()">
+                <NewActionButton
+                    v-if="props.can_create"
+                    :href="PlanogramController.create.url()"
+                >
                     {{ t('app.tenant.planograms.actions.new') }}
                 </NewActionButton>
             </div>

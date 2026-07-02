@@ -80,6 +80,9 @@ export function useProductOccupation() {
         const summary = emptySummary();
 
         for (const segment of shelf.segments) {
+            if (segment?.deleted_at || segment?.layer?.deleted_at) {
+                continue;
+            }
             if (segment?.layer?.product?.id !== productId) {
                 continue;
             }
@@ -107,9 +110,18 @@ export function useProductOccupation() {
         const summary = emptySummary();
 
         for (const section of target.sections) {
+            if (section?.deleted_at) {
+                continue;
+            }
             for (const shelf of section.shelves ?? []) {
+                if (shelf?.deleted_at) {
+                    continue;
+                }
                 const shelfDepth = Number(shelf.shelf_depth ?? 0);
                 for (const segment of shelf.segments ?? []) {
+                    if (segment?.deleted_at || segment?.layer?.deleted_at) {
+                        continue;
+                    }
                     if (segment?.layer?.product?.id !== productId) {
                         continue;
                     }
@@ -140,9 +152,18 @@ export function useProductOccupation() {
         let total = 0;
 
         for (const section of target.sections) {
+            if (section?.deleted_at) {
+                continue;
+            }
             for (const shelf of section.shelves ?? []) {
+                if (shelf?.deleted_at) {
+                    continue;
+                }
                 const shelfDepth = Number(shelf.shelf_depth ?? 0);
                 for (const segment of shelf.segments ?? []) {
+                    if (segment?.deleted_at || segment?.layer?.deleted_at) {
+                        continue;
+                    }
                     if (segment?.layer?.product?.id !== productId) {
                         continue;
                     }

@@ -53,6 +53,7 @@ const props = defineProps<{
         stores: Array<{ id: string; name: string }>;
     };
     can_create_gondola: boolean;
+    can_view_orphans: boolean;
     can: {
         create: boolean;
         limit_reached: boolean;
@@ -131,7 +132,7 @@ const pageMeta = useCrudPageMeta({
         <KankanNavigationLinks />
         <template #header-actions>
             <div class="flex flex-wrap items-center justify-end gap-2">
-                <Button variant="outline" as-child>
+                <Button v-if="props.can_view_orphans" variant="outline" as-child>
                     <WayfinderLink :href="PlanogramController.orphanLayers.url()">
                         Layers órfãs
                     </WayfinderLink>

@@ -63,6 +63,7 @@ class WorkflowKanbanController extends Controller
             ] : null,
             'can_initiate' => $request->user()?->can('start', WorkflowGondolaExecution::class) ?? false,
             'can_create_gondola' => $request->user()?->can('create', Gondola::class) ?? false,
+            'can_create' => $request->user()?->can('create', Planogram::class) ?? false,
         ]);
     }
 

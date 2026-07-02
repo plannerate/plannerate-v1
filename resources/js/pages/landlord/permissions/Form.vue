@@ -108,16 +108,19 @@ const pageMeta = useCrudPageMeta({
                     <InputError :message="errors.type" />
                 </div>
 
-                <!-- Name field -->
+                <!-- Name field (slug): imutável após a criação. -->
                 <div class="grid gap-2">
                     <Label for="name">{{ t('app.landlord.permissions.fields.name') }}</Label>
                     <Input
                         id="name"
                         name="name"
                         :default-value="props.permission?.name ?? ''"
-                        :disabled="isProtected"
+                        :disabled="isProtected || isEdit"
                         required
                     />
+                    <p v-if="isEdit" class="text-xs text-muted-foreground">
+                        {{ t('app.landlord.permissions.fields.name_hint') }}
+                    </p>
                     <InputError :message="errors.name" />
                 </div>
 

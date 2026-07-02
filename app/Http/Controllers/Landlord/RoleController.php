@@ -147,22 +147,21 @@ class RoleController extends Controller
 
         $validated = $request->validated();
 
+        // O slug (system_name) é imutável após a criação em qualquer perfil.
         if (in_array((string) $role->system_name, self::PROTECTED_ROLES, true)) {
-            Inertia::flash('toast', [
-                'type' => 'error',
-                'message' => __('app.landlord.roles.messages.protected'),
+            // Perfis protegidos (admin): apenas o nome de exibição pode mudar.
+            // Tipo e permissões permanecem intactos para não quebrar o RBAC.
+            $role->update([
+                'name' => $validated['name'],
+            ]);
+        } else {
+            $role->update([
+                'type' => $validated['type'],
+                'name' => $validated['name'],
             ]);
 
-            return back();
+            $role->syncPermissions($validated['permissions'] ?? []);
         }
-
-        $role->update([
-            'type' => $validated['type'],
-            'name' => $validated['name'],
-            'system_name' => $validated['system_name'],
-        ]);
-
-        $role->syncPermissions($validated['permissions'] ?? []);
 
         Inertia::flash('toast', [
             'type' => 'success',

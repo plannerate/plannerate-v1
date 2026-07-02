@@ -231,7 +231,10 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
                     {{ t('app.tenant.gondolas.actions.new') }}
                 </button>
 
-                <NewActionButton :href="PlanogramController.create.url()">
+                <NewActionButton
+                    v-if="props.can_create"
+                    :href="PlanogramController.create.url()"
+                >
                     {{ t('app.tenant.planograms.actions.new') }}
                 </NewActionButton>
             </div>

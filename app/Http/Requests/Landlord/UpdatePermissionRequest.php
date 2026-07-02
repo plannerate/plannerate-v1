@@ -34,16 +34,7 @@ class UpdatePermissionRequest extends FormRequest
 
         return [
             'type' => ['required', 'string', Rule::in(RbacType::all())],
-            'name' => [
-                'required',
-                'string',
-                'max:150',
-                Rule::unique('landlord.permissions', 'name')
-                    ->ignore($permission?->id)
-                    ->where(static fn ($query) => $query
-                        ->where('guard_name', 'web')
-                        ->where('type', $type)),
-            ],
+            // O slug (name) é imutável após a criação e não é validado na edição.
             'short_name' => ['nullable', 'string', 'max:150'],
             'description' => ['nullable', 'string', 'max:1000'],
         ];

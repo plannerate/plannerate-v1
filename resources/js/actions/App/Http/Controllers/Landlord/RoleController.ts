@@ -439,7 +439,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::destroy
-* @see app/Http/Controllers/Landlord/RoleController.php:178
+* @see app/Http/Controllers/Landlord/RoleController.php:177
 * @route '//plannerate.localhost/roles/{role}'
 */
 export const destroy = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -454,7 +454,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::destroy
-* @see app/Http/Controllers/Landlord/RoleController.php:178
+* @see app/Http/Controllers/Landlord/RoleController.php:177
 * @route '//plannerate.localhost/roles/{role}'
 */
 destroy.url = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -487,7 +487,7 @@ destroy.url = (args: { role: string | { id: string } } | [role: string | { id: s
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::destroy
-* @see app/Http/Controllers/Landlord/RoleController.php:178
+* @see app/Http/Controllers/Landlord/RoleController.php:177
 * @route '//plannerate.localhost/roles/{role}'
 */
 destroy.delete = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -497,7 +497,7 @@ destroy.delete = (args: { role: string | { id: string } } | [role: string | { id
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::destroy
-* @see app/Http/Controllers/Landlord/RoleController.php:178
+* @see app/Http/Controllers/Landlord/RoleController.php:177
 * @route '//plannerate.localhost/roles/{role}'
 */
 const destroyForm = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -512,7 +512,7 @@ const destroyForm = (args: { role: string | { id: string } } | [role: string | {
 
 /**
 * @see \App\Http\Controllers\Landlord\RoleController::destroy
-* @see app/Http/Controllers/Landlord/RoleController.php:178
+* @see app/Http/Controllers/Landlord/RoleController.php:177
 * @route '//plannerate.localhost/roles/{role}'
 */
 destroyForm.delete = (args: { role: string | { id: string } } | [role: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

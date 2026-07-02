@@ -87,12 +87,17 @@ test('tenant admin can execute planogram crud in tenant context', function (): v
             'status' => 'draft',
         ]);
 
-    $createResponse->assertRedirect(route('tenant.planograms.index', ['subdomain' => $subdomain], false));
-
     $planogram = Planogram::query()
         ->where('tenant_id', $tenant->id)
         ->where('slug', 'planograma-1')
         ->firstOrFail();
+
+    // Após criar, redireciona para a edição com a aba de workflow ativa.
+    $createResponse->assertRedirect(route('tenant.planograms.edit', [
+        'subdomain' => $subdomain,
+        'planogram' => $planogram->id,
+        'tab' => 'workflow',
+    ], false));
 
     $updateResponse = $this
         ->withServerVariables(['HTTP_HOST' => $host])
@@ -122,6 +127,107 @@ test('tenant admin can execute planogram crud in tenant context', function (): v
 
     $deleteResponse->assertRedirect(route('tenant.planograms.index', ['subdomain' => $subdomain], false));
     expect($planogram->fresh())->toBeNull();
+});
+
+test('force deletes a trashed planogram permanently', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForPlanograms('tenant-planograms-force');
+    assignTenantAdminRoleForPlanograms($user, $tenant->id);
+
+    $planogram = Planogram::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Para excluir',
+        'slug' => 'para-excluir',
+        'type' => 'planograma',
+        'status' => 'draft',
+    ]);
+
+    // Envia para a lixeira primeiro (soft delete).
+    $planogram->delete();
+    expect($planogram->trashed())->toBeTrue();
+
+    // Excluir de novo um planograma que já está na lixeira deve removê-lo em definitivo.
+    $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-planograms-force.'.config('app.landlord_domain')])
+        ->delete(route('tenant.planograms.destroy', ['subdomain' => 'tenant-planograms-force', 'planogram' => $planogram->id], false))
+        ->assertRedirect();
+
+    expect(Planogram::withTrashed()->find($planogram->id))->toBeNull();
+});
+
+test('planogram store requires store, category and sales period', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForPlanograms('tenant-planograms-required');
+    assignTenantAdminRoleForPlanograms($user, $tenant->id);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-planograms-required.'.config('app.landlord_domain')])
+        ->post(route('tenant.planograms.store', ['subdomain' => 'tenant-planograms-required'], false), [
+            'name' => 'Sem obrigatórios',
+            'type' => 'planograma',
+            'status' => 'draft',
+        ]);
+
+    $response->assertSessionHasErrors(['store_id', 'category_id', 'start_date', 'end_date']);
+});
+
+test('planogram store generates workflow steps from published templates', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForPlanograms('tenant-planograms-workflow');
+    assignTenantAdminRoleForPlanograms($user, $tenant->id);
+
+    $store = Store::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Loja WF',
+        'slug' => 'loja-wf',
+        'status' => 'published',
+    ]);
+
+    $category = Category::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Categoria WF',
+        'slug' => 'categoria-wf',
+        'status' => 'published',
+    ]);
+
+    $template = WorkflowTemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Etapa WF',
+        'slug' => 'etapa-wf',
+        'status' => 'published',
+        'suggested_order' => 1,
+    ]);
+
+    $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-planograms-workflow.'.config('app.landlord_domain')])
+        ->post(route('tenant.planograms.store', ['subdomain' => 'tenant-planograms-workflow'], false), [
+            'name' => 'Planograma WF',
+            'slug' => 'planograma-wf',
+            'type' => 'planograma',
+            'store_id' => $store->id,
+            'category_id' => $category->id,
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-01-31',
+            'status' => 'draft',
+        ])
+        ->assertSessionHasNoErrors();
+
+    $planogram = Planogram::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('slug', 'planograma-wf')
+        ->firstOrFail();
+
+    // O workflow deve ser gerado na criação a partir dos templates publicados.
+    expect(WorkflowPlanogramStep::query()
+        ->where('planogram_id', $planogram->id)
+        ->where('workflow_template_id', $template->id)
+        ->exists())->toBeTrue();
 });
 
 test('tenant planograms index is isolated by tenant_id', function (): void {

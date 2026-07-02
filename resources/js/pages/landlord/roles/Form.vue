@@ -191,7 +191,6 @@ const pageMeta = useCrudPageMeta({
             >
                 <FormCard
                     :processing="processing"
-                    :disabled="isProtected"
                     :cancel-href="rolesIndexPath"
                     :title="pageMeta.title"
                     :description="pageMeta.description"
@@ -237,6 +236,14 @@ const pageMeta = useCrudPageMeta({
                                 {{ type.label }}
                             </option>
                         </select>
+                        <!-- Perfis protegidos têm o select desabilitado; envia o tipo atual
+                             por um campo oculto para que a validação (type obrigatório) passe. -->
+                        <input
+                            v-if="isProtected"
+                            type="hidden"
+                            name="type"
+                            :value="selectedType"
+                        />
                         <InputError :message="errors.type" />
                     </div>
 
@@ -249,20 +256,19 @@ const pageMeta = useCrudPageMeta({
                             id="name"
                             v-model="name"
                             name="name"
-                            :disabled="isProtected"
                             required
                         />
                         <InputError :message="errors.name" />
                     </div>
 
-                    <!-- System Name (gerado a partir do nome) -->
+                    <!-- System Name: gerado a partir do nome na criação e imutável na edição (slug). -->
                     <FormSlugField
                         id="system_name"
                         name="system_name"
                         :label="t('app.landlord.roles.fields.system_name')"
                         :source="name"
                         :default-value="props.role?.system_name ?? ''"
-                        :disabled="isProtected"
+                        :disabled="isEdit"
                         :error="errors.system_name"
                     />
 

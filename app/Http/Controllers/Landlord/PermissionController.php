@@ -157,10 +157,10 @@ class PermissionController extends Controller
             return back();
         }
 
-        $name = $request->string('name')->toString();
+        // O slug (name) é imutável após a criação; usa-se o valor atual da permissão.
+        $name = $permission->name;
 
         $permission->update([
-            'name' => $name,
             'type' => $request->string('type')->toString(),
             'short_name' => $this->resolveShortName($request->input('short_name'), $name),
             'description' => $this->resolveDescription($request->input('description'), $name),

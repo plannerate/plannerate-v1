@@ -1,12 +1,12 @@
 <?php
 
 return [
-    'navigation' => 'Tenants',
-    'title' => 'Tenants',
-    'description' => 'Gerencie tenants e seus domínios primários.',
+    'navigation' => 'Clientes',
+    'title' => 'Clientes',
+    'description' => 'Gerencie clientes e seus domínios primários.',
     'actions' => [
-        'new' => 'Novo tenant',
-        'edit' => 'Editar tenant',
+        'new' => 'Novo cliente',
+        'edit' => 'Editar cliente',
         'export' => 'Exportar configurações',
         'import' => 'Importar configurações',
     ],
@@ -29,18 +29,18 @@ return [
         'domain_is_active' => 'Domínio primário ativo',
     ],
     'messages' => [
-        'created' => 'Tenant criado com sucesso.',
-        'updated' => 'Tenant atualizado com sucesso.',
-        'deleted' => 'Tenant removido com sucesso.',
+        'created' => 'Cliente criado com sucesso.',
+        'updated' => 'Cliente atualizado com sucesso.',
+        'deleted' => 'Cliente removido com sucesso.',
         'provisioning_started' => 'Provisionamento iniciado. O banco será criado em instantes.',
-        'imported' => 'Importação concluída. Tenants criados: :tenant_created, atualizados: :tenant_updated, ignorados: :tenant_skipped. Domínios: :domains, integrações: :integrations, APIs criadas: :api_created, APIs atualizadas: :api_updated.',
+        'imported' => 'Importação concluída. Clientes criados: :tenant_created, atualizados: :tenant_updated, ignorados: :tenant_skipped. Domínios: :domains, integrações: :integrations, APIs criadas: :api_created, APIs atualizadas: :api_updated.',
         'import_invalid_json' => 'O arquivo enviado não contém um JSON válido.',
         'import_invalid_structure' => 'Estrutura inválida. Use um arquivo com "tenants".',
     ],
     'gondola_defaults' => [
         'navigation' => 'Padrão de gôndola',
-        'title' => 'Padrão de gôndola do tenant',
-        'description' => 'Defina as dimensões e a estrutura padrão usadas ao criar gôndolas para este tenant. Se não for configurado, o padrão do Plannerate é utilizado.',
+        'title' => 'Padrão de gôndola do cliente',
+        'description' => 'Defina as dimensões e a estrutura padrão usadas ao criar gôndolas para este cliente. Se não for configurado, o padrão do Plannerate é utilizado.',
         'restore_default' => 'Restaurar padrão Plannerate',
         'sections' => [
             'general' => 'Geral',

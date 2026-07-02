@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, usePage } from '@inertiajs/vue3';
 import { LayoutGrid } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import FormKanbanSettings from '@/components/form/FormKanbanSettings.vue';
 import FormMonthYearRangePicker from '@/components/form/FormMonthYearRangePicker.vue';
@@ -41,12 +41,68 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
+const page = usePage();
 const isEdit = computed(() => props.planogram !== null);
 const planogramsIndexPath = PlanogramController.index
     .url()
     .replace(/^\/\/[^/]+/, '');
 const categoryId = ref<string | null>(props.planogram?.category_id ?? null);
-const activeTab = ref<TabKey>('identificacao');
+
+const tabKeys: TabKey[] = ['identificacao', 'mercadologico', 'workflow'];
+
+/**
+ * Resolve a aba a partir do parâmetro `?tab=` da URL atual. Após criar, o backend
+ * redireciona com `?tab=workflow` para forçar a configuração do workflow; nas
+ * demais aberturas cai em "identificacao".
+ */
+function resolveTabFromUrl(): TabKey {
+    const query = page.url.split('?')[1] ?? '';
+    const requestedTab = new URLSearchParams(query).get('tab');
+
+    return tabKeys.includes(requestedTab as TabKey)
+        ? (requestedTab as TabKey)
+        : 'identificacao';
+}
+
+const activeTab = ref<TabKey>(resolveTabFromUrl());
+
+// O Inertia reutiliza este componente ao navegar de "create" para "edit" (mesmo
+// componente), então o setup não roda de novo. Observa a URL para reativar a aba
+// correta quando o backend redireciona para `?tab=workflow` após a criação.
+watch(
+    () => page.url,
+    () => {
+        activeTab.value = resolveTabFromUrl();
+    },
+);
+
+/** Campos exibidos na aba de identificação (usados para focar a aba ao falhar a validação). */
+const identificacaoFields = [
+    'type',
+    'name',
+    'cluster_id',
+    'store_id',
+    'start_date',
+    'end_date',
+    'status',
+    'description',
+];
+
+/**
+ * Ao falhar a validação, ativa a aba que contém o primeiro erro para que a
+ * mensagem fique visível (os campos obrigatórios estão espalhados entre abas).
+ */
+function focusTabWithError(errors: Record<string, string>): void {
+    if (identificacaoFields.some((field) => errors[field])) {
+        activeTab.value = 'identificacao';
+
+        return;
+    }
+
+    if (errors.category_id) {
+        activeTab.value = 'mercadologico';
+    }
+}
 
 const tabs = computed(() => [
     {
@@ -63,7 +119,9 @@ const tabs = computed(() => [
     },
 ]);
 
-const pageMeta = useCrudPageMeta({
+// Reativo: o componente é reutilizado entre "create" e "edit", então o título e
+// os breadcrumbs precisam recalcular quando `props.planogram` muda (isEdit).
+const pageMetaOverride = computed(() => ({
     headTitle: isEdit.value
         ? t('app.tenant.planograms.actions.edit')
         : t('app.tenant.planograms.actions.new'),
@@ -91,7 +149,17 @@ const pageMeta = useCrudPageMeta({
                 : PlanogramController.create.url(),
         },
     ],
-});
+}));
+
+const pageMeta = useCrudPageMeta(
+    {
+        headTitle: t('app.tenant.planograms.actions.new'),
+        title: t('app.tenant.planograms.actions.new'),
+        description: t('app.tenant.planograms.description'),
+        breadcrumbs: [],
+    },
+    pageMetaOverride,
+);
 </script>
 
 <template>
@@ -107,6 +175,7 @@ const pageMeta = useCrudPageMeta({
                         : PlanogramController.store?.form()
                 "
                 v-slot="{ errors, processing }"
+                @error="focusTabWithError"
             >
                 <FormCard
                     :processing="processing"
@@ -176,9 +245,14 @@ const pageMeta = useCrudPageMeta({
                             :default-value="props.planogram?.store_id ?? ''"
                             :error="errors.store_id"
                             class="md:col-span-4"
+                            required
                         >
-                            <option value="">
-                                {{ t('app.tenant.common.all') }}
+                            <option value="" disabled>
+                                {{
+                                    t(
+                                        'app.tenant.planograms.fields.store_placeholder',
+                                    )
+                                }}
                             </option>
                             <option
                                 v-for="store in props.stores"
@@ -195,7 +269,8 @@ const pageMeta = useCrudPageMeta({
                             :label="
                                 t('app.tenant.planograms.fields.start_date') +
                                 ' / ' +
-                                t('app.tenant.planograms.fields.end_date')
+                                t('app.tenant.planograms.fields.end_date') +
+                                ' *'
                             "
                             :start-value="props.planogram?.start_date ?? null"
                             :end-value="props.planogram?.end_date ?? null"
@@ -232,7 +307,20 @@ const pageMeta = useCrudPageMeta({
                     </div>
 
                     <!-- Tab: Mercadológico -->
-                    <div v-show="activeTab === 'mercadologico'">
+                    <div v-show="activeTab === 'mercadologico'" class="space-y-2">
+                        <div class="flex flex-col gap-0.5">
+                            <span class="text-sm font-medium text-foreground">
+                                {{ t('app.tenant.planograms.fields.category') }}
+                                <span class="text-destructive">*</span>
+                            </span>
+                            <span class="text-xs text-muted-foreground">
+                                {{
+                                    t(
+                                        'app.tenant.planograms.fields.category_required_hint',
+                                    )
+                                }}
+                            </span>
+                        </div>
                         <CategoryCascadeSelect
                             v-model="categoryId"
                             :error="errors.category_id"
@@ -248,6 +336,60 @@ const pageMeta = useCrudPageMeta({
                             v-if="props.planogram"
                             :planogram="props.planogram"
                         />
+
+                        <!-- Na criação o planograma ainda não existe: orienta a
+                             preencher as demais abas e salvar antes de configurar. -->
+                        <div
+                            v-else
+                            class="rounded-lg border border-dashed border-border bg-muted/30 p-5 md:col-span-12"
+                        >
+                            <h3 class="text-sm font-semibold text-foreground">
+                                {{
+                                    t(
+                                        'app.tenant.planograms.workflow_intro.title',
+                                    )
+                                }}
+                            </h3>
+                            <p class="mt-1 text-sm text-muted-foreground">
+                                {{
+                                    t(
+                                        'app.tenant.planograms.workflow_intro.description',
+                                    )
+                                }}
+                            </p>
+                            <ol
+                                class="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-muted-foreground marker:text-primary marker:font-semibold"
+                            >
+                                <li>
+                                    {{
+                                        t(
+                                            'app.tenant.planograms.workflow_intro.step_identificacao',
+                                        )
+                                    }}
+                                </li>
+                                <li>
+                                    {{
+                                        t(
+                                            'app.tenant.planograms.workflow_intro.step_mercadologico',
+                                        )
+                                    }}
+                                </li>
+                                <li>
+                                    {{
+                                        t(
+                                            'app.tenant.planograms.workflow_intro.step_salvar',
+                                        )
+                                    }}
+                                </li>
+                                <li>
+                                    {{
+                                        t(
+                                            'app.tenant.planograms.workflow_intro.step_configurar',
+                                        )
+                                    }}
+                                </li>
+                            </ol>
+                        </div>
                     </div>
                 </FormCard>
             </Form>
