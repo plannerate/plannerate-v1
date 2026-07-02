@@ -86,16 +86,18 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`);
             class="px-4 py-2"
             :class="
                 compact
-                    ? 'flex flex-col gap-y-2 xl:flex-row xl:flex-wrap xl:items-center xl:gap-x-4'
+                    ? 'flex flex-col gap-y-2'
                     : 'flex flex-wrap items-center gap-x-4 gap-y-2'
             "
         >
             <!-- Modo execução: alvo p/ as infos da barra (status, SLA, evidências…)
-                 teleportadas de ExecutionBar. Ocupa a linha inteira abaixo de xl. -->
+                 teleportadas de ExecutionBar. Sempre em cima, ocupando a linha
+                 inteira; os controles ficam na linha de baixo. Não usamos linha
+                 única porque tudo junto só caberia a partir de ~1950px. -->
             <div
                 v-if="compact"
                 id="execution-bar-info"
-                class="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-1 xl:flex-1"
+                class="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-1"
             ></div>
 
             <!-- Branding + metadados (ocultos no modo enxuto p/ não duplicar o cabeçalho da gôndola) -->
@@ -149,7 +151,11 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`);
                 quebram como blocos inteiros, nunca no meio.
             -->
             <div
-                class="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 xl:ml-auto xl:shrink-0"
+                :class="
+                    compact
+                        ? 'flex w-full flex-wrap items-center justify-start gap-x-3 gap-y-2'
+                        : 'ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2'
+                "
             >
                 <!-- Controles do preview (zoom, performance, indicadores, layout, PDF, sino) -->
                 <div class="flex flex-wrap items-center gap-2">
@@ -237,8 +243,10 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`);
                         }}
                     </ButtonWithTooltip>
 
-                    <!-- Sino de notificações (mesmo componente da topbar principal) -->
-                    <NotificationsDropdown />
+                    <!-- Sino de notificações (mesmo componente da topbar
+                         principal). Oculto na Execução em Loja para não ficar
+                         solto no meio da linha, entre os controles e as ações. -->
+                    <NotificationsDropdown v-if="!compact" />
                 </div>
 
                 <!-- Modo execução: alvo p/ os 3 botões de ação

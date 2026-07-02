@@ -4,6 +4,8 @@ import { useT } from '@/composables/useT';
 
 interface Props {
     observacoes: string;
+    /** Título do planograma, movido do cabeçalho para a área de observações. */
+    title?: string;
 }
 
 defineProps<Props>();
@@ -22,8 +24,15 @@ const { t } = useT();
                 <ClipboardListIcon class="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
+                <h2
+                    v-if="title"
+                    class="text-lg leading-none font-black tracking-wide text-slate-900 uppercase dark:text-slate-100"
+                >
+                    {{ title }}
+                </h2>
                 <p
                     class="text-sm font-semibold text-slate-800 dark:text-slate-200"
+                    :class="{ 'mt-1.5': title }"
                 >
                     {{ t('plannerate.print.labels.observations') }}:
                 </p>

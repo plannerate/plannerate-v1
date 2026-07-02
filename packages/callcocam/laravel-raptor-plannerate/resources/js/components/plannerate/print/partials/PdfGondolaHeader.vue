@@ -42,16 +42,6 @@ const props = defineProps<Props>();
 const { t } = useT();
 
 /**
- * Título principal do cabeçalho: usa o nome do planograma quando existir,
- * caindo para o rótulo genérico de planograma de exposição.
- */
-const title = computed(
-    () =>
-        props.gondola.planogram?.name ||
-        t('plannerate.print.preview.exposure_planogram'),
-);
-
-/**
  * Campos informativos pertinentes da gôndola, exibidos em linha no
  * cabeçalho. Cada item tem ícone, rótulo curto e valor (com fallback '—').
  */
@@ -104,19 +94,10 @@ const metaItems = computed<Array<{ icon: Component; label: string; value: string
 <template>
     <div class="border-b border-slate-200 bg-white px-6 py-4">
         <div class="flex items-center  justify-between space-x-3 gap-6">
-            <!-- Logo + título -->
+            <!-- Logo (título do planograma foi movido para as observações) -->
             <div class="flex  items-center justify-between gap-6">
                 <div class="flex shrink-0 items-center gap-3">
                     <img src="/img/marca-claro.png" alt="Logo" class="block h-11 w-auto" />
-                    <div class="border-l border-slate-200 pl-3">
-                        <p v-if="tenantName"
-                            class="mb-0.5 text-xs leading-none font-bold tracking-widest text-slate-500 uppercase">
-                            {{ tenantName }}
-                        </p>
-                        <h1 class="text-2xl leading-none font-black tracking-wide text-slate-900 uppercase">
-                            {{ title }}
-                        </h1>
-                    </div>
                 </div>
                 <div class="h-10 w-px shrink-0 bg-slate-200 dark:bg-slate-700"></div>
                 <!-- Metadados em linha -->

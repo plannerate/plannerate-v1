@@ -97,6 +97,17 @@ const observacoes = computed(
         t('plannerate.print.preview.default_observations'),
 );
 
+/**
+ * Título do planograma exibido na área de observações (antes ficava no
+ * cabeçalho da gôndola, que agora mostra só a logo). Cai para o rótulo genérico
+ * quando o planograma não tem nome.
+ */
+const planogramTitle = computed(
+    () =>
+        props.gondola.planogram?.name ||
+        t('plannerate.print.preview.exposure_planogram'),
+);
+
 function removeSavedLayoutDirection(): void {
     try {
         window.localStorage.removeItem(LAYOUT_DIRECTION_STORAGE_KEY);
@@ -424,7 +435,11 @@ const orderedSections = computed<Section[]>(() => {
                     :local-scale="localScale"
                     :alignment="gondola.alignment ?? 'justify'"
                 />
-                <PdfPageFooter data-pdf-footer :observacoes="observacoes" />
+                <PdfPageFooter
+                    data-pdf-footer
+                    :title="planogramTitle"
+                    :observacoes="observacoes"
+                />
             </div>
         </div>
 
