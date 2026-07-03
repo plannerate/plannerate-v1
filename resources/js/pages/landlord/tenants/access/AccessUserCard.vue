@@ -1,10 +1,21 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
-import { Edit, Mail, RotateCcw, Trash2 } from 'lucide-vue-next';
+import { Edit, Mail, RotateCcw, Trash2, XCircle } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import WayfinderLink from '@/components/WayfinderLink.vue';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useT } from '@/composables/useT';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
@@ -58,6 +69,23 @@ function onActiveChange(tenantId: string, userId: string, currentIsActive: boole
     router.patch(tenantWayfinderPath(TenantUserAccessController.toggleActive.url({ tenant: tenantId, userId })), {
         is_active: currentIsActive ? 0 : 1,
     }, { preserveScroll: true });
+}
+
+const isForceDeleteOpen = ref(false);
+
+/**
+ * Exclui o usuário definitivamente (hard delete) após confirmação no diálogo.
+ */
+function onForceDelete(): void {
+    router.delete(
+        tenantWayfinderPath(TenantUserAccessController.forceDelete.url({ tenant: props.tenantId, userId: props.user.id })),
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                isForceDeleteOpen.value = false;
+            },
+        },
+    );
 }
 
 function getUserInitials(name: string): string {
@@ -193,16 +221,48 @@ function getUserInitials(name: string): string {
                 <Trash2 class="size-4" />
             </WayfinderLink>
 
-            <WayfinderLink
-                v-if="user.deleted_at"
-                :href="TenantUserAccessController.restore.url({ tenant: tenantId, userId: user.id })"
-                method="patch"
-                as="button"
-                class="rounded-lg p-2 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
-                :title="t('app.actions.restore')"
-            >
-                <RotateCcw class="size-4" />
-            </WayfinderLink>
+            <div v-if="user.deleted_at" class="flex items-center gap-1">
+                <!-- Restaurar usuário -->
+                <WayfinderLink
+                    :href="TenantUserAccessController.restore.url({ tenant: tenantId, userId: user.id })"
+                    method="patch"
+                    as="button"
+                    class="rounded-lg p-2 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
+                    :title="t('app.actions.restore')"
+                >
+                    <RotateCcw class="size-4" />
+                </WayfinderLink>
+
+                <!-- Excluir definitivamente (com confirmação) -->
+                <AlertDialog v-model:open="isForceDeleteOpen">
+                    <AlertDialogTrigger as-child>
+                        <button
+                            type="button"
+                            class="rounded-lg p-2 text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive"
+                            :title="t('app.actions.force_delete')"
+                        >
+                            <XCircle class="size-4" />
+                        </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{{ t('app.landlord.tenant_access.force_delete.title') }}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {{ t('app.landlord.tenant_access.force_delete.description', { name: user.name }) }}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>{{ t('app.actions.cancel') }}</AlertDialogCancel>
+                            <AlertDialogAction
+                                class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                @click="onForceDelete"
+                            >
+                                {{ t('app.landlord.tenant_access.force_delete.confirm') }}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
         </div>
     </div>
 </template>

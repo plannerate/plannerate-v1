@@ -58,6 +58,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'delete' => 'Excluir',
         'edit' => 'Editar',
         'restore' => 'Restaurar',
+        'force_delete' => 'Excluir definitivamente',
         'back' => 'Voltar',
         'close' => 'Fechar',
         'continue' => 'Continuar',

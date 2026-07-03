@@ -324,6 +324,35 @@ class TenantUserAccessController extends Controller
     }
 
     /**
+     * Permanently delete a soft deleted tenant user and its role assignments.
+     */
+    public function forceDelete(Tenant $tenant, string $userId): RedirectResponse
+    {
+        $this->authorize('update', $tenant);
+
+        $this->runInTenantContext($tenant, function () use ($tenant, $userId): void {
+            $tenantUser = User::query()->withTrashed()->findOrFail($userId);
+
+            // Remove role assignments held on the landlord connection for this user/tenant.
+            DB::connection('landlord')
+                ->table('model_has_roles')
+                ->where('model_type', User::class)
+                ->where('model_id', $tenantUser->id)
+                ->where('tenant_id', $tenant->id)
+                ->delete();
+
+            $tenantUser->forceDelete();
+        });
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.tenant_access.messages.force_deleted'),
+        ]);
+
+        return back();
+    }
+
+    /**
      * @return array<string, array<int, string>>
      */
     private function tenantRoleNamesByUser(Tenant $tenant): array

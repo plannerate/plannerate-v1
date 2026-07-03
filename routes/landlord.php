@@ -98,6 +98,8 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->name('landlord.tenants.access.users.destroy');
     Route::patch('tenants/{tenant}/access/users/{userId}/restore', [Landlord\TenantUserAccessController::class, 'restore'])
         ->name('landlord.tenants.access.users.restore');
+    Route::delete('tenants/{tenant}/access/users/{userId}/force', [Landlord\TenantUserAccessController::class, 'forceDelete'])
+        ->name('landlord.tenants.access.users.force-delete');
 
     Route::get('tenants/{tenant}/gondola-defaults', [Landlord\TenantGondolaDefaultsController::class, 'edit'])
         ->name('landlord.tenants.gondola-defaults.edit');

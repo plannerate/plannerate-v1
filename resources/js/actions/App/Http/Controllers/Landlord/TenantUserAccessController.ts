@@ -609,6 +609,91 @@ restoreForm.patch = (args: { tenant: string | { id: string }, userId: string | n
 
 restore.form = restoreForm
 
-const TenantUserAccessController = { edit, store, update, toggleActive, syncRoles, destroy, restore }
+/**
+* @see \App\Http\Controllers\Landlord\TenantUserAccessController::forceDelete
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:328
+* @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/force'
+*/
+export const forceDelete = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+    url: forceDelete.url(args, options),
+    method: 'delete',
+})
+
+forceDelete.definition = {
+    methods: ["delete"],
+    url: '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/force',
+} satisfies RouteDefinition<["delete"]>
+
+/**
+* @see \App\Http\Controllers\Landlord\TenantUserAccessController::forceDelete
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:328
+* @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/force'
+*/
+forceDelete.url = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions) => {
+    if (Array.isArray(args)) {
+        args = {
+            tenant: args[0],
+            userId: args[1],
+        }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+        tenant: typeof args.tenant === 'object'
+        ? args.tenant.id
+        : args.tenant,
+        userId: args.userId,
+    }
+
+    return forceDelete.definition.url
+            .replace('{tenant}', parsedArgs.tenant.toString())
+            .replace('{userId}', parsedArgs.userId.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Landlord\TenantUserAccessController::forceDelete
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:328
+* @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/force'
+*/
+forceDelete.delete = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+    url: forceDelete.url(args, options),
+    method: 'delete',
+})
+
+/**
+* @see \App\Http\Controllers\Landlord\TenantUserAccessController::forceDelete
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:328
+* @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/force'
+*/
+const forceDeleteForm = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: forceDelete.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'DELETE',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Landlord\TenantUserAccessController::forceDelete
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:328
+* @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/force'
+*/
+forceDeleteForm.delete = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: forceDelete.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'DELETE',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+forceDelete.form = forceDeleteForm
+
+const TenantUserAccessController = { edit, store, update, toggleActive, syncRoles, destroy, restore, forceDelete }
 
 export default TenantUserAccessController
