@@ -6,7 +6,7 @@
         com dimensões escalonadas pelo fator do PDF.
     -->
     <div
-        v-if="classification && isVisible && isClassActive(classification)"
+        v-if="classification && isVisible && isRecommendationActive(effectiveRecommendation)"
         class="pointer-events-none absolute left-1/2 z-50 flex items-center rounded-full bg-white/95 shadow-md"
         :style="pillStyle"
         :title="t('plannerate.editor.abc_badge.title', { classification })"
@@ -39,7 +39,7 @@ import type { AbcRecommendation } from '@/composables/plannerate/analysis/useAbc
 import { indicatorOrientation } from '@/composables/plannerate/core/useGondolaState';
 import { useT } from '@/composables/useT';
 
-const { isVisible, isClassActive } = useAbcClassification();
+const { isVisible, isRecommendationActive } = useAbcClassification();
 const { t } = useT();
 
 /** Orientação atual do selo (vertical = rotacionado 90°, horizontal = normal). */

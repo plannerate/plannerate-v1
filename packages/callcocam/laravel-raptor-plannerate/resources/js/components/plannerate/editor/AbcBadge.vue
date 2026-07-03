@@ -7,7 +7,7 @@
         As dimensões (círculo, fonte, padding) escalam com o `scale` do planograma.
     -->
     <div
-        v-if="classification && isVisible && isClassActive(classification)"
+        v-if="classification && isVisible && isRecommendationActive(effectiveRecommendation)"
         class="flex items-center rounded-full bg-white/95 shadow-md"
         :style="pillStyle"
     >
@@ -54,7 +54,7 @@ const props = withDefaults(defineProps<Props>(), {
     scale: 3,
 });
 
-const { isVisible, isClassActive } = useAbcClassification();
+const { isVisible, isRecommendationActive } = useAbcClassification();
 const { t } = useT();
 
 /** Orientação atual do selo (vertical = rotacionado 90°, horizontal = normal). */

@@ -7,76 +7,96 @@
                 <ChevronDown class="ml-1 size-3" />
             </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" class="z-9999 w-56">
-            <DropdownMenuLabel class="text-xs text-muted-foreground">
+        <DropdownMenuContent align="end" class="z-9999 w-64 p-2">
+            <!-- Título do painel -->
+            <p class="px-1 pb-1.5 text-sm font-semibold text-foreground">
                 {{ t('plannerate.dropdown.indicators.title') }}
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            </p>
 
-            <!-- Itens montados dinamicamente a partir do registro de indicadores -->
-            <DropdownMenuItem
-                v-for="indicator in indicators"
-                :key="indicator.key"
-                class="gap-2"
-                @click="select(indicator.key)"
-            >
-                <span
-                    class="flex size-5 shrink-0 items-center justify-center rounded"
-                    :class="indicator.badgeClass"
+            <!-- Card com a lista de indicadores (montados a partir do registro) -->
+            <div class="overflow-hidden rounded-lg border bg-card">
+                <DropdownMenuItem
+                    v-for="(indicator, index) in indicators"
+                    :key="indicator.key"
+                    class="gap-2.5 rounded-none px-2 py-1.5"
+                    :class="index < indicators.length - 1 ? 'border-b' : ''"
+                    @click="select(indicator.key)"
                 >
-                    <component :is="indicator.icon" class="size-3" :class="indicator.iconClass" />
+                    <span
+                        class="flex size-8 shrink-0 items-center justify-center rounded-lg"
+                        :class="indicator.badgeClass"
+                    >
+                        <component :is="indicator.icon" class="size-4" :class="indicator.iconClass" />
+                    </span>
+                    <span class="flex-1 text-sm">{{ t(indicator.labelKey) }}</span>
+                    <CheckCircle2
+                        v-if="selectedIndicator === indicator.key"
+                        class="size-5 shrink-0 text-green-600"
+                    />
+                </DropdownMenuItem>
+            </div>
+
+            <!-- Card "Nenhum" (limpar seleção) -->
+            <DropdownMenuItem
+                class="mt-1.5 gap-2.5 rounded-lg border bg-card px-2 py-1.5"
+                @click="select(INDICATOR_NONE)"
+            >
+                <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                    <Ban class="size-4" />
                 </span>
-                <span class="flex-1">{{ t(indicator.labelKey) }}</span>
-                <Check v-if="selectedIndicator === indicator.key" class="size-4 text-primary" />
+                <span class="flex-1 text-sm">{{ t('plannerate.dropdown.indicators.none') }}</span>
+                <CheckCircle2
+                    v-if="selectedIndicator === INDICATOR_NONE"
+                    class="size-5 shrink-0 text-green-600"
+                />
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator />
-
-            <!-- Opção "Nenhum" -->
-            <DropdownMenuItem class="gap-2" @click="select(INDICATOR_NONE)">
-                <span class="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground">
-                    <Ban class="size-3" />
-                </span>
-                <span class="flex-1">{{ t('plannerate.dropdown.indicators.none') }}</span>
-                <Check v-if="selectedIndicator === INDICATOR_NONE" class="size-4 text-primary" />
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator />
-
-            <!-- Orientação do selo: vertical (rotacionado) ou horizontal -->
-            <DropdownMenuLabel class="text-xs text-muted-foreground">
+            <!-- Orientação do selo: dois botões lado a lado (vertical | horizontal) -->
+            <p class="px-1 pb-1.5 pt-2 text-xs font-medium text-muted-foreground">
                 {{ t('plannerate.dropdown.indicators.orientation') }}
-            </DropdownMenuLabel>
+            </p>
 
-            <DropdownMenuItem class="gap-2" @click="setOrientation('vertical')">
-                <span class="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground">
-                    <GalleryVertical class="size-3" />
-                </span>
-                <span class="flex-1">{{ t('plannerate.dropdown.indicators.orientation_vertical') }}</span>
-                <Check v-if="indicatorOrientation === 'vertical'" class="size-4 text-primary" />
-            </DropdownMenuItem>
+            <div class="grid grid-cols-2 gap-1.5">
+                <button
+                    type="button"
+                    class="flex items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors"
+                    :class="
+                        indicatorOrientation === 'vertical'
+                            ? 'border-green-600 bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400'
+                            : 'text-foreground hover:bg-accent'
+                    "
+                    @click="setOrientation('vertical')"
+                >
+                    <GalleryVertical class="size-3.5" />
+                    {{ t('plannerate.dropdown.indicators.orientation_vertical') }}
+                </button>
 
-            <DropdownMenuItem class="gap-2" @click="setOrientation('horizontal')">
-                <span class="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground">
-                    <GalleryHorizontal class="size-3" />
-                </span>
-                <span class="flex-1">{{ t('plannerate.dropdown.indicators.orientation_horizontal') }}</span>
-                <Check v-if="indicatorOrientation === 'horizontal'" class="size-4 text-primary" />
-            </DropdownMenuItem>
+                <button
+                    type="button"
+                    class="flex items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors"
+                    :class="
+                        indicatorOrientation === 'horizontal'
+                            ? 'border-green-600 bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400'
+                            : 'text-foreground hover:bg-accent'
+                    "
+                    @click="setOrientation('horizontal')"
+                >
+                    <GalleryHorizontal class="size-3.5" />
+                    {{ t('plannerate.dropdown.indicators.orientation_horizontal') }}
+                </button>
+            </div>
         </DropdownMenuContent>
     </DropdownMenu>
 </template>
 
 <script setup lang="ts">
-import { Ban, Check, ChevronDown, Eye, GalleryHorizontal, GalleryVertical } from 'lucide-vue-next';
+import { Ban, CheckCircle2, ChevronDown, Eye, GalleryHorizontal, GalleryVertical } from 'lucide-vue-next';
 import { computed, onMounted } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useSalesIndicators } from '@/composables/plannerate/analysis/useSalesIndicators';

@@ -7,16 +7,6 @@ import { createEanAnalysisStore } from './useEanAnalysisStore';
 export type AbcClass = 'A' | 'B' | 'C';
 
 /**
- * Filtro de classes ativas para exibição dos selos ABC.
- * Estado singleton no nível do módulo — compartilhado entre todos os
- * componentes que consomem `useAbcClassification()` (dropdown e selos).
- *
- * Por padrão todas as classes (A/B/C) estão ativas. Ao desmarcar uma classe,
- * os selos daquela classe deixam de ser renderizados no planograma.
- */
-const _activeClasses = shallowRef<Set<AbcClass>>(new Set<AbcClass>(['A', 'B', 'C']));
-
-/**
  * Recomendação de sortimento derivada da classificação ABC e da decisão de
  * retirar (ou não) o produto do mix:
  * - `proteger`     → Produto A (alta performance, deve ser protegido)
@@ -25,6 +15,23 @@ const _activeClasses = shallowRef<Set<AbcClass>>(new Set<AbcClass>(['A', 'B', 'C
  * - `retirar`      → Produto C que a análise recomenda retirar do mix
  */
 export type AbcRecommendation = 'proteger' | 'potencializar' | 'monitorar' | 'retirar';
+
+/** Lista canônica das recomendações (tags) na ordem de exibição. */
+export const ABC_RECOMMENDATIONS: AbcRecommendation[] = ['proteger', 'potencializar', 'monitorar', 'retirar'];
+
+/**
+ * Filtro de tags (recomendações) ativas para exibição dos selos ABC.
+ * Estado singleton no nível do módulo — compartilhado entre todos os
+ * componentes que consomem `useAbcClassification()` (dropdown e selos).
+ *
+ * Filtra pela TAG COMPLETA (Proteger/Potencializar/Monitorar/Retirar) e não só
+ * pela classe ABC — assim os produtos C "monitorar" e "retirar", que compartilham
+ * a mesma classe, podem ser exibidos/ocultados independentemente.
+ *
+ * Por padrão todas as tags estão ativas. Ao desmarcar uma tag, os selos daquela
+ * recomendação deixam de ser renderizados no planograma.
+ */
+const _activeRecommendations = shallowRef<Set<AbcRecommendation>>(new Set<AbcRecommendation>(ABC_RECOMMENDATIONS));
 
 /**
  * Entrada armazenada por EAN: a classificação ABC mais a informação de se o
@@ -150,44 +157,66 @@ export function useAbcClassification() {
     }
 
     /**
-     * Verifica se a classe informada está ativa no filtro de exibição.
-     * Retorna false para EANs sem classificação (classe undefined).
+     * Verifica se a tag (recomendação) informada está ativa no filtro de exibição.
+     * Retorna false para produtos sem recomendação (undefined).
      */
-    function isClassActive(classification: AbcClass | undefined): boolean {
-        if (!classification) {
+    function isRecommendationActive(recommendation: AbcRecommendation | undefined): boolean {
+        if (!recommendation) {
             return false;
         }
 
-        return _activeClasses.value.has(classification);
+        return _activeRecommendations.value.has(recommendation);
     }
 
     /**
-     * Alterna (liga/desliga) a exibição dos selos de uma classe específica.
+     * Alterna (liga/desliga) a exibição dos selos de uma tag específica.
      * Cria um novo Set para disparar a reatividade do shallowRef.
      */
-    function toggleClassFilter(classification: AbcClass): void {
-        const next = new Set(_activeClasses.value);
-        if (next.has(classification)) {
-            next.delete(classification);
+    function toggleRecommendationFilter(recommendation: AbcRecommendation): void {
+        const next = new Set(_activeRecommendations.value);
+        if (next.has(recommendation)) {
+            next.delete(recommendation);
         } else {
-            next.add(classification);
+            next.add(recommendation);
         }
-        _activeClasses.value = next;
+        _activeRecommendations.value = next;
     }
 
     /**
-     * Define explicitamente o conjunto de classes ativas no filtro.
+     * Define explicitamente o conjunto de tags ativas no filtro.
      */
-    function setClassFilter(classes: AbcClass[]): void {
-        _activeClasses.value = new Set(classes);
+    function setRecommendationFilter(recommendations: AbcRecommendation[]): void {
+        _activeRecommendations.value = new Set(recommendations);
     }
 
     /**
-     * Reseta o filtro para exibir todas as classes (A/B/C).
+     * Reseta o filtro para exibir todas as tags (Proteger/Potencializar/Monitorar/Retirar).
      */
-    function resetClassFilter(): void {
-        _activeClasses.value = new Set<AbcClass>(['A', 'B', 'C']);
+    function resetRecommendationFilter(): void {
+        _activeRecommendations.value = new Set<AbcRecommendation>(ABC_RECOMMENDATIONS);
     }
+
+    /**
+     * Contagem de produtos por tag (recomendação), derivada das entradas atuais.
+     * Usada pelo dropdown para exibir "(N)" ao lado de cada tag.
+     */
+    const recommendationStats = computed(() => {
+        const counts: Record<AbcRecommendation, number> = {
+            proteger: 0,
+            potencializar: 0,
+            monitorar: 0,
+            retirar: 0,
+        };
+
+        for (const entry of store.rawValues.value) {
+            const recommendation = resolveAbcRecommendation(entry);
+            if (recommendation) {
+                counts[recommendation] += 1;
+            }
+        }
+
+        return counts;
+    });
 
     return {
         // Métodos
@@ -202,17 +231,18 @@ export function useAbcClassification() {
         toggleVisibility: store.toggleVisibility,
         setVisibility: store.setVisibility,
 
-        // Filtro por classe (A/B/C)
-        isClassActive,
-        toggleClassFilter,
-        setClassFilter,
-        resetClassFilter,
+        // Filtro por tag completa (Proteger/Potencializar/Monitorar/Retirar)
+        isRecommendationActive,
+        toggleRecommendationFilter,
+        setRecommendationFilter,
+        resetRecommendationFilter,
 
         // Computed
         stats: store.stats,
+        recommendationStats,
         hasData: store.hasData,
         isVisible: store.isVisible,
         lastAnalysisDate: store.lastAnalysisDate,
-        activeClasses: computed(() => _activeClasses.value),
+        activeRecommendations: computed(() => _activeRecommendations.value),
     };
 }

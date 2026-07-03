@@ -58,10 +58,16 @@ const orientation = computed(() => indicatorOrientation.value);
 const pillStyle = computed(() => {
     const padY = Math.max(0.5 * props.scale, 1);
     const padX = Math.max(1.5 * props.scale, 3);
+    // Na orientação horizontal o selo sobe um pouco mais (afasta da base do
+    // produto e do selo ABC); na vertical mantém a distância original.
+    const bottom =
+        orientation.value === 'vertical'
+            ? Math.max(6 * props.scale, 12)
+            : Math.max(11 * props.scale, 22);
     const base: Record<string, string> = {
         gap: `${Math.max(0.75 * props.scale, 1.5)}px`,
         padding: `${padY}px ${padX}px`,
-        bottom: `${Math.max(6 * props.scale, 12)}px`,
+        bottom: `${bottom}px`,
         transform:
             orientation.value === 'vertical'
                 ? 'translateX(-50%) rotate(-90deg)'
