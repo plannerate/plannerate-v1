@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, setLayoutProps, usePage } from '@inertiajs/vue3';
+import { Lock, Mail } from 'lucide-vue-next';
 import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
@@ -42,10 +43,7 @@ function socialiteRedirectUrl(provider: string): string {
 
 <template>
     <Head :title="t('app.auth.login_short')" />
-    <AuthLayout
-        :title="t('app.auth.login_title')"
-        :description="t('app.auth.login_description')"
-    >
+    <AuthLayout :title="t('app.auth.login_title')">
         <div
             v-if="status"
             class="mb-4 text-center text-sm font-medium text-green-600"
@@ -59,27 +57,41 @@ function socialiteRedirectUrl(provider: string): string {
             v-slot="{ errors, processing }"
             class="flex flex-col gap-6"
         >
-            <div class="grid gap-6">
+            <div class="grid gap-5">
                 <div class="grid gap-2">
-                    <Label for="email">{{
-                        t('app.labels.email_address')
-                    }}</Label>
-                    <Input
-                        id="email"
-                        type="email"
-                        name="email"
-                        required
-                        autofocus
-                        :tabindex="1"
-                        autocomplete="email"
-                        placeholder="email@example.com"
-                    />
+                    <Label
+                        for="email"
+                        class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+                    >
+                        {{ t('app.labels.email_address') }}
+                    </Label>
+                    <div class="relative">
+                        <Mail
+                            class="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground"
+                        />
+                        <Input
+                            id="email"
+                            type="email"
+                            name="email"
+                            required
+                            autofocus
+                            :tabindex="1"
+                            autocomplete="email"
+                            placeholder="email@example.com"
+                            class="h-11 rounded-xl border-border/60 bg-muted/50 pr-4 pl-11 shadow-none"
+                        />
+                    </div>
                     <InputError :message="errors.email" />
                 </div>
 
                 <div class="grid gap-2">
                     <div class="flex items-center justify-between">
-                        <Label for="password">{{ t('app.password') }}</Label>
+                        <Label
+                            for="password"
+                            class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+                        >
+                            {{ t('app.password') }}
+                        </Label>
                         <TextLink
                             v-if="canResetPassword"
                             :href="request()"
@@ -89,27 +101,36 @@ function socialiteRedirectUrl(provider: string): string {
                             {{ t('app.auth.forgot_password_link') }}
                         </TextLink>
                     </div>
-                    <PasswordInput
-                        id="password"
-                        name="password"
-                        required
-                        :tabindex="2"
-                        autocomplete="current-password"
-                        :placeholder="t('app.password')"
-                    />
+                    <div class="relative">
+                        <Lock
+                            class="pointer-events-none absolute top-1/2 left-4 z-10 size-4 -translate-y-1/2 text-muted-foreground"
+                        />
+                        <PasswordInput
+                            id="password"
+                            name="password"
+                            required
+                            :tabindex="2"
+                            autocomplete="current-password"
+                            :placeholder="t('app.password')"
+                            class="h-11 rounded-xl border-border/60 bg-muted/50 pl-11 shadow-none"
+                        />
+                    </div>
                     <InputError :message="errors.password" />
                 </div>
 
                 <div class="flex items-center justify-between">
                     <Label for="remember" class="flex items-center space-x-3">
                         <Checkbox id="remember" name="remember" :tabindex="3" />
-                        <span>{{ t('app.labels.remember_me') }}</span>
+                        <span class="text-sm text-muted-foreground">{{
+                            t('app.labels.remember_me')
+                        }}</span>
                     </Label>
                 </div>
 
                 <Button
                     type="submit"
-                    class="mt-4 w-full"
+                    variant="gradient"
+                    class="mt-2 h-11 w-full rounded-xl text-sm font-semibold"
                     :tabindex="4"
                     :disabled="processing"
                     data-test="login-button"
