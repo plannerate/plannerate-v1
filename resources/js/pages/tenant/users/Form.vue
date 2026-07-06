@@ -116,11 +116,11 @@ const updateFormAttrs = computed(() => {
                         </div>
                     </div>
 
-                    <div class="grid gap-4 md:grid-cols-2">
+                    <div v-if="isEdit" class="grid gap-4 md:grid-cols-2">
                         <div class="grid gap-2">
                             <Label for="password">{{ t('app.tenant.users.fields.password') }}</Label>
-                            <Input id="password" name="password" type="password" :required="!isEdit" autocomplete="new-password" />
-                            <p v-if="isEdit" class="text-xs text-muted-foreground">{{ t('app.tenant.users.fields.password_hint') }}</p>
+                            <Input id="password" name="password" type="password" autocomplete="new-password" />
+                            <p class="text-xs text-muted-foreground">{{ t('app.tenant.users.fields.password_hint') }}</p>
                             <InputError :message="errors.password" />
                         </div>
 
@@ -130,7 +130,6 @@ const updateFormAttrs = computed(() => {
                                 id="password_confirmation"
                                 name="password_confirmation"
                                 type="password"
-                                :required="!isEdit"
                                 autocomplete="new-password"
                             />
                             <InputError :message="errors.password_confirmation" />

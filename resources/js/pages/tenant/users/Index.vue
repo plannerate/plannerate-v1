@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/vue3';
 import TenantUserController from '@/actions/App/Http/Controllers/Tenant/UserController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import ResendPasswordSetupButton from '@/components/ResendPasswordSetupButton.vue';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -127,6 +128,12 @@ const pageMeta = useCrudPageMeta({
                                             {{ t('app.tenant.common.edit') }}
                                         </WayfinderLink>
                                     </Button>
+                                    <ResendPasswordSetupButton
+                                        v-if="user.is_active"
+                                        variant="button"
+                                        :resend-url="TenantUserController.resendPasswordSetup.url({ user: user.id }).replace(/^\/\/[^/]+/, '')"
+                                        :user-name="user.name"
+                                    />
                                     <Button variant="destructive" size="sm" as-child>
                                         <WayfinderLink
                                             :href="TenantUserController.destroy.url({ user: user.id })"

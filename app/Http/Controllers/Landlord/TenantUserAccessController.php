@@ -9,14 +9,17 @@ use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Impersonation\IssueImpersonationService;
+use App\Services\PasswordSetup\IssuePasswordSetupService;
 use App\Support\Authorization\RbacType;
 use App\Support\Impersonation\ImpersonationException;
+use App\Support\PasswordSetup\PasswordSetupException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -157,14 +160,28 @@ class TenantUserAccessController extends Controller
             $this->ensureUserCreationAllowed($tenant);
         }
 
-        $this->runInTenantContext($tenant, function () use ($validated, $tenant): void {
+        $tenantUser = $this->runInTenantContext($tenant, function () use ($validated, $tenant): User {
             $tenantUser = User::query()->create([
                 ...Arr::except($validated, ['role_names']),
+                'password' => Str::password(32),
                 'is_active' => (bool) ($validated['is_active'] ?? true),
             ]);
 
             $this->syncTenantRoles($tenant, $tenantUser, $validated['role_names'] ?? []);
+
+            return $tenantUser;
         });
+
+        try {
+            app(IssuePasswordSetupService::class)->issue($tenant, $tenantUser->id, $request->user(), $request);
+        } catch (PasswordSetupException $exception) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => $exception->getMessage(),
+            ]);
+
+            return $this->toLandlordRoute('landlord.tenants.access.edit', ['tenant' => $tenant]);
+        }
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -380,6 +397,33 @@ class TenantUserAccessController extends Controller
     }
 
     /**
+     * Reenvia o link de definição de senha para um usuário do tenant, invalidando
+     * qualquer link pendente anterior.
+     */
+    public function resendPasswordSetup(Request $request, Tenant $tenant, string $userId): RedirectResponse
+    {
+        $this->authorize('update', $tenant);
+
+        try {
+            app(IssuePasswordSetupService::class)->issue($tenant, $userId, $request->user(), $request, isResend: true);
+        } catch (PasswordSetupException $exception) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back();
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.tenant_access.messages.password_setup_sent'),
+        ]);
+
+        return back();
+    }
+
+    /**
      * @return array<string, array<int, string>>
      */
     private function tenantRoleNamesByUser(Tenant $tenant): array
@@ -477,7 +521,6 @@ class TenantUserAccessController extends Controller
                     'max:255',
                     Rule::unique("{$tenantConnection}.users", 'email')->whereNull('deleted_at'),
                 ],
-                'password' => ['required', 'string', 'min:8', 'confirmed'],
                 'is_active' => ['sometimes', 'boolean'],
                 'role_names' => ['nullable', 'array'],
                 'role_names.*' => [

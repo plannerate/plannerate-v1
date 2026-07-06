@@ -131,18 +131,6 @@ function getUserInitials(name: string): string {
                                     <Input id="create_email" name="email" type="email" required />
                                     <InputError :message="errors.email" />
                                 </div>
-
-                                <div class="grid gap-2">
-                                    <Label for="create_password">{{ t('app.landlord.users.fields.password') }}</Label>
-                                    <Input id="create_password" name="password" type="password" required />
-                                    <InputError :message="errors.password" />
-                                </div>
-
-                                <div class="grid gap-2">
-                                    <Label for="create_password_confirmation">{{ t('app.landlord.users.fields.password_confirmation') }}</Label>
-                                    <Input id="create_password_confirmation" name="password_confirmation" type="password" required />
-                                    <InputError :message="errors.password_confirmation" />
-                                </div>
                             </div>
 
                             <div class="space-y-4">

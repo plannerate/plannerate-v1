@@ -10,12 +10,15 @@ use App\Http\Requests\Tenant\UpdateUserRequest;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\PasswordSetup\IssuePasswordSetupService;
 use App\Support\Authorization\RbacType;
+use App\Support\PasswordSetup\PasswordSetupException;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -79,10 +82,25 @@ class UserController extends Controller
 
         $user = User::query()->create([
             ...Arr::except($validated, ['role_ids']),
+            'password' => Str::password(32),
             'is_active' => $request->boolean('is_active', true),
         ]);
 
         $this->syncTenantRoles($user, $roleIds);
+
+        $tenant = Tenant::current();
+        abort_if(! $tenant instanceof Tenant, 404);
+
+        try {
+            app(IssuePasswordSetupService::class)->issue($tenant, $user->id, $request->user(), $request);
+        } catch (PasswordSetupException $exception) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => $exception->getMessage(),
+            ]);
+
+            return $this->toTenantRoute('tenant.users.index');
+        }
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -158,6 +176,36 @@ class UserController extends Controller
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.tenant.users.messages.deleted'),
+        ]);
+
+        return $this->toTenantRoute('tenant.users.index');
+    }
+
+    /**
+     * Reenvia o link de definição de senha para um usuário do próprio tenant
+     * (autoatendimento), invalidando qualquer link pendente anterior.
+     */
+    public function resendPasswordSetup(Request $request, User $user): RedirectResponse
+    {
+        $this->authorize('update', $user);
+
+        $tenant = Tenant::current();
+        abort_if(! $tenant instanceof Tenant, 404);
+
+        try {
+            app(IssuePasswordSetupService::class)->issue($tenant, $user->id, $request->user(), $request, isResend: true);
+        } catch (PasswordSetupException $exception) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => $exception->getMessage(),
+            ]);
+
+            return $this->toTenantRoute('tenant.users.index');
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.users.messages.password_setup_sent'),
         ]);
 
         return $this->toTenantRoute('tenant.users.index');

@@ -103,6 +103,9 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::post('tenants/{tenant}/access/users/{userId}/impersonate', [Landlord\TenantUserAccessController::class, 'impersonate'])
         ->middleware('throttle:6,1')
         ->name('landlord.tenants.access.users.impersonate');
+    Route::post('tenants/{tenant}/access/users/{userId}/password-setup/resend', [Landlord\TenantUserAccessController::class, 'resendPasswordSetup'])
+        ->middleware('throttle:6,1')
+        ->name('landlord.tenants.access.users.password-setup.resend');
 
     Route::get('tenants/{tenant}/gondola-defaults', [Landlord\TenantGondolaDefaultsController::class, 'edit'])
         ->name('landlord.tenants.gondola-defaults.edit');

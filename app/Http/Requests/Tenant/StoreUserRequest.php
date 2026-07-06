@@ -28,7 +28,6 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique($usersTable, 'email')->whereNull('deleted_at')],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
             'is_active' => ['sometimes', 'boolean'],
             'role_ids' => ['nullable', 'array'],
             'role_ids.*' => [

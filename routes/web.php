@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\TenantSocialiteController;
 use App\Http\Controllers\Tenant\ImpersonationController;
+use App\Http\Controllers\Tenant\PasswordSetupController;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -30,6 +31,17 @@ Route::middleware(['web', NeedsTenant::class])
         Route::get('/impersonation/consume/{code}', [ImpersonationController::class, 'consume'])
             ->middleware('throttle:10,1')
             ->name('tenant.impersonation.consume');
+    });
+
+// ── PASSWORD SETUP consume — subdomain, sem auth, com NeedsTenant ───
+Route::middleware(['web', NeedsTenant::class])
+    ->group(function (): void {
+        Route::get('/password/setup/{code}', [PasswordSetupController::class, 'edit'])
+            ->middleware('throttle:10,1')
+            ->name('tenant.password-setup.edit');
+        Route::post('/password/setup/{code}', [PasswordSetupController::class, 'update'])
+            ->middleware('throttle:6,1')
+            ->name('tenant.password-setup.update');
     });
 // Route::prefix('admin')
 // ->group(function (): void {

@@ -152,6 +152,9 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
         Route::resource('users', Tenant\UserController::class)
             ->except(['show'])
             ->names('users');
+        Route::post('users/{user}/password-setup/resend', [Tenant\UserController::class, 'resendPasswordSetup'])
+            ->middleware('throttle:6,1')
+            ->name('users.password-setup.resend');
 
         // ── Notifications ─────────────────────────────────────
         Route::post('notifications/read-all', [Tenant\NotificationController::class, 'markAllRead'])

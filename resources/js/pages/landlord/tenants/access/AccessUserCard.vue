@@ -4,6 +4,7 @@ import { useDebounceFn } from '@vueuse/core';
 import { Edit, LogIn, Mail, RotateCcw, Trash2, XCircle } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
+import ResendPasswordSetupButton from '@/components/ResendPasswordSetupButton.vue';
 import WayfinderLink from '@/components/WayfinderLink.vue';
 import {
     AlertDialog,
@@ -251,6 +252,13 @@ function getUserInitials(name: string): string {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+
+                <ResendPasswordSetupButton
+                    v-if="!user.deleted_at && user.is_active"
+                    variant="icon"
+                    :resend-url="tenantWayfinderPath(TenantUserAccessController.resendPasswordSetup.url({ tenant: tenantId, userId: user.id }))"
+                    :user-name="user.name"
+                />
             </div>
 
             <!-- Delete / Restore -->

@@ -6,6 +6,7 @@ import planogramTemplates from './planogram-templates'
 import planogramProductRules from './planogram-product-rules'
 import auth from './auth'
 import impersonation from './impersonation'
+import passwordSetup from './password-setup'
 import editor from './editor'
 import planograms from './planograms'
 import categories from './categories'
@@ -115,6 +116,7 @@ const tenant = {
     planogramProductRules: Object.assign(planogramProductRules, planogramProductRules),
     auth: Object.assign(auth, auth),
     impersonation: Object.assign(impersonation, impersonation),
+    passwordSetup: Object.assign(passwordSetup, passwordSetup),
     editor: Object.assign(editor, editor),
     planograms: Object.assign(planograms, planograms),
     dashboard: Object.assign(dashboard, dashboard),

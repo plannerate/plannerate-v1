@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 import users from './users'
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::edit
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:38
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:41
 * @route '//plannerate.localhost/tenants/{tenant}/access'
 */
 export const edit = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -17,7 +17,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::edit
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:38
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:41
 * @route '//plannerate.localhost/tenants/{tenant}/access'
 */
 edit.url = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -50,7 +50,7 @@ edit.url = (args: { tenant: string | { id: string } } | [tenant: string | { id: 
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::edit
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:38
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:41
 * @route '//plannerate.localhost/tenants/{tenant}/access'
 */
 edit.get = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -60,7 +60,7 @@ edit.get = (args: { tenant: string | { id: string } } | [tenant: string | { id: 
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::edit
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:38
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:41
 * @route '//plannerate.localhost/tenants/{tenant}/access'
 */
 edit.head = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -70,7 +70,7 @@ edit.head = (args: { tenant: string | { id: string } } | [tenant: string | { id:
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::edit
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:38
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:41
 * @route '//plannerate.localhost/tenants/{tenant}/access'
 */
 const editForm = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -80,7 +80,7 @@ const editForm = (args: { tenant: string | { id: string } } | [tenant: string | 
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::edit
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:38
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:41
 * @route '//plannerate.localhost/tenants/{tenant}/access'
 */
 editForm.get = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -90,7 +90,7 @@ editForm.get = (args: { tenant: string | { id: string } } | [tenant: string | { 
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::edit
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:38
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:41
 * @route '//plannerate.localhost/tenants/{tenant}/access'
 */
 editForm.head = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
