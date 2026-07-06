@@ -4,7 +4,9 @@
 
 use App\Http\Controllers\Settings;
 use App\Http\Controllers\Tenant;
+use App\Http\Controllers\Tenant\ImpersonationController;
 use App\Http\Controllers\Tenant\Products\DimensionApprovalController;
+use App\Http\Middleware\EnsureValidImpersonationSession;
 use App\Http\Middleware\SetPermissionTeamContext;
 use App\Support\Modules\ModuleSlug;
 use Illuminate\Support\Facades\Route;
@@ -13,7 +15,7 @@ use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 // ── EDITOR & AUTO-PLANOGRAM (sem redirect de client) ─────────
 // Rotas do editor visual e API interna do auto-planograma.
 // Não passam pelo middleware tenant.client.redirect.
-Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
+Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class, EnsureValidImpersonationSession::class])
     ->name('tenant.')
     ->group(function (): void {
 
@@ -25,12 +27,17 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
         Route::get('editor/planograms/{record}/gondolas/editor', [Tenant\Editor\EditorPlanogramController::class, 'edit'])
             ->name('planograms.gondolas.editor');
 
+        // ── Impersonation: sair (precisa funcionar mesmo para o papel "client") ──
+        Route::post('impersonation/leave', [ImpersonationController::class, 'leave'])
+            ->middleware('throttle:6,1')
+            ->name('impersonation.leave');
+
     });
 
 // ── TENANT PRINCIPAL ──────────────────────────────────────────
 // Todas as rotas abaixo passam pelo middleware tenant.client.redirect,
 // que bloqueia usuários do tipo "client" de acessar áreas restritas.
-Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class, 'tenant.client.redirect'])
+Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class, EnsureValidImpersonationSession::class, 'tenant.client.redirect'])
     ->name('tenant.')
     ->group(function (): void {
 

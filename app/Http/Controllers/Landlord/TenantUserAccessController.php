@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
+use App\Http\Controllers\Concerns\SwitchesTenantContext;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Impersonation\IssueImpersonationService;
 use App\Support\Authorization\RbacType;
+use App\Support\Impersonation\ImpersonationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -18,11 +21,11 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\Multitenancy\Models\Tenant as CurrentTenantModel;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class TenantUserAccessController extends Controller
 {
-    use InteractsWithTrashedFilter;
+    use InteractsWithTrashedFilter, SwitchesTenantContext;
 
     /**
      * @var list<string>
@@ -117,6 +120,7 @@ class TenantUserAccessController extends Controller
                 'plan_user_limit' => $planUserLimit,
                 'users_count' => $adminCount,
                 'limit_message' => $adminLimitReached ? __('app.landlord.tenant_access.messages.limit_reached') : null,
+                'can_impersonate' => $request->user()->can('impersonate', $tenant),
             ],
             'users' => $users,
             'roles' => $roles,
@@ -353,6 +357,29 @@ class TenantUserAccessController extends Controller
     }
 
     /**
+     * Issue an impersonation code for a tenant user and redirect the browser to the tenant's
+     * host to consume it. Uses Inertia::location() so the cross-host hop happens automatically
+     * even though the trigger is a normal Inertia visit.
+     */
+    public function impersonate(Request $request, Tenant $tenant, string $userId): RedirectResponse|SymfonyResponse
+    {
+        $this->authorize('impersonate', $tenant);
+
+        try {
+            $issued = app(IssueImpersonationService::class)->issue($request->user(), $tenant, $userId, $request);
+        } catch (ImpersonationException $exception) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back();
+        }
+
+        return Inertia::location($issued['consumeUrl']);
+    }
+
+    /**
      * @return array<string, array<int, string>>
      */
     private function tenantRoleNamesByUser(Tenant $tenant): array
@@ -499,39 +526,6 @@ class TenantUserAccessController extends Controller
                 ],
             ])->validate();
         });
-    }
-
-    /**
-     * @template TReturn
-     *
-     * @param  callable(): TReturn  $callback
-     * @return TReturn
-     */
-    private function runInTenantContext(Tenant $tenant, callable $callback): mixed
-    {
-        $tenantConnectionName = $this->resolveTenantConnectionName();
-        $originalTenantDatabase = config("database.connections.{$tenantConnectionName}.database");
-        $originalTenant = CurrentTenantModel::current();
-        $tenant->makeCurrent();
-
-        try {
-            return $callback();
-        } finally {
-            if ($originalTenant !== null) {
-                $originalTenant->makeCurrent();
-            } else {
-                CurrentTenantModel::forgetCurrent();
-                config([
-                    "database.connections.{$tenantConnectionName}.database" => $originalTenantDatabase,
-                ]);
-                DB::purge($tenantConnectionName);
-            }
-        }
-    }
-
-    private function resolveTenantConnectionName(): string
-    {
-        return (string) (config('multitenancy.tenant_database_connection_name') ?: 'tenant');
     }
 
     private function countTenantAdminUsers(Tenant $tenant): int

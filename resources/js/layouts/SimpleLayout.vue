@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import ImpersonationBanner from '@/components/ImpersonationBanner.vue';
 import { Toaster } from '@/components/ui/sonner';
 
 interface Props {
@@ -23,8 +24,9 @@ const pageTitle = computed(() => props.title || 'Dashboard');
 <template>
   <Head :title="pageTitle" />
 
-  <div class="min-h-screen bg-background"> 
+  <div class="min-h-screen bg-background">
     <Toaster />
+    <ImpersonationBanner />
     
     <div class="w-full mx-auto px-4 sm:px-6 lg:px-8" :class="`max-w-${props.maxWidth}`">
       <slot>

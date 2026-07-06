@@ -23,6 +23,7 @@ type TenantPayload = {
     plan_user_limit: number | null;
     users_count: number;
     limit_message: string | null;
+    can_impersonate: boolean;
 };
 
 type UserAccessRow = {
@@ -174,6 +175,7 @@ const pageMeta = useCrudPageMeta({
                     :tenant-id="props.tenant.id"
                     :roles="props.roles"
                     :admin-limit-reached="adminLimitReached"
+                    :can-impersonate="props.tenant.can_impersonate"
                     @edit="openEditDrawer"
                 />
 

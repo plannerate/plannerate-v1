@@ -100,6 +100,9 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->name('landlord.tenants.access.users.restore');
     Route::delete('tenants/{tenant}/access/users/{userId}/force', [Landlord\TenantUserAccessController::class, 'forceDelete'])
         ->name('landlord.tenants.access.users.force-delete');
+    Route::post('tenants/{tenant}/access/users/{userId}/impersonate', [Landlord\TenantUserAccessController::class, 'impersonate'])
+        ->middleware('throttle:6,1')
+        ->name('landlord.tenants.access.users.impersonate');
 
     Route::get('tenants/{tenant}/gondola-defaults', [Landlord\TenantGondolaDefaultsController::class, 'edit'])
         ->name('landlord.tenants.gondola-defaults.edit');

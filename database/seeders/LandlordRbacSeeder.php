@@ -77,6 +77,7 @@ class LandlordRbacSeeder extends Seeder
             PermissionName::LANDLORD_TENANTS_CREATE,
             PermissionName::LANDLORD_TENANTS_UPDATE,
             PermissionName::LANDLORD_TENANTS_DELETE,
+            PermissionName::LANDLORD_TENANTS_IMPERSONATE,
             PermissionName::LANDLORD_ROLES_VIEW_ANY,
             PermissionName::LANDLORD_ROLES_VIEW,
             PermissionName::LANDLORD_ROLES_CREATE,

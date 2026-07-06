@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
-import { Edit, Mail, RotateCcw, Trash2, XCircle } from 'lucide-vue-next';
+import { Edit, LogIn, Mail, RotateCcw, Trash2, XCircle } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import WayfinderLink from '@/components/WayfinderLink.vue';
@@ -39,6 +39,7 @@ const props = defineProps<{
     tenantId: string;
     roles: RoleOption[];
     adminLimitReached: boolean;
+    canImpersonate: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -72,6 +73,22 @@ function onActiveChange(tenantId: string, userId: string, currentIsActive: boole
 }
 
 const isForceDeleteOpen = ref(false);
+const isImpersonateOpen = ref(false);
+
+/**
+ * Emite o código de impersonation e navega o navegador para o host do tenant para consumi-lo.
+ */
+function onImpersonate(): void {
+    router.post(
+        TenantUserAccessController.impersonate.url({ tenant: props.tenantId, userId: props.user.id }),
+        {},
+        {
+            onFinish: () => {
+                isImpersonateOpen.value = false;
+            },
+        },
+    );
+}
 
 /**
  * Exclui o usuário definitivamente (hard delete) após confirmação no diálogo.
@@ -198,16 +215,43 @@ function getUserInitials(name: string): string {
 
         <!-- Footer action strip -->
         <div class="flex items-center justify-between border-t border-border bg-muted/30 px-6 py-3">
-            <!-- Edit -->
-            <button
-                v-if="!user.deleted_at"
-                class="rounded-lg p-2 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
-                :title="t('app.landlord.common.edit')"
-                @click="emit('edit', user.id)"
-            >
-                <Edit class="size-4" />
-            </button>
-            <div v-else />
+            <!-- Edit + Logar como -->
+            <div class="flex items-center gap-1">
+                <button
+                    v-if="!user.deleted_at"
+                    class="rounded-lg p-2 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
+                    :title="t('app.landlord.common.edit')"
+                    @click="emit('edit', user.id)"
+                >
+                    <Edit class="size-4" />
+                </button>
+
+                <AlertDialog v-if="!user.deleted_at && user.is_active && canImpersonate" v-model:open="isImpersonateOpen">
+                    <AlertDialogTrigger as-child>
+                        <button
+                            type="button"
+                            class="rounded-lg p-2 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
+                            :title="t('app.landlord.tenant_access.impersonate.title')"
+                        >
+                            <LogIn class="size-4" />
+                        </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{{ t('app.landlord.tenant_access.impersonate.title') }}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {{ t('app.landlord.tenant_access.impersonate.description', { name: user.name }) }}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>{{ t('app.actions.cancel') }}</AlertDialogCancel>
+                            <AlertDialogAction @click="onImpersonate">
+                                {{ t('app.landlord.tenant_access.impersonate.confirm') }}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
 
             <!-- Delete / Restore -->
             <WayfinderLink

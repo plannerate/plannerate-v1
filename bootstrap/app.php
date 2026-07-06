@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\BlockActionsWhileImpersonating;
+use App\Http\Middleware\EnsureValidImpersonationSession;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\InjectTenantUrlDefaults;
@@ -54,6 +56,16 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         /*
+         * EnsureValidImpersonationSession precisa rodar depois de NeedsTenant/SetPermissionTeamContext
+         * (depende de Tenant::current() e do usuário autenticado já resolvidos) mas ainda antes de
+         * SubstituteBindings.
+         */
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: EnsureValidImpersonationSession::class,
+        );
+
+        /*
          * InjectTenantUrlDefaults extrai o subdomain do host e chama URL::defaults() para que
          * route('tenant.xxx') funcione sem passar o parâmetro subdomain manualmente.
          * É adicionado ao web group antes de HandleInertiaRequests, que constrói a navegação
@@ -72,6 +84,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.module.active' => RequireActiveTenantModule::class,
             'tenant.client.redirect' => RedirectClientRole::class,
             'tenant.url.defaults' => InjectTenantUrlDefaults::class,
+            'impersonation.block' => BlockActionsWhileImpersonating::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

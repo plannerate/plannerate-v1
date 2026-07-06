@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Tenant;
+use App\Models\TenantImpersonationToken;
 use App\Models\TenantSocialiteProvider;
 use App\Support\Modules\TenantModuleService;
 use App\Support\Navigation\SidebarNavigationService;
@@ -114,6 +115,35 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'navigation' => app(SidebarNavigationService::class)->build($request),
+            'impersonation' => fn (): ?array => $this->resolveImpersonationBanner($request),
+        ];
+    }
+
+    /**
+     * Monta os dados do banner de impersonation exibido no frontend, ou null se a sessão
+     * atual não estiver marcada como uma sessão de impersonation ativa.
+     *
+     * @return array{target_user_name: ?string, initiator_name: ?string, tenant_name: ?string, started_at: ?string}|null
+     */
+    private function resolveImpersonationBanner(Request $request): ?array
+    {
+        $tokenId = $request->session()->get('impersonation.token_id');
+
+        if (! is_string($tokenId)) {
+            return null;
+        }
+
+        $token = TenantImpersonationToken::query()->find($tokenId);
+
+        if ($token === null) {
+            return null;
+        }
+
+        return [
+            'target_user_name' => $token->target_user_name,
+            'initiator_name' => $token->issuer_name,
+            'tenant_name' => $token->tenant?->name,
+            'started_at' => $token->consumed_at?->toISOString(),
         ];
     }
 

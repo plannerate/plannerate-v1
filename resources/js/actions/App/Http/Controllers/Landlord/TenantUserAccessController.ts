@@ -694,6 +694,81 @@ forceDeleteForm.delete = (args: { tenant: string | { id: string }, userId: strin
 
 forceDelete.form = forceDeleteForm
 
-const TenantUserAccessController = { edit, store, update, toggleActive, syncRoles, destroy, restore, forceDelete }
+/**
+* @see \App\Http\Controllers\Landlord\TenantUserAccessController::impersonate
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:357
+* @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/impersonate'
+*/
+export const impersonate = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: impersonate.url(args, options),
+    method: 'post',
+})
+
+impersonate.definition = {
+    methods: ["post"],
+    url: '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/impersonate',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\Landlord\TenantUserAccessController::impersonate
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:357
+* @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/impersonate'
+*/
+impersonate.url = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions) => {
+    if (Array.isArray(args)) {
+        args = {
+            tenant: args[0],
+            userId: args[1],
+        }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+        tenant: typeof args.tenant === 'object'
+        ? args.tenant.id
+        : args.tenant,
+        userId: args.userId,
+    }
+
+    return impersonate.definition.url
+            .replace('{tenant}', parsedArgs.tenant.toString())
+            .replace('{userId}', parsedArgs.userId.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Landlord\TenantUserAccessController::impersonate
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:357
+* @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/impersonate'
+*/
+impersonate.post = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: impersonate.url(args, options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Landlord\TenantUserAccessController::impersonate
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:357
+* @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/impersonate'
+*/
+const impersonateForm = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: impersonate.url(args, options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Landlord\TenantUserAccessController::impersonate
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:357
+* @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/impersonate'
+*/
+impersonateForm.post = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: impersonate.url(args, options),
+    method: 'post',
+})
+
+impersonate.form = impersonateForm
+
+const TenantUserAccessController = { edit, store, update, toggleActive, syncRoles, destroy, restore, forceDelete, impersonate }
 
 export default TenantUserAccessController

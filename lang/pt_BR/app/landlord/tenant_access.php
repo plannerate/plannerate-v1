@@ -24,6 +24,11 @@ return [
         'description' => 'Esta ação é irreversível. O usuário :name e seus perfis de acesso serão removidos permanentemente.',
         'confirm' => 'Excluir definitivamente',
     ],
+    'impersonate' => [
+        'title' => 'Logar como este usuário?',
+        'description' => 'Você será autenticado como :name para fins de suporte. Ações sensíveis (senha, email, 2FA) ficarão bloqueadas enquanto o acesso estiver ativo.',
+        'confirm' => 'Logar como',
+    ],
     'messages' => [
         'created' => 'Usuário criado com sucesso.',
         'updated' => 'Acesso do usuário atualizado com sucesso.',

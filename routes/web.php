@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\TenantSocialiteController;
+use App\Http\Controllers\Tenant\ImpersonationController;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +22,14 @@ Route::middleware(['web', NeedsTenant::class])
             ->name('tenant.auth.socialite.redirect');
         Route::get('/auth/{provider}/callback', [TenantSocialiteController::class, 'callback'])
             ->name('tenant.auth.socialite.callback');
+    });
+
+// ── IMPERSONATION consume — subdomain, sem auth, com NeedsTenant ───
+Route::middleware(['web', NeedsTenant::class])
+    ->group(function (): void {
+        Route::get('/impersonation/consume/{code}', [ImpersonationController::class, 'consume'])
+            ->middleware('throttle:10,1')
+            ->name('tenant.impersonation.consume');
     });
 // Route::prefix('admin')
 // ->group(function (): void {

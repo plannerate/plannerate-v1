@@ -44,6 +44,8 @@ final class PermissionName
 
     public const LANDLORD_TENANTS_DELETE = 'landlord.tenants.delete';
 
+    public const LANDLORD_TENANTS_IMPERSONATE = 'landlord.tenants.impersonate';
+
     public const LANDLORD_ROLES_VIEW_ANY = 'landlord.roles.viewAny';
 
     public const LANDLORD_ROLES_VIEW = 'landlord.roles.view';
@@ -260,6 +262,7 @@ final class PermissionName
             self::LANDLORD_TENANTS_CREATE,
             self::LANDLORD_TENANTS_UPDATE,
             self::LANDLORD_TENANTS_DELETE,
+            self::LANDLORD_TENANTS_IMPERSONATE,
             self::LANDLORD_ROLES_VIEW_ANY,
             self::LANDLORD_ROLES_VIEW,
             self::LANDLORD_ROLES_CREATE,
@@ -429,6 +432,10 @@ final class PermissionName
      * @var array<string, array{short_name: string, description: string}>
      */
     private const OVERRIDES = [
+        self::LANDLORD_TENANTS_IMPERSONATE => [
+            'short_name' => 'Logar como Usuário do Cliente',
+            'description' => 'Permite acessar a plataforma autenticado como um usuário de um cliente (tenant), para fins de suporte.',
+        ],
         self::TENANT_DASHBOARD_VIEW => [
             'short_name' => 'Acessar Painel',
             'description' => 'Permite acessar o painel principal (dashboard) do cliente com os indicadores gerais.',
