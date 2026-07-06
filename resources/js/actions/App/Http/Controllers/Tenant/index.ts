@@ -1,3 +1,4 @@
+import ImpersonationController from './ImpersonationController'
 import Editor from './Editor'
 import DashboardController from './DashboardController'
 import CategoryController from './CategoryController'
@@ -22,6 +23,7 @@ import WorkflowPlanogramStepController from './WorkflowPlanogramStepController'
 import ReverbTestController from './ReverbTestController'
 
 const Tenant = {
+    ImpersonationController: Object.assign(ImpersonationController, ImpersonationController),
     Editor: Object.assign(Editor, Editor),
     DashboardController: Object.assign(DashboardController, DashboardController),
     CategoryController: Object.assign(CategoryController, CategoryController),
