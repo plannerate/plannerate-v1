@@ -1,0 +1,1 @@
+[Plannerate]({{ $url }})
