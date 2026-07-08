@@ -1,6 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 import cloudflare from './cloudflare'
 import access from './access'
+import mercadologico from './mercadologico'
 import gondolaDefaults from './gondola-defaults'
 import socialiteProvider from './socialite-provider'
 import integration from './integration'
@@ -868,6 +869,7 @@ const tenants = {
     provision: Object.assign(provision, provision),
     cloudflare: Object.assign(cloudflare, cloudflare),
     access: Object.assign(access, access),
+    mercadologico: Object.assign(mercadologico, mercadologico),
     gondolaDefaults: Object.assign(gondolaDefaults, gondolaDefaults),
     socialiteProvider: Object.assign(socialiteProvider, socialiteProvider),
     integration: Object.assign(integration, integration),

@@ -37,6 +37,8 @@ return [
         'select_target' => 'Selecione a categoria de destino',
         'open_target_hint' => 'Abra outra categoria como destino',
         'load_more' => 'Carregar mais',
+        'close' => 'Fechar',
+        'drag_hint' => 'Arraste os produtos para outra janela para movê-los',
         'not_leaf_warning' => 'A categoria de destino não é uma folha da árvore.',
         'columns' => [
             'name' => 'Produto',

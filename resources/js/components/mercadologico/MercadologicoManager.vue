@@ -15,8 +15,8 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { useT } from '@/composables/useT';
 
-import CategoryProductsModal from './CategoryProductsModal.vue';
 import CategoryTree from './CategoryTree.vue';
+import FloatingProductsPanel from './FloatingProductsPanel.vue';
 import type { MercadologicoUrls, OpenModal, TreeNode } from './types';
 import type { DropTarget } from './useCategoryDrag';
 import { ROOT_TARGET } from './useCategoryDrag';
@@ -102,29 +102,47 @@ function confirmMove(): void {
     );
 }
 
-// ── Modais de produtos (uma por categoria) ────────────────
-const openModals = ref<OpenModal[]>([]);
-const modalVersion = reactive<Record<string, number>>({});
+// ── Painéis flutuantes de produtos (um por categoria) ─────
+type ProductsPanel = { refetch: () => void };
+
+const openPanels = ref<OpenModal[]>([]);
+const panelPositions = reactive<Record<string, { x: number; y: number }>>({});
+// Refs de cada painel aberto, para recarregá-los após um move (sem remount).
+const panelRefs: Record<string, ProductsPanel | null> = {};
+
+function setPanelRef(categoryId: string, el: unknown): void {
+    if (el) {
+        panelRefs[categoryId] = el as ProductsPanel;
+    } else {
+        delete panelRefs[categoryId];
+    }
+}
 
 function openProducts(node: TreeNode): void {
-    if (openModals.value.some((modal) => modal.categoryId === node.id)) {
+    if (openPanels.value.some((panel) => panel.categoryId === node.id)) {
         return;
     }
 
-    openModals.value = [
-        ...openModals.value,
+    // Cascata leve para não empilhar as janelas exatamente umas sobre as outras.
+    const offset = openPanels.value.length % 8;
+    panelPositions[node.id] = { x: 96 + offset * 34, y: 84 + offset * 34 };
+
+    openPanels.value = [
+        ...openPanels.value,
         { categoryId: node.id, categoryName: node.name },
     ];
 }
 
-function closeModal(categoryId: string): void {
-    openModals.value = openModals.value.filter(
-        (modal) => modal.categoryId !== categoryId,
+function closePanel(categoryId: string): void {
+    openPanels.value = openPanels.value.filter(
+        (panel) => panel.categoryId !== categoryId,
     );
+    delete panelPositions[categoryId];
+    delete panelRefs[categoryId];
 }
 
 function otherCategoriesFor(categoryId: string): OpenModal[] {
-    return openModals.value.filter((modal) => modal.categoryId !== categoryId);
+    return openPanels.value.filter((panel) => panel.categoryId !== categoryId);
 }
 
 function onProductsMoved(payload: {
@@ -134,8 +152,9 @@ function onProductsMoved(payload: {
 }): void {
     store.adjustProductsCount(payload.from, -payload.count);
     store.adjustProductsCount(payload.to, payload.count);
-    // Força a modal de destino (se aberta) a recarregar seus produtos.
-    modalVersion[payload.to] = (modalVersion[payload.to] ?? 0) + 1;
+    // Recarrega os painéis de origem e destino que estiverem abertos.
+    panelRefs[payload.from]?.refetch();
+    panelRefs[payload.to]?.refetch();
 }
 </script>
 
@@ -190,14 +209,16 @@ function onProductsMoved(payload: {
             </DialogContent>
         </Dialog>
 
-        <!-- Modais de produtos por categoria -->
-        <CategoryProductsModal
-            v-for="modal in openModals"
-            :key="`${modal.categoryId}-${modalVersion[modal.categoryId] ?? 0}`"
+        <!-- Painéis flutuantes de produtos (não bloqueiam a navegação na árvore) -->
+        <FloatingProductsPanel
+            v-for="panel in openPanels"
+            :key="panel.categoryId"
+            :ref="(el) => setPanelRef(panel.categoryId, el)"
             :urls="urls"
-            :category="modal"
-            :other-categories="otherCategoriesFor(modal.categoryId)"
-            @close="closeModal(modal.categoryId)"
+            :category="panel"
+            :other-categories="otherCategoriesFor(panel.categoryId)"
+            :initial-position="panelPositions[panel.categoryId] ?? { x: 96, y: 84 }"
+            @close="closePanel(panel.categoryId)"
             @moved="onProductsMoved"
         />
     </div>
