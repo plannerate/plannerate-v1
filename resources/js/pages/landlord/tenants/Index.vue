@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { KeyRound, Layers, Link2, Ruler, Users } from 'lucide-vue-next';
+import { FolderTree, KeyRound, Layers, Link2, Ruler, Users } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantGondolaDefaultsController from '@/actions/App/Http/Controllers/Landlord/TenantGondolaDefaultsController';
@@ -17,6 +17,7 @@ import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { mercadologicoUrls } from '@/pages/landlord/tenants/mercadologico/routes';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import type { Paginator } from '@/types';
 import TenantSocialiteSheet from './TenantSocialiteSheet.vue';
@@ -354,6 +355,18 @@ function openSsoSheet(tenant: TenantRow): void {
                                             {{
                                                 t('app.landlord.tenants.gondola_defaults.navigation')
                                             }}
+                                        </Link>
+                                    </Button>
+
+                                    <!-- Mercadológico — manutenção da árvore de categorias do tenant -->
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        as-child
+                                    >
+                                        <Link :href="mercadologicoUrls.index(tenant.id)">
+                                            <FolderTree class="size-4" />
+                                            {{ t('app.landlord.mercadologico.navigation') }}
                                         </Link>
                                     </Button>
 

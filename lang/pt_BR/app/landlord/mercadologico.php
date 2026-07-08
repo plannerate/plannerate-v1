@@ -15,6 +15,7 @@ return [
         'placeholder_badge' => 'Placeholder',
         'expand' => 'Expandir',
         'collapse' => 'Recolher',
+        'move_to_root' => 'Solte aqui para mover para a raiz',
     ],
 
     'move' => [
@@ -34,6 +35,8 @@ return [
         'move_to' => 'Mover para…',
         'move_selected' => 'Mover selecionados',
         'select_target' => 'Selecione a categoria de destino',
+        'open_target_hint' => 'Abra outra categoria como destino',
+        'load_more' => 'Carregar mais',
         'not_leaf_warning' => 'A categoria de destino não é uma folha da árvore.',
         'columns' => [
             'name' => 'Produto',

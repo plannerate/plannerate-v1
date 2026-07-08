@@ -309,24 +309,31 @@ Unit test:
   nos docblocks dos serviços (inclusive um `use` de controller só para documentação) —
   inofensivo, é só referência de doc.
 
-### Fase 2 — Frontend árvore + drag
-- [ ] `Index.vue` + `CategoryTree.vue` + `CategoryTreeNode.vue` (recursivo, expand **lazy** c/ skeleton)
-- [ ] `useCategoryTree.ts` (estado lazy, `loadChildren`/`refreshNode` via `useHttp`)
-- [ ] `useCategoryDrag.ts` (DnD nativo, validação de ciclo)
-- [ ] Confirmação com contagem de impacto + `router.post` do move + `refreshNode` origem/destino + toast
-- [ ] Link de menu/navegação landlord para a tela
+### Fase 2 — Frontend árvore + drag ✅ (implementada; lint + build verdes)
+> **Reestruturação importante:** os componentes/composables/tipos foram extraídos
+> para **`resources/js/components/mercadologico/`** (reutilizáveis, com URLs
+> **injetáveis** via `MercadologicoUrls`), e a página landlord virou fina. Assim
+> uma futura **página de tenant** só monta `<MercadologicoManager :urls :roots>`.
+- [x] `components/mercadologico/CategoryTree.vue` + `CategoryTreeNode.vue` (recursivo, expand **lazy** c/ skeleton)
+- [x] `components/mercadologico/useCategoryTree.ts` (estado lazy, `ensureLoaded`/`refresh` via `useHttp`)
+- [x] `components/mercadologico/useCategoryDrag.ts` (DnD nativo, guard de ciclo/self/pai)
+- [x] `components/mercadologico/MercadologicoManager.vue` (orquestrador reutilizável) — confirmação com contagem de impacto + `router.post` (preserveState) + `refresh` origem/destino
+- [x] `pages/landlord/tenants/mercadologico/Index.vue` (fina) + `routes.ts` (factory `landlordMercadologicoUrls`)
+- [x] Link de navegação em `pages/landlord/tenants/Index.vue`
 
-### Fase 3 — Modais de produtos
-- [ ] `CategoryProductsModal.vue` (lista, busca, seleção múltipla)
-- [ ] `useOpenProductModals.ts` (N modais simultâneas)
-- [ ] Endpoint/carregamento de produtos por categoria
-- [ ] Mover produtos entre modais (drag ou botão "mover para…")
-- [ ] Atualização otimista de contagens + toast
+### Fase 3 — Modais de produtos ✅ (implementada)
+- [x] `components/mercadologico/CategoryProductsModal.vue` (lista paginada, busca debounced, seleção múltipla)
+- [x] N modais simultâneas (estado `openModals` no `MercadologicoManager`)
+- [x] Endpoint/carregamento de produtos por categoria (`products` + `useHttp`)
+- [x] Mover produtos entre categorias (botão "mover para…" com destinos = outras modais abertas)
+- [x] Atualização otimista de contagens (`adjustProductsCount`) + remount da modal de destino
 
 ### Fase 4 — Validação
-- [ ] Build via Docker (`wayfinder:generate --with-form` só se necessário + `VITE_ENABLE_WAYFINDER=false npm run build`)
-- [ ] Validação manual no browser (tenant de teste `alberti`)
-- [ ] Rodar suíte relevante isolada
+- [x] Build via `VITE_ENABLE_WAYFINDER=false npm run build` (✓ built; página no manifest)
+- [x] Lint dos arquivos novos (eslint --fix, verde)
+- [x] Testes backend isolados (13 verdes)
+- [ ] **Validação manual no browser** (tenant de teste `alberti`) — pendente do usuário
+- [ ] Typecheck global (`vue-tsc`) — não roda neste ambiente (OOM); coberto pelo build
 
 ### Fase 5 — Pós-merge (opcional)
 - [ ] Refatorar `CategoryHierarchyImportService` para usar `CategoryHierarchyService`
