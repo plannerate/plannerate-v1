@@ -10,6 +10,7 @@ import passwordSetup from './password-setup'
 import editor from './editor'
 import planograms from './planograms'
 import categories from './categories'
+import mercadologico from './mercadologico'
 import products from './products'
 import dimensions from './dimensions'
 import similarGroups from './similar-groups'
@@ -121,6 +122,7 @@ const tenant = {
     planograms: Object.assign(planograms, planograms),
     dashboard: Object.assign(dashboard, dashboard),
     categories: Object.assign(categories, categories),
+    mercadologico: Object.assign(mercadologico, mercadologico),
     products: Object.assign(products, products),
     dimensions: Object.assign(dimensions, dimensions),
     similarGroups: Object.assign(similarGroups, similarGroups),

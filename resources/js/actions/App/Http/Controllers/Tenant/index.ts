@@ -3,6 +3,7 @@ import PasswordSetupController from './PasswordSetupController'
 import Editor from './Editor'
 import DashboardController from './DashboardController'
 import CategoryController from './CategoryController'
+import MercadologicoController from './MercadologicoController'
 import ProductController from './ProductController'
 import ProductImageController from './ProductImageController'
 import Products from './Products'
@@ -29,6 +30,7 @@ const Tenant = {
     Editor: Object.assign(Editor, Editor),
     DashboardController: Object.assign(DashboardController, DashboardController),
     CategoryController: Object.assign(CategoryController, CategoryController),
+    MercadologicoController: Object.assign(MercadologicoController, MercadologicoController),
     ProductController: Object.assign(ProductController, ProductController),
     ProductImageController: Object.assign(ProductImageController, ProductImageController),
     Products: Object.assign(Products, Products),

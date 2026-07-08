@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::index
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:36
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:38
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico'
 */
 export const index = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::index
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:36
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:38
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico'
 */
 index.url = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -49,7 +49,7 @@ index.url = (args: { tenant: string | { id: string } } | [tenant: string | { id:
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::index
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:36
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:38
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico'
 */
 index.get = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -59,7 +59,7 @@ index.get = (args: { tenant: string | { id: string } } | [tenant: string | { id:
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::index
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:36
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:38
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico'
 */
 index.head = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -69,7 +69,7 @@ index.head = (args: { tenant: string | { id: string } } | [tenant: string | { id
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::index
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:36
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:38
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico'
 */
 const indexForm = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ const indexForm = (args: { tenant: string | { id: string } } | [tenant: string |
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::index
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:36
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:38
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico'
 */
 indexForm.get = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -89,7 +89,7 @@ indexForm.get = (args: { tenant: string | { id: string } } | [tenant: string | {
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::index
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:36
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:38
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico'
 */
 indexForm.head = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -106,7 +106,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::children
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:56
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:58
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/children'
 */
 export const children = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -121,7 +121,7 @@ children.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::children
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:56
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:58
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/children'
 */
 children.url = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -154,7 +154,7 @@ children.url = (args: { tenant: string | { id: string } } | [tenant: string | { 
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::children
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:56
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:58
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/children'
 */
 children.get = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -164,7 +164,7 @@ children.get = (args: { tenant: string | { id: string } } | [tenant: string | { 
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::children
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:56
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:58
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/children'
 */
 children.head = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -174,7 +174,7 @@ children.head = (args: { tenant: string | { id: string } } | [tenant: string | {
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::children
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:56
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:58
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/children'
 */
 const childrenForm = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -184,7 +184,7 @@ const childrenForm = (args: { tenant: string | { id: string } } | [tenant: strin
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::children
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:56
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:58
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/children'
 */
 childrenForm.get = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -194,7 +194,7 @@ childrenForm.get = (args: { tenant: string | { id: string } } | [tenant: string 
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::children
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:56
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:58
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/children'
 */
 childrenForm.head = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -211,7 +211,7 @@ children.form = childrenForm
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::products
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:73
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:75
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/{category}/products'
 */
 export const products = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -226,7 +226,7 @@ products.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::products
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:73
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:75
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/{category}/products'
 */
 products.url = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions) => {
@@ -254,7 +254,7 @@ products.url = (args: { tenant: string | { id: string }, category: string | numb
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::products
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:73
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:75
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/{category}/products'
 */
 products.get = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -264,7 +264,7 @@ products.get = (args: { tenant: string | { id: string }, category: string | numb
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::products
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:73
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:75
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/{category}/products'
 */
 products.head = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -274,7 +274,7 @@ products.head = (args: { tenant: string | { id: string }, category: string | num
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::products
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:73
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:75
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/{category}/products'
 */
 const productsForm = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -284,7 +284,7 @@ const productsForm = (args: { tenant: string | { id: string }, category: string 
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::products
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:73
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:75
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/{category}/products'
 */
 productsForm.get = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -294,7 +294,7 @@ productsForm.get = (args: { tenant: string | { id: string }, category: string | 
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::products
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:73
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:75
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/{category}/products'
 */
 productsForm.head = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -311,7 +311,7 @@ products.form = productsForm
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::move
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:119
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:121
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/{category}/move'
 */
 export const move = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -326,7 +326,7 @@ move.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::move
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:119
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:121
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/{category}/move'
 */
 move.url = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions) => {
@@ -354,7 +354,7 @@ move.url = (args: { tenant: string | { id: string }, category: string | number }
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::move
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:119
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:121
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/{category}/move'
 */
 move.post = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -364,7 +364,7 @@ move.post = (args: { tenant: string | { id: string }, category: string | number 
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::move
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:119
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:121
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/{category}/move'
 */
 const moveForm = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -374,7 +374,7 @@ const moveForm = (args: { tenant: string | { id: string }, category: string | nu
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::move
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:119
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:121
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/{category}/move'
 */
 moveForm.post = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -386,7 +386,7 @@ move.form = moveForm
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::moveProducts
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:140
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:203
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/move-products'
 */
 export const moveProducts = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -401,7 +401,7 @@ moveProducts.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::moveProducts
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:140
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:203
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/move-products'
 */
 moveProducts.url = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -434,7 +434,7 @@ moveProducts.url = (args: { tenant: string | { id: string } } | [tenant: string 
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::moveProducts
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:140
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:203
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/move-products'
 */
 moveProducts.post = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -444,7 +444,7 @@ moveProducts.post = (args: { tenant: string | { id: string } } | [tenant: string
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::moveProducts
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:140
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:203
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/move-products'
 */
 const moveProductsForm = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -454,7 +454,7 @@ const moveProductsForm = (args: { tenant: string | { id: string } } | [tenant: s
 
 /**
 * @see \App\Http\Controllers\Landlord\CategoryTreeController::moveProducts
-* @see app/Http/Controllers/Landlord/CategoryTreeController.php:140
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:203
 * @route '//plannerate.localhost/tenants/{tenant}/mercadologico/move-products'
 */
 moveProductsForm.post = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -464,6 +464,331 @@ moveProductsForm.post = (args: { tenant: string | { id: string } } | [tenant: st
 
 moveProducts.form = moveProductsForm
 
-const CategoryTreeController = { index, children, products, move, moveProducts }
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::store
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:143
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories'
+*/
+export const store = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(args, options),
+    method: 'post',
+})
+
+store.definition = {
+    methods: ["post"],
+    url: '//plannerate.localhost/tenants/{tenant}/mercadologico/categories',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::store
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:143
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories'
+*/
+store.url = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { tenant: args }
+    }
+
+    if (typeof args === 'object' && !Array.isArray(args) && 'id' in args) {
+        args = { tenant: args.id }
+    }
+
+    if (Array.isArray(args)) {
+        args = {
+            tenant: args[0],
+        }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+        tenant: typeof args.tenant === 'object'
+        ? args.tenant.id
+        : args.tenant,
+    }
+
+    return store.definition.url
+            .replace('{tenant}', parsedArgs.tenant.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::store
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:143
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories'
+*/
+store.post = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(args, options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::store
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:143
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories'
+*/
+const storeForm = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: store.url(args, options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::store
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:143
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories'
+*/
+storeForm.post = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: store.url(args, options),
+    method: 'post',
+})
+
+store.form = storeForm
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::update
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:159
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}'
+*/
+export const update = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: update.url(args, options),
+    method: 'put',
+})
+
+update.definition = {
+    methods: ["put"],
+    url: '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}',
+} satisfies RouteDefinition<["put"]>
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::update
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:159
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}'
+*/
+update.url = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions) => {
+    if (Array.isArray(args)) {
+        args = {
+            tenant: args[0],
+            category: args[1],
+        }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+        tenant: typeof args.tenant === 'object'
+        ? args.tenant.id
+        : args.tenant,
+        category: args.category,
+    }
+
+    return update.definition.url
+            .replace('{tenant}', parsedArgs.tenant.toString())
+            .replace('{category}', parsedArgs.category.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::update
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:159
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}'
+*/
+update.put = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: update.url(args, options),
+    method: 'put',
+})
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::update
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:159
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}'
+*/
+const updateForm = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: update.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'PUT',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::update
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:159
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}'
+*/
+updateForm.put = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: update.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'PUT',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+update.form = updateForm
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::destroy
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:175
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}'
+*/
+export const destroy = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+    url: destroy.url(args, options),
+    method: 'delete',
+})
+
+destroy.definition = {
+    methods: ["delete"],
+    url: '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}',
+} satisfies RouteDefinition<["delete"]>
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::destroy
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:175
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}'
+*/
+destroy.url = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions) => {
+    if (Array.isArray(args)) {
+        args = {
+            tenant: args[0],
+            category: args[1],
+        }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+        tenant: typeof args.tenant === 'object'
+        ? args.tenant.id
+        : args.tenant,
+        category: args.category,
+    }
+
+    return destroy.definition.url
+            .replace('{tenant}', parsedArgs.tenant.toString())
+            .replace('{category}', parsedArgs.category.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::destroy
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:175
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}'
+*/
+destroy.delete = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+    url: destroy.url(args, options),
+    method: 'delete',
+})
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::destroy
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:175
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}'
+*/
+const destroyForm = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: destroy.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'DELETE',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::destroy
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:175
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}'
+*/
+destroyForm.delete = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: destroy.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'DELETE',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+destroy.form = destroyForm
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::restore
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:189
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}/restore'
+*/
+export const restore = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: restore.url(args, options),
+    method: 'post',
+})
+
+restore.definition = {
+    methods: ["post"],
+    url: '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}/restore',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::restore
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:189
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}/restore'
+*/
+restore.url = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions) => {
+    if (Array.isArray(args)) {
+        args = {
+            tenant: args[0],
+            category: args[1],
+        }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+        tenant: typeof args.tenant === 'object'
+        ? args.tenant.id
+        : args.tenant,
+        category: args.category,
+    }
+
+    return restore.definition.url
+            .replace('{tenant}', parsedArgs.tenant.toString())
+            .replace('{category}', parsedArgs.category.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::restore
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:189
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}/restore'
+*/
+restore.post = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: restore.url(args, options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::restore
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:189
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}/restore'
+*/
+const restoreForm = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: restore.url(args, options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Landlord\CategoryTreeController::restore
+* @see app/Http/Controllers/Landlord/CategoryTreeController.php:189
+* @route '//plannerate.localhost/tenants/{tenant}/mercadologico/categories/{category}/restore'
+*/
+restoreForm.post = (args: { tenant: string | { id: string }, category: string | number } | [tenant: string | { id: string }, category: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: restore.url(args, options),
+    method: 'post',
+})
+
+restore.form = restoreForm
+
+const CategoryTreeController = { index, children, products, move, moveProducts, store, update, destroy, restore }
 
 export default CategoryTreeController

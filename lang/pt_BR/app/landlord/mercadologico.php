@@ -2,7 +2,7 @@
 
 return [
     'title' => 'Mercadológico',
-    'description' => 'Gerencie a árvore de categorias deste tenant. Arraste para reorganizar e mova produtos entre categorias.',
+    'description' => 'Gerencie a árvore de categorias. Arraste para reorganizar e mova produtos entre categorias.',
     'navigation' => 'Mercadológico',
 
     'tree' => [

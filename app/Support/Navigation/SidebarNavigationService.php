@@ -182,6 +182,14 @@ class SidebarNavigationService
                             ->authorize('viewAny', Category::class)
                             ->setOrder(20);
                     })
+                    ->item('tenant.mercadologico', function ($item): void {
+                        $item
+                            ->label(__('app.landlord.mercadologico.navigation'))
+                            ->href(route('tenant.mercadologico.index', [], false))
+                            ->icon('list-tree')
+                            ->authorize('viewAny', Category::class)
+                            ->setOrder(25);
+                    })
                     ->item('tenant.dimensions', function ($item): void {
                         $item
                             ->label('Dimensões')

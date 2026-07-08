@@ -59,6 +59,27 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
             ->except(['show'])
             ->names('categories');
 
+        // ── Mercadológico (árvore de categorias do tenant ativo) ──
+        Route::get('mercadologico', [Tenant\MercadologicoController::class, 'index'])
+            ->name('mercadologico.index');
+        Route::get('mercadologico/children', [Tenant\MercadologicoController::class, 'children'])
+            ->name('mercadologico.children');
+        Route::get('mercadologico/{category}/products', [Tenant\MercadologicoController::class, 'products'])
+            ->name('mercadologico.products');
+        Route::post('mercadologico/{category}/move', [Tenant\MercadologicoController::class, 'move'])
+            ->name('mercadologico.move');
+        Route::post('mercadologico/move-products', [Tenant\MercadologicoController::class, 'moveProducts'])
+            ->name('mercadologico.move-products');
+        // CRUD de categorias (JSON, via useHttp)
+        Route::post('mercadologico/categories', [Tenant\MercadologicoController::class, 'store'])
+            ->name('mercadologico.categories.store');
+        Route::put('mercadologico/categories/{category}', [Tenant\MercadologicoController::class, 'update'])
+            ->name('mercadologico.categories.update');
+        Route::delete('mercadologico/categories/{category}', [Tenant\MercadologicoController::class, 'destroy'])
+            ->name('mercadologico.categories.destroy');
+        Route::post('mercadologico/categories/{category}/restore', [Tenant\MercadologicoController::class, 'restore'])
+            ->name('mercadologico.categories.restore');
+
         // ── Products ─────────────────────────────────────────
         Route::resource('products', Tenant\ProductController::class)
             ->except(['show'])
