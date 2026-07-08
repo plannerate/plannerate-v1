@@ -34,14 +34,14 @@ const children = computed(() => props.store.childrenStates(node.value.id));
 <template>
     <div>
         <div
-            class="group flex items-center gap-1.5 rounded-md px-1.5 py-1 transition-colors"
+            class="group flex items-center gap-1.5 rounded-md px-1.5 py-1 transition-colors select-none"
             :class="{
                 'opacity-40': isDragging,
                 'bg-primary/10 ring-1 ring-primary/40': isDropTarget,
                 'hover:bg-muted/60': !isDropTarget,
             }"
             draggable="true"
-            @dragstart="drag.onDragStart(node.id)"
+            @dragstart="drag.onDragStart(node.id, $event)"
             @dragend="drag.onDragEnd()"
             @dragover.prevent="drag.onDragOver(node.id)"
             @dragleave="drag.onDragLeave(node.id)"

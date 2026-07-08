@@ -23,8 +23,16 @@ export function useCategoryDrag(
     const draggingId = ref<string | null>(null);
     const dragOverTarget = ref<DropTarget | null>(null);
 
-    function onDragStart(id: string): void {
+    function onDragStart(id: string, event?: DragEvent): void {
         draggingId.value = id;
+
+        // Alguns navegadores (Firefox e certos modos do Chromium) só iniciam o
+        // arraste nativo se algum dado for setado no dragstart — sem isso o
+        // `drop` nunca dispara e "não move".
+        if (event?.dataTransfer) {
+            event.dataTransfer.setData('text/plain', id);
+            event.dataTransfer.effectAllowed = 'move';
+        }
     }
 
     function onDragEnd(): void {

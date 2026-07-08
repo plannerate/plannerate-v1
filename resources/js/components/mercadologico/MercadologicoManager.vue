@@ -48,7 +48,11 @@ const pendingMove = ref<PendingMove | null>(null);
 const moving = ref(false);
 
 function requestMove(draggedId: string, target: DropTarget): void {
-    pendingMove.value = { draggedId, target };
+    // Abre a confirmação após o gesto do drop terminar, para o modal recém-aberto
+    // não ser fechado pelo mesmo evento de ponteiro que o disparou.
+    window.setTimeout(() => {
+        pendingMove.value = { draggedId, target };
+    }, 0);
 }
 
 const drag = useCategoryDrag(store, requestMove);
