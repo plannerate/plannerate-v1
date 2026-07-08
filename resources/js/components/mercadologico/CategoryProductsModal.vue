@@ -13,7 +13,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { useT } from '@/composables/useT';
 
@@ -191,7 +190,7 @@ onMounted(() => {
 
 <template>
     <Dialog :open="true" @update:open="onOpenChange">
-        <DialogContent class="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-lg">
+        <DialogContent class="gap-0 overflow-hidden p-0 sm:max-w-lg">
             <DialogHeader class="border-b px-5 py-4">
                 <DialogTitle class="truncate">
                     {{ t('app.landlord.mercadologico.products.modal_title', { name: category.categoryName }) }}
@@ -225,9 +224,9 @@ onMounted(() => {
                 </div>
             </div>
 
-            <!-- Lista -->
-            <ScrollArea class="min-h-0 flex-1">
-                <div class="px-3 py-2">
+            <!-- Lista (rola com altura própria, independente do display do Dialog) -->
+            <div class="max-h-[55vh] overflow-y-auto px-3 py-2">
+                <div>
                     <div v-if="loading && products.length === 0" class="flex justify-center py-10">
                         <Spinner class="size-5" />
                     </div>
@@ -276,7 +275,7 @@ onMounted(() => {
                         </div>
                     </template>
                 </div>
-            </ScrollArea>
+            </div>
 
             <!-- Rodapé: mover selecionados -->
             <div class="flex items-center gap-2 border-t px-5 py-3">

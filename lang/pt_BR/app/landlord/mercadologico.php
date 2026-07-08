@@ -31,7 +31,7 @@ return [
         'modal_title' => 'Produtos de :name',
         'search' => 'Buscar por nome, EAN ou código ERP…',
         'empty' => 'Nenhum produto nesta categoria.',
-        'selected' => ':count selecionado|:count selecionados',
+        'selected' => ':count selecionado(s)',
         'move_to' => 'Mover para…',
         'move_selected' => 'Mover selecionados',
         'select_target' => 'Selecione a categoria de destino',
