@@ -81,11 +81,22 @@ defineProps<{
         <!-- Painel direito: formulário -->
         <div class="flex flex-1 flex-col items-center justify-center bg-background py-12">
             <div class="w-full max-w-lg px-5">
-                <div class="rounded-2xl border border-border/60 bg-card p-8 shadow-lg md:p-10">
-                     
+                <div class="rounded-2xl border border-border/40 bg-card p-8 shadow-md md:p-10">
+                    <Link :href="home()" class="mb-2 flex justify-center">
+                        <img
+                            src="/img/marca-claro.png"
+                            alt="Plannerate"
+                            class="h-24 w-auto dark:hidden"
+                        />
+                        <img
+                            src="/img/marcadark.png"
+                            alt="Plannerate"
+                            class="hidden h-24 w-auto dark:block"
+                        />
+                    </Link>
 
                     <div v-if="title || description" class="mb-8 text-center">
-                        <h2 v-if="title" class="text-3xl font-bold tracking-tight text-foreground uppercase">
+                        <h2 v-if="title" class="text-xl font-bold tracking-tight text-foreground uppercase">
                             {{ title }}
                         </h2>
                         <p v-if="description" class="mt-1.5 text-sm text-muted-foreground">

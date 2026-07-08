@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
+import { Mail } from 'lucide-vue-next';
 import InputError from '@/components/InputError.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
@@ -39,23 +40,33 @@ defineProps<{
         <div class="space-y-6">
             <Form v-bind="email.form()" v-slot="{ errors, processing }">
                 <div class="grid gap-2">
-                    <Label for="email">{{
-                        t('app.labels.email_address')
-                    }}</Label>
-                    <Input
-                        id="email"
-                        type="email"
-                        name="email"
-                        autocomplete="off"
-                        autofocus
-                        placeholder="email@example.com"
-                    />
+                    <Label
+                        for="email"
+                        class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+                    >
+                        {{ t('app.labels.email_address') }}
+                    </Label>
+                    <div class="relative">
+                        <Mail
+                            class="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground"
+                        />
+                        <Input
+                            id="email"
+                            type="email"
+                            name="email"
+                            autocomplete="off"
+                            autofocus
+                            placeholder="email@example.com"
+                            class="h-11 rounded-xl border-border/60 bg-muted/50 pr-4 pl-11 shadow-none"
+                        />
+                    </div>
                     <InputError :message="errors.email" />
                 </div>
 
                 <div class="my-6 flex items-center justify-start">
                     <Button
-                        class="w-full"
+                        variant="gradient"
+                        class="h-11 w-full rounded-xl text-sm font-semibold"
                         :disabled="processing"
                         data-test="email-password-reset-link-button"
                     >

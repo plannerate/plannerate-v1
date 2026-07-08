@@ -33,20 +33,29 @@ class SetPasswordNotification extends Notification implements ShouldQueue
     }
 
     /**
-     * Monta o email de definição de senha usando o MailMessage padrão do Laravel
-     * (não há template de email customizado neste projeto ainda).
+     * Monta o e-mail de credenciais/definição de senha usando o template HTML
+     * customizado da marca Plannerate (resources/views/emails/credentials.blade.php).
      */
     public function toMail(object $notifiable): MailMessage
     {
+        // URL base do sistema (home do tenant), derivada da própria URL de setup,
+        // para exibir no cartão "Link do sistema" e como fallback do logo.
+        $parts = parse_url($this->setupUrl);
+        $systemUrl = isset($parts['scheme'], $parts['host'])
+            ? $parts['scheme'].'://'.$parts['host'].(isset($parts['port']) ? ':'.$parts['port'] : '')
+            : (string) config('app.url');
+
         return (new MailMessage)
             ->subject($this->isResend
                 ? __('app.password_setup.mail.resend_subject')
                 : __('app.password_setup.mail.subject'))
-            ->greeting(__('app.password_setup.mail.greeting', ['name' => $notifiable->name]))
-            ->line($this->isResend
-                ? __('app.password_setup.mail.resend_intro')
-                : __('app.password_setup.mail.intro'))
-            ->action(__('app.password_setup.mail.action'), $this->setupUrl)
-            ->line(__('app.password_setup.mail.expiry', ['days' => (string) (int) config('password_setup.code_ttl_days', 7)]));
+            ->view(['emails.credentials', 'emails.credentials-text'], [
+                'name' => $notifiable->name,
+                'username' => $notifiable->email,
+                'systemUrl' => $systemUrl,
+                'actionUrl' => $this->setupUrl,
+                'expiryDays' => (int) config('password_setup.code_ttl_days', 7),
+                'isResend' => $this->isResend,
+            ]);
     }
 }

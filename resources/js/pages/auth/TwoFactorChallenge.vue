@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
+import { KeyRound } from 'lucide-vue-next';
 import { computed, ref, watchEffect } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -90,7 +91,8 @@ const code = ref<string>('');
                     </div>
                     <Button
                         type="submit"
-                        class="w-full"
+                        variant="gradient"
+                        class="h-11 w-full rounded-xl text-sm font-semibold"
                         :disabled="processing"
                         >{{ t('app.actions.continue') }}</Button
                     >
@@ -114,17 +116,24 @@ const code = ref<string>('');
                     reset-on-error
                     #default="{ errors, processing, clearErrors }"
                 >
-                    <Input
-                        name="recovery_code"
-                        type="text"
-                        :placeholder="t('app.auth.enter_recovery_code')"
-                        :autofocus="showRecoveryInput"
-                        required
-                    />
+                    <div class="relative">
+                        <KeyRound
+                            class="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground"
+                        />
+                        <Input
+                            name="recovery_code"
+                            type="text"
+                            :placeholder="t('app.auth.enter_recovery_code')"
+                            :autofocus="showRecoveryInput"
+                            required
+                            class="h-11 rounded-xl border-border/60 bg-muted/50 pr-4 pl-11 shadow-none"
+                        />
+                    </div>
                     <InputError :message="errors.recovery_code" />
                     <Button
                         type="submit"
-                        class="w-full"
+                        variant="gradient"
+                        class="h-11 w-full rounded-xl text-sm font-semibold"
                         :disabled="processing"
                         >{{ t('app.actions.continue') }}</Button
                     >
