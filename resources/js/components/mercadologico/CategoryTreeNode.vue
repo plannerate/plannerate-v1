@@ -1,8 +1,15 @@
 <script setup lang="ts">
-import { ChevronRight, GripVertical, Package } from 'lucide-vue-next';
+import { ChevronRight, GripVertical, MoreVertical, Package, Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 import { Badge } from '@/components/ui/badge';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useT } from '@/composables/useT';
 
@@ -17,6 +24,9 @@ const props = defineProps<{
     store: CategoryTreeStore;
     drag: CategoryDragController;
     onOpenProducts: (node: TreeNode) => void;
+    onAddChild: (node: TreeNode) => void;
+    onEdit: (node: TreeNode) => void;
+    onDelete: (node: TreeNode) => void;
     depth?: number;
 }>();
 
@@ -94,6 +104,38 @@ const children = computed(() => props.store.childrenStates(node.value.id));
                 <Package class="size-3.5" />
                 {{ node.products_count }}
             </button>
+
+            <!-- Menu de ações do nó -->
+            <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                    <button
+                        type="button"
+                        class="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100 data-[state=open]:opacity-100"
+                        :aria-label="t('app.landlord.mercadologico.actions.menu')"
+                        @click.stop
+                    >
+                        <MoreVertical class="size-4" />
+                    </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem @select="onAddChild(node)">
+                        <Plus class="size-4" />
+                        {{ t('app.landlord.mercadologico.actions.add_child') }}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem @select="onEdit(node)">
+                        <Pencil class="size-4" />
+                        {{ t('app.landlord.mercadologico.actions.rename') }}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        class="text-destructive focus:text-destructive"
+                        @select="onDelete(node)"
+                    >
+                        <Trash2 class="size-4" />
+                        {{ t('app.landlord.mercadologico.actions.delete') }}
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
         </div>
 
         <!-- Filhos (lazy) -->
@@ -120,6 +162,9 @@ const children = computed(() => props.store.childrenStates(node.value.id));
                 :store="store"
                 :drag="drag"
                 :on-open-products="onOpenProducts"
+                :on-add-child="onAddChild"
+                :on-edit="onEdit"
+                :on-delete="onDelete"
                 :depth="(depth ?? 0) + 1"
             />
         </div>

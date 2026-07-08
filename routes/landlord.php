@@ -118,6 +118,15 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->name('landlord.tenants.mercadologico.move');
     Route::post('tenants/{tenant}/mercadologico/move-products', [Landlord\CategoryTreeController::class, 'moveProducts'])
         ->name('landlord.tenants.mercadologico.move-products');
+    // CRUD de categorias (JSON, via useHttp)
+    Route::post('tenants/{tenant}/mercadologico/categories', [Landlord\CategoryTreeController::class, 'store'])
+        ->name('landlord.tenants.mercadologico.categories.store');
+    Route::put('tenants/{tenant}/mercadologico/categories/{category}', [Landlord\CategoryTreeController::class, 'update'])
+        ->name('landlord.tenants.mercadologico.categories.update');
+    Route::delete('tenants/{tenant}/mercadologico/categories/{category}', [Landlord\CategoryTreeController::class, 'destroy'])
+        ->name('landlord.tenants.mercadologico.categories.destroy');
+    Route::post('tenants/{tenant}/mercadologico/categories/{category}/restore', [Landlord\CategoryTreeController::class, 'restore'])
+        ->name('landlord.tenants.mercadologico.categories.restore');
 
     Route::get('tenants/{tenant}/gondola-defaults', [Landlord\TenantGondolaDefaultsController::class, 'edit'])
         ->name('landlord.tenants.gondola-defaults.edit');

@@ -46,12 +46,13 @@ class CategoryTreeService
             )
             ->withCount(['children', 'products'])
             ->orderBy('name')
-            ->get(['id', 'name', 'level_name', 'nivel', 'status', 'is_placeholder', 'category_id'])
+            ->get(['id', 'name', 'level_name', 'nivel', 'codigo', 'status', 'is_placeholder', 'category_id'])
             ->map(fn (Category $category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
                 'level_name' => $category->level_name,
                 'nivel' => $category->nivel,
+                'codigo' => $category->codigo,
                 'status' => $category->status,
                 'is_placeholder' => (bool) $category->is_placeholder,
                 'children_count' => (int) $category->children_count,
@@ -86,6 +87,111 @@ class CategoryTreeService
 
             return $category;
         });
+    }
+
+    /**
+     * Cria uma categoria sob `$parentId` (ou na raiz quando `null`) e computa sua
+     * denormalização de hierarquia.
+     *
+     * @param  array{name: string, codigo?: int|null, status?: string}  $data
+     *
+     * @throws ValidationException Quando estouraria a profundidade máxima.
+     */
+    public function create(?string $parentId, array $data): Category
+    {
+        $parent = null;
+
+        if ($parentId !== null && $parentId !== '') {
+            $parent = Category::query()->findOrFail($parentId);
+
+            if ($parent->getMercadologicoDepth() + 1 > CategoryHierarchyService::MAX_DEPTH) {
+                throw ValidationException::withMessages([
+                    'parent_id' => __('app.landlord.mercadologico.errors.max_depth_exceeded', [
+                        'max' => CategoryHierarchyService::MAX_DEPTH,
+                    ]),
+                ]);
+            }
+        }
+
+        return DB::transaction(function () use ($parent, $data): Category {
+            $category = Category::query()->create([
+                'category_id' => $parent?->id,
+                'name' => $data['name'],
+                'codigo' => $data['codigo'] ?? null,
+                'status' => $data['status'] ?? 'draft',
+            ]);
+
+            $this->hierarchy->recomputeSubtree($category->refresh());
+
+            return $category->refresh();
+        });
+    }
+
+    /**
+     * Atualiza uma categoria. Se o nome mudar, recomputa a denormalização da
+     * subárvore (o nome faz parte de `full_path`/`hierarchy_path`).
+     *
+     * @param  array{name: string, codigo?: int|null, status?: string}  $data
+     */
+    public function update(string $categoryId, array $data): Category
+    {
+        $category = Category::query()->findOrFail($categoryId);
+        $nameChanged = $data['name'] !== $category->name;
+
+        return DB::transaction(function () use ($category, $data, $nameChanged): Category {
+            $category->update([
+                'name' => $data['name'],
+                'codigo' => $data['codigo'] ?? null,
+                'status' => $data['status'] ?? $category->status,
+            ]);
+
+            if ($nameChanged) {
+                $this->hierarchy->recomputeSubtree($category->refresh());
+            }
+
+            return $category->refresh();
+        });
+    }
+
+    /**
+     * Exclui (soft delete) uma categoria — permitido apenas se ela não tiver
+     * subcategorias nem produtos vinculados.
+     *
+     * @throws ValidationException Quando a categoria não está vazia.
+     */
+    public function delete(string $categoryId): Category
+    {
+        $category = Category::query()->findOrFail($categoryId);
+
+        if ($category->children()->exists()) {
+            throw ValidationException::withMessages([
+                'category' => __('app.landlord.mercadologico.errors.delete_has_children'),
+            ]);
+        }
+
+        if ($category->products()->exists()) {
+            throw ValidationException::withMessages([
+                'category' => __('app.landlord.mercadologico.errors.delete_has_products'),
+            ]);
+        }
+
+        $category->delete();
+
+        return $category;
+    }
+
+    /**
+     * Restaura uma categoria excluída (usado pelo desfazer de exclusão/criação).
+     */
+    public function restore(string $categoryId): Category
+    {
+        $category = Category::query()->withTrashed()->findOrFail($categoryId);
+
+        if ($category->trashed()) {
+            $category->restore();
+        }
+
+        return $category;
     }
 
     /**

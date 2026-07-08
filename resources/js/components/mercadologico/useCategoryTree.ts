@@ -148,6 +148,43 @@ export function useCategoryTree(urls: MercadologicoUrls) {
         }
     }
 
+    /**
+     * Ajusta a contagem de subcategorias de um nó (feedback imediato ao criar/
+     * excluir/restaurar filhos).
+     */
+    function adjustChildrenCount(categoryId: string, delta: number): void {
+        const state = nodes[categoryId];
+
+        if (state) {
+            state.node.children_count = Math.max(
+                0,
+                state.node.children_count + delta,
+            );
+        }
+    }
+
+    /**
+     * Atualiza os dados de um nó já existente (ex.: após renomear/editar).
+     */
+    function updateNodeData(node: TreeNode): void {
+        const state = nodes[node.id];
+
+        if (state) {
+            state.node = node;
+        }
+    }
+
+    /**
+     * Marca um nó como expandido (usado ao criar um filho, para ele aparecer).
+     */
+    function markExpanded(id: string): void {
+        const state = nodes[id];
+
+        if (state) {
+            state.expanded = true;
+        }
+    }
+
     function getNode(id: string): NodeState | undefined {
         return nodes[id];
     }
@@ -199,6 +236,9 @@ export function useCategoryTree(urls: MercadologicoUrls) {
         toggle,
         refresh,
         adjustProductsCount,
+        adjustChildrenCount,
+        updateNodeData,
+        markExpanded,
         getNode,
         childrenStates,
         isSelfOrLoadedDescendant,

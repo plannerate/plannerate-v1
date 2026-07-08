@@ -11,6 +11,8 @@ import type { MercadologicoUrls } from '@/components/mercadologico/types';
 
 const base = (tenantId: string): string => `/tenants/${tenantId}/mercadologico`;
 
+const categories = (tenantId: string): string => `${base(tenantId)}/categories`;
+
 export const mercadologicoUrls = {
     index: (tenantId: string): string => base(tenantId),
     children: (tenantId: string): string => `${base(tenantId)}/children`,
@@ -19,6 +21,13 @@ export const mercadologicoUrls = {
     move: (tenantId: string, categoryId: string): string =>
         `${base(tenantId)}/${categoryId}/move`,
     moveProducts: (tenantId: string): string => `${base(tenantId)}/move-products`,
+    store: (tenantId: string): string => categories(tenantId),
+    update: (tenantId: string, categoryId: string): string =>
+        `${categories(tenantId)}/${categoryId}`,
+    destroy: (tenantId: string, categoryId: string): string =>
+        `${categories(tenantId)}/${categoryId}`,
+    restore: (tenantId: string, categoryId: string): string =>
+        `${categories(tenantId)}/${categoryId}/restore`,
 };
 
 /**
@@ -31,5 +40,9 @@ export function landlordMercadologicoUrls(tenantId: string): MercadologicoUrls {
         products: (categoryId) => mercadologicoUrls.products(tenantId, categoryId),
         move: (categoryId) => mercadologicoUrls.move(tenantId, categoryId),
         moveProducts: () => mercadologicoUrls.moveProducts(tenantId),
+        store: () => mercadologicoUrls.store(tenantId),
+        update: (categoryId) => mercadologicoUrls.update(tenantId, categoryId),
+        destroy: (categoryId) => mercadologicoUrls.destroy(tenantId, categoryId),
+        restore: (categoryId) => mercadologicoUrls.restore(tenantId, categoryId),
     };
 }

@@ -6,6 +6,8 @@ use App\Http\Controllers\Concerns\RunsInTenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\MoveCategoryRequest;
 use App\Http\Requests\Landlord\MoveProductsRequest;
+use App\Http\Requests\Landlord\StoreCategoryNodeRequest;
+use App\Http\Requests\Landlord\UpdateCategoryNodeRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Tenant;
@@ -135,6 +137,67 @@ class CategoryTreeController extends Controller
     }
 
     /**
+     * Cria uma categoria (raiz ou subcategoria). Responde JSON (chamado via
+     * useHttp) com o nó pronto para inserir na árvore.
+     */
+    public function store(StoreCategoryNodeRequest $request, Tenant $tenant): JsonResponse
+    {
+        $this->authorize('update', $tenant);
+
+        $validated = $request->validated();
+
+        $node = $this->runInTenantContext($tenant, fn (): array => $this->nodePayload(
+            $this->tree->create($validated['parent_id'] ?? null, $validated),
+        ));
+
+        return response()->json(['category' => $node]);
+    }
+
+    /**
+     * Edita uma categoria (nome, código, status).
+     */
+    public function update(UpdateCategoryNodeRequest $request, Tenant $tenant, string $category): JsonResponse
+    {
+        $this->authorize('update', $tenant);
+
+        $validated = $request->validated();
+
+        $node = $this->runInTenantContext($tenant, fn (): array => $this->nodePayload(
+            $this->tree->update($category, $validated),
+        ));
+
+        return response()->json(['category' => $node]);
+    }
+
+    /**
+     * Exclui (soft delete) uma categoria vazia.
+     */
+    public function destroy(Tenant $tenant, string $category): JsonResponse
+    {
+        $this->authorize('update', $tenant);
+
+        $this->runInTenantContext($tenant, function () use ($category): void {
+            $this->tree->delete($category);
+        });
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Restaura uma categoria excluída (desfazer de exclusão/criação).
+     */
+    public function restore(Tenant $tenant, string $category): JsonResponse
+    {
+        $this->authorize('update', $tenant);
+
+        $node = $this->runInTenantContext($tenant, fn (): array => $this->nodePayload(
+            $this->tree->restore($category),
+        ));
+
+        return response()->json(['category' => $node]);
+    }
+
+    /**
      * Move produtos de uma categoria para outra.
      */
     public function moveProducts(MoveProductsRequest $request, Tenant $tenant): RedirectResponse
@@ -154,5 +217,30 @@ class CategoryTreeController extends Controller
         ]);
 
         return back();
+    }
+
+    /**
+     * Serializa uma categoria no formato de nó da árvore (mesma forma do
+     * `nodesForParent`).
+     *
+     * @return array{
+     *     id: string, name: string, level_name: string|null, nivel: string|null,
+     *     codigo: int|null, status: string, is_placeholder: bool,
+     *     children_count: int, products_count: int
+     * }
+     */
+    private function nodePayload(Category $category): array
+    {
+        return [
+            'id' => $category->id,
+            'name' => $category->name,
+            'level_name' => $category->level_name,
+            'nivel' => $category->nivel,
+            'codigo' => $category->codigo,
+            'status' => $category->status,
+            'is_placeholder' => (bool) $category->is_placeholder,
+            'children_count' => $category->children()->count(),
+            'products_count' => $category->products()->count(),
+        ];
     }
 }

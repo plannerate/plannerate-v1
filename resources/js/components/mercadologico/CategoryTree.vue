@@ -14,6 +14,9 @@ const props = defineProps<{
     store: CategoryTreeStore;
     drag: CategoryDragController;
     onOpenProducts: (node: TreeNode) => void;
+    onAddChild: (node: TreeNode) => void;
+    onEdit: (node: TreeNode) => void;
+    onDelete: (node: TreeNode) => void;
 }>();
 
 const { t } = useT();
@@ -67,6 +70,9 @@ const isRootDropTarget = computed(
             :store="store"
             :drag="drag"
             :on-open-products="onOpenProducts"
+            :on-add-child="onAddChild"
+            :on-edit="onEdit"
+            :on-delete="onDelete"
         />
     </div>
 </template>

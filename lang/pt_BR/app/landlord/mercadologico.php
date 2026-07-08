@@ -47,14 +47,55 @@ return [
         ],
     ],
 
+    'actions' => [
+        'new_root' => 'Nova categoria',
+        'add_child' => 'Adicionar subcategoria',
+        'rename' => 'Editar',
+        'delete' => 'Excluir',
+        'menu' => 'Ações',
+        'undo' => 'Desfazer',
+        'redo' => 'Refazer',
+    ],
+
+    'form' => [
+        'create_root_title' => 'Nova categoria',
+        'create_child_title' => 'Nova subcategoria de :parent',
+        'edit_title' => 'Editar categoria',
+        'name' => 'Nome',
+        'name_placeholder' => 'Nome da categoria',
+        'codigo' => 'Código ERP',
+        'codigo_placeholder' => 'Opcional',
+        'status' => 'Status',
+        'status_draft' => 'Rascunho',
+        'status_published' => 'Publicado',
+        'save' => 'Salvar',
+        'cancel' => 'Cancelar',
+    ],
+
+    'delete' => [
+        'confirm_title' => 'Excluir categoria',
+        'confirm_message' => 'Excluir a categoria ":name"?',
+        'confirm' => 'Excluir',
+        'cancel' => 'Cancelar',
+    ],
+
     'messages' => [
         'moved' => 'Categoria movida com sucesso.',
         'products_moved' => 'Nenhum produto movido.|:count produto movido com sucesso.|:count produtos movidos com sucesso.',
+        'created' => 'Categoria criada com sucesso.',
+        'updated' => 'Categoria atualizada com sucesso.',
+        'deleted' => 'Categoria excluída com sucesso.',
+        'restored' => 'Categoria restaurada.',
+        'undone' => 'Ação desfeita.',
+        'redone' => 'Ação refeita.',
+        'action_failed' => 'Não foi possível concluir a ação.',
     ],
 
     'errors' => [
         'move_into_self' => 'Não é possível mover uma categoria para dentro dela mesma.',
         'move_into_descendant' => 'Não é possível mover uma categoria para dentro de um de seus descendentes.',
         'max_depth_exceeded' => 'A movimentação excede a profundidade máxima do mercadológico (:max níveis).',
+        'delete_has_children' => 'A categoria possui subcategorias. Mova ou exclua as subcategorias antes.',
+        'delete_has_products' => 'A categoria possui produtos vinculados. Mova os produtos antes de excluir.',
     ],
 ];

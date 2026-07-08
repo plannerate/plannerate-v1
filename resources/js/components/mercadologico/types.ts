@@ -12,6 +12,7 @@ export type TreeNode = {
     name: string;
     level_name: string | null;
     nivel: string | null;
+    codigo: number | null;
     status: string;
     is_placeholder: boolean;
     children_count: number;
@@ -48,4 +49,12 @@ export interface MercadologicoUrls {
     move: (categoryId: string) => string;
     /** Movimentação de produtos entre categorias. */
     moveProducts: () => string;
+    /** Cria uma categoria (raiz ou subcategoria). */
+    store: () => string;
+    /** Edita uma categoria. */
+    update: (categoryId: string) => string;
+    /** Exclui (soft delete) uma categoria. */
+    destroy: (categoryId: string) => string;
+    /** Restaura uma categoria excluída. */
+    restore: (categoryId: string) => string;
 }

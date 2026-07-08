@@ -168,3 +168,68 @@ test('nodesForParent returns roots with children and product counts', function (
     $children = treeService()->nodesForParent($root->id);
     expect($children)->toHaveCount(2);
 });
+
+test('create makes a root category with computed denormalization', function (): void {
+    $category = treeService()->create(null, ['name' => 'Bebidas', 'status' => 'published']);
+
+    expect($category->category_id)->toBeNull();
+    expect($category->hierarchy_position)->toBe(1);
+    expect($category->full_path)->toBe('Bebidas');
+    expect($category->level_name)->toBe('Segmento varejista');
+});
+
+test('create makes a child category under a parent', function (): void {
+    $parent = makeCategory('Mercearia');
+
+    $child = treeService()->create($parent->id, ['name' => 'Biscoitos', 'codigo' => 42]);
+
+    expect($child->category_id)->toBe($parent->id);
+    expect($child->hierarchy_position)->toBe(2);
+    expect($child->full_path)->toBe('Mercearia > Biscoitos');
+    expect($child->codigo)->toBe(42);
+});
+
+test('create beyond max depth is rejected', function (): void {
+    $parent = makeCategory('N1');
+    for ($i = 2; $i <= 7; $i++) {
+        $parent = makeCategory('N'.$i, $parent->id);
+    }
+
+    // parent está no nível 7; criar um filho iria para o nível 8 (> 7).
+    treeService()->create($parent->id, ['name' => 'N8']);
+})->throws(ValidationException::class);
+
+test('update renaming a category recomputes descendant paths', function (): void {
+    $mercearia = makeCategory('Mercearia');
+    $biscoitos = makeCategory('Biscoitos', $mercearia->id);
+
+    treeService()->update($mercearia->id, ['name' => 'Armazém']);
+
+    expect($biscoitos->refresh()->full_path)->toBe('Armazém > Biscoitos');
+});
+
+test('delete is blocked when the category has children', function (): void {
+    $mercearia = makeCategory('Mercearia');
+    makeCategory('Biscoitos', $mercearia->id);
+
+    treeService()->delete($mercearia->id);
+})->throws(ValidationException::class);
+
+test('delete is blocked when the category has products', function (): void {
+    $origem = makeCategory('Origem');
+    Product::query()->create(['name' => 'P', 'slug' => 'p-'.Str::lower(Str::random(5)), 'ean' => '7890000000105', 'status' => 'published', 'category_id' => $origem->id]);
+
+    treeService()->delete($origem->id);
+})->throws(ValidationException::class);
+
+test('delete soft-deletes an empty leaf and restore brings it back', function (): void {
+    $leaf = makeCategory('Folha');
+
+    treeService()->delete($leaf->id);
+    // Query escopada exclui o soft-deleted; withTrashed enxerga como trashed.
+    expect(Category::query()->whereKey($leaf->id)->first())->toBeNull();
+    expect(Category::withTrashed()->whereKey($leaf->id)->first()->trashed())->toBeTrue();
+
+    treeService()->restore($leaf->id);
+    expect(Category::query()->whereKey($leaf->id)->first())->not->toBeNull();
+});

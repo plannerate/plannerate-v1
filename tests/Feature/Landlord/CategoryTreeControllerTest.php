@@ -175,3 +175,50 @@ test('move-products reassigns products to another category', function (): void {
     app()->instance((string) config('multitenancy.current_tenant_container_key', 'currentTenant'), $tenant);
     expect($product->refresh()->category_id)->toBe($destino->id);
 });
+
+test('store creates a category and returns the node', function (): void {
+    $this->actingAs(User::factory()->create());
+    $tenant = mercadologicoTenant('merc-store');
+
+    $this->postJson(
+        route('landlord.tenants.mercadologico.categories.store', $tenant),
+        ['name' => 'Bebidas', 'codigo' => 55, 'status' => 'published'],
+    )
+        ->assertOk()
+        ->assertJsonPath('category.name', 'Bebidas')
+        ->assertJsonPath('category.codigo', 55)
+        ->assertJsonPath('category.children_count', 0);
+});
+
+test('destroy is blocked (422) when the category has children', function (): void {
+    $this->actingAs(User::factory()->create());
+    $tenant = mercadologicoTenant('merc-del-block');
+
+    $parent = mercCategory($tenant, 'Mercearia');
+    mercCategory($tenant, 'Biscoitos', $parent->id);
+
+    $this->deleteJson(
+        route('landlord.tenants.mercadologico.categories.destroy', ['tenant' => $tenant, 'category' => $parent->id]),
+    )->assertStatus(422);
+});
+
+test('destroy soft-deletes an empty leaf and restore brings it back', function (): void {
+    $this->actingAs(User::factory()->create());
+    $tenant = mercadologicoTenant('merc-del-restore');
+
+    $leaf = mercCategory($tenant, 'Folha');
+
+    $this->deleteJson(
+        route('landlord.tenants.mercadologico.categories.destroy', ['tenant' => $tenant, 'category' => $leaf->id]),
+    )->assertOk();
+
+    app()->instance((string) config('multitenancy.current_tenant_container_key', 'currentTenant'), $tenant);
+    expect(Category::query()->whereKey($leaf->id)->first())->toBeNull();
+
+    $this->postJson(
+        route('landlord.tenants.mercadologico.categories.restore', ['tenant' => $tenant, 'category' => $leaf->id]),
+    )->assertOk()->assertJsonPath('category.id', $leaf->id);
+
+    app()->instance((string) config('multitenancy.current_tenant_container_key', 'currentTenant'), $tenant);
+    expect(Category::query()->whereKey($leaf->id)->first())->not->toBeNull();
+});
