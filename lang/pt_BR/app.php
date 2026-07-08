@@ -445,7 +445,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
     'auth' => [
         'login' => 'Entrar',
         'login_short' => 'Login',
-        'login_title' => 'Entre na sua conta',
+        'login_title' => 'Acessar Sistema',
         'login_description' => 'Informe seu e-mail e senha para entrar',
         'dont_have_account' => 'Não tem uma conta?',
         'sign_up' => 'Criar conta',

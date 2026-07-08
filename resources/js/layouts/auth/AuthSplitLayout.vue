@@ -96,7 +96,7 @@ defineProps<{
                     </Link>
 
                     <div v-if="title || description" class="mb-8 text-center">
-                        <h2 v-if="title" class="text-xl font-bold tracking-tight text-foreground uppercase">
+                        <h2 v-if="title" class="text-2xl font-bold tracking-tight text-slate-900">
                             {{ title }}
                         </h2>
                         <p v-if="description" class="mt-1.5 text-sm text-muted-foreground">
