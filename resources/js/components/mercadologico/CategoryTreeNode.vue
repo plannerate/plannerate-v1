@@ -43,7 +43,7 @@ const children = computed(() => props.store.childrenStates(node.value.id));
             draggable="true"
             @dragstart="drag.onDragStart(node.id, $event)"
             @dragend="drag.onDragEnd()"
-            @dragover.prevent="drag.onDragOver(node.id)"
+            @dragover.prevent="drag.onDragOver(node.id, $event)"
             @dragleave="drag.onDragLeave(node.id)"
             @drop.prevent="drag.onDrop(node.id)"
         >

@@ -43,7 +43,7 @@ const isRootDropTarget = computed(
                     ? 'border-primary/50 bg-primary/10 text-primary'
                     : 'border-border text-muted-foreground'
             "
-            @dragover.prevent="drag.onDragOver(ROOT_TARGET)"
+            @dragover.prevent="drag.onDragOver(ROOT_TARGET, $event)"
             @dragleave="drag.onDragLeave(ROOT_TARGET)"
             @drop.prevent="drag.onDrop(ROOT_TARGET)"
         >

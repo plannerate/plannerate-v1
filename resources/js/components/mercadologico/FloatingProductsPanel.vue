@@ -210,6 +210,9 @@ function onProductDragStart(event: DragEvent, product: ProductRow): void {
 function onPanelDragOver(event: DragEvent): void {
     if (event.dataTransfer?.types.includes(DRAG_MIME)) {
         event.preventDefault();
+        // Origem seta effectAllowed='move' → alvo precisa casar o dropEffect,
+        // senão o navegador rejeita o drop.
+        event.dataTransfer.dropEffect = 'move';
         isDropActive.value = true;
     }
 }

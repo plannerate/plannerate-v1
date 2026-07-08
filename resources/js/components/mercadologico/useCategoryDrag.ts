@@ -66,7 +66,14 @@ export function useCategoryDrag(
         return state?.parentId !== target;
     }
 
-    function onDragOver(target: DropTarget): void {
+    function onDragOver(target: DropTarget, event?: DragEvent): void {
+        // Como a origem seta effectAllowed='move', o alvo PRECISA setar
+        // dropEffect='move' aqui — senão o navegador resolve para 'none' e o
+        // `drop` é rejeitado (o item "não sai do lugar").
+        if (event?.dataTransfer) {
+            event.dataTransfer.dropEffect = 'move';
+        }
+
         if (canDrop(target)) {
             dragOverTarget.value = target;
         }
