@@ -20,22 +20,34 @@ export function useCategoryDrag(
     store: CategoryTreeStore,
     requestMove: (draggedId: string, target: DropTarget) => void,
 ) {
+    // Id do nó arrastado em variável NÃO-reativa: a lógica de drop usa este valor
+    // imediatamente, sem disparar re-render. O estado reativo `draggingId` (só
+    // para o visual) é setado de forma ADIADA — mutar o DOM de forma síncrona
+    // durante o dragstart cancela o arraste nativo (é o que fazia "não mover").
+    let draggedIdRaw: string | null = null;
     const draggingId = ref<string | null>(null);
     const dragOverTarget = ref<DropTarget | null>(null);
 
     function onDragStart(id: string, event?: DragEvent): void {
-        draggingId.value = id;
+        draggedIdRaw = id;
 
-        // Alguns navegadores (Firefox e certos modos do Chromium) só iniciam o
-        // arraste nativo se algum dado for setado no dragstart — sem isso o
-        // `drop` nunca dispara e "não move".
+        // Alguns navegadores só iniciam o arraste nativo se algum dado for setado
+        // no dragstart.
         if (event?.dataTransfer) {
             event.dataTransfer.setData('text/plain', id);
             event.dataTransfer.effectAllowed = 'move';
         }
+
+        // Visual (opacidade do nó, faixa de raiz) só depois do arraste engatar.
+        requestAnimationFrame(() => {
+            if (draggedIdRaw === id) {
+                draggingId.value = id;
+            }
+        });
     }
 
     function onDragEnd(): void {
+        draggedIdRaw = null;
         draggingId.value = null;
         dragOverTarget.value = null;
     }
@@ -44,7 +56,7 @@ export function useCategoryDrag(
      * Um nó pode receber o arrastado?
      */
     function canDrop(target: DropTarget): boolean {
-        const dragged = draggingId.value;
+        const dragged = draggedIdRaw;
 
         if (!dragged) {
             return false;
@@ -86,7 +98,7 @@ export function useCategoryDrag(
     }
 
     function onDrop(target: DropTarget): void {
-        const dragged = draggingId.value;
+        const dragged = draggedIdRaw;
 
         if (dragged && canDrop(target)) {
             requestMove(dragged, target);

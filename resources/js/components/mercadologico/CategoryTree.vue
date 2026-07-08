@@ -34,9 +34,11 @@ const isRootDropTarget = computed(
 
 <template>
     <div class="space-y-1">
-        <!-- Zona de soltura para mover um nó de volta à raiz -->
+        <!-- Zona de soltura para mover um nó de volta à raiz.
+             v-show (não v-if): inserir/remover este elemento durante o dragstart
+             mutaria a estrutura do DOM e cancelaria o arraste nativo. -->
         <div
-            v-if="isDraggingSomething"
+            v-show="isDraggingSomething"
             class="flex items-center gap-2 rounded-md border border-dashed px-3 py-2 text-xs transition-colors"
             :class="
                 isRootDropTarget
