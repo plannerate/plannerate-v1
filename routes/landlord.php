@@ -107,6 +107,18 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->middleware('throttle:6,1')
         ->name('landlord.tenants.access.users.password-setup.resend');
 
+    // ── Mercadológico (árvore de categorias do tenant) ──
+    Route::get('tenants/{tenant}/mercadologico', [Landlord\CategoryTreeController::class, 'index'])
+        ->name('landlord.tenants.mercadologico.index');
+    Route::get('tenants/{tenant}/mercadologico/children', [Landlord\CategoryTreeController::class, 'children'])
+        ->name('landlord.tenants.mercadologico.children');
+    Route::get('tenants/{tenant}/mercadologico/{category}/products', [Landlord\CategoryTreeController::class, 'products'])
+        ->name('landlord.tenants.mercadologico.products');
+    Route::post('tenants/{tenant}/mercadologico/{category}/move', [Landlord\CategoryTreeController::class, 'move'])
+        ->name('landlord.tenants.mercadologico.move');
+    Route::post('tenants/{tenant}/mercadologico/move-products', [Landlord\CategoryTreeController::class, 'moveProducts'])
+        ->name('landlord.tenants.mercadologico.move-products');
+
     Route::get('tenants/{tenant}/gondola-defaults', [Landlord\TenantGondolaDefaultsController::class, 'edit'])
         ->name('landlord.tenants.gondola-defaults.edit');
     Route::put('tenants/{tenant}/gondola-defaults', [Landlord\TenantGondolaDefaultsController::class, 'update'])

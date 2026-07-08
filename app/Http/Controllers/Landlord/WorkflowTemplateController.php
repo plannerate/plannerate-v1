@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
+use App\Http\Controllers\Concerns\RunsInTenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\WorkflowTemplateStoreRequest;
 use App\Http\Requests\Landlord\WorkflowTemplateUpdateRequest;
@@ -13,15 +14,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\Multitenancy\Models\Tenant as CurrentTenantModel;
 
 class WorkflowTemplateController extends Controller
 {
     use InteractsWithTrashedFilter;
+    use RunsInTenantContext;
 
     public function index(Request $request, Tenant $tenant): Response
     {
@@ -310,38 +310,5 @@ class WorkflowTemplateController extends Controller
             ->get(['id', 'name'])
             ->map(fn (WorkflowTemplate $t): array => ['id' => $t->id, 'name' => $t->name])
             ->all();
-    }
-
-    /**
-     * @template TReturn
-     *
-     * @param  callable(): TReturn  $callback
-     * @return TReturn
-     */
-    private function runInTenantContext(Tenant $tenant, callable $callback): mixed
-    {
-        $tenantConnectionName = $this->resolveTenantConnectionName();
-        $originalTenantDatabase = config("database.connections.{$tenantConnectionName}.database");
-        $originalTenant = CurrentTenantModel::current();
-        $tenant->makeCurrent();
-
-        try {
-            return $callback();
-        } finally {
-            if ($originalTenant !== null) {
-                $originalTenant->makeCurrent();
-            } else {
-                CurrentTenantModel::forgetCurrent();
-                config([
-                    "database.connections.{$tenantConnectionName}.database" => $originalTenantDatabase,
-                ]);
-                DB::purge($tenantConnectionName);
-            }
-        }
-    }
-
-    private function resolveTenantConnectionName(): string
-    {
-        return (string) (config('multitenancy.tenant_database_connection_name') ?: 'tenant');
     }
 }
