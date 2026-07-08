@@ -339,6 +339,18 @@ Unit test:
 - [ ] Refatorar `CategoryHierarchyImportService` para usar `CategoryHierarchyService`
 - [ ] Avaliar expor a mesma tela dentro do tenant
 
+### Fase 6 — CRUD + desfazer/refazer ✅ (implementada; commit `bb0e338e`)
+> Decisões do usuário: **excluir só categoria vazia** (sem subcategorias/produtos);
+> campos do formulário **nome + código + status**.
+- [x] Backend `CategoryTreeService`: `create` (recompute + guard de profundidade),
+  `update` (recompute ao renomear), `delete` (bloqueia se não vazia), `restore`
+- [x] Controller `store/update/destroy/restore` (JSON via `useHttp`); nó inclui `codigo`
+- [x] Form Requests `StoreCategoryNodeRequest`/`UpdateCategoryNodeRequest` + rotas `categories.*`
+- [x] Frontend: `CategoryFormDialog`, menu "⋯" por nó (add/editar/excluir), botão "Nova categoria"
+- [x] `useCategoryCrud` (JSON + extração de erro p/ toast) e `useCategoryHistory` (undo/redo de thunks)
+- [x] Toolbar com desfazer/refazer; 23 testes backend verdes; lint + build OK
+- [ ] **Validação manual no browser** — pendente do usuário
+
 ---
 
 ## 10. Riscos & atenção

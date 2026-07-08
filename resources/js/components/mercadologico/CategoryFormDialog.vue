@@ -130,6 +130,11 @@ function submit(): void {
                         >
                             <option value="draft">{{ t('app.landlord.mercadologico.form.status_draft') }}</option>
                             <option value="published">{{ t('app.landlord.mercadologico.form.status_published') }}</option>
+                            <!-- Só aparece quando a categoria já é 'importer' (importada), para
+                                 não forçar a troca de status ao editar. -->
+                            <option v-if="status === 'importer'" value="importer">
+                                {{ t('app.landlord.mercadologico.form.status_importer') }}
+                            </option>
                         </select>
                     </div>
                 </div>

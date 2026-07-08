@@ -27,7 +27,7 @@ class StoreCategoryNodeRequest extends FormRequest
             'parent_id' => ['nullable', 'string'],
             'name' => ['required', 'string', 'max:255'],
             'codigo' => ['nullable', 'integer'],
-            'status' => ['nullable', Rule::in(['draft', 'published'])],
+            'status' => ['nullable', Rule::in(['draft', 'published', 'importer'])],
         ];
     }
 }

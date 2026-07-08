@@ -68,6 +68,7 @@ return [
         'status' => 'Status',
         'status_draft' => 'Rascunho',
         'status_published' => 'Publicado',
+        'status_importer' => 'Importado',
         'save' => 'Salvar',
         'cancel' => 'Cancelar',
     ],

@@ -23,7 +23,7 @@ class UpdateCategoryNodeRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'codigo' => ['nullable', 'integer'],
-            'status' => ['nullable', Rule::in(['draft', 'published'])],
+            'status' => ['nullable', Rule::in(['draft', 'published', 'importer'])],
         ];
     }
 }
