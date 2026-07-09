@@ -258,7 +258,7 @@ const pageMeta = useCrudPageMeta({
                     </label>
 
                     <!-- Limites por perfil administrativo -->
-                    <div v-if="props.administrative_roles.length > 0" class="space-y-3">
+                    <div class="space-y-3">
                         <div>
                             <p class="text-sm font-semibold text-foreground">
                                 {{ t('app.landlord.plans.role_limits.title') }}
@@ -268,7 +268,14 @@ const pageMeta = useCrudPageMeta({
                             </p>
                         </div>
 
-                        <div class="grid gap-4 md:grid-cols-2">
+                        <div
+                            v-if="props.administrative_roles.length === 0"
+                            class="flex items-center justify-center rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground"
+                        >
+                            {{ t('app.landlord.plans.role_limits.empty') }}
+                        </div>
+
+                        <div v-else class="grid gap-4 md:grid-cols-2">
                             <div
                                 v-for="role in props.administrative_roles"
                                 :key="role.system_name"

@@ -21,6 +21,7 @@ return [
         'hint' => 'Quantidade máxima de usuários por perfil neste plano. Em branco = ilimitado.',
         'unlimited_placeholder' => 'Em branco = ilimitado',
         'item_label' => 'Limite de usuários: :role',
+        'empty' => 'Nenhum perfil administrativo cadastrado. Marque um perfil como "administrativo" na tela de Perfis para definir o limite dele por plano aqui.',
     ],
     'messages' => [
         'created' => 'Plano criado com sucesso.',
