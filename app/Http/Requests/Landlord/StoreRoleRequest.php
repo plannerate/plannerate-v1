@@ -39,6 +39,7 @@ class StoreRoleRequest extends FormRequest
                         ->where('type', $type)
                         ->whereNull('tenant_id')),
             ],
+            'is_administrative' => ['sometimes', 'boolean'],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => [
                 'string',

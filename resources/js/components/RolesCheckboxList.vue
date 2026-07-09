@@ -5,18 +5,36 @@ type RoleItem = {
     value: string;
     label: string;
     isAdmin: boolean;
+    /** Limite de usuários do perfil no plano (null = ilimitado). */
+    limit?: number | null;
+    /** Quantidade atual de usuários com o perfil. */
+    count?: number;
+    /** Limite do perfil atingido (bloqueia novas atribuições). */
+    limitReached?: boolean;
 };
 
 const props = defineProps<{
     nameAttr: string;
     roles: RoleItem[];
     selectedValues?: string[];
-    adminLimitReached: boolean;
     error?: string;
 }>();
 
+function isSelected(role: RoleItem): boolean {
+    return props.selectedValues?.includes(role.value) ?? false;
+}
+
+/**
+ * Desabilita o perfil administrativo cujo limite foi atingido — exceto para
+ * usuários que já o possuem (que não reconsomem vaga).
+ */
 function isDisabled(role: RoleItem): boolean {
-    return role.isAdmin && props.adminLimitReached && !(props.selectedValues?.includes(role.value) ?? false);
+    return role.isAdmin && (role.limitReached ?? false) && !isSelected(role);
+}
+
+/** Exibe o contador "usados/limite" para perfis administrativos com limite. */
+function hasCounter(role: RoleItem): boolean {
+    return role.isAdmin && role.limit !== null && role.limit !== undefined;
 }
 </script>
 
@@ -36,11 +54,17 @@ function isDisabled(role: RoleItem): boolean {
                 type="checkbox"
                 :name="nameAttr"
                 :value="role.value"
-                :checked="selectedValues?.includes(role.value) ?? false"
+                :checked="isSelected(role)"
                 :disabled="isDisabled(role)"
                 class="accent-primary"
             />
-            <span>{{ role.label }}</span>
+            <span class="flex-1">{{ role.label }}</span>
+            <span
+                v-if="hasCounter(role)"
+                class="shrink-0 rounded-full border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground"
+            >
+                {{ role.count ?? 0 }}/{{ role.limit }}
+            </span>
         </label>
     </div>
     <InputError v-if="error" :message="error" />

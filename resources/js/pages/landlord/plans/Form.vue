@@ -38,8 +38,15 @@ type PlanPayload = {
     items: PlanItem[];
 };
 
+type AdministrativeRoleLimit = {
+    system_name: string;
+    name: string;
+    limit: number | null;
+};
+
 const props = defineProps<{
     plan: PlanPayload | null;
+    administrative_roles: AdministrativeRoleLimit[];
 }>();
 
 const { t } = useT();
@@ -249,6 +256,37 @@ const pageMeta = useCrudPageMeta({
                         </div>
                         <InputError :message="errors.is_active" />
                     </label>
+
+                    <!-- Limites por perfil administrativo -->
+                    <div v-if="props.administrative_roles.length > 0" class="space-y-3">
+                        <div>
+                            <p class="text-sm font-semibold text-foreground">
+                                {{ t('app.landlord.plans.role_limits.title') }}
+                            </p>
+                            <p class="text-xs text-muted-foreground">
+                                {{ t('app.landlord.plans.role_limits.hint') }}
+                            </p>
+                        </div>
+
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div
+                                v-for="role in props.administrative_roles"
+                                :key="role.system_name"
+                                class="grid gap-2"
+                            >
+                                <Label :for="`role_limit_${role.system_name}`">{{ role.name }}</Label>
+                                <Input
+                                    :id="`role_limit_${role.system_name}`"
+                                    :name="`role_limits[${role.system_name}]`"
+                                    type="number"
+                                    min="1"
+                                    :default-value="role.limit ?? ''"
+                                    :placeholder="t('app.landlord.plans.role_limits.unlimited_placeholder')"
+                                />
+                                <InputError :message="errors[`role_limits.${role.system_name}`]" />
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Plan Items -->
                     <div class="space-y-3">

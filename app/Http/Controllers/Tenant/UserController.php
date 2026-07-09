@@ -11,6 +11,7 @@ use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\PasswordSetup\IssuePasswordSetupService;
+use App\Services\Tenancy\AdministrativeUserLimitService;
 use App\Support\Authorization\RbacType;
 use App\Support\PasswordSetup\PasswordSetupException;
 use App\Support\Tenancy\InteractsWithTenantContext;
@@ -19,7 +20,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,6 +29,10 @@ class UserController extends Controller
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
 
+    public function __construct(
+        private readonly AdministrativeUserLimitService $administrativeUserLimit,
+    ) {}
+
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', User::class);
@@ -36,6 +40,7 @@ class UserController extends Controller
         $search = $this->requestString($request, 'search');
         $isActive = $this->requestEnum($request, 'is_active', ['0', '1']);
         $trashed = $this->resolveTrashedFilter($request);
+        $tenant = $this->currentTenantOrFail();
 
         return $this->renderDeferredIndex('tenant/users/Index', 'users', fn (): LengthAwarePaginator => $this->usersPaginator(
             $search,
@@ -48,9 +53,9 @@ class UserController extends Controller
                 'is_active' => $isActive,
                 'trashed' => $trashed,
             ],
-            'tenant' => $this->tenantLimitPayload(),
+            'tenant' => $this->administrativeUserLimit->tenantAdminSummary($tenant),
             'filter_options' => [
-                'roles' => $this->rolesForSelect(),
+                'roles' => $this->administrativeUserLimit->rolesForSelect($tenant),
             ],
             'can' => [
                 'create' => $this->authorize('create', User::class),
@@ -62,10 +67,12 @@ class UserController extends Controller
     {
         $this->authorize('create', User::class);
 
+        $tenant = $this->currentTenantOrFail();
+
         return Inertia::render('tenant/users/Form', [
             'user' => null,
-            'roles' => $this->rolesForSelect(),
-            'tenant' => $this->tenantLimitPayload(),
+            'roles' => $this->administrativeUserLimit->rolesForSelect($tenant),
+            'tenant' => $this->administrativeUserLimit->tenantAdminSummary($tenant),
         ]);
     }
 
@@ -75,10 +82,9 @@ class UserController extends Controller
 
         $validated = $request->validated();
         $roleIds = is_array($validated['role_ids'] ?? null) ? $validated['role_ids'] : [];
+        $tenant = $this->currentTenantOrFail();
 
-        if ($this->roleIdsIncludeTenantAdmin($roleIds)) {
-            $this->ensureUserCreationAllowed();
-        }
+        $this->administrativeUserLimit->ensureCanAssign($tenant, $roleIds);
 
         $user = User::query()->create([
             ...Arr::except($validated, ['role_ids']),
@@ -87,9 +93,6 @@ class UserController extends Controller
         ]);
 
         $this->syncTenantRoles($user, $roleIds);
-
-        $tenant = Tenant::current();
-        abort_if(! $tenant instanceof Tenant, 404);
 
         try {
             app(IssuePasswordSetupService::class)->issue($tenant, $user->id, $request->user(), $request);
@@ -120,6 +123,8 @@ class UserController extends Controller
             ->where('roles.type', RbacType::TENANT)
             ->orderBy('roles.name')]);
 
+        $tenant = $this->currentTenantOrFail();
+
         return Inertia::render('tenant/users/Form', [
             'user' => [
                 'id' => $user->id,
@@ -128,8 +133,8 @@ class UserController extends Controller
                 'is_active' => (bool) $user->is_active,
                 'role_ids' => $user->roles->pluck('id')->values()->all(),
             ],
-            'roles' => $this->rolesForSelect(),
-            'tenant' => $this->tenantLimitPayload(),
+            'roles' => $this->administrativeUserLimit->rolesForSelect($tenant),
+            'tenant' => $this->administrativeUserLimit->tenantAdminSummary($tenant),
         ]);
     }
 
@@ -147,9 +152,7 @@ class UserController extends Controller
             ->where('roles.type', RbacType::TENANT)]);
         $currentRoleIds = $user->roles->pluck('id')->values()->all();
 
-        if ($this->roleIdsIncludeTenantAdmin($roleIds) && ! $this->roleIdsIncludeTenantAdmin($currentRoleIds)) {
-            $this->ensureUserCreationAllowed();
-        }
+        $this->administrativeUserLimit->ensureCanAssign($this->currentTenantOrFail(), $roleIds, $currentRoleIds);
 
         $user->update([
             ...Arr::except($validated, ['password', 'role_ids']),
@@ -243,23 +246,12 @@ class UserController extends Controller
             ]);
     }
 
-    /**
-     * @return array<int, array{id: string, name: string, is_admin: bool}>
-     */
-    private function rolesForSelect(): array
+    private function currentTenantOrFail(): Tenant
     {
-        return Role::query()
-            ->whereNull('tenant_id')
-            ->where('guard_name', 'web')
-            ->where('type', RbacType::TENANT)
-            ->orderBy('name')
-            ->get(['id', 'name', 'system_name'])
-            ->map(fn (Role $role): array => [
-                'id' => $role->id,
-                'name' => $role->name,
-                'is_admin' => $role->system_name === 'tenant-admin',
-            ])
-            ->all();
+        $tenant = Tenant::current();
+        abort_if(! $tenant instanceof Tenant, 404);
+
+        return $tenant;
     }
 
     /**
@@ -278,69 +270,5 @@ class UserController extends Controller
         setPermissionsTeamId($this->tenantId());
         $user->syncRoles($roles);
         setPermissionsTeamId($currentTeamId);
-    }
-
-    /**
-     * @param  list<string>  $roleIds
-     */
-    private function roleIdsIncludeTenantAdmin(array $roleIds): bool
-    {
-        if ($roleIds === []) {
-            return false;
-        }
-
-        return Role::query()
-            ->whereIn('id', $roleIds)
-            ->where('system_name', 'tenant-admin')
-            ->exists();
-    }
-
-    /**
-     * @throws ValidationException
-     */
-    private function ensureUserCreationAllowed(): void
-    {
-        $tenant = Tenant::current();
-        $limit = $tenant?->plan_user_limit;
-
-        if (! $tenant || $tenant->plan === null || $limit === null) {
-            throw ValidationException::withMessages([
-                'limit' => __('app.landlord.tenant_access.messages.no_plan_limit'),
-            ]);
-        }
-
-        if ($this->countTenantAdminUsers() >= $limit) {
-            throw ValidationException::withMessages([
-                'limit' => __('app.landlord.tenant_access.messages.limit_reached'),
-            ]);
-        }
-    }
-
-    /**
-     * @return array{plan_user_limit:int|null,users_count:int,limit_message:string|null}
-     */
-    private function tenantLimitPayload(): array
-    {
-        $tenant = Tenant::current();
-        $usersCount = $this->countTenantAdminUsers();
-        $planUserLimit = $tenant?->plan_user_limit;
-        $adminLimitReached = $planUserLimit !== null && $tenant?->plan !== null && $usersCount >= $planUserLimit;
-
-        return [
-            'plan_user_limit' => $planUserLimit,
-            'users_count' => $usersCount,
-            'limit_message' => $adminLimitReached ? __('app.landlord.tenant_access.messages.limit_reached') : null,
-        ];
-    }
-
-    private function countTenantAdminUsers(): int
-    {
-        return Role::query()
-            ->join('model_has_roles', 'model_has_roles.role_id', '=', 'roles.id')
-            ->where('roles.system_name', 'tenant-admin')
-            ->where('model_has_roles.model_type', User::class)
-            ->where('model_has_roles.tenant_id', $this->tenantId())
-            ->distinct()
-            ->count('model_has_roles.model_id');
     }
 }

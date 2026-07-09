@@ -17,6 +17,8 @@ return [
         'system_name' => 'Nome do sistema',
         'system_name_hint' => 'O identificador do sistema não pode ser alterado após a criação.',
         'type' => 'Tipo',
+        'is_administrative' => 'Perfil administrativo',
+        'is_administrative_hint' => 'Usuários com este perfil contam no limite do plano (definido por plano na tela de Planos).',
         'permissions' => 'Permissões',
         'permissions_count' => 'Permissões',
     ],

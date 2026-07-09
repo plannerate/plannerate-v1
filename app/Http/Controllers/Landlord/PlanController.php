@@ -8,9 +8,12 @@ use App\Http\Requests\Landlord\StorePlanRequest;
 use App\Http\Requests\Landlord\UpdatePlanRequest;
 use App\Models\Plan;
 use App\Models\PlanItem;
+use App\Models\Role;
+use App\Services\Tenancy\AdministrativeUserLimitService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,6 +21,15 @@ use Inertia\Response;
 class PlanController extends Controller
 {
     use InteractsWithDeferredIndex;
+
+    /**
+     * Prefixo das chaves de plan_item que guardam o limite por perfil administrativo.
+     */
+    private const ROLE_LIMIT_KEY_PREFIX = 'user_limit:';
+
+    public function __construct(
+        private readonly AdministrativeUserLimitService $administrativeUserLimit,
+    ) {}
 
     /**
      * Display a listing of plans.
@@ -78,6 +90,7 @@ class PlanController extends Controller
 
         return Inertia::render('landlord/plans/Form', [
             'plan' => null,
+            'administrative_roles' => $this->administrativeRoleLimits(null),
         ]);
     }
 
@@ -91,11 +104,13 @@ class PlanController extends Controller
         $validated = $request->validated();
         $validated['is_active'] = $request->boolean('is_active');
         $items = $validated['items'] ?? [];
-        unset($validated['items']);
+        $roleLimits = $validated['role_limits'] ?? [];
+        unset($validated['items'], $validated['role_limits']);
 
-        DB::connection('landlord')->transaction(function () use ($validated, $items): void {
+        DB::connection('landlord')->transaction(function () use ($validated, $items, $roleLimits): void {
             $plan = Plan::query()->create($validated);
             $this->syncPlanItems($plan, $items);
+            $this->syncRoleLimits($plan, $roleLimits);
         });
 
         Inertia::flash('toast', [
@@ -124,18 +139,21 @@ class PlanController extends Controller
                 'price_cents' => $plan->price_cents,
                 'user_limit' => $plan->user_limit,
                 'is_active' => $plan->is_active,
-                'items' => $plan->items->map(fn (PlanItem $item): array => [
-                    'id' => $item->id,
-                    'key' => $item->key,
-                    'label' => $item->label,
-                    'value' => $item->value,
-                    'type' => $item->type,
-                    'sort_order' => $item->sort_order,
-                    'is_active' => $item->is_active,
-                    'limit_message' => $item->limit_message,
-                    'upgrade_url' => $item->upgrade_url,
-                ])->values()->all(),
+                'items' => $plan->items
+                    ->reject(fn (PlanItem $item): bool => $this->isRoleLimitKey((string) $item->key))
+                    ->map(fn (PlanItem $item): array => [
+                        'id' => $item->id,
+                        'key' => $item->key,
+                        'label' => $item->label,
+                        'value' => $item->value,
+                        'type' => $item->type,
+                        'sort_order' => $item->sort_order,
+                        'is_active' => $item->is_active,
+                        'limit_message' => $item->limit_message,
+                        'upgrade_url' => $item->upgrade_url,
+                    ])->values()->all(),
             ],
+            'administrative_roles' => $this->administrativeRoleLimits($plan),
         ]);
     }
 
@@ -149,11 +167,13 @@ class PlanController extends Controller
         $validated = $request->validated();
         $validated['is_active'] = $request->boolean('is_active');
         $items = $validated['items'] ?? [];
-        unset($validated['items']);
+        $roleLimits = $validated['role_limits'] ?? [];
+        unset($validated['items'], $validated['role_limits']);
 
-        DB::connection('landlord')->transaction(function () use ($plan, $validated, $items): void {
+        DB::connection('landlord')->transaction(function () use ($plan, $validated, $items, $roleLimits): void {
             $plan->update($validated);
             $this->syncPlanItems($plan, $items);
+            $this->syncRoleLimits($plan, $roleLimits);
         });
 
         Inertia::flash('toast', [
@@ -171,7 +191,12 @@ class PlanController extends Controller
     {
         $submittedIds = collect($items)->pluck('id')->filter()->values()->all();
 
-        $plan->items()->whereNotIn('id', $submittedIds)->delete();
+        // Não remove os itens de limite por perfil (user_limit:*) — estes são
+        // gerenciados exclusivamente por syncRoleLimits().
+        $plan->items()
+            ->whereNotIn('id', $submittedIds)
+            ->where('key', 'not like', self::ROLE_LIMIT_KEY_PREFIX.'%')
+            ->delete();
 
         foreach ($items as $index => $data) {
             $plan->items()->updateOrCreate(
@@ -188,6 +213,81 @@ class PlanController extends Controller
                 ],
             );
         }
+    }
+
+    /**
+     * Persiste os limites por perfil administrativo como plan_items
+     * (key = "user_limit:{system_name}", type integer). Valor vazio/nulo
+     * remove o item (= perfil sem limite naquele plano).
+     *
+     * @param  array<string, mixed>  $roleLimits  Mapa system_name => limite
+     */
+    private function syncRoleLimits(Plan $plan, array $roleLimits): void
+    {
+        foreach ($this->limitableAdministrativeRoles() as $role) {
+            $key = self::ROLE_LIMIT_KEY_PREFIX.$role->system_name;
+            $value = $roleLimits[$role->system_name] ?? null;
+
+            // Valor vazio/nulo/inválido = perfil sem limite neste plano → remove o item.
+            if ($value === null || $value === '' || (int) $value < 1) {
+                $plan->items()->where('key', $key)->delete();
+
+                continue;
+            }
+
+            $plan->items()->updateOrCreate(
+                ['key' => $key],
+                [
+                    'label' => __('app.landlord.plans.role_limits.item_label', ['role' => $role->name]),
+                    'value' => (string) (int) $value,
+                    'type' => 'integer',
+                    'is_active' => true,
+                ],
+            );
+        }
+    }
+
+    /**
+     * Lista dos perfis administrativos (exceto tenant-admin, cujo limite usa o
+     * campo user_limit do plano) com o limite atual configurado no plano.
+     *
+     * @return list<array{system_name:string,name:string,limit:int|null}>
+     */
+    private function administrativeRoleLimits(?Plan $plan): array
+    {
+        $existing = $plan instanceof Plan
+            ? $plan->items()->where('key', 'like', self::ROLE_LIMIT_KEY_PREFIX.'%')->get()->keyBy('key')
+            : collect();
+
+        return $this->limitableAdministrativeRoles()
+            ->map(function (Role $role) use ($existing): array {
+                $value = $existing->get(self::ROLE_LIMIT_KEY_PREFIX.$role->system_name)?->typedValue();
+
+                return [
+                    'system_name' => (string) $role->system_name,
+                    'name' => $role->name,
+                    'limit' => is_int($value) ? $value : null,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Perfis administrativos elegíveis a limite por plano (exclui tenant-admin).
+     *
+     * @return Collection<int, Role>
+     */
+    private function limitableAdministrativeRoles(): Collection
+    {
+        return $this->administrativeUserLimit->administrativeRoles()
+            ->reject(fn (Role $role): bool => $role->system_name === 'tenant-admin')
+            ->values();
+    }
+
+    private function isRoleLimitKey(string $key): bool
+    {
+        return str_starts_with($key, self::ROLE_LIMIT_KEY_PREFIX);
     }
 
     /**

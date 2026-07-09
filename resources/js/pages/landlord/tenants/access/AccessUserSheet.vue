@@ -36,6 +36,9 @@ type RoleOption = {
     id: string;
     name: string;
     is_admin: boolean;
+    limit: number | null;
+    count: number;
+    limit_reached: boolean;
 };
 
 const props = defineProps<{
@@ -52,15 +55,14 @@ const emit = defineEmits<{
 
 const { t } = useT();
 
-const adminLimitReached = computed(
-    () => props.tenant.plan_user_limit !== null && props.tenant.users_count >= props.tenant.plan_user_limit,
-);
-
 const rolesForField = computed(() =>
     props.roles.map((role) => ({
         value: role.name,
         label: role.name,
         isAdmin: role.is_admin,
+        limit: role.limit,
+        count: role.count,
+        limitReached: role.limit_reached,
     })),
 );
 
@@ -144,7 +146,6 @@ function getUserInitials(name: string): string {
                                 <RolesCheckboxList
                                     name-attr="role_names[]"
                                     :roles="rolesForField"
-                                    :admin-limit-reached="adminLimitReached"
                                     :error="errors.role_names"
                                 />
                             </div>
@@ -233,7 +234,6 @@ function getUserInitials(name: string): string {
                                     name-attr="role_names[]"
                                     :roles="rolesForField"
                                     :selected-values="user.role_names"
-                                    :admin-limit-reached="adminLimitReached"
                                     :error="errors.role_names"
                                 />
                             </div>

@@ -66,6 +66,7 @@ class RoleController extends Controller
                 'name' => $role->name,
                 'type' => $role->type,
                 'permissions_count' => $role->permissions_count,
+                'is_administrative' => (bool) $role->is_administrative,
                 'is_protected' => in_array((string) $role->system_name, self::PROTECTED_ROLES, true),
                 'created_at' => $role->created_at?->toDateTimeString(),
             ]);
@@ -99,6 +100,7 @@ class RoleController extends Controller
             'name' => $validated['name'],
             'guard_name' => 'web',
             'tenant_id' => null,
+            'is_administrative' => $request->boolean('is_administrative'),
         ]);
 
         $role->syncPermissions($validated['permissions'] ?? []);
@@ -128,6 +130,7 @@ class RoleController extends Controller
                 'name' => $role->name,
                 'type' => $role->type,
                 'system_name' => $role->system_name,
+                'is_administrative' => (bool) $role->is_administrative,
                 'permissions' => $role->permissions->pluck('name')->values()->all(),
                 'is_protected' => in_array((string) $role->system_name, self::PROTECTED_ROLES, true),
             ],
@@ -149,15 +152,18 @@ class RoleController extends Controller
 
         // O slug (system_name) é imutável após a criação em qualquer perfil.
         if (in_array((string) $role->system_name, self::PROTECTED_ROLES, true)) {
-            // Perfis protegidos (admin): apenas o nome de exibição pode mudar.
-            // Tipo e permissões permanecem intactos para não quebrar o RBAC.
+            // Perfis protegidos (admin): apenas o nome de exibição e a flag
+            // administrativa podem mudar. Tipo e permissões permanecem intactos
+            // para não quebrar o RBAC.
             $role->update([
                 'name' => $validated['name'],
+                'is_administrative' => $request->boolean('is_administrative'),
             ]);
         } else {
             $role->update([
                 'type' => $validated['type'],
                 'name' => $validated['name'],
+                'is_administrative' => $request->boolean('is_administrative'),
             ]);
 
             $role->syncPermissions($validated['permissions'] ?? []);

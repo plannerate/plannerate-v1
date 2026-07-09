@@ -38,6 +38,7 @@ return [
         'force_deleted' => 'Usuário excluído definitivamente.',
         'no_plan_limit' => 'Não é possível cadastrar usuários sem limite definido no plano.',
         'limit_reached' => 'Você atingiu o limite de usuários administradores do seu plano.',
+        'role_limit_reached' => 'Você atingiu o limite de usuários com o perfil ":role" do seu plano.',
         'password_setup_sent' => 'Link de definição de senha enviado com sucesso.',
     ],
 ];

@@ -19,6 +19,7 @@ type RolePayload = {
     type: string;
     name: string;
     system_name: string | null;
+    is_administrative: boolean;
     permissions: string[];
     is_protected: boolean;
 };
@@ -271,6 +272,28 @@ const pageMeta = useCrudPageMeta({
                         :disabled="isEdit"
                         :error="errors.system_name"
                     />
+
+                    <!-- Perfil administrativo: conta no limite de usuários do plano.
+                         Só faz sentido para perfis de tenant. -->
+                    <label
+                        v-if="selectedType === 'tenant'"
+                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50 has-checked:border-primary/50 has-checked:bg-primary/5"
+                    >
+                        <input type="hidden" name="is_administrative" value="0" />
+                        <input
+                            id="is_administrative"
+                            name="is_administrative"
+                            type="checkbox"
+                            value="1"
+                            :checked="props.role?.is_administrative ?? false"
+                            class="accent-primary"
+                        />
+                        <div>
+                            <span class="text-sm font-medium">{{ t('app.landlord.roles.fields.is_administrative') }}</span>
+                            <p class="text-xs text-muted-foreground">{{ t('app.landlord.roles.fields.is_administrative_hint') }}</p>
+                        </div>
+                        <InputError :message="errors.is_administrative" />
+                    </label>
 
                     <!-- Permissions -->
                     <div class="space-y-3">

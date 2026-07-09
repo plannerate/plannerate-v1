@@ -45,6 +45,7 @@ class UpdateRoleRequest extends FormRequest
                         ->whereNull('tenant_id')),
             ],
             // O slug (system_name) é imutável após a criação e não é validado na edição.
+            'is_administrative' => ['sometimes', 'boolean'],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => [
                 'string',

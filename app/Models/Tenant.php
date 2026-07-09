@@ -55,8 +55,11 @@ class Tenant extends ModelsTenant
     }
 
     /**
-     * Resolve the effective tenant-admin user limit for this tenant's plan.
-     * The limit applies only to users with the "tenant-admin" role.
+     * Resolve the effective "tenant-admin" user limit for this tenant's plan.
+     *
+     * Trata do perfil administrativo legado. Os demais perfis administrativos
+     * usam {@see self::roleUserLimit()}.
+     *
      * Priority:
      * 1) Active plan item with key "user_limit"
      * 2) plans.user_limit fallback
@@ -84,6 +87,40 @@ class Tenant extends ModelsTenant
         }
 
         return $plan->user_limit;
+    }
+
+    /**
+     * Resolve o limite de usuários de um perfil administrativo específico,
+     * dentro do plano deste tenant.
+     *
+     * - "tenant-admin" mantém o comportamento legado ({@see self::getPlanUserLimitAttribute()}).
+     * - Demais perfis administrativos usam o plan_item com key "user_limit:{system_name}".
+     *
+     * @return int|null O limite configurado, ou null quando ilimitado/não definido.
+     */
+    public function roleUserLimit(string $systemName): ?int
+    {
+        if ($systemName === 'tenant-admin') {
+            return $this->plan_user_limit;
+        }
+
+        $this->loadMissing('plan:id,user_limit');
+
+        $plan = $this->plan;
+
+        if (! $plan instanceof Plan) {
+            return null;
+        }
+
+        // Consulta direta na relação (não na coleção carregada) para evitar
+        // contaminação com itens carregados por outros accessors do plano.
+        $value = $plan->items()
+            ->where('key', 'user_limit:'.$systemName)
+            ->where('is_active', true)
+            ->first()
+            ?->typedValue();
+
+        return is_int($value) ? $value : null;
     }
 
     /**

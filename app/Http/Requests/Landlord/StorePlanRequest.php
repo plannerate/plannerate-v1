@@ -31,6 +31,8 @@ class StorePlanRequest extends FormRequest
             'price_cents' => ['required', 'integer', 'min:0'],
             'user_limit' => ['nullable', 'integer', 'min:1'],
             'is_active' => ['sometimes', 'boolean'],
+            'role_limits' => ['sometimes', 'array'],
+            'role_limits.*' => ['nullable', 'integer', 'min:1'],
             'items' => ['sometimes', 'array'],
             'items.*.key' => ['required', 'string', 'max:100'],
             'items.*.label' => ['required', 'string', 'max:255'],
@@ -40,5 +42,22 @@ class StorePlanRequest extends FormRequest
             'items.*.limit_message' => ['nullable', 'string', 'max:500'],
             'items.*.upgrade_url' => ['nullable', 'url', 'max:2048'],
         ];
+    }
+
+    /**
+     * Normaliza limites por perfil vazios ("") para null (= ilimitado).
+     */
+    protected function prepareForValidation(): void
+    {
+        $roleLimits = $this->input('role_limits');
+
+        if (is_array($roleLimits)) {
+            $this->merge([
+                'role_limits' => array_map(
+                    static fn ($value) => ($value === '' || $value === null) ? null : $value,
+                    $roleLimits,
+                ),
+            ]);
+        }
     }
 }

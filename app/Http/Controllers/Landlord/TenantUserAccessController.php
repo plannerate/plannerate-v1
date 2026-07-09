@@ -10,6 +10,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Impersonation\IssueImpersonationService;
 use App\Services\PasswordSetup\IssuePasswordSetupService;
+use App\Services\Tenancy\AdministrativeUserLimitService;
 use App\Support\Authorization\RbacType;
 use App\Support\Impersonation\ImpersonationException;
 use App\Support\PasswordSetup\PasswordSetupException;
@@ -21,7 +22,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
@@ -34,6 +34,10 @@ class TenantUserAccessController extends Controller
      * @var list<string>
      */
     private const AVAILABLE_STATUS_FILTERS = ['all', 'active', 'inactive', 'trashed'];
+
+    public function __construct(
+        private readonly AdministrativeUserLimitService $administrativeUserLimit,
+    ) {}
 
     /**
      * Show tenant user access management.
@@ -53,9 +57,9 @@ class TenantUserAccessController extends Controller
          *     activeCount: int
          * } $tenantUserData
          */
-        $activeCount = $this->countTenantAdminUsers($tenant);
+        $summary = $this->administrativeUserLimit->tenantAdminSummary($tenant);
 
-        $tenantUserData = $this->runInTenantContext($tenant, function () use ($search, $statusFilter, $perPage, $trashFilter, $activeCount): array {
+        $tenantUserData = $this->runInTenantContext($tenant, function () use ($search, $statusFilter, $perPage, $trashFilter): array {
             $query = User::query()
                 ->when($search !== '', function ($query) use ($search): void {
                     $query->where(function ($where) use ($search): void {
@@ -88,22 +92,10 @@ class TenantUserAccessController extends Controller
 
             return [
                 'users' => $users,
-                'activeCount' => $activeCount,
             ];
         });
 
-        $roles = Role::query()
-            ->whereNull('tenant_id')
-            ->where('guard_name', 'web')
-            ->where('type', RbacType::TENANT)
-            ->orderBy('name')
-            ->get(['id', 'name', 'system_name'])
-            ->map(fn (Role $role): array => [
-                'id' => $role->id,
-                'name' => $role->name,
-                'is_admin' => $role->system_name === 'tenant-admin',
-            ])
-            ->all();
+        $roles = $this->administrativeUserLimit->rolesForSelect($tenant);
 
         $roleNamesByUser = $this->tenantRoleNamesByUser($tenant);
         $users = $tenantUserData['users']->through(fn (array $user): array => [
@@ -111,18 +103,14 @@ class TenantUserAccessController extends Controller
             'role_names' => $roleNamesByUser[$user['id']] ?? [],
         ]);
 
-        $planUserLimit = $tenant->plan_user_limit;
-        $adminCount = $tenantUserData['activeCount'];
-        $adminLimitReached = $planUserLimit !== null && $tenant->plan !== null && $adminCount >= $planUserLimit;
-
         return Inertia::render('landlord/tenants/Access', [
             'tenant' => [
                 'id' => $tenant->id,
                 'name' => $tenant->name,
                 'slug' => $tenant->slug,
-                'plan_user_limit' => $planUserLimit,
-                'users_count' => $adminCount,
-                'limit_message' => $adminLimitReached ? __('app.landlord.tenant_access.messages.limit_reached') : null,
+                'plan_user_limit' => $summary['plan_user_limit'],
+                'users_count' => $summary['users_count'],
+                'limit_message' => $summary['limit_message'],
                 'can_impersonate' => $request->user()->can('impersonate', $tenant),
             ],
             'users' => $users,
@@ -151,14 +139,7 @@ class TenantUserAccessController extends Controller
         $validated = $this->validateStorePayload($request, $tenant);
 
         $roleNames = is_array($validated['role_names'] ?? null) ? $validated['role_names'] : [];
-        $isAssigningAdmin = Role::query()
-            ->whereIn('name', $roleNames)
-            ->where('system_name', 'tenant-admin')
-            ->exists();
-
-        if ($isAssigningAdmin) {
-            $this->ensureUserCreationAllowed($tenant);
-        }
+        $this->administrativeUserLimit->ensureCanAssign($tenant, $this->roleIdsForNames($roleNames));
 
         $tenantUser = $this->runInTenantContext($tenant, function () use ($validated, $tenant): User {
             $tenantUser = User::query()->create([
@@ -201,25 +182,11 @@ class TenantUserAccessController extends Controller
         $validated = $this->validateUpdatePayload($request, $tenant, $userId);
 
         $roleNames = is_array($validated['role_names'] ?? null) ? $validated['role_names'] : [];
-        $isAddingAdmin = Role::query()
-            ->whereIn('name', $roleNames)
-            ->where('system_name', 'tenant-admin')
-            ->exists();
-
-        if ($isAddingAdmin) {
-            $hadAdminBefore = DB::connection('landlord')
-                ->table('model_has_roles')
-                ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-                ->where('roles.system_name', 'tenant-admin')
-                ->where('model_has_roles.model_type', User::class)
-                ->where('model_has_roles.model_id', $userId)
-                ->where('model_has_roles.tenant_id', $tenant->id)
-                ->exists();
-
-            if (! $hadAdminBefore) {
-                $this->ensureUserCreationAllowed($tenant);
-            }
-        }
+        $this->administrativeUserLimit->ensureCanAssign(
+            $tenant,
+            $this->roleIdsForNames($roleNames),
+            $this->currentTenantRoleIds($tenant, $userId),
+        );
 
         $this->runInTenantContext($tenant, function () use ($validated, $tenant, $userId): void {
             $tenantUser = User::query()->findOrFail($userId);
@@ -483,25 +450,40 @@ class TenantUserAccessController extends Controller
     }
 
     /**
-     * @throws ValidationException
+     * Resolve os IDs dos perfis (roles de tenant globais) a partir dos nomes.
+     *
+     * @param  list<string>  $roleNames
+     * @return list<string>
      */
-    private function ensureUserCreationAllowed(Tenant $tenant): void
+    private function roleIdsForNames(array $roleNames): array
     {
-        $limit = $tenant->plan_user_limit;
-
-        if ($tenant->plan === null || $limit === null) {
-            throw ValidationException::withMessages([
-                'limit' => __('app.landlord.tenant_access.messages.no_plan_limit'),
-            ]);
+        if ($roleNames === []) {
+            return [];
         }
 
-        $usersCount = $this->countTenantAdminUsers($tenant);
+        return Role::query()
+            ->whereNull('tenant_id')
+            ->where('guard_name', 'web')
+            ->where('type', RbacType::TENANT)
+            ->whereIn('name', $roleNames)
+            ->pluck('id')
+            ->all();
+    }
 
-        if ($usersCount >= $limit) {
-            throw ValidationException::withMessages([
-                'limit' => __('app.landlord.tenant_access.messages.limit_reached'),
-            ]);
-        }
+    /**
+     * IDs dos perfis que o usuário já possui neste tenant.
+     *
+     * @return list<string>
+     */
+    private function currentTenantRoleIds(Tenant $tenant, string $userId): array
+    {
+        return DB::connection('landlord')
+            ->table('model_has_roles')
+            ->where('model_type', User::class)
+            ->where('model_id', $userId)
+            ->where('tenant_id', $tenant->id)
+            ->pluck('role_id')
+            ->all();
     }
 
     /**
@@ -569,16 +551,5 @@ class TenantUserAccessController extends Controller
                 ],
             ])->validate();
         });
-    }
-
-    private function countTenantAdminUsers(Tenant $tenant): int
-    {
-        return Role::query()
-            ->join('model_has_roles', 'model_has_roles.role_id', '=', 'roles.id')
-            ->where('roles.system_name', 'tenant-admin')
-            ->where('model_has_roles.model_type', User::class)
-            ->where('model_has_roles.tenant_id', $tenant->id)
-            ->distinct()
-            ->count('model_has_roles.model_id');
     }
 }

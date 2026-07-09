@@ -55,6 +55,9 @@ class LandlordRbacSeeder extends Seeder
             'type' => RbacType::TENANT,
         ]);
 
+        // tenant-admin é sempre administrativo (conta no limite de usuários do plano).
+        $tenantAdminRole->forceFill(['is_administrative' => true])->save();
+
         $superAdminRole->syncPermissions(PermissionName::all());
         $landlordAdminRole->syncPermissions([
             PermissionName::LANDLORD_USERS_VIEW_ANY,

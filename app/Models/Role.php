@@ -28,5 +28,18 @@ class Role extends SpatieRole
         'system_name',
         'name',
         'guard_name',
+        'is_administrative',
     ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_administrative' => 'boolean',
+        ];
+    }
 }

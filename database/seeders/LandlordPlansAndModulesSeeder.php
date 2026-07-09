@@ -20,6 +20,27 @@ class LandlordPlansAndModulesSeeder extends Seeder
             ]
         );
 
+        // Limites default por perfil administrativo (plan_items "user_limit:{system_name}").
+        // Em branco/ausente = ilimitado; aqui damos um teto de exemplo para cada perfil.
+        $roleLimits = [
+            'kanban-aprovacao-da-area-de-gc' => 2,
+            'kanban-revisao-de-dimensoes' => 3,
+            'kanban-revisao-de-imagens' => 3,
+            'kanban-revisao-periodica' => 2,
+        ];
+
+        foreach ($roleLimits as $systemName => $limit) {
+            $plan->items()->updateOrCreate(
+                ['key' => 'user_limit:'.$systemName],
+                [
+                    'label' => 'Limite de usuários: '.$systemName,
+                    'value' => (string) $limit,
+                    'type' => 'integer',
+                    'is_active' => true,
+                ],
+            );
+        }
+
         $module = Module::on('landlord')->firstOrCreate(
             ['slug' => 'kanban'],
             [

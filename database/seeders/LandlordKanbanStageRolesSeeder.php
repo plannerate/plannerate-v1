@@ -13,6 +13,19 @@ use Spatie\Permission\PermissionRegistrar;
 class LandlordKanbanStageRolesSeeder extends Seeder
 {
     /**
+     * Slugs das etapas cujos perfis são administrativos (contam no limite de
+     * usuários do plano). O limite de cada um é definido por plano (plan_items).
+     *
+     * @var list<string>
+     */
+    private const ADMINISTRATIVE_SLUGS = [
+        'aprovacao-da-area-de-gc',
+        'revisao-de-dimensoes',
+        'revisao-de-imagens',
+        'revisao-periodica',
+    ];
+
+    /**
      * Permissões concedidas a TODAS as etapas do kanban.
      *
      * Base mínima para o participante enxergar o kanban, abrir o planograma
@@ -66,6 +79,12 @@ class LandlordKanbanStageRolesSeeder extends Seeder
                         'name' => $name,
                     ],
                 );
+
+                // Marca (idempotente) os perfis administrativos que contam no
+                // limite de usuários do plano.
+                $role->forceFill([
+                    'is_administrative' => in_array($slug, self::ADMINISTRATIVE_SLUGS, true),
+                ])->save();
 
                 $extra = $permissionsBySlug[$slug] ?? [];
                 $role->syncPermissions([...self::COMMON_PERMISSIONS, ...$extra]);

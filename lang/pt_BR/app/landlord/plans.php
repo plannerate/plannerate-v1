@@ -16,6 +16,12 @@ return [
         'is_active' => 'Ativo',
         'clients_count' => 'Clientes associados',
     ],
+    'role_limits' => [
+        'title' => 'Limites por perfil administrativo',
+        'hint' => 'Quantidade máxima de usuários por perfil neste plano. Em branco = ilimitado.',
+        'unlimited_placeholder' => 'Em branco = ilimitado',
+        'item_label' => 'Limite de usuários: :role',
+    ],
     'messages' => [
         'created' => 'Plano criado com sucesso.',
         'updated' => 'Plano atualizado com sucesso.',

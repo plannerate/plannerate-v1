@@ -39,6 +39,9 @@ type RoleOption = {
     id: string;
     name: string;
     is_admin: boolean;
+    limit: number | null;
+    count: number;
+    limit_reached: boolean;
 };
 
 type FilterOption = {
@@ -60,9 +63,6 @@ const props = defineProps<{
 
 const { t } = useT();
 const tenantsIndexPath = TenantController.index.url().replace(/^\/\/[^/]+/, '');
-const adminLimitReached = computed(
-    () => props.tenant.plan_user_limit !== null && props.tenant.users_count >= props.tenant.plan_user_limit,
-);
 const isDrawerOpen = ref(false);
 const drawerMode = ref<'create' | 'edit'>('create');
 const selectedUserId = ref<string | null>(null);
@@ -174,7 +174,6 @@ const pageMeta = useCrudPageMeta({
                     :user="user"
                     :tenant-id="props.tenant.id"
                     :roles="props.roles"
-                    :admin-limit-reached="adminLimitReached"
                     :can-impersonate="props.tenant.can_impersonate"
                     @edit="openEditDrawer"
                 />

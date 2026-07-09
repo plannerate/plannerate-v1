@@ -3,6 +3,8 @@
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
+use Database\Seeders\LandlordKanbanStageRolesSeeder;
+use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -73,6 +75,64 @@ test('authenticated user can create update and delete plan', function () {
 
     $this->assertDatabaseMissing('plans', [
         'id' => $plan->id,
+    ], 'landlord');
+});
+
+test('plan role limits are persisted and removed as plan_items', function () {
+    Artisan::call('db:seed', [
+        '--class' => LandlordRbacSeeder::class,
+        '--force' => true,
+        '--no-interaction' => true,
+    ]);
+    Artisan::call('db:seed', [
+        '--class' => LandlordKanbanStageRolesSeeder::class,
+        '--force' => true,
+        '--no-interaction' => true,
+    ]);
+
+    $createResponse = $this->post(route('landlord.plans.store'), [
+        'name' => 'Plano Limites',
+        'slug' => 'plano-limites',
+        'price_cents' => 1000,
+        'user_limit' => 10,
+        'is_active' => '1',
+        'role_limits' => [
+            'kanban-revisao-de-imagens' => '3',
+            'kanban-revisao-de-dimensoes' => '', // vazio = ilimitado (não cria item)
+        ],
+    ]);
+
+    $createResponse->assertRedirect(route('landlord.plans.index'));
+
+    $plan = Plan::query()->where('slug', 'plano-limites')->firstOrFail();
+
+    $this->assertDatabaseHas('plan_items', [
+        'plan_id' => $plan->id,
+        'key' => 'user_limit:kanban-revisao-de-imagens',
+        'value' => '3',
+        'type' => 'integer',
+    ], 'landlord');
+
+    $this->assertDatabaseMissing('plan_items', [
+        'plan_id' => $plan->id,
+        'key' => 'user_limit:kanban-revisao-de-dimensoes',
+    ], 'landlord');
+
+    // Atualizar zerando o limite → item removido definitivamente.
+    $this->put(route('landlord.plans.update', $plan), [
+        'name' => 'Plano Limites',
+        'slug' => 'plano-limites',
+        'price_cents' => 1000,
+        'user_limit' => 10,
+        'is_active' => '1',
+        'role_limits' => [
+            'kanban-revisao-de-imagens' => '',
+        ],
+    ])->assertRedirect(route('landlord.plans.index'));
+
+    $this->assertDatabaseMissing('plan_items', [
+        'plan_id' => $plan->id,
+        'key' => 'user_limit:kanban-revisao-de-imagens',
     ], 'landlord');
 });
 

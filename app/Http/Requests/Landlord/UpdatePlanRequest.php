@@ -37,6 +37,8 @@ class UpdatePlanRequest extends FormRequest
             'price_cents' => ['nullable'],
             'user_limit' => ['nullable', 'integer', 'min:1'],
             'is_active' => ['sometimes', 'boolean'],
+            'role_limits' => ['sometimes', 'array'],
+            'role_limits.*' => ['nullable', 'integer', 'min:1'],
             'items' => ['sometimes', 'array'],
             'items.*.id' => ['sometimes', 'nullable', 'string'],
             'items.*.key' => ['required', 'string', 'max:100'],
@@ -47,5 +49,22 @@ class UpdatePlanRequest extends FormRequest
             'items.*.limit_message' => ['nullable', 'string', 'max:500'],
             'items.*.upgrade_url' => ['nullable', 'url', 'max:2048'],
         ];
+    }
+
+    /**
+     * Normaliza limites por perfil vazios ("") para null (= ilimitado).
+     */
+    protected function prepareForValidation(): void
+    {
+        $roleLimits = $this->input('role_limits');
+
+        if (is_array($roleLimits)) {
+            $this->merge([
+                'role_limits' => array_map(
+                    static fn ($value) => ($value === '' || $value === null) ? null : $value,
+                    $roleLimits,
+                ),
+            ]);
+        }
     }
 }

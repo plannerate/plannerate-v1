@@ -24,6 +24,9 @@ type RoleOption = {
     id: string;
     name: string;
     is_admin: boolean;
+    limit: number | null;
+    count: number;
+    limit_reached: boolean;
 };
 
 const props = defineProps<{
@@ -38,14 +41,14 @@ const props = defineProps<{
 
 const { t } = useT();
 const isEdit = computed(() => props.user !== null);
-const adminLimitReached = computed(
-    () => props.tenant.plan_user_limit !== null && props.tenant.users_count >= props.tenant.plan_user_limit,
-);
 const rolesForField = computed(() =>
     props.roles.map((role) => ({
         value: role.id,
         label: role.name,
         isAdmin: role.is_admin,
+        limit: role.limit,
+        count: role.count,
+        limitReached: role.limit_reached,
     })),
 );
 const usersIndexPath = TenantUserController.index.url().replace(/^\/\/[^/]+/, '');
@@ -142,7 +145,6 @@ const updateFormAttrs = computed(() => {
                             name-attr="role_ids[]"
                             :roles="rolesForField"
                             :selected-values="props.user?.role_ids"
-                            :admin-limit-reached="adminLimitReached"
                             :error="errors.role_ids"
                         />
                     </div>

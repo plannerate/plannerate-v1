@@ -78,6 +78,33 @@ test('authenticated user can create update and delete a role', function () {
     ], 'landlord');
 });
 
+test('is_administrative flag persists on create and update for a tenant role', function () {
+    $createResponse = $this->post(route('landlord.roles.store'), [
+        'type' => 'tenant',
+        'name' => 'Revisor Custom',
+        'is_administrative' => '1',
+    ]);
+
+    $createResponse->assertRedirect(route('landlord.roles.index'));
+
+    $role = Role::query()
+        ->whereNull('tenant_id')
+        ->where('name', 'Revisor Custom')
+        ->firstOrFail();
+
+    expect($role->is_administrative)->toBeTrue();
+
+    $updateResponse = $this->put(route('landlord.roles.update', $role), [
+        'type' => 'tenant',
+        'name' => 'Revisor Custom',
+        'is_administrative' => '0',
+    ]);
+
+    $updateResponse->assertRedirect(route('landlord.roles.index'));
+
+    expect($role->fresh()->is_administrative)->toBeFalse();
+});
+
 test('protected role can update its display name without changing slug or permissions', function () {
     setPermissionsTeamId(null);
 

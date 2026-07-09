@@ -33,13 +33,15 @@ type RoleOption = {
     id: string;
     name: string;
     is_admin: boolean;
+    limit: number | null;
+    count: number;
+    limit_reached: boolean;
 };
 
 const props = defineProps<{
     user: UserAccessRow;
     tenantId: string;
     roles: RoleOption[];
-    adminLimitReached: boolean;
     canImpersonate: boolean;
 }>();
 
@@ -65,6 +67,14 @@ function onRoleChange(roleName: string, checked: boolean): void {
         ? [...localRoleNames.value, roleName]
         : localRoleNames.value.filter((r) => r !== roleName);
     flushRoles();
+}
+
+/**
+ * Desabilita o chip do perfil quando o usuário está excluído ou quando o
+ * perfil administrativo atingiu o limite do plano e o usuário ainda não o possui.
+ */
+function isRoleDisabled(role: RoleOption): boolean {
+    return !!props.user.deleted_at || (role.is_admin && role.limit_reached && !localRoleNames.value.includes(role.name));
 }
 
 function onActiveChange(tenantId: string, userId: string, currentIsActive: boolean): void {
@@ -181,7 +191,7 @@ function getUserInitials(name: string): string {
                         :key="role.id"
                         class="flex cursor-pointer items-center gap-1.5 rounded-full border border-input px-3 py-1 text-sm transition-colors has-checked:border-primary/60 has-checked:bg-primary/5 has-checked:text-primary"
                         :class="[
-                            user.deleted_at || (role.is_admin && adminLimitReached && !localRoleNames.includes(role.name))
+                            isRoleDisabled(role)
                                 ? 'pointer-events-none opacity-60'
                                 : 'hover:bg-accent',
                         ]"
@@ -190,11 +200,17 @@ function getUserInitials(name: string): string {
                             type="checkbox"
                             :value="role.name"
                             :checked="localRoleNames.includes(role.name)"
-                            :disabled="!!user.deleted_at || (role.is_admin && adminLimitReached && !localRoleNames.includes(role.name))"
+                            :disabled="isRoleDisabled(role)"
                             class="accent-primary"
                             @change="onRoleChange(role.name, ($event.target as HTMLInputElement).checked)"
                         />
                         <span class="font-medium">{{ role.name }}</span>
+                        <span
+                            v-if="role.is_admin && role.limit !== null"
+                            class="shrink-0 rounded-full border border-border px-1.5 text-[10px] font-medium text-muted-foreground"
+                        >
+                            {{ role.count }}/{{ role.limit }}
+                        </span>
                     </label>
                 </div>
             </div>
