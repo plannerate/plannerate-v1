@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::resend
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:403
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:370
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/password-setup/resend'
 */
 export const resend = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -16,7 +16,7 @@ resend.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::resend
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:403
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:370
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/password-setup/resend'
 */
 resend.url = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ resend.url = (args: { tenant: string | { id: string }, userId: string | number }
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::resend
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:403
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:370
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/password-setup/resend'
 */
 resend.post = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -54,7 +54,7 @@ resend.post = (args: { tenant: string | { id: string }, userId: string | number 
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::resend
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:403
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:370
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/password-setup/resend'
 */
 const resendForm = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -64,7 +64,7 @@ const resendForm = (args: { tenant: string | { id: string }, userId: string | nu
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::resend
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:403
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:370
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/password-setup/resend'
 */
 resendForm.post = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

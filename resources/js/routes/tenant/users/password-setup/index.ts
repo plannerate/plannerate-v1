@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Tenant\UserController::resend
-* @see app/Http/Controllers/Tenant/UserController.php:188
+* @see app/Http/Controllers/Tenant/UserController.php:191
 * @route '/users/{user}/password-setup/resend'
 */
 export const resend = (args: { user: string | { id: string } } | [user: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -16,7 +16,7 @@ resend.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\UserController::resend
-* @see app/Http/Controllers/Tenant/UserController.php:188
+* @see app/Http/Controllers/Tenant/UserController.php:191
 * @route '/users/{user}/password-setup/resend'
 */
 resend.url = (args: { user: string | { id: string } } | [user: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -49,7 +49,7 @@ resend.url = (args: { user: string | { id: string } } | [user: string | { id: st
 
 /**
 * @see \App\Http\Controllers\Tenant\UserController::resend
-* @see app/Http/Controllers/Tenant/UserController.php:188
+* @see app/Http/Controllers/Tenant/UserController.php:191
 * @route '/users/{user}/password-setup/resend'
 */
 resend.post = (args: { user: string | { id: string } } | [user: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -59,7 +59,7 @@ resend.post = (args: { user: string | { id: string } } | [user: string | { id: s
 
 /**
 * @see \App\Http\Controllers\Tenant\UserController::resend
-* @see app/Http/Controllers/Tenant/UserController.php:188
+* @see app/Http/Controllers/Tenant/UserController.php:191
 * @route '/users/{user}/password-setup/resend'
 */
 const resendForm = (args: { user: string | { id: string } } | [user: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -69,7 +69,7 @@ const resendForm = (args: { user: string | { id: string } } | [user: string | { 
 
 /**
 * @see \App\Http\Controllers\Tenant\UserController::resend
-* @see app/Http/Controllers/Tenant/UserController.php:188
+* @see app/Http/Controllers/Tenant/UserController.php:191
 * @route '/users/{user}/password-setup/resend'
 */
 resendForm.post = (args: { user: string | { id: string } } | [user: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

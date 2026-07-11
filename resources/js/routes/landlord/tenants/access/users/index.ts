@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 import passwordSetup from './password-setup'
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::store
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:147
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:135
 * @route '//plannerate.localhost/tenants/{tenant}/access/users'
 */
 export const store = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -17,7 +17,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::store
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:147
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:135
 * @route '//plannerate.localhost/tenants/{tenant}/access/users'
 */
 store.url = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -50,7 +50,7 @@ store.url = (args: { tenant: string | { id: string } } | [tenant: string | { id:
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::store
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:147
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:135
 * @route '//plannerate.localhost/tenants/{tenant}/access/users'
 */
 store.post = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -60,7 +60,7 @@ store.post = (args: { tenant: string | { id: string } } | [tenant: string | { id
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::store
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:147
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:135
 * @route '//plannerate.localhost/tenants/{tenant}/access/users'
 */
 const storeForm = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -70,7 +70,7 @@ const storeForm = (args: { tenant: string | { id: string } } | [tenant: string |
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::store
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:147
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:135
 * @route '//plannerate.localhost/tenants/{tenant}/access/users'
 */
 storeForm.post = (args: { tenant: string | { id: string } } | [tenant: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -82,7 +82,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::update
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:197
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:178
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}'
 */
 export const update = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -97,7 +97,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::update
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:197
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:178
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}'
 */
 update.url = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions) => {
@@ -125,7 +125,7 @@ update.url = (args: { tenant: string | { id: string }, userId: string | number }
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::update
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:197
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:178
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}'
 */
 update.put = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -135,7 +135,7 @@ update.put = (args: { tenant: string | { id: string }, userId: string | number }
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::update
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:197
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:178
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}'
 */
 const updateForm = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -150,7 +150,7 @@ const updateForm = (args: { tenant: string | { id: string }, userId: string | nu
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::update
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:197
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:178
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}'
 */
 updateForm.put = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -167,7 +167,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::toggleActive
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:248
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:215
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/toggle-active'
 */
 export const toggleActive = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -182,7 +182,7 @@ toggleActive.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::toggleActive
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:248
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:215
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/toggle-active'
 */
 toggleActive.url = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions) => {
@@ -210,7 +210,7 @@ toggleActive.url = (args: { tenant: string | { id: string }, userId: string | nu
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::toggleActive
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:248
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:215
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/toggle-active'
 */
 toggleActive.patch = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -220,7 +220,7 @@ toggleActive.patch = (args: { tenant: string | { id: string }, userId: string | 
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::toggleActive
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:248
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:215
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/toggle-active'
 */
 const toggleActiveForm = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -235,7 +235,7 @@ const toggleActiveForm = (args: { tenant: string | { id: string }, userId: strin
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::toggleActive
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:248
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:215
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/toggle-active'
 */
 toggleActiveForm.patch = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -252,7 +252,7 @@ toggleActive.form = toggleActiveForm
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::syncRoles
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:274
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:241
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/sync-roles'
 */
 export const syncRoles = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -267,7 +267,7 @@ syncRoles.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::syncRoles
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:274
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:241
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/sync-roles'
 */
 syncRoles.url = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions) => {
@@ -295,7 +295,7 @@ syncRoles.url = (args: { tenant: string | { id: string }, userId: string | numbe
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::syncRoles
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:274
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:241
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/sync-roles'
 */
 syncRoles.patch = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -305,7 +305,7 @@ syncRoles.patch = (args: { tenant: string | { id: string }, userId: string | num
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::syncRoles
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:274
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:241
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/sync-roles'
 */
 const syncRolesForm = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -320,7 +320,7 @@ const syncRolesForm = (args: { tenant: string | { id: string }, userId: string |
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::syncRoles
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:274
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:241
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/sync-roles'
 */
 syncRolesForm.patch = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -337,7 +337,7 @@ syncRoles.form = syncRolesForm
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::destroy
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:307
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:274
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}'
 */
 export const destroy = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -352,7 +352,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::destroy
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:307
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:274
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}'
 */
 destroy.url = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions) => {
@@ -380,7 +380,7 @@ destroy.url = (args: { tenant: string | { id: string }, userId: string | number 
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::destroy
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:307
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:274
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}'
 */
 destroy.delete = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -390,7 +390,7 @@ destroy.delete = (args: { tenant: string | { id: string }, userId: string | numb
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::destroy
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:307
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:274
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}'
 */
 const destroyForm = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -405,7 +405,7 @@ const destroyForm = (args: { tenant: string | { id: string }, userId: string | n
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::destroy
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:307
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:274
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}'
 */
 destroyForm.delete = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -422,7 +422,7 @@ destroy.form = destroyForm
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::restore
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:327
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:294
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/restore'
 */
 export const restore = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -437,7 +437,7 @@ restore.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::restore
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:327
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:294
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/restore'
 */
 restore.url = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions) => {
@@ -465,7 +465,7 @@ restore.url = (args: { tenant: string | { id: string }, userId: string | number 
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::restore
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:327
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:294
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/restore'
 */
 restore.patch = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -475,7 +475,7 @@ restore.patch = (args: { tenant: string | { id: string }, userId: string | numbe
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::restore
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:327
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:294
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/restore'
 */
 const restoreForm = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -490,7 +490,7 @@ const restoreForm = (args: { tenant: string | { id: string }, userId: string | n
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::restore
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:327
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:294
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/restore'
 */
 restoreForm.patch = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -507,7 +507,7 @@ restore.form = restoreForm
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::forceDelete
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:350
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:317
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/force'
 */
 export const forceDelete = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -522,7 +522,7 @@ forceDelete.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::forceDelete
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:350
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:317
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/force'
 */
 forceDelete.url = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions) => {
@@ -550,7 +550,7 @@ forceDelete.url = (args: { tenant: string | { id: string }, userId: string | num
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::forceDelete
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:350
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:317
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/force'
 */
 forceDelete.delete = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -560,7 +560,7 @@ forceDelete.delete = (args: { tenant: string | { id: string }, userId: string | 
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::forceDelete
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:350
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:317
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/force'
 */
 const forceDeleteForm = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -575,7 +575,7 @@ const forceDeleteForm = (args: { tenant: string | { id: string }, userId: string
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::forceDelete
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:350
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:317
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/force'
 */
 forceDeleteForm.delete = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -592,7 +592,7 @@ forceDelete.form = forceDeleteForm
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::impersonate
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:381
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:348
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/impersonate'
 */
 export const impersonate = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -607,7 +607,7 @@ impersonate.definition = {
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::impersonate
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:381
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:348
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/impersonate'
 */
 impersonate.url = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions) => {
@@ -635,7 +635,7 @@ impersonate.url = (args: { tenant: string | { id: string }, userId: string | num
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::impersonate
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:381
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:348
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/impersonate'
 */
 impersonate.post = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -645,7 +645,7 @@ impersonate.post = (args: { tenant: string | { id: string }, userId: string | nu
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::impersonate
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:381
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:348
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/impersonate'
 */
 const impersonateForm = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -655,7 +655,7 @@ const impersonateForm = (args: { tenant: string | { id: string }, userId: string
 
 /**
 * @see \App\Http\Controllers\Landlord\TenantUserAccessController::impersonate
-* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:381
+* @see app/Http/Controllers/Landlord/TenantUserAccessController.php:348
 * @route '//plannerate.localhost/tenants/{tenant}/access/users/{userId}/impersonate'
 */
 impersonateForm.post = (args: { tenant: string | { id: string }, userId: string | number } | [tenant: string | { id: string }, userId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
