@@ -32,12 +32,17 @@
         data-segment="true"
     >
 
-        <!-- Badge de papel estratégico, centralizado no topo do segmento -->
+        <!--
+            Selos de papel e de quadrante BCG dividem o topo do segmento.
+            Ficam na MESMA linha de propósito: são duas análises distintas sobre o
+            mesmo produto, e empilhá-las ou sobrepô-las por z-index esconderia uma.
+        -->
         <div
-            v-if="paperRole"
+            v-if="paperRole || bcgBadgeData"
             class="absolute -top-2.5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5"
         >
             <PaperRoleBadge :role="paperRole" />
+            <BcgBadge :data="bcgBadgeData" />
         </div>
 
         <!-- Badge de sortimento ABC, na base do segmento -->
@@ -105,11 +110,13 @@ import {
 } from '../../../composables/plannerate/core/useGondolaState';
 import { DND_KEYS, hasSegmentData, setSegmentDragData } from '../../../composables/plannerate/dnd/transfer';
 import { useAbcClassification } from '../../../composables/plannerate/analysis/useAbcClassification';
+import { useBcgAnalysis } from '../../../composables/plannerate/analysis/useBcgAnalysis';
 import { usePaperAnalysis } from '../../../composables/plannerate/analysis/usePaperAnalysis';
 import { usePlanogramEditor } from '../../../composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '../../../composables/plannerate/core/usePlanogramSelection';
 import type { Layer, Segment } from '../../../types/planogram';
 import AbcBadge from './AbcBadge.vue';
+import BcgBadge from './BcgBadge.vue';
 import PaperRoleBadge from './PaperRoleBadge.vue';
 import LayerRenderer from './Layer.vue';
 import ProductIndicatorBadge from './ProductIndicatorBadge.vue';
@@ -151,6 +158,7 @@ const editor = usePlanogramEditor();
 const openProperties = inject<() => void>('openProperties');
 const { getClassification, getRecommendation } = useAbcClassification();
 const { getPaperRole } = usePaperAnalysis();
+const { getBcgData } = useBcgAnalysis();
 
 const getQuantity = computed(() => props.segment.quantity || 1);
 
@@ -171,6 +179,9 @@ const abcBadgeWrapperStyle = computed(() => ({
 
 // Busca papel estratégico do produto pelo EAN
 const paperRole = computed(() => getPaperRole(layer.value?.product?.ean));
+
+// Busca quadrante BCG + ação de espaço do produto pelo EAN
+const bcgBadgeData = computed(() => getBcgData(layer.value?.product?.ean));
 
 const isEanMatch = computed(() => {
     const query = eanSearchApplied.value.trim();

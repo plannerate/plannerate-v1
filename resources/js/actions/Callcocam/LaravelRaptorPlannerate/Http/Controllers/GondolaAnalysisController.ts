@@ -199,7 +199,7 @@ calculateTargetStock.form = calculateTargetStockForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateAbcApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:22
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:24
 * @route '/api/editor/gondolas/{gondola}/analysis/abc'
 */
 export const calculateAbcApi = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -214,7 +214,7 @@ calculateAbcApi.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateAbcApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:22
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:24
 * @route '/api/editor/gondolas/{gondola}/analysis/abc'
 */
 calculateAbcApi.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -241,7 +241,7 @@ calculateAbcApi.url = (args: { gondola: string | number } | [gondola: string | n
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateAbcApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:22
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:24
 * @route '/api/editor/gondolas/{gondola}/analysis/abc'
 */
 calculateAbcApi.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -251,7 +251,7 @@ calculateAbcApi.post = (args: { gondola: string | number } | [gondola: string | 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateAbcApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:22
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:24
 * @route '/api/editor/gondolas/{gondola}/analysis/abc'
 */
 const calculateAbcApiForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -261,7 +261,7 @@ const calculateAbcApiForm = (args: { gondola: string | number } | [gondola: stri
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateAbcApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:22
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:24
 * @route '/api/editor/gondolas/{gondola}/analysis/abc'
 */
 calculateAbcApiForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -273,7 +273,7 @@ calculateAbcApi.form = calculateAbcApiForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateTargetStockApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:81
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:83
 * @route '/api/editor/gondolas/{gondola}/analysis/target-stock'
 */
 export const calculateTargetStockApi = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -288,7 +288,7 @@ calculateTargetStockApi.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateTargetStockApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:81
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:83
 * @route '/api/editor/gondolas/{gondola}/analysis/target-stock'
 */
 calculateTargetStockApi.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -315,7 +315,7 @@ calculateTargetStockApi.url = (args: { gondola: string | number } | [gondola: st
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateTargetStockApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:81
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:83
 * @route '/api/editor/gondolas/{gondola}/analysis/target-stock'
 */
 calculateTargetStockApi.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -325,7 +325,7 @@ calculateTargetStockApi.post = (args: { gondola: string | number } | [gondola: s
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateTargetStockApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:81
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:83
 * @route '/api/editor/gondolas/{gondola}/analysis/target-stock'
 */
 const calculateTargetStockApiForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -335,7 +335,7 @@ const calculateTargetStockApiForm = (args: { gondola: string | number } | [gondo
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateTargetStockApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:81
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:83
 * @route '/api/editor/gondolas/{gondola}/analysis/target-stock'
 */
 calculateTargetStockApiForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -347,7 +347,7 @@ calculateTargetStockApi.form = calculateTargetStockApiForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculatePaperApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:144
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:146
 * @route '/api/editor/gondolas/{gondola}/analysis/paper'
 */
 export const calculatePaperApi = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -362,7 +362,7 @@ calculatePaperApi.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculatePaperApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:144
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:146
 * @route '/api/editor/gondolas/{gondola}/analysis/paper'
 */
 calculatePaperApi.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -389,7 +389,7 @@ calculatePaperApi.url = (args: { gondola: string | number } | [gondola: string |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculatePaperApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:144
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:146
 * @route '/api/editor/gondolas/{gondola}/analysis/paper'
 */
 calculatePaperApi.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -399,7 +399,7 @@ calculatePaperApi.post = (args: { gondola: string | number } | [gondola: string 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculatePaperApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:144
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:146
 * @route '/api/editor/gondolas/{gondola}/analysis/paper'
 */
 const calculatePaperApiForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -409,7 +409,7 @@ const calculatePaperApiForm = (args: { gondola: string | number } | [gondola: st
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculatePaperApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:144
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:146
 * @route '/api/editor/gondolas/{gondola}/analysis/paper'
 */
 calculatePaperApiForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -420,8 +420,82 @@ calculatePaperApiForm.post = (args: { gondola: string | number } | [gondola: str
 calculatePaperApi.form = calculatePaperApiForm
 
 /**
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateBcgApi
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:207
+* @route '/api/editor/gondolas/{gondola}/analysis/bcg'
+*/
+export const calculateBcgApi = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: calculateBcgApi.url(args, options),
+    method: 'post',
+})
+
+calculateBcgApi.definition = {
+    methods: ["post"],
+    url: '/api/editor/gondolas/{gondola}/analysis/bcg',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateBcgApi
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:207
+* @route '/api/editor/gondolas/{gondola}/analysis/bcg'
+*/
+calculateBcgApi.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { gondola: args }
+    }
+
+    if (Array.isArray(args)) {
+        args = {
+            gondola: args[0],
+        }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+        gondola: args.gondola,
+    }
+
+    return calculateBcgApi.definition.url
+            .replace('{gondola}', parsedArgs.gondola.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateBcgApi
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:207
+* @route '/api/editor/gondolas/{gondola}/analysis/bcg'
+*/
+calculateBcgApi.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: calculateBcgApi.url(args, options),
+    method: 'post',
+})
+
+/**
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateBcgApi
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:207
+* @route '/api/editor/gondolas/{gondola}/analysis/bcg'
+*/
+const calculateBcgApiForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: calculateBcgApi.url(args, options),
+    method: 'post',
+})
+
+/**
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::calculateBcgApi
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:207
+* @route '/api/editor/gondolas/{gondola}/analysis/bcg'
+*/
+calculateBcgApiForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: calculateBcgApi.url(args, options),
+    method: 'post',
+})
+
+calculateBcgApi.form = calculateBcgApiForm
+
+/**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clearAnalysisApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:269
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 export const clearAnalysisApi = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -436,7 +510,7 @@ clearAnalysisApi.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clearAnalysisApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:269
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 clearAnalysisApi.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -463,7 +537,7 @@ clearAnalysisApi.url = (args: { gondola: string | number } | [gondola: string | 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clearAnalysisApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:269
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 clearAnalysisApi.delete = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -473,7 +547,7 @@ clearAnalysisApi.delete = (args: { gondola: string | number } | [gondola: string
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clearAnalysisApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:269
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 const clearAnalysisApiForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -488,7 +562,7 @@ const clearAnalysisApiForm = (args: { gondola: string | number } | [gondola: str
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clearAnalysisApi
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:269
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 clearAnalysisApiForm.delete = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -503,6 +577,6 @@ clearAnalysisApiForm.delete = (args: { gondola: string | number } | [gondola: st
 
 clearAnalysisApi.form = clearAnalysisApiForm
 
-const GondolaAnalysisController = { calculateAbc, calculateTargetStock, calculateAbcApi, calculateTargetStockApi, calculatePaperApi, clearAnalysisApi }
+const GondolaAnalysisController = { calculateAbc, calculateTargetStock, calculateAbcApi, calculateTargetStockApi, calculatePaperApi, calculateBcgApi, clearAnalysisApi }
 
 export default GondolaAnalysisController

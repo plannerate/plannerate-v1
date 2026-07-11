@@ -93,6 +93,69 @@ class SalesStatistics
     }
 
     /**
+     * Média aritmética de uma sequência de números. Retorna null para sequência vazia.
+     *
+     * Usada pela Análise BCG como método de corte alternativo à mediana, para
+     * reproduzir o comportamento da planilha VBA original. A mediana é o padrão
+     * porque vendas de varejo têm cauda longa e a média é puxada pelos líderes.
+     *
+     * @param  iterable<int|string, int|float>  $values
+     */
+    public static function mean(iterable $values): ?float
+    {
+        $items = array_map('floatval', is_array($values) ? $values : iterator_to_array($values));
+
+        if (count($items) === 0) {
+            return null;
+        }
+
+        return array_sum($items) / count($items);
+    }
+
+    /**
+     * Posição percentual (0-100) de um valor dentro de uma população — a fração de
+     * itens menores ou iguais a ele. Retorna 0 para população vazia.
+     *
+     * É o score CONTÍNUO que acompanha o quadrante discreto da Análise BCG: o rótulo
+     * do quadrante esconde a distância até o limiar, e classificação por corte é
+     * notoriamente instável entre períodos. O percentil preserva essa informação.
+     *
+     * @param  iterable<int|string, int|float>  $values
+     */
+    public static function percentileRank(float $value, iterable $values): float
+    {
+        $items = array_map('floatval', is_array($values) ? $values : iterator_to_array($values));
+        $count = count($items);
+
+        if ($count === 0) {
+            return 0.0;
+        }
+
+        $atOrBelow = count(array_filter($items, fn (float $item) => $item <= $value));
+
+        return ($atOrBelow / $count) * 100;
+    }
+
+    /**
+     * Amplitude (máximo − mínimo) de uma sequência. Retorna 0 para sequência vazia.
+     *
+     * Serve de escala para decidir se um item está "em cima da linha" de corte:
+     * a proximidade do limiar só é interpretável em relação à dispersão do grupo.
+     *
+     * @param  iterable<int|string, int|float>  $values
+     */
+    public static function range(iterable $values): float
+    {
+        $items = array_map('floatval', is_array($values) ? $values : iterator_to_array($values));
+
+        if (count($items) === 0) {
+            return 0.0;
+        }
+
+        return max($items) - min($items);
+    }
+
+    /**
      * Z-score (inverso da distribuição normal padrão) — equivalente ao NormSInv
      * do Excel/VBA. Usa valores exatos tabelados para os níveis de serviço comuns
      * e a aproximação de Abramowitz e Stegun para os demais. Retorna 0 fora de (0,1).

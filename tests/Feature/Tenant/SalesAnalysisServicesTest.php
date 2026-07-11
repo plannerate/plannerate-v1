@@ -4,9 +4,17 @@ use App\Models\Product;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use Callcocam\LaravelRaptorPlannerate\Models\Category;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Layer;
 use Callcocam\LaravelRaptorPlannerate\Models\MonthlySalesSummary;
 use Callcocam\LaravelRaptorPlannerate\Models\Sale;
+use Callcocam\LaravelRaptorPlannerate\Models\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Segment;
+use Callcocam\LaravelRaptorPlannerate\Models\Shelf;
 use Callcocam\LaravelRaptorPlannerate\Services\Analysis\AbcAnalysisService;
+use Callcocam\LaravelRaptorPlannerate\Services\Analysis\BcgAnalysisService;
+use Callcocam\LaravelRaptorPlannerate\Services\Analysis\GondolaSpaceService;
 use Callcocam\LaravelRaptorPlannerate\Services\Analysis\PaperAnalysisService;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
@@ -178,6 +186,207 @@ test('Paper computes market share and growth vs the auto-derived previous period
         ->and($byProduct[$p2->id]['market_share'])->toBe(75.0)
         ->and($byProduct[$p2->id]['growth_rate'])->toBeNull()
         ->and($byProduct[$p2->id]['is_new'])->toBeTrue();
+});
+
+test('BCG soma as colunas dos eixos escolhidos e zera quem não vendeu', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    $tenant = setupAnalysisTenant('tenant-bcg-sales', $user);
+
+    $p1 = makeAnalysisProduct($tenant, 'BCG-1', '7890000000062');
+    $p2 = makeAnalysisProduct($tenant, 'BCG-2', '7890000000079');
+    $semVenda = makeAnalysisProduct($tenant, 'BCG-3', '7890000000086');
+
+    // Eixos padrão: X = quantidade, Y = margem. Duas linhas de P1 provam o SUM.
+    Sale::query()->create(['tenant_id' => $tenant->id, 'product_id' => $p1->id, 'codigo_erp' => 'BCG-1', 'sale_date' => '2026-04-10', 'total_sale_quantity' => '60.000', 'total_sale_value' => '600.00', 'margem_contribuicao' => '120.00']);
+    Sale::query()->create(['tenant_id' => $tenant->id, 'product_id' => $p1->id, 'codigo_erp' => 'BCG-1', 'sale_date' => '2026-04-12', 'total_sale_quantity' => '40.000', 'total_sale_value' => '400.00', 'margem_contribuicao' => '80.00']);
+    Sale::query()->create(['tenant_id' => $tenant->id, 'product_id' => $p2->id, 'codigo_erp' => 'BCG-2', 'sale_date' => '2026-04-11', 'total_sale_quantity' => '10.000', 'total_sale_value' => '100.00', 'margem_contribuicao' => '20.00']);
+
+    $result = (new BcgAnalysisService)->analyzeByProductIds(
+        [$p1->id, $p2->id, $semVenda->id],
+        'sales',
+        ['tenant_id' => $tenant->id, 'date_from' => '2026-04-01', 'date_to' => '2026-04-30'],
+    );
+
+    $byProduct = $result->keyBy('product_id');
+
+    // P1 agregado: qtde 60+40 = 100 (eixo X), margem 120+80 = 200 (eixo Y)
+    expect($byProduct[$p1->id]['x_value'])->toBe(100.0)
+        ->and($byProduct[$p1->id]['y_value'])->toBe(200.0)
+        ->and($byProduct[$p1->id]['quadrant'])->toBe('alto_alto')
+        ->and($byProduct[$p1->id]['x_axis'])->toBe('quantidade')
+        ->and($byProduct[$p1->id]['y_axis'])->toBe('margem')
+        // P2 é o mais fraco dos ativos → abaixo da mediana nos dois eixos
+        ->and($byProduct[$p2->id]['x_value'])->toBe(10.0)
+        ->and($byProduct[$p2->id]['quadrant'])->toBe('baixo_baixo')
+        // Produto sem venda permanece no resultado (senão sumiria da gôndola), zerado
+        ->and($byProduct[$semVenda->id]['sem_venda'])->toBeTrue()
+        ->and($byProduct[$semVenda->id]['x_value'])->toBe(0.0)
+        ->and($byProduct[$semVenda->id]['quadrant'])->toBe('baixo_baixo')
+        // ...mas fora do limiar: a mediana é dos ATIVOS [100, 10] = 55, não de [100, 10, 0] = 10
+        ->and($byProduct[$p1->id]['x_threshold'])->toBe(55.0);
+});
+
+test('BCG respeita eixos configurados e o corte pela média (planilha VBA)', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    $tenant = setupAnalysisTenant('tenant-bcg-eixos', $user);
+
+    $p1 = makeAnalysisProduct($tenant, 'BCGX-1', '7890000000093');
+    $p2 = makeAnalysisProduct($tenant, 'BCGX-2', '7890000000109');
+
+    Sale::query()->create(['tenant_id' => $tenant->id, 'product_id' => $p1->id, 'codigo_erp' => 'BCGX-1', 'sale_date' => '2026-04-10', 'total_sale_quantity' => '5.000', 'total_sale_value' => '900.00', 'margem_contribuicao' => '10.00']);
+    Sale::query()->create(['tenant_id' => $tenant->id, 'product_id' => $p2->id, 'codigo_erp' => 'BCGX-2', 'sale_date' => '2026-04-11', 'total_sale_quantity' => '50.000', 'total_sale_value' => '100.00', 'margem_contribuicao' => '90.00']);
+
+    // Eixos trocados: X = valor de venda, Y = margem. Média de [900, 100] = 500.
+    $result = (new BcgAnalysisService)
+        ->setAxes('valor', 'margem')
+        ->setThresholdMethod(BcgAnalysisService::THRESHOLD_MEAN)
+        ->analyzeByProductIds(
+            [$p1->id, $p2->id],
+            'sales',
+            ['tenant_id' => $tenant->id, 'date_from' => '2026-04-01', 'date_to' => '2026-04-30'],
+        );
+
+    $byProduct = $result->keyBy('product_id');
+
+    // P1 fatura muito e ganha pouco; P2 o inverso → cada um forte em um eixo.
+    expect($byProduct[$p1->id]['x_value'])->toBe(900.0)   // valor, não quantidade
+        ->and($byProduct[$p1->id]['x_threshold'])->toBe(500.0)  // média, não mediana
+        ->and($byProduct[$p1->id]['quadrant'])->toBe('forte_x')
+        ->and($byProduct[$p2->id]['quadrant'])->toBe('forte_y');
+});
+
+test('BCG lê os sumários mensais por start_month/end_month (a chave que o controller envia)', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    $tenant = setupAnalysisTenant('tenant-bcg-monthly', $user);
+
+    $p1 = makeAnalysisProduct($tenant, 'BCGM-1', '7890000000116');
+
+    MonthlySalesSummary::query()->create(['tenant_id' => $tenant->id, 'product_id' => $p1->id, 'codigo_erp' => 'BCGM-1', 'sale_month' => '2026-03-01', 'total_sale_quantity' => 30, 'total_sale_value' => '300.00', 'margem_contribuicao' => '60.00']);
+    MonthlySalesSummary::query()->create(['tenant_id' => $tenant->id, 'product_id' => $p1->id, 'codigo_erp' => 'BCGM-1', 'sale_month' => '2026-04-01', 'total_sale_quantity' => 20, 'total_sale_value' => '200.00', 'margem_contribuicao' => '40.00']);
+    // Fora do período pedido: se a chave de período fosse ignorada (como acontece
+    // hoje na ABC e no Estoque-Alvo, que leem month_from/month_to), este mês entraria
+    // na soma e a quantidade viria 500 em vez de 50.
+    MonthlySalesSummary::query()->create(['tenant_id' => $tenant->id, 'product_id' => $p1->id, 'codigo_erp' => 'BCGM-1', 'sale_month' => '2026-08-01', 'total_sale_quantity' => 450, 'total_sale_value' => '4500.00', 'margem_contribuicao' => '900.00']);
+
+    $result = (new BcgAnalysisService)->analyzeByProductIds(
+        [$p1->id],
+        'monthly_summaries',
+        ['tenant_id' => $tenant->id, 'start_month' => '2026-03', 'end_month' => '2026-04'],
+    );
+
+    $row = $result->firstWhere('product_id', $p1->id);
+
+    // Só março + abril: qtde 30+20 = 50, margem 60+40 = 100. Agosto fica de fora.
+    expect($row['x_value'])->toBe(50.0)
+        ->and($row['y_value'])->toBe(100.0);
+});
+
+test('BCG classify_by muda o grupo de comparação e, com ele, o quadrante', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    $tenant = setupAnalysisTenant('tenant-bcg-hierarquia', $user);
+
+    // Hierarquia: Mercearia (raiz) → Biscoitos / Massas
+    $raiz = Category::query()->create(['tenant_id' => $tenant->id, 'name' => 'Mercearia', 'slug' => 'mercearia', 'status' => 'published']);
+    $biscoitos = Category::query()->create(['tenant_id' => $tenant->id, 'category_id' => $raiz->id, 'name' => 'Biscoitos', 'slug' => 'biscoitos', 'status' => 'published']);
+    $massas = Category::query()->create(['tenant_id' => $tenant->id, 'category_id' => $raiz->id, 'name' => 'Massas', 'slug' => 'massas', 'status' => 'published']);
+
+    $mk = function (string $codigo, string $ean, string $categoryId, float $qtde, float $margem) use ($tenant) {
+        $product = makeAnalysisProduct($tenant, $codigo, $ean);
+        $product->forceFill(['category_id' => $categoryId])->save();
+
+        Sale::query()->create([
+            'tenant_id' => $tenant->id, 'product_id' => $product->id, 'codigo_erp' => $codigo,
+            'sale_date' => '2026-04-10',
+            'total_sale_quantity' => (string) $qtde, 'total_sale_value' => '100.00',
+            'margem_contribuicao' => (string) $margem,
+        ]);
+
+        return $product;
+    };
+
+    // Biscoitos opera numa escala muito maior que Massas
+    $bisForte = $mk('HIER-1', '7890000000147', $biscoitos->id, 100, 100);
+    $bisFraco = $mk('HIER-2', '7890000000154', $biscoitos->id, 80, 80);
+    $masForte = $mk('HIER-3', '7890000000161', $massas->id, 10, 10);
+    $masFraco = $mk('HIER-4', '7890000000178', $massas->id, 5, 5);
+
+    $ids = [$bisForte->id, $bisFraco->id, $masForte->id, $masFraco->id];
+    $filters = ['tenant_id' => $tenant->id, 'date_from' => '2026-04-01', 'date_to' => '2026-04-30'];
+
+    // Nível folha (a hierarquia tem 2 níveis, então 'subcategoria' cai no mais profundo
+    // disponível): cada categoria é seu próprio grupo → mediana de Massas = 7,5
+    $porFolha = (new BcgAnalysisService)
+        ->setClassifyBy('subcategoria')
+        ->analyzeByProductIds($ids, 'sales', $filters)
+        ->keyBy('product_id');
+
+    // Nível raiz: os 4 produtos viram um único grupo → mediana da quantidade = 45
+    $porRaiz = (new BcgAnalysisService)
+        ->setClassifyBy('segmento_varejista')
+        ->analyzeByProductIds($ids, 'sales', $filters)
+        ->keyBy('product_id');
+
+    // O líder de Massas é forte entre os seus pares...
+    expect($porFolha[$masForte->id]['quadrant'])->toBe('alto_alto')
+        ->and($porFolha[$masForte->id]['x_threshold'])->toBe(7.5)
+        ->and($porFolha[$masForte->id]['group_name'])->toBe('Massas')
+        // ...mas vira fraco quando comparado à mercearia inteira, onde os biscoitos dominam.
+        // É exatamente isto que o "Classificar por" controla — e que a tela prometia sem entregar.
+        ->and($porRaiz[$masForte->id]['quadrant'])->toBe('baixo_baixo')
+        ->and($porRaiz[$masForte->id]['x_threshold'])->toBe(45.0)
+        ->and($porRaiz[$masForte->id]['group_name'])->toBe('Mercearia')
+        // O líder de Biscoitos é forte nos dois recortes
+        ->and($porFolha[$bisForte->id]['quadrant'])->toBe('alto_alto')
+        ->and($porRaiz[$bisForte->id]['quadrant'])->toBe('alto_alto')
+        // A categoria folha do produto continua exposta para exibição, separada do grupo do corte
+        ->and($porRaiz[$masFraco->id]['category_name'])->toBe('Massas');
+});
+
+test('GondolaSpace soma frentes e espaço linear descendo a hierarquia física', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    $tenant = setupAnalysisTenant('tenant-bcg-espaco', $user);
+
+    // Produtos com largura: o espaço linear depende dela, não só das frentes.
+    $largo = makeAnalysisProduct($tenant, 'ESP-1', '7890000000123');
+    $largo->forceFill(['width' => 20.0])->save();
+
+    $estreito = makeAnalysisProduct($tenant, 'ESP-2', '7890000000130');
+    $estreito->forceFill(['width' => 5.0])->save();
+
+    // Hierarquia: gôndola → seção → prateleira → segmento → layer
+    $gondola = Gondola::query()->create(['tenant_id' => $tenant->id, 'name' => 'Gôndola Teste']);
+    $section = Section::query()->create(['tenant_id' => $tenant->id, 'gondola_id' => $gondola->id, 'name' => 'Seção 1']);
+    $shelf = Shelf::query()->create(['tenant_id' => $tenant->id, 'section_id' => $section->id]);
+
+    // Segment e Layer não declaram $fillable → mass assignment bloqueado; forceCreate.
+    $seg1 = Segment::query()->forceCreate(['tenant_id' => $tenant->id, 'shelf_id' => $shelf->id, 'ordering' => 1]);
+    $seg2 = Segment::query()->forceCreate(['tenant_id' => $tenant->id, 'shelf_id' => $shelf->id, 'ordering' => 2]);
+
+    // 2 frentes do produto largo (2 × 20 = 40cm)
+    Layer::query()->forceCreate(['tenant_id' => $tenant->id, 'segment_id' => $seg1->id, 'product_id' => $largo->id, 'quantity' => 2]);
+    // 8 frentes do estreito, em dois segmentos (5 + 3 = 8 frentes × 5cm = 40cm)
+    Layer::query()->forceCreate(['tenant_id' => $tenant->id, 'segment_id' => $seg1->id, 'product_id' => $estreito->id, 'quantity' => 5]);
+    Layer::query()->forceCreate(['tenant_id' => $tenant->id, 'segment_id' => $seg2->id, 'product_id' => $estreito->id, 'quantity' => 3]);
+
+    $space = (new GondolaSpaceService)->spaceByProduct($gondola->id);
+
+    // O estreito tem 4x mais frentes, mas ocupa o MESMO linear que o largo — é por isso
+    // que o share é medido em cm, não em contagem de frentes.
+    expect($space[$largo->id]['facings'])->toBe(2)
+        ->and($space[$largo->id]['espaco_linear_cm'])->toBe(40.0)
+        ->and($space[$estreito->id]['facings'])->toBe(8)   // somou os dois segmentos
+        ->and($space[$estreito->id]['espaco_linear_cm'])->toBe(40.0)
+        ->and($space[$largo->id]['share_gondola'])->toBe(50.0)
+        ->and($space[$estreito->id]['share_gondola'])->toBe(50.0);
+
+    // E o BCG enxerga a gôndola pelos layers, sem precisar da categoria do planograma
+    expect((new BcgAnalysisService)->getProductIdsByGondola($gondola->id))
+        ->toHaveCount(2);
 });
 
 /**

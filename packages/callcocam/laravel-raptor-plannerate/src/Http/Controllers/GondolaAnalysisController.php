@@ -11,6 +11,8 @@ namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\GondolaAnalysis;
 use Callcocam\LaravelRaptorPlannerate\Services\Analysis\AbcAnalysisService;
+use Callcocam\LaravelRaptorPlannerate\Services\Analysis\BcgAnalysisService;
+use Callcocam\LaravelRaptorPlannerate\Services\Analysis\GondolaSpaceService;
 use Callcocam\LaravelRaptorPlannerate\Services\Analysis\PaperAnalysisService;
 use Callcocam\LaravelRaptorPlannerate\Services\Analysis\TargetStockService;
 use Illuminate\Http\Request;
@@ -195,6 +197,75 @@ class GondolaAnalysisController extends Controller
         return redirect()->back();
     }
 
+    /**
+     * Análise BCG: matriz de quadrantes com eixos configuráveis, período único.
+     *
+     * Ao contrário da Análise de Papel, não busca período anterior (não há eixo de
+     * crescimento), e cruza o resultado com o espaço ocupado na gôndola — é o
+     * cruzamento que produz a ação de planograma.
+     */
+    public function calculateBcgApi(Request $request, string $gondola)
+    {
+        $gondolaModel = Gondola::find($gondola);
+
+        if (! $gondolaModel) {
+            return redirect()->back()->withErrors(['error' => 'Gôndola não encontrada.']);
+        }
+
+        $tableType = $request->input('table_type', 'monthly_summaries');
+        $filters = $this->buildFilters($request, $gondolaModel);
+
+        $xAxis = $request->input('x_axis', 'quantidade');
+        $yAxis = $request->input('y_axis', 'margem');
+        $thresholdMethod = $request->input('threshold_method', BcgAnalysisService::THRESHOLD_MEDIAN);
+        $classifyBy = $request->input('classify_by', 'categoria');
+
+        try {
+            // Os setters lançam InvalidArgumentException em entrada inválida (eixos
+            // iguais, métrica ou nível desconhecido) — cai no catch abaixo e vira flash
+            // de erro, já que o projeto não usa FormRequest aqui.
+            $service = app(BcgAnalysisService::class)
+                ->setAxes($xAxis, $yAxis)
+                ->setThresholdMethod($thresholdMethod)
+                ->setClassifyBy($classifyBy);
+
+            $productIds = $service->getProductIdsByGondola($gondola);
+            $results = $service->analyzeByProductIds($productIds, $tableType, $filters);
+
+            $space = app(GondolaSpaceService::class)->spaceByProduct($gondola);
+            $results = $service->withSpace($results, $space);
+
+            $summary = $this->buildBcgSummary($results->toArray());
+
+            GondolaAnalysis::updateOrCreate(
+                ['gondola_id' => $gondolaModel->id, 'type' => 'bcg'],
+                [
+                    'data' => [
+                        'results' => $results->toArray(),
+                        'filters' => $filters,
+                        'parameters' => [
+                            'table_type' => $tableType,
+                            // A UI depende dos eixos para compor os rótulos dos
+                            // quadrantes — as chaves do backend são agnósticas.
+                            'x_axis' => $xAxis,
+                            'y_axis' => $yAxis,
+                            'threshold_method' => $thresholdMethod,
+                            'classify_by' => $classifyBy,
+                        ],
+                    ],
+                    'summary' => $summary,
+                    'analyzed_at' => now(),
+                ]
+            );
+        } catch (\Exception $e) {
+            Log::error('BcgAnalysis failed', ['gondola' => $gondola, 'error' => $e->getMessage()]);
+
+            return redirect()->back()->with('flash', ['error' => 'Erro ao calcular Análise BCG: '.$e->getMessage()]);
+        }
+
+        return redirect()->back();
+    }
+
     public function clearAnalysisApi(Request $request, string $gondola)
     {
         GondolaAnalysis::where('gondola_id', $gondola)->delete();
@@ -284,6 +355,33 @@ class GondolaAnalysisController extends Controller
             'anchor' => $anchor,
             'rising' => $rising,
             'lagging' => $lagging,
+        ];
+    }
+
+    /**
+     * Agrega os resultados da Análise BCG por quadrante.
+     *
+     * `espaco_mal_alocado` é a contagem que interessa ao merchandiser: produtos cujo
+     * espaço na gôndola está desalinhado do valor que entregam (para mais ou para menos).
+     */
+    private function buildBcgSummary(array $results): array
+    {
+        $countByQuadrant = fn (string $quadrant) => count(
+            array_filter($results, fn ($r) => ($r['quadrant'] ?? '') === $quadrant)
+        );
+
+        return [
+            'total' => count($results),
+            'alto_alto' => $countByQuadrant('alto_alto'),
+            'forte_x' => $countByQuadrant('forte_x'),
+            'forte_y' => $countByQuadrant('forte_y'),
+            'baixo_baixo' => $countByQuadrant('baixo_baixo'),
+            'sem_venda' => count(array_filter($results, fn ($r) => ($r['sem_venda'] ?? false) === true)),
+            'borderline' => count(array_filter($results, fn ($r) => ($r['is_borderline'] ?? false) === true)),
+            'espaco_mal_alocado' => count(array_filter(
+                $results,
+                fn ($r) => in_array($r['acao_espaco'] ?? null, ['aumentar', 'reduzir'], true)
+            )),
         ];
     }
 

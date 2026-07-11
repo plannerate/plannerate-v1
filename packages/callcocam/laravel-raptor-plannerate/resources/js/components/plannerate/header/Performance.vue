@@ -13,7 +13,7 @@
             </DialogHeader>
 
             <Tabs v-model="activeTab" class="flex-1 flex flex-col overflow-hidden px-4 pb-4">
-                <TabsList class="grid w-full grid-cols-3 h-9">
+                <TabsList class="grid w-full grid-cols-4 h-9">
                     <TabsTrigger value="abc">
                         <div class="flex items-center gap-1.5">
                             <BarChart3 class="size-3.5 shrink-0  " />
@@ -26,10 +26,17 @@
                             <span class="leading-tight">{{ t('plannerate.performance.target_stock') }}</span>
                         </div>
                     </TabsTrigger>
-                    <TabsTrigger value="bcg">
+                    <!-- Esta aba se chamava "bcg" mas renderizava a Análise de Papel — renomeada -->
+                    <TabsTrigger value="paper">
                         <div class="flex items-center gap-1.5">
                             <TrendingUp class="size-3.5 shrink-0" />
                             <span class="leading-tight">{{ t('plannerate.performance.paper_tab') }}</span>
+                        </div>
+                    </TabsTrigger>
+                    <TabsTrigger value="bcg">
+                        <div class="flex items-center gap-1.5">
+                            <Grid2x2 class="size-3.5 shrink-0" />
+                            <span class="leading-tight">{{ t('plannerate.performance.bcg_tab') }}</span>
                         </div>
                     </TabsTrigger>
                 </TabsList>
@@ -42,8 +49,12 @@
                     <PerformanceTargetStockTab :gondola-id="gondolaId" :planogram="planogram" :results="analysis?.stock?.results" />
                 </TabsContent>
 
-                <TabsContent value="bcg" class="flex-1 overflow-auto mt-2">
+                <TabsContent value="paper" class="flex-1 overflow-auto mt-2">
                     <PerformancePaperTab :gondola-id="gondolaId" :planogram="planogram" :results="analysis?.paper?.results" />
+                </TabsContent>
+
+                <TabsContent value="bcg" class="flex-1 overflow-auto mt-2">
+                    <PerformanceBcgTab :gondola-id="gondolaId" :planogram="planogram" :results="analysis?.bcg?.results" />
                 </TabsContent>
             </Tabs>
         </DialogContent>
@@ -51,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { BarChart3, Gauge, Package, TrendingUp } from 'lucide-vue-next';
+import { BarChart3, Gauge, Grid2x2, Package, TrendingUp } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import {
     Dialog,
@@ -64,6 +75,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useT } from '@/composables/useT';
 import type { AbcAnalysis, StockAnalysis } from '@/types/planogram';
 import PerformanceAbcTab from './PerformanceAbcTab.vue';
+import PerformanceBcgTab from './PerformanceBcgTab.vue';
 import PerformancePaperTab from './PerformancePaperTab.vue';
 import PerformanceTargetStockTab from './PerformanceTargetStockTab.vue';
 

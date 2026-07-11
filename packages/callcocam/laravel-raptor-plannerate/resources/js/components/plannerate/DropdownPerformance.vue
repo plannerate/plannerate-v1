@@ -231,6 +231,90 @@
                     </CollapsibleContent>
                 </Collapsible>
 
+                <!-- Card: Análise BCG -->
+                <Collapsible v-model:open="bcgOpen" class="overflow-hidden rounded-xl border bg-card">
+                    <div class="relative flex items-start gap-2.5 p-3">
+                        <span
+                            v-if="performance.bcg.isVisible.value"
+                            class="absolute inset-y-2 left-0 w-1 rounded-full bg-emerald-500"
+                        />
+                        <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+                            <Grid2x2 class="size-5" />
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-medium leading-tight text-foreground">
+                                {{ t('plannerate.dropdown.performance.bcg_analysis') }}
+                            </p>
+                            <p class="text-xs text-muted-foreground">
+                                {{ t('plannerate.dropdown.performance.bcg_subtitle') }}
+                            </p>
+                        </div>
+                        <div class="flex shrink-0 items-center gap-1.5">
+                            <Switch
+                                :model-value="performance.bcg.isVisible.value"
+                                :disabled="!performance.bcg.hasData.value"
+                                class="data-[state=checked]:bg-emerald-500"
+                                @update:model-value="performance.bcg.setVisibility($event)"
+                            />
+                            <span class="text-xs text-muted-foreground">{{ t('plannerate.dropdown.performance.show') }}</span>
+                            <CollapsibleTrigger class="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground">
+                                <ChevronDown class="size-4 transition-transform" :class="bcgOpen ? 'rotate-180' : ''" />
+                            </CollapsibleTrigger>
+                        </div>
+                    </div>
+
+                    <CollapsibleContent>
+                        <div class="px-3 pb-3">
+                            <Separator class="mb-3" />
+
+                            <!--
+                                Filtro por quadrante: isola um quadrante na GÔNDOLA.
+                                É o que transforma o selo em ferramenta — dá para ver
+                                onde os "baixo valor" estão fisicamente alocados.
+                            -->
+                            <p class="mb-1.5 text-[11px] text-muted-foreground">
+                                {{ t('plannerate.dropdown.performance.bcg_filter') }}
+                            </p>
+                            <div class="flex flex-wrap gap-1">
+                                <button
+                                    v-for="quadrant in BCG_QUADRANTS"
+                                    :key="quadrant"
+                                    type="button"
+                                    class="rounded-md border px-1.5 py-0.5 text-[10px] font-semibold transition-opacity"
+                                    :class="[
+                                        quadrantBadgeClass(quadrant),
+                                        performance.bcg.activeQuadrants.value.size > 0 && !performance.bcg.activeQuadrants.value.has(quadrant)
+                                            ? 'opacity-40'
+                                            : '',
+                                    ]"
+                                    @click="performance.bcg.toggleQuadrantFilter(quadrant)"
+                                >
+                                    {{ quadrantIcon(quadrant) }}
+                                    {{ quadrantLabel(quadrant, bcgAxes.x, bcgAxes.y) }}
+                                    ({{ performance.bcg.quadrantStats.value[quadrant] }})
+                                </button>
+                                <button
+                                    v-if="performance.bcg.activeQuadrants.value.size > 0"
+                                    type="button"
+                                    class="rounded-md border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+                                    @click="performance.bcg.resetQuadrantFilter()"
+                                >
+                                    {{ t('plannerate.dropdown.performance.bcg_filter_reset') }}
+                                </button>
+                            </div>
+
+                            <p class="mt-2 text-xs text-muted-foreground">
+                                {{ performance.bcg.stats.value.total }}
+                                {{ t('plannerate.dropdown.performance.analyzed_products') }}
+                            </p>
+                            <p v-if="performance.bcg.misallocatedCount.value > 0" class="mt-0.5 text-xs font-medium text-foreground">
+                                {{ performance.bcg.misallocatedCount.value }}
+                                {{ t('plannerate.dropdown.performance.bcg_misallocated') }}
+                            </p>
+                        </div>
+                    </CollapsibleContent>
+                </Collapsible>
+
                 <!-- Ações gerais -->
                 <div>
                     <p class="mb-1.5 text-xs font-semibold text-muted-foreground">
@@ -322,6 +406,7 @@ import {
     GalleryHorizontal,
     GalleryVertical,
     Gauge,
+    Grid2x2,
     Info,
     PieChart,
     SlidersHorizontal,
@@ -331,6 +416,8 @@ import {
 import { computed, onMounted, ref, watch } from 'vue';
 import Performance from '@/components/plannerate/header/Performance.vue';
 import type { AbcResult } from '@/components/plannerate/analysis/abc/types';
+import { useBcgLabels } from '@/components/plannerate/analysis/bcg/labels';
+import type { BcgQuadrant, BcgResult } from '@/components/plannerate/analysis/bcg/types';
 import type { PaperResult } from '@/components/plannerate/analysis/paper/types';
 import type { TargetStockResult } from '@/components/plannerate/analysis/target-stock/types';
 import { Button } from '@/components/ui/button';
@@ -350,15 +437,32 @@ const props = defineProps<{
         abc?: AbcAnalysis;
         stock?: StockAnalysis;
         paper?: { results?: PaperResult[] };
+        bcg?: { results?: BcgResult[] };
         [key: string]: any;
     };
 }>();
 
 const showPerformanceModal = ref(false);
 const { t } = useT();
-const { exportAbcToCsv, exportStockToCsv, exportPaperToCsv } = useAnalysisExport();
+const { exportAbcToCsv, exportStockToCsv, exportPaperToCsv, exportBcgToCsv } = useAnalysisExport();
+const { quadrantLabel, quadrantIcon, quadrantBadgeClass } = useBcgLabels();
 
 const performance = usePerformanceIndicators();
+
+const BCG_QUADRANTS: BcgQuadrant[] = ['alto_alto', 'forte_x', 'forte_y', 'baixo_baixo'];
+
+/**
+ * Eixos usados na última análise — o rótulo do quadrante é derivado deles, então o
+ * filtro precisa saber quais foram (ver bcg/labels.ts).
+ */
+const bcgAxes = computed(() => {
+    const first = props.analysis?.bcg?.results?.[0];
+
+    return {
+        x: first?.x_axis ?? 'quantidade',
+        y: first?.y_axis ?? 'margem',
+    };
+});
 
 /** Estado de abertura do painel (Popover) — controlado para poder fechá-lo ao abrir a modal. */
 const panelOpen = ref(false);
@@ -367,6 +471,7 @@ const panelOpen = ref(false);
 const sortimentoOpen = ref(true);
 const stockOpen = ref(false);
 const paperOpen = ref(false);
+const bcgOpen = ref(false);
 
 /**
  * Abre a modal de Análises de Performance fechando antes o painel, para os dois
@@ -471,6 +576,14 @@ const exportReports = computed(() => [
         enabled: performance.paper.hasData,
         handler: handleExportPaper,
     },
+    {
+        key: 'bcg',
+        title: t('plannerate.dropdown.performance.export_bcg'),
+        subtitle: t('plannerate.dropdown.performance.export_bcg_subtitle'),
+        badgeClass: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400',
+        enabled: performance.bcg.hasData,
+        handler: handleExportBcg,
+    },
 ]);
 
 const getStorageKey = (gondolaId: string) => `plannerate:performance:visibility:${gondolaId}`;
@@ -479,6 +592,7 @@ interface PerformanceVisibilityPreferences {
     abcVisible: boolean;
     targetStockVisible: boolean;
     paperVisible: boolean;
+    bcgVisible: boolean;
 }
 
 const saveVisibilityPreferences = (): void => {
@@ -488,6 +602,7 @@ const saveVisibilityPreferences = (): void => {
         abcVisible: performance.abc.isVisible.value,
         targetStockVisible: performance.targetStock.isVisible.value,
         paperVisible: performance.paper.isVisible.value,
+        bcgVisible: performance.bcg.isVisible.value,
     };
 
     window.localStorage.setItem(getStorageKey(props.gondola.id), JSON.stringify(payload));
@@ -505,6 +620,7 @@ const loadVisibilityPreferences = (): void => {
         if (typeof parsed.abcVisible === 'boolean') performance.abc.setVisibility(parsed.abcVisible);
         if (typeof parsed.targetStockVisible === 'boolean') performance.targetStock.setVisibility(parsed.targetStockVisible);
         if (typeof parsed.paperVisible === 'boolean') performance.paper.setVisibility(parsed.paperVisible);
+        if (typeof parsed.bcgVisible === 'boolean') performance.bcg.setVisibility(parsed.bcgVisible);
     } catch {
         window.localStorage.removeItem(getStorageKey(props.gondola.id));
     }
@@ -518,6 +634,7 @@ watch(
             performance.abc.clearClassifications();
             performance.targetStock.clearTargetStockData();
             performance.paper.clearPaperRoles();
+            performance.bcg.clearBcgQuadrants();
             loadVisibilityPreferences();
         }
     },
@@ -563,9 +680,26 @@ watch(
     { immediate: true },
 );
 
+// Carregar quadrantes BCG (selo na frente do produto)
+watch(
+    () => props.analysis?.bcg,
+    (analysis) => {
+        performance.bcg.clearBcgQuadrants();
+        if (analysis?.results?.length) {
+            performance.bcg.setBcgQuadrants(analysis.results as BcgResult[]);
+        }
+    },
+    { immediate: true },
+);
+
 // Persistir preferências de visibilidade
 watch(
-    [performance.abc.isVisible, performance.targetStock.isVisible, performance.paper.isVisible],
+    [
+        performance.abc.isVisible,
+        performance.targetStock.isVisible,
+        performance.paper.isVisible,
+        performance.bcg.isVisible,
+    ],
     () => saveVisibilityPreferences(),
 );
 
@@ -598,5 +732,11 @@ function handleExportPaper(): void {
     const results = props.analysis?.paper?.results;
     if (!results?.length) return;
     exportPaperToCsv(results as PaperResult[]);
+}
+
+function handleExportBcg(): void {
+    const results = props.analysis?.bcg?.results;
+    if (!results?.length) return;
+    exportBcgToCsv(results as BcgResult[]);
 }
 </script>

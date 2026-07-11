@@ -89,6 +89,17 @@ class GondolaAnalysis extends Model
     }
 
     /**
+     * Obtém a Análise BCG mais recente da gôndola
+     */
+    public static function getLatestBcgAnalysis(string $gondolaId): ?self
+    {
+        return static::ofType('bcg')
+            ->where('gondola_id', $gondolaId)
+            ->latest('analyzed_at')
+            ->first();
+    }
+
+    /**
      * Verifica se a análise está desatualizada (mais de 24h)
      */
     public function isOutdated(): bool
@@ -244,6 +255,40 @@ class GondolaAnalysis extends Model
                 'anchor' => $this->summary['anchor'] ?? 0,
                 'rising' => $this->summary['rising'] ?? 0,
                 'lagging' => $this->summary['lagging'] ?? 0,
+            ],
+            'analyzed_at' => $this->analyzed_at,
+            'is_outdated' => $this->isOutdated(),
+        ];
+    }
+
+    /**
+     * Retorna a Análise BCG formatada para o frontend.
+     *
+     * `parameters` carrega os eixos usados (x_axis/y_axis) e não é opcional para a UI:
+     * os rótulos dos quadrantes são derivados dos eixos, porque as chaves do backend
+     * são agnósticas de métrica (ver BcgAnalysisService).
+     */
+    public function toBcgFormattedArray(): array
+    {
+        if ($this->type !== 'bcg') {
+            return $this->toFormattedArray();
+        }
+
+        return [
+            'id' => $this->id,
+            'type' => $this->type,
+            'results' => $this->data['results'] ?? [],
+            'filters' => $this->data['filters'] ?? [],
+            'parameters' => $this->data['parameters'] ?? [],
+            'summary' => [
+                'total' => $this->summary['total'] ?? 0,
+                'alto_alto' => $this->summary['alto_alto'] ?? 0,
+                'forte_x' => $this->summary['forte_x'] ?? 0,
+                'forte_y' => $this->summary['forte_y'] ?? 0,
+                'baixo_baixo' => $this->summary['baixo_baixo'] ?? 0,
+                'sem_venda' => $this->summary['sem_venda'] ?? 0,
+                'borderline' => $this->summary['borderline'] ?? 0,
+                'espaco_mal_alocado' => $this->summary['espaco_mal_alocado'] ?? 0,
             ],
             'analyzed_at' => $this->analyzed_at,
             'is_outdated' => $this->isOutdated(),

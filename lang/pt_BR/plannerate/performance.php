@@ -6,6 +6,7 @@ return [
     'target_stock' => 'Estoque Alvo',
     'abc_tab' => 'Sortimento',
     'paper_tab' => 'Papel',
+    'bcg_tab' => 'BCG',
     'paper_title' => 'Análise de Papel',
     'soon' => 'Em breve',
     'common' => [
@@ -43,6 +44,16 @@ return [
         'empty_description' => 'Configure os períodos e execute a análise para ver os resultados.',
         'no_analysis' => 'Nenhuma Análise de Papel calculada',
         'no_analysis_description' => 'Configure os períodos atual e anterior para calcular a Análise de Papel.',
+        'configure_and_calculate' => 'Configurar e Calcular',
+    ],
+    'bcg' => [
+        'loading' => 'Calculando Análise BCG...',
+        'analysis_parameters' => 'Parâmetros da Análise BCG',
+        'axes' => 'Eixos',
+        'threshold' => 'Corte',
+        'empty_description' => 'Configure os eixos e o período e execute a análise para ver os resultados.',
+        'no_analysis' => 'Nenhuma Análise BCG calculada',
+        'no_analysis_description' => 'Escolha duas métricas para os eixos e calcule a matriz de quadrantes.',
         'configure_and_calculate' => 'Configurar e Calcular',
     ],
 ];

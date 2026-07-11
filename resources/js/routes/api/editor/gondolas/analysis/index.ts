@@ -3,7 +3,7 @@ import abc06b05a from './abc'
 import stock from './stock'
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::abc
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:22
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:24
 * @route '/api/editor/gondolas/{gondola}/analysis/abc'
 */
 export const abc = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -18,7 +18,7 @@ abc.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::abc
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:22
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:24
 * @route '/api/editor/gondolas/{gondola}/analysis/abc'
 */
 abc.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -45,7 +45,7 @@ abc.url = (args: { gondola: string | number } | [gondola: string | number ] | st
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::abc
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:22
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:24
 * @route '/api/editor/gondolas/{gondola}/analysis/abc'
 */
 abc.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -55,7 +55,7 @@ abc.post = (args: { gondola: string | number } | [gondola: string | number ] | s
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::abc
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:22
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:24
 * @route '/api/editor/gondolas/{gondola}/analysis/abc'
 */
 const abcForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -65,7 +65,7 @@ const abcForm = (args: { gondola: string | number } | [gondola: string | number 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::abc
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:22
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:24
 * @route '/api/editor/gondolas/{gondola}/analysis/abc'
 */
 abcForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -77,7 +77,7 @@ abc.form = abcForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::targetStock
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:81
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:83
 * @route '/api/editor/gondolas/{gondola}/analysis/target-stock'
 */
 export const targetStock = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -92,7 +92,7 @@ targetStock.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::targetStock
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:81
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:83
 * @route '/api/editor/gondolas/{gondola}/analysis/target-stock'
 */
 targetStock.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -119,7 +119,7 @@ targetStock.url = (args: { gondola: string | number } | [gondola: string | numbe
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::targetStock
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:81
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:83
 * @route '/api/editor/gondolas/{gondola}/analysis/target-stock'
 */
 targetStock.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -129,7 +129,7 @@ targetStock.post = (args: { gondola: string | number } | [gondola: string | numb
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::targetStock
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:81
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:83
 * @route '/api/editor/gondolas/{gondola}/analysis/target-stock'
 */
 const targetStockForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -139,7 +139,7 @@ const targetStockForm = (args: { gondola: string | number } | [gondola: string |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::targetStock
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:81
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:83
 * @route '/api/editor/gondolas/{gondola}/analysis/target-stock'
 */
 targetStockForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -151,7 +151,7 @@ targetStock.form = targetStockForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::paper
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:144
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:146
 * @route '/api/editor/gondolas/{gondola}/analysis/paper'
 */
 export const paper = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -166,7 +166,7 @@ paper.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::paper
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:144
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:146
 * @route '/api/editor/gondolas/{gondola}/analysis/paper'
 */
 paper.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -193,7 +193,7 @@ paper.url = (args: { gondola: string | number } | [gondola: string | number ] | 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::paper
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:144
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:146
 * @route '/api/editor/gondolas/{gondola}/analysis/paper'
 */
 paper.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -203,7 +203,7 @@ paper.post = (args: { gondola: string | number } | [gondola: string | number ] |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::paper
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:144
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:146
 * @route '/api/editor/gondolas/{gondola}/analysis/paper'
 */
 const paperForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -213,7 +213,7 @@ const paperForm = (args: { gondola: string | number } | [gondola: string | numbe
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::paper
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:144
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:146
 * @route '/api/editor/gondolas/{gondola}/analysis/paper'
 */
 paperForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -224,8 +224,82 @@ paperForm.post = (args: { gondola: string | number } | [gondola: string | number
 paper.form = paperForm
 
 /**
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::bcg
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:207
+* @route '/api/editor/gondolas/{gondola}/analysis/bcg'
+*/
+export const bcg = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: bcg.url(args, options),
+    method: 'post',
+})
+
+bcg.definition = {
+    methods: ["post"],
+    url: '/api/editor/gondolas/{gondola}/analysis/bcg',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::bcg
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:207
+* @route '/api/editor/gondolas/{gondola}/analysis/bcg'
+*/
+bcg.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { gondola: args }
+    }
+
+    if (Array.isArray(args)) {
+        args = {
+            gondola: args[0],
+        }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+        gondola: args.gondola,
+    }
+
+    return bcg.definition.url
+            .replace('{gondola}', parsedArgs.gondola.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::bcg
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:207
+* @route '/api/editor/gondolas/{gondola}/analysis/bcg'
+*/
+bcg.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: bcg.url(args, options),
+    method: 'post',
+})
+
+/**
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::bcg
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:207
+* @route '/api/editor/gondolas/{gondola}/analysis/bcg'
+*/
+const bcgForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: bcg.url(args, options),
+    method: 'post',
+})
+
+/**
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::bcg
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:207
+* @route '/api/editor/gondolas/{gondola}/analysis/bcg'
+*/
+bcgForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: bcg.url(args, options),
+    method: 'post',
+})
+
+bcg.form = bcgForm
+
+/**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clear
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:269
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 export const clear = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -240,7 +314,7 @@ clear.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clear
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:269
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 clear.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -267,7 +341,7 @@ clear.url = (args: { gondola: string | number } | [gondola: string | number ] | 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clear
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:269
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 clear.delete = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -277,7 +351,7 @@ clear.delete = (args: { gondola: string | number } | [gondola: string | number ]
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clear
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:269
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 const clearForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -292,7 +366,7 @@ const clearForm = (args: { gondola: string | number } | [gondola: string | numbe
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clear
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:269
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 clearForm.delete = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -311,6 +385,7 @@ const analysis = {
     abc: Object.assign(abc, abc06b05a),
     targetStock: Object.assign(targetStock, targetStock),
     paper: Object.assign(paper, paper),
+    bcg: Object.assign(bcg, bcg),
     clear: Object.assign(clear, clear),
     stock: Object.assign(stock, stock),
 }

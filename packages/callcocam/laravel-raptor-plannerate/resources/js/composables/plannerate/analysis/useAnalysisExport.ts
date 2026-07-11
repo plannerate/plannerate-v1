@@ -1,4 +1,5 @@
 import type { AbcResult } from '@/components/plannerate/analysis/abc/types';
+import type { BcgAxis, BcgResult } from '@/components/plannerate/analysis/bcg/types';
 import type { PaperResult } from '@/components/plannerate/analysis/paper/types';
 import type { TargetStockResult } from '@/components/plannerate/analysis/target-stock/types';
 
@@ -174,5 +175,86 @@ export function useAnalysisExport() {
         URL.revokeObjectURL(url);
     }
 
-    return { exportAbcToCsv, exportStockToCsv, exportPaperToCsv };
+    /**
+     * Gera e dispara o download do CSV da Análise BCG.
+     *
+     * As colunas dos eixos são nomeadas pela MÉTRICA escolhida (e não "Eixo X"/"Eixo Y"):
+     * um CSV com cabeçalho "Eixo X" é ilegível fora da tela que o gerou.
+     *
+     * @param results - Resultados BCG (normalmente os filtrados/exibidos na tela)
+     * @param filename - Prefixo do nome do arquivo; padrão: 'analise_bcg'
+     */
+    function exportBcgToCsv(results: BcgResult[], filename: string = 'analise_bcg'): void {
+        const axisLabels: Record<BcgAxis, string> = {
+            valor: 'Valor de Venda',
+            quantidade: 'Venda em Quantidade',
+            margem: 'Margem de Contribuicao',
+        };
+
+        const quadrantLabels: Record<string, string> = {
+            alto_alto: 'Alto nos dois eixos',
+            forte_x: 'Alto so no eixo X',
+            forte_y: 'Alto so no eixo Y',
+            baixo_baixo: 'Baixo nos dois eixos',
+        };
+
+        const actionLabels: Record<string, string> = {
+            aumentar: 'Aumentar frentes',
+            reduzir: 'Reduzir frentes',
+            manter: 'Manter',
+        };
+
+        const xAxis = results[0]?.x_axis ?? 'quantidade';
+        const yAxis = results[0]?.y_axis ?? 'margem';
+
+        const headers = [
+            'EAN',
+            'Produto',
+            'Categoria',
+            'Grupo de Comparacao',
+            'Quadrante',
+            axisLabels[xAxis],
+            axisLabels[yAxis],
+            `Corte ${axisLabels[xAxis]}`,
+            `Corte ${axisLabels[yAxis]}`,
+            'Percentil X (%)',
+            'Percentil Y (%)',
+            'Em Cima da Linha',
+            'Margem Negativa',
+            'Sem Venda',
+            'Frentes',
+            'Espaco Linear (cm)',
+            'Share de Gondola (%)',
+            'Acao Sugerida',
+        ];
+
+        const decimal = (value: number) => (value ?? 0).toFixed(2).replace('.', ',');
+
+        const rows = results.map((item) => [
+            item.ean,
+            item.product_name,
+            item.category_name ?? '',
+            item.group_name ?? '',
+            quadrantLabels[item.quadrant] ?? item.quadrant,
+            decimal(item.x_value),
+            decimal(item.y_value),
+            decimal(item.x_threshold),
+            decimal(item.y_threshold),
+            decimal(item.x_percentil),
+            decimal(item.y_percentil),
+            item.is_borderline ? 'Sim' : 'Nao',
+            item.alerta_margem_negativa ? 'Sim' : 'Nao',
+            item.sem_venda ? 'Sim' : 'Nao',
+            String(item.facings ?? 0),
+            decimal(item.espaco_linear_cm),
+            // Produto sem largura cadastrada: o share é 0 por falta de dado, não por ser
+            // pequeno. Exportar "0,00" transformaria dado ausente em fato.
+            item.sem_dimensao ? 'Sem dimensao' : decimal(item.share_gondola),
+            item.acao_espaco ? (actionLabels[item.acao_espaco] ?? item.acao_espaco) : 'Sem dimensao',
+        ]);
+
+        downloadCsv(headers, rows, filename);
+    }
+
+    return { exportAbcToCsv, exportStockToCsv, exportPaperToCsv, exportBcgToCsv };
 }

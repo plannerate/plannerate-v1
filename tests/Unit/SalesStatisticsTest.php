@@ -65,3 +65,26 @@ test('stock formulas round to whole units', function (): void {
         // alvo = mínimo + segurança = 10 + 13 = 23
         ->and(SalesStatistics::targetStock(10, 13))->toBe(23.0);
 });
+
+test('mean is the arithmetic average, null when empty', function (): void {
+    // (10 + 20 + 30 + 940) / 4 = 250 — o outlier puxa a média para longe da mediana (25)
+    expect(SalesStatistics::mean([10, 20, 30, 940]))->toBe(250.0)
+        ->and(SalesStatistics::median([10, 20, 30, 940]))->toBe(25.0)
+        ->and(SalesStatistics::mean([]))->toBeNull();
+});
+
+test('percentileRank is the share of items at or below the value', function (): void {
+    // [10, 10, 100, 100]: até 100 → 4 de 4 = 100%; até 10 → 2 de 4 = 50%
+    expect(SalesStatistics::percentileRank(100, [10, 10, 100, 100]))->toBe(100.0)
+        ->and(SalesStatistics::percentileRank(10, [10, 10, 100, 100]))->toBe(50.0)
+        // valor abaixo de toda a população → 0%; população vazia → 0% (guarda de divisão)
+        ->and(SalesStatistics::percentileRank(5, [10, 20]))->toBe(0.0)
+        ->and(SalesStatistics::percentileRank(5, []))->toBe(0.0);
+});
+
+test('range is max minus min, zero-safe', function (): void {
+    expect(SalesStatistics::range([10, 50, 90]))->toBe(80.0)
+        // grupo sem dispersão: não há "quase acima" do limiar
+        ->and(SalesStatistics::range([7, 7, 7]))->toBe(0.0)
+        ->and(SalesStatistics::range([]))->toBe(0.0);
+});
