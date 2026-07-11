@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import { router, useHttp } from '@inertiajs/vue3';
-import { useDraggable, watchDebounced } from '@vueuse/core';
-import { ArrowRightLeft, GripHorizontal, PackageOpen, Search, X } from 'lucide-vue-next';
-import { computed, onMounted, ref } from 'vue';
+import { useDraggable, useResizeObserver, watchDebounced } from '@vueuse/core';
+import {
+    ArrowRightLeft,
+    ChevronDown,
+    ChevronUp,
+    GripHorizontal,
+    PackageOpen,
+    Search,
+    X,
+} from 'lucide-vue-next';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -38,6 +46,16 @@ const props = defineProps<{
 const emit = defineEmits<{
     close: [];
     moved: [payload: { from: string; to: string; count: number }];
+    /** Geometria atual da janela — o manager usa para desenhar as linhas de ligação. */
+    geometry: [
+        payload: {
+            categoryId: string;
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        },
+    ];
 }>();
 
 const { t } = useT();
@@ -50,6 +68,31 @@ const { x, y } = useDraggable(panelRef, {
     handle: handleRef,
     preventDefault: true,
 });
+
+/**
+ * Publica a posição/tamanho atuais para o manager, que desenha a linha de
+ * ligação entre a janela da categoria pai e a da subcategoria.
+ */
+function emitGeometry(): void {
+    const el = panelRef.value;
+
+    if (!el) {
+        return;
+    }
+
+    emit('geometry', {
+        categoryId: props.category.categoryId,
+        x: x.value,
+        y: y.value,
+        width: el.offsetWidth,
+        height: el.offsetHeight,
+    });
+}
+
+// Reposicionar (arraste) e redimensionar (lista carregando/paginando) movem as
+// âncoras da linha — republica nos dois casos.
+watch([x, y], emitGeometry);
+useResizeObserver(panelRef, emitGeometry);
 
 // ── Produtos ──────────────────────────────────────────────
 const http = useHttp<Record<string, string>, ProductsResponse>();
@@ -65,6 +108,14 @@ const selectedIds = ref<Set<string>>(new Set());
 const targetId = ref('');
 const moving = ref(false);
 const isDropActive = ref(false);
+
+/**
+ * Janela recolhida: esconde busca/lista/rodapé e mantém só o cabeçalho, para
+ * desafogar a tela quando há muitas janelas abertas. O corpo é removido do DOM,
+ * então o ResizeObserver republica a geometria e as linhas de ligação se
+ * reancoram sozinhas. O painel continua aceitando drop de produtos recolhido.
+ */
+const collapsed = ref(false);
 
 const hasMore = computed(() => page.value < lastPage.value);
 const selectedCount = computed(() => selectedIds.value.size);
@@ -265,6 +316,7 @@ watchDebounced(
 );
 
 onMounted(() => {
+    emitGeometry();
     void fetchProducts();
 });
 </script>
@@ -279,20 +331,51 @@ onMounted(() => {
         @dragleave="onPanelDragLeave"
         @drop="onPanelDrop"
     >
-        <!-- Cabeçalho (arrasta a janela) -->
+        <!-- Cabeçalho (arrasta a janela; duplo-clique recolhe/expande) -->
         <div
             ref="handleRef"
-            class="flex cursor-move items-center gap-2 border-b bg-muted/30 px-4 py-3 select-none"
+            class="flex cursor-move items-center gap-2 bg-muted/30 px-4 py-3 select-none"
+            :class="{ 'border-b': !collapsed }"
+            @dblclick="collapsed = !collapsed"
         >
             <GripHorizontal class="size-4 shrink-0 text-muted-foreground" />
             <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-semibold">
-                    {{ t('app.landlord.mercadologico.products.modal_title', { name: category.categoryName }) }}
+                    {{
+                        t('app.landlord.mercadologico.products.modal_title', {
+                            name: category.categoryName,
+                        })
+                    }}
                 </p>
-                <p v-if="fullPath" class="truncate text-xs text-muted-foreground">
+                <p
+                    v-if="fullPath"
+                    class="truncate text-xs text-muted-foreground"
+                >
                     {{ fullPath }}
                 </p>
             </div>
+
+            <!-- Recolhida, a contagem some do corpo — mantém a referência no cabeçalho. -->
+            <span
+                v-if="collapsed"
+                class="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground tabular-nums"
+            >
+                {{ total }}
+            </span>
+
+            <button
+                type="button"
+                class="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                :aria-label="
+                    collapsed
+                        ? t('app.landlord.mercadologico.products.expand')
+                        : t('app.landlord.mercadologico.products.collapse')
+                "
+                @click="collapsed = !collapsed"
+            >
+                <ChevronDown v-if="collapsed" class="size-4" />
+                <ChevronUp v-else class="size-4" />
+            </button>
             <button
                 type="button"
                 class="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
@@ -303,103 +386,155 @@ onMounted(() => {
             </button>
         </div>
 
-        <!-- Busca -->
-        <div class="border-b px-4 py-3">
-            <div class="relative">
-                <Search class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                    v-model="search"
-                    type="text"
-                    :placeholder="t('app.landlord.mercadologico.products.search')"
-                    class="h-9 w-full rounded-lg border border-input bg-background pr-3 pl-8 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                />
-            </div>
-
-            <div class="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                <label class="flex cursor-pointer items-center gap-2">
-                    <Checkbox
-                        :model-value="allVisibleSelected"
-                        @update:model-value="toggleAll"
+        <template v-if="!collapsed">
+            <!-- Busca -->
+            <div class="border-b px-4 py-3">
+                <div class="relative">
+                    <Search
+                        class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
                     />
-                    <span>{{ t('app.landlord.mercadologico.products.selected', { count: String(selectedCount) }) }}</span>
-                </label>
-                <span>{{ total }}</span>
-            </div>
-        </div>
+                    <input
+                        v-model="search"
+                        type="text"
+                        :placeholder="
+                            t('app.landlord.mercadologico.products.search')
+                        "
+                        class="h-9 w-full rounded-lg border border-input bg-background pr-3 pl-8 text-sm transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                    />
+                </div>
 
-        <!-- Lista (rola com altura própria) -->
-        <div class="max-h-[45vh] flex-1 overflow-y-auto px-2 py-2">
-            <div v-if="loading && products.length === 0" class="flex justify-center py-10">
-                <Spinner class="size-5" />
-            </div>
-
-            <div
-                v-else-if="products.length === 0"
-                class="flex flex-col items-center gap-2 py-10 text-sm text-muted-foreground"
-            >
-                <PackageOpen class="size-8 opacity-30" />
-                {{ t('app.landlord.mercadologico.products.empty') }}
-            </div>
-
-            <template v-else>
                 <div
-                    v-for="product in products"
-                    :key="product.id"
-                    draggable="true"
-                    class="flex cursor-grab items-center gap-3 rounded-md px-2 py-1.5 transition hover:bg-muted/60 active:cursor-grabbing"
-                    @dragstart="onProductDragStart($event, product)"
+                    class="mt-2 flex items-center justify-between text-xs text-muted-foreground"
                 >
-                    <Checkbox
-                        :model-value="selectedIds.has(product.id)"
-                        @update:model-value="toggle(product.id)"
-                    />
-                    <img
-                        v-if="product.image_url"
-                        :src="product.image_url"
-                        alt=""
-                        draggable="false"
-                        class="size-9 shrink-0 rounded border border-border/60 object-contain"
-                    />
-                    <div v-else class="flex size-9 shrink-0 items-center justify-center rounded border border-border/60 bg-muted">
-                        <PackageOpen class="size-4 text-muted-foreground/50" />
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="truncate text-sm font-medium">{{ product.name }}</p>
-                        <p class="truncate text-xs text-muted-foreground">
-                            <span v-if="product.ean">{{ t('app.landlord.mercadologico.products.columns.ean') }}: {{ product.ean }}</span>
-                            <span v-if="product.codigo_erp"> · {{ product.codigo_erp }}</span>
-                        </p>
-                    </div>
+                    <label class="flex cursor-pointer items-center gap-2">
+                        <Checkbox
+                            :model-value="allVisibleSelected"
+                            @update:model-value="toggleAll"
+                        />
+                        <span>{{
+                            t('app.landlord.mercadologico.products.selected', {
+                                count: String(selectedCount),
+                            })
+                        }}</span>
+                    </label>
+                    <span>{{ total }}</span>
+                </div>
+            </div>
+
+            <!-- Lista (rola com altura própria) -->
+            <div class="max-h-[45vh] flex-1 overflow-y-auto px-2 py-2">
+                <div
+                    v-if="loading && products.length === 0"
+                    class="flex justify-center py-10"
+                >
+                    <Spinner class="size-5" />
                 </div>
 
-                <div v-if="hasMore" class="px-2 py-2">
-                    <Button variant="outline" size="sm" class="w-full" :disabled="loading" @click="loadMore">
-                        <Spinner v-if="loading" class="size-4" />
-                        {{ t('app.landlord.mercadologico.products.load_more') }}
-                    </Button>
+                <div
+                    v-else-if="products.length === 0"
+                    class="flex flex-col items-center gap-2 py-10 text-sm text-muted-foreground"
+                >
+                    <PackageOpen class="size-8 opacity-30" />
+                    {{ t('app.landlord.mercadologico.products.empty') }}
                 </div>
-            </template>
-        </div>
 
-        <!-- Rodapé: mover selecionados (alternativa ao arraste entre painéis) -->
-        <div class="flex items-center gap-2 border-t px-4 py-3">
-            <ArrowRightLeft class="size-4 shrink-0 text-muted-foreground" />
-            <select
-                v-model="targetId"
-                class="h-9 min-w-0 flex-1 rounded-lg border border-input bg-background px-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
-                :disabled="otherCategories.length === 0"
-            >
-                <option value="">
-                    {{ otherCategories.length === 0 ? t('app.landlord.mercadologico.products.open_target_hint') : t('app.landlord.mercadologico.products.select_target') }}
-                </option>
-                <option v-for="option in otherCategories" :key="option.categoryId" :value="option.categoryId">
-                    {{ option.categoryName }}
-                </option>
-            </select>
-            <Button size="sm" :disabled="!canMove" @click="moveSelected">
-                <Spinner v-if="moving" class="size-4" />
-                {{ t('app.landlord.mercadologico.products.move_selected') }}
-            </Button>
-        </div>
+                <template v-else>
+                    <div
+                        v-for="product in products"
+                        :key="product.id"
+                        draggable="true"
+                        class="flex cursor-grab items-center gap-3 rounded-md px-2 py-1.5 transition hover:bg-muted/60 active:cursor-grabbing"
+                        @dragstart="onProductDragStart($event, product)"
+                    >
+                        <Checkbox
+                            :model-value="selectedIds.has(product.id)"
+                            @update:model-value="toggle(product.id)"
+                        />
+                        <img
+                            v-if="product.image_url"
+                            :src="product.image_url"
+                            alt=""
+                            draggable="false"
+                            class="size-9 shrink-0 rounded border border-border/60 object-contain"
+                        />
+                        <div
+                            v-else
+                            class="flex size-9 shrink-0 items-center justify-center rounded border border-border/60 bg-muted"
+                        >
+                            <PackageOpen
+                                class="size-4 text-muted-foreground/50"
+                            />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-medium">
+                                {{ product.name }}
+                            </p>
+                            <p class="truncate text-xs text-muted-foreground">
+                                <span v-if="product.ean"
+                                    >{{
+                                        t(
+                                            'app.landlord.mercadologico.products.columns.ean',
+                                        )
+                                    }}: {{ product.ean }}</span
+                                >
+                                <span v-if="product.codigo_erp">
+                                    · {{ product.codigo_erp }}</span
+                                >
+                            </p>
+                        </div>
+                    </div>
+
+                    <div v-if="hasMore" class="px-2 py-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="w-full"
+                            :disabled="loading"
+                            @click="loadMore"
+                        >
+                            <Spinner v-if="loading" class="size-4" />
+                            {{
+                                t(
+                                    'app.landlord.mercadologico.products.load_more',
+                                )
+                            }}
+                        </Button>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Rodapé: mover selecionados (alternativa ao arraste entre painéis) -->
+            <div class="flex items-center gap-2 border-t px-4 py-3">
+                <ArrowRightLeft class="size-4 shrink-0 text-muted-foreground" />
+                <select
+                    v-model="targetId"
+                    class="h-9 min-w-0 flex-1 rounded-lg border border-input bg-background px-2 text-sm transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+                    :disabled="otherCategories.length === 0"
+                >
+                    <option value="">
+                        {{
+                            otherCategories.length === 0
+                                ? t(
+                                      'app.landlord.mercadologico.products.open_target_hint',
+                                  )
+                                : t(
+                                      'app.landlord.mercadologico.products.select_target',
+                                  )
+                        }}
+                    </option>
+                    <option
+                        v-for="option in otherCategories"
+                        :key="option.categoryId"
+                        :value="option.categoryId"
+                    >
+                        {{ option.categoryName }}
+                    </option>
+                </select>
+                <Button size="sm" :disabled="!canMove" @click="moveSelected">
+                    <Spinner v-if="moving" class="size-4" />
+                    {{ t('app.landlord.mercadologico.products.move_selected') }}
+                </Button>
+            </div>
+        </template>
     </div>
 </template>

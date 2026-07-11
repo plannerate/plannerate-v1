@@ -38,6 +38,8 @@ return [
         'open_target_hint' => 'Abra outra categoria como destino',
         'load_more' => 'Carregar mais',
         'close' => 'Fechar',
+        'collapse' => 'Recolher janela',
+        'expand' => 'Expandir janela',
         'drag_hint' => 'Arraste os produtos para outra janela para movê-los',
         'not_leaf_warning' => 'A categoria de destino não é uma folha da árvore.',
         'columns' => [
@@ -55,6 +57,8 @@ return [
         'menu' => 'Ações',
         'undo' => 'Desfazer',
         'redo' => 'Refazer',
+        'show_links' => 'Mostrar linhas de ligação',
+        'hide_links' => 'Ocultar linhas de ligação',
     ],
 
     'form' => [

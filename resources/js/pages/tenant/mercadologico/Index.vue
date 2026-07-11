@@ -40,8 +40,8 @@ const urls = computed(() => tenantMercadologicoUrls());
 <template>
     <Head :title="t('app.landlord.mercadologico.title')" />
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
-        <div class="p-4">
-            <div class="mx-auto max-w-3xl">
+        <div class="p-2 sm:p-4">
+            <div class="mx-auto w-full max-w-6xl">
                 <MercadologicoManager :urls="urls" :roots="props.roots" />
             </div>
         </div>
