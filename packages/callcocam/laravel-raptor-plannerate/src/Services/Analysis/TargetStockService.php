@@ -5,6 +5,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Services\Analysis;
 use Callcocam\LaravelRaptorPlannerate\Models\MonthlySalesSummary;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Sale;
+use Callcocam\LaravelRaptorPlannerate\Sales\ProductSalesAggregateQuery;
 use Callcocam\LaravelRaptorPlannerate\Sales\SalesStatistics;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -289,7 +290,10 @@ class TargetStockService
     }
 
     /**
-     * Query agregada para tabela monthly_sales_summaries - calcula AVG e STDDEV_POP no banco
+     * Query agregada para tabela monthly_sales_summaries - calcula AVG e STDDEV_POP no banco.
+     *
+     * O período sai de monthPeriod(), que aceita tanto month_from/month_to
+     * (auto-planograma, já em data) quanto start_month/end_month (a UI, em Y-m).
      */
     private function getMonthlySummariesAggregatedQuery(array $eans, array $filters): Builder
     {
@@ -310,12 +314,14 @@ class TargetStockService
             $query->where('monthly_sales_summaries.store_id', $filters['store_id']);
         }
 
-        if (isset($filters['month_from'])) {
-            $query->where('monthly_sales_summaries.sale_month', '>=', $filters['month_from']);
+        [$from, $to] = ProductSalesAggregateQuery::monthPeriod($filters);
+
+        if ($from !== null) {
+            $query->where('monthly_sales_summaries.sale_month', '>=', $from);
         }
 
-        if (isset($filters['month_to'])) {
-            $query->where('monthly_sales_summaries.sale_month', '<=', $filters['month_to']);
+        if ($to !== null) {
+            $query->where('monthly_sales_summaries.sale_month', '<=', $to);
         }
 
         return $query;

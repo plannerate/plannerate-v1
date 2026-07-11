@@ -424,7 +424,10 @@ class AbcAnalysisService
 
     /**
      * Query para tabela monthly_sales_summaries usando codigo_erp.
-     * Mesmo plumbing da query de sales; período por mês (month_from/month_to).
+     *
+     * Mesmo plumbing da query de sales; o período sai de monthPeriod(), que aceita
+     * tanto month_from/month_to (auto-planograma, já em data) quanto start_month/
+     * end_month (a UI, em Y-m).
      */
     private function getMonthlySummariesQueryByCodigoErp(array $codigosErp, array $productIds, array $filters): Builder
     {
@@ -437,7 +440,8 @@ class AbcAnalysisService
                 $agg->sum('margem_contribuicao', 'margem'),
             ]);
 
-        $agg->applyPeriod($query, $filters['month_from'] ?? null, $filters['month_to'] ?? null);
+        [$from, $to] = ProductSalesAggregateQuery::monthPeriod($filters);
+        $agg->applyPeriod($query, $from, $to);
 
         return $query;
     }

@@ -128,18 +128,43 @@ test('ABC aggregates sales (SUM) and ranks the dominant product as A', function 
         ->and((float) $byProduct[$p2->id]['valor'])->toBe(100.0);
 });
 
-test('ABC reads from monthly_sales_summaries when tableType is monthly_summaries', function (): void {
+/**
+ * Semeia março (30/300/60), abril (20/200/40) e agosto (450/4500/900) SÓ na tabela de
+ * sumários mensais. Agosto é o canário: se o filtro de período for ignorado, ele entra
+ * na soma e a quantidade vira 500 em vez de 50.
+ */
+if (! function_exists('seedMonthlySummariesForPeriodTest')) {
+    function seedMonthlySummariesForPeriodTest(Tenant $tenant, Product $product, string $codigoErp): void
+    {
+        $months = [
+            ['2026-03-01', 30, '300.00', '60.00'],
+            ['2026-04-01', 20, '200.00', '40.00'],
+            ['2026-08-01', 450, '4500.00', '900.00'],
+        ];
+
+        foreach ($months as [$month, $qtde, $valor, $margem]) {
+            MonthlySalesSummary::query()->create([
+                'tenant_id' => $tenant->id,
+                'product_id' => $product->id,
+                'codigo_erp' => $codigoErp,
+                'sale_month' => $month,
+                'total_sale_quantity' => $qtde,
+                'total_sale_value' => $valor,
+                'margem_contribuicao' => $margem,
+            ]);
+        }
+    }
+}
+
+test('ABC lê os sumários mensais e respeita month_from/month_to (a chave do auto-planograma)', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);
     $tenant = setupAnalysisTenant('tenant-abc-monthly', $user);
 
     $p1 = makeAnalysisProduct($tenant, 'ABCM-1', '7890000000031');
+    seedMonthlySummariesForPeriodTest($tenant, $p1, 'ABCM-1');
 
-    // Dados SÓ na tabela de sumários mensais — prova que o branch monthly_summaries
-    // (com filtros month_from/month_to) lê da fonte correta.
-    MonthlySalesSummary::query()->create(['tenant_id' => $tenant->id, 'product_id' => $p1->id, 'codigo_erp' => 'ABCM-1', 'sale_month' => '2026-03-01', 'total_sale_quantity' => 30, 'total_sale_value' => '300.00', 'margem_contribuicao' => '60.00']);
-    MonthlySalesSummary::query()->create(['tenant_id' => $tenant->id, 'product_id' => $p1->id, 'codigo_erp' => 'ABCM-1', 'sale_month' => '2026-04-01', 'total_sale_quantity' => 20, 'total_sale_value' => '200.00', 'margem_contribuicao' => '40.00']);
-
+    // Convenção do ProductSelectionService::computeAbcOnTheFly: limites já em data.
     $result = (new AbcAnalysisService)->analyzeByProductIds(
         [$p1->id],
         'monthly_summaries',
@@ -148,11 +173,34 @@ test('ABC reads from monthly_sales_summaries when tableType is monthly_summaries
 
     $row = $result->firstWhere('product_id', $p1->id);
 
-    // Soma dos dois meses: 30+20 = 50 / 300+200 = 500 / 60+40 = 100
+    // Só março + abril: 30+20 = 50 / 300+200 = 500 / 60+40 = 100. Agosto fica de fora.
     expect((float) $row['qtde'])->toBe(50.0)
         ->and((float) $row['valor'])->toBe(500.0)
         ->and((float) $row['margem'])->toBe(100.0)
         ->and($row['classificacao'])->toBe('A');
+});
+
+test('ABC respeita start_month/end_month (a chave que a UI envia)', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    $tenant = setupAnalysisTenant('tenant-abc-monthly-ui', $user);
+
+    $p1 = makeAnalysisProduct($tenant, 'ABCU-1', '7890000000123');
+    seedMonthlySummariesForPeriodTest($tenant, $p1, 'ABCU-1');
+
+    // Convenção da UI: mês em Y-m. Antes desta correção o ABC só entendia
+    // month_from/month_to e somava TODOS os meses da base, agosto incluso.
+    $result = (new AbcAnalysisService)->analyzeByProductIds(
+        [$p1->id],
+        'monthly_summaries',
+        ['tenant_id' => $tenant->id, 'start_month' => '2026-03', 'end_month' => '2026-04'],
+    );
+
+    $row = $result->firstWhere('product_id', $p1->id);
+
+    expect((float) $row['qtde'])->toBe(50.0)
+        ->and((float) $row['valor'])->toBe(500.0)
+        ->and((float) $row['margem'])->toBe(100.0);
 });
 
 test('Paper computes market share and growth vs the auto-derived previous period', function (): void {
@@ -266,8 +314,7 @@ test('BCG lê os sumários mensais por start_month/end_month (a chave que o cont
 
     MonthlySalesSummary::query()->create(['tenant_id' => $tenant->id, 'product_id' => $p1->id, 'codigo_erp' => 'BCGM-1', 'sale_month' => '2026-03-01', 'total_sale_quantity' => 30, 'total_sale_value' => '300.00', 'margem_contribuicao' => '60.00']);
     MonthlySalesSummary::query()->create(['tenant_id' => $tenant->id, 'product_id' => $p1->id, 'codigo_erp' => 'BCGM-1', 'sale_month' => '2026-04-01', 'total_sale_quantity' => 20, 'total_sale_value' => '200.00', 'margem_contribuicao' => '40.00']);
-    // Fora do período pedido: se a chave de período fosse ignorada (como acontece
-    // hoje na ABC e no Estoque-Alvo, que leem month_from/month_to), este mês entraria
+    // Fora do período pedido: se a chave de período fosse ignorada, este mês entraria
     // na soma e a quantidade viria 500 em vez de 50.
     MonthlySalesSummary::query()->create(['tenant_id' => $tenant->id, 'product_id' => $p1->id, 'codigo_erp' => 'BCGM-1', 'sale_month' => '2026-08-01', 'total_sale_quantity' => 450, 'total_sale_value' => '4500.00', 'margem_contribuicao' => '900.00']);
 

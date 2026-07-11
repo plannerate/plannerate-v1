@@ -4,6 +4,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Sales;
 
 use Callcocam\LaravelRaptorPlannerate\Models\MonthlySalesSummary;
 use Callcocam\LaravelRaptorPlannerate\Models\Sale;
+use Carbon\Carbon;
 use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -102,6 +103,51 @@ class ProductSalesAggregateQuery
         }
 
         return $query;
+    }
+
+    /**
+     * Resolve o período mensal a partir dos filtros, aceitando as DUAS convenções que
+     * convivem no sistema:
+     *
+     *  - `month_from` / `month_to`: limites já em data completa (Y-m-d). É o que o
+     *    auto-planograma manda (ProductSelectionService::computeAbcOnTheFly).
+     *  - `start_month` / `end_month`: mês no formato Y-m. É o que a UI manda (o
+     *    <input type="month"> das telas de análise).
+     *
+     * A convenção explícita vence, porque é a mais específica; na prática as duas
+     * nunca chegam juntas. O mês em Y-m vira o intervalo fechado do mês inteiro
+     * (2026-01 → 2026-01-01 .. 2026-01-31), já que `sale_month` é uma coluna date.
+     *
+     * Sem isso, quem manda só `start_month`/`end_month` era ignorado em silêncio e a
+     * análise somava TODOS os meses da base.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array{0: ?string, 1: ?string} [from, to] em Y-m-d, ou null
+     */
+    public static function monthPeriod(array $filters): array
+    {
+        $from = self::blankToNull($filters['month_from'] ?? null);
+        $to = self::blankToNull($filters['month_to'] ?? null);
+
+        if ($from === null && ($startMonth = self::blankToNull($filters['start_month'] ?? null)) !== null) {
+            $from = Carbon::createFromFormat('Y-m', $startMonth)->startOfMonth()->format('Y-m-d');
+        }
+
+        if ($to === null && ($endMonth = self::blankToNull($filters['end_month'] ?? null)) !== null) {
+            $to = Carbon::createFromFormat('Y-m', $endMonth)->endOfMonth()->format('Y-m-d');
+        }
+
+        return [$from, $to];
+    }
+
+    /**
+     * Normaliza filtro ausente/vazio para null — string vazia não é período.
+     */
+    private static function blankToNull(mixed $value): ?string
+    {
+        $value = is_string($value) ? trim($value) : $value;
+
+        return ($value === null || $value === '') ? null : (string) $value;
     }
 
     /**
