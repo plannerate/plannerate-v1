@@ -9,9 +9,14 @@
  */
 
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GenerationReportPageController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramGenerationRunController;
 use Illuminate\Support\Facades\Route;
+
+// Página do relatório da geração — o editor exibe só a barra-resumo e linka para cá.
+Route::get('editor/gondolas/{gondola}/generation-report', [GenerationReportPageController::class, 'show'])
+    ->name('gondolas.generation-report');
 
 Route::prefix('api')->name('api.')->group(function (): void {
     Route::post('gondolas/{gondola}/auto-generate', [AutoPlanogramController::class, 'generate'])

@@ -29,4 +29,44 @@ return [
         'duration' => 'Duração',
         'in_progress' => 'Geração em andamento...',
     ],
+
+    /*
+     * Relatório da geração. Ele vive em página própria (não mais despejado embaixo
+     * do canvas); o editor mostra apenas a barra-resumo com o link.
+     */
+    'report' => [
+        'head_title' => 'Relatório da geração — :gondola',
+        'title' => 'Relatório da geração',
+        'link' => 'Ver relatório completo',
+        'back_to_editor' => 'Voltar ao editor',
+        'empty' => 'Esta gôndola ainda não foi gerada — não há relatório para exibir.',
+        'failed' => 'Esta execução falhou e não produziu relatório.',
+        'generated_at' => 'Gerada em :date',
+
+        'summary' => [
+            'title' => 'Última geração',
+            'positioned' => ':placed de :total produtos posicionados',
+            'no_space' => ':count sem espaço',
+            'no_dimensions' => ':count sem dimensão',
+            'height_exceeds' => ':count acima da altura',
+            'suggestions' => ':count sugestão(ões)',
+            'validation_errors' => ':count erro(s) de validação',
+        ],
+
+        'metrics' => [
+            'positioned' => 'Posicionados',
+            'coverage' => 'Cobertura',
+            'no_space' => 'Sem espaço',
+            'no_dimensions' => 'Sem dimensão',
+            'height_exceeds' => 'Altura excede a prateleira',
+            'occupancy' => 'Ocupação média',
+            'duration' => 'Duração',
+            'mode' => 'Modo',
+        ],
+
+        'runs' => [
+            'title' => 'Execuções anteriores',
+            'viewing' => 'Exibindo esta execução',
+        ],
+    ],
 ];

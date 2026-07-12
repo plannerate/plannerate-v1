@@ -2,10 +2,10 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Jobs;
 
-use App\Events\TenantNotificationBroadcast;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\AppNotification;
+use App\Notifications\AppNotificationDispatcher;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Callcocam\LaravelRaptorPlannerate\Exports\GondolaCompraReportExport;
 use Callcocam\LaravelRaptorPlannerate\Exports\GondolaDimensaoReportExport;
@@ -149,14 +149,13 @@ class GenerateGondolaReportJob implements ShouldQueue, TenantAware
     /**
      * Dispara a AppNotification (database + broadcast) para o usuário solicitante.
      *
-     * Usa notifyNow() (envio SÍNCRONO) de propósito: a AppNotification é
-     * ShouldQueue + NotTenantAware, então, se fosse re-enfileirada, rodaria num
-     * job separado SEM tenant restaurado — e a conexão `tenant` (com database=null
-     * fora de contexto tenant) não gravaria a notificação no banco do tenant.
-     * Enviando aqui, dentro do handle() TenantAware, o tenant está corrente e a
-     * notificação database cai no banco do tenant correto; o broadcast dispara no
-     * mesmo contexto. O tenantId ainda é passado para preencher a coluna tenant_id
-     * (via listener UpdateNotificationTenantId), essencial para o filtro de download.
+     * O envio é SÍNCRONO (ver AppNotificationDispatcher): a AppNotification é
+     * ShouldQueue + NotTenantAware, então, se fosse re-enfileirada, rodaria num job
+     * separado SEM tenant restaurado — e a conexão `tenant` (com database=null fora
+     * de contexto tenant) não gravaria a notificação no banco do tenant. Enviando
+     * aqui, dentro do handle() TenantAware, o tenant está corrente. O tenantId ainda
+     * é passado para preencher a coluna tenant_id (via listener
+     * UpdateNotificationTenantId), essencial para o filtro de download.
      */
     private function notify(
         string $title,
@@ -171,41 +170,17 @@ class GenerateGondolaReportJob implements ShouldQueue, TenantAware
             return;
         }
 
-        $notification = new AppNotification(
-            title: $title,
-            message: $message,
-            type: $type,
-            downloadUrl: $downloadUrl,
-            downloadName: $downloadName,
-            tenantId: $this->tenantId,
+        app(AppNotificationDispatcher::class)->send(
+            $user,
+            new AppNotification(
+                title: $title,
+                message: $message,
+                type: $type,
+                downloadUrl: $downloadUrl,
+                downloadName: $downloadName,
+                tenantId: $this->tenantId,
+            ),
+            context: 'GenerateGondolaReportJob',
         );
-
-        // Persiste APENAS pelo canal database. Não usamos o canal broadcast
-        // padrão: ele serializa o notifiable User (conexão tenant) e, ao rodar
-        // no worker sem tenant restaurado, falha com ModelNotFoundException. O
-        // notifyNow síncrono garante gravação no banco do tenant (corrente aqui)
-        // e define $notification->id, reaproveitado no broadcast e no download.
-        $user->notifyNow($notification, ['database']);
-
-        // Broadcast em tempo real confiável: evento ShouldBroadcastNow com dados
-        // primitivos, capturado pelo mesmo listener do front (useEchoNotification).
-        try {
-            TenantNotificationBroadcast::dispatch($this->userId, array_merge(
-                $notification->toArray($user),
-                [
-                    'id' => $notification->id,
-                    'type' => AppNotification::class,
-                    'read_at' => null,
-                ],
-            ));
-        } catch (\Throwable $e) {
-            // A notificação já foi persistida (aparece ao recarregar); um problema
-            // de broadcast (ex.: Reverb indisponível) não deve falhar o relatório.
-            Log::warning('GenerateGondolaReportJob: falha no broadcast (notificação já persistida)', [
-                'user_id' => $this->userId,
-                'tenant_id' => $this->tenantId,
-                'error' => $e->getMessage(),
-            ]);
-        }
     }
 }

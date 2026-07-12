@@ -2,10 +2,10 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Jobs;
 
-use App\Events\TenantNotificationBroadcast;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\AppNotification;
+use App\Notifications\AppNotificationDispatcher;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\AutoGenerationRunner;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use Callcocam\LaravelRaptorPlannerate\Enums\GenerationRunStatus;
@@ -178,11 +178,9 @@ class GenerateAutoPlanogramJob implements ShouldQueue, TenantAware
     /**
      * Dispara a AppNotification (database + broadcast) para o usuário solicitante.
      *
-     * Usa notifyNow() (envio SÍNCRONO) de propósito, pelo mesmo motivo documentado em
-     * GenerateGondolaReportJob: a AppNotification é ShouldQueue + NotTenantAware — se
-     * fosse re-enfileirada, rodaria num job separado SEM tenant restaurado e não
-     * gravaria na conexão do tenant. O broadcast vai por evento próprio com dados
-     * primitivos (não serializa o User da conexão tenant).
+     * O envio é SÍNCRONO (ver AppNotificationDispatcher): a AppNotification é
+     * ShouldQueue + NotTenantAware — se fosse re-enfileirada, rodaria num job separado
+     * SEM tenant restaurado e não gravaria na conexão do tenant.
      */
     private function notify(string $title, string $message, string $type): void
     {
@@ -192,34 +190,17 @@ class GenerateAutoPlanogramJob implements ShouldQueue, TenantAware
             return;
         }
 
-        $notification = new AppNotification(
-            title: $title,
-            message: $message,
-            type: $type,
-            actionUrl: $this->runActionUrl(),
-            tenantId: $this->tenantId,
+        app(AppNotificationDispatcher::class)->send(
+            $user,
+            new AppNotification(
+                title: $title,
+                message: $message,
+                type: $type,
+                actionUrl: $this->runActionUrl(),
+                tenantId: $this->tenantId,
+            ),
+            context: 'GenerateAutoPlanogramJob',
         );
-
-        $user->notifyNow($notification, ['database']);
-
-        try {
-            TenantNotificationBroadcast::dispatch($this->userId, array_merge(
-                $notification->toArray($user),
-                [
-                    'id' => $notification->id,
-                    'type' => AppNotification::class,
-                    'read_at' => null,
-                ],
-            ));
-        } catch (\Throwable $e) {
-            // A notificação já foi persistida (aparece ao recarregar); um problema de
-            // broadcast (ex.: Reverb indisponível) não deve falhar a geração.
-            Log::warning('GenerateAutoPlanogramJob: falha no broadcast (notificação já persistida)', [
-                'user_id' => $this->userId,
-                'tenant_id' => $this->tenantId,
-                'error' => $e->getMessage(),
-            ]);
-        }
     }
 
     /**
