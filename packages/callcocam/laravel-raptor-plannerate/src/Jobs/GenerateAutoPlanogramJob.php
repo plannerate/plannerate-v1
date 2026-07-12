@@ -9,6 +9,7 @@ use App\Notifications\AppNotificationDispatcher;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\AutoGenerationRunner;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use Callcocam\LaravelRaptorPlannerate\Enums\GenerationRunStatus;
+use Callcocam\LaravelRaptorPlannerate\Exceptions\GenerationCancelledException;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramGenerationRun;
@@ -132,9 +133,17 @@ class GenerateAutoPlanogramJob implements ShouldQueue, TenantAware
                 ]),
                 type: $validationReport->errorCount > 0 ? 'warning' : 'success',
             );
-        } catch (\RuntimeException $e) {
-            // Cancelamento de negócio (ex.: nenhum produto elegível) — não é erro técnico,
-            // mas o usuário precisa saber por que a gôndola não foi gerada.
+        } catch (GenerationCancelledException $e) {
+            /*
+             * SÓ cancelamento de negócio (ex.: nenhum produto elegível) — não é erro técnico,
+             * mas o usuário precisa saber por que a gôndola não foi gerada.
+             *
+             * Antes isto capturava `\RuntimeException`, e QueryException TAMBÉM é uma
+             * RuntimeException: uma falha real de banco (a tabela ausente `product_analyses`)
+             * era engolida e mostrada ao usuário como "geração cancelada", sem nunca ser
+             * tratada como o defeito que era. Qualquer outra exceção agora volta a estourar e
+             * cai no failed() — que é o lugar certo para falha técnica.
+             */
             $run->markFailed($e->getMessage());
 
             Log::info('GenerateAutoPlanogramJob: geração cancelada', [
