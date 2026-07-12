@@ -1,7 +1,8 @@
 # Plano de Implementação — Gôndola Precisa e Verdadeira
 
-> Nada implementado ainda. Este documento é o plano; a execução de cada fase
-> precisa de aprovação explícita antes de começar (padrão do projeto).
+> **Status:** Fase 0 ✅ IMPLEMENTADA E VALIDADA NO BROWSER (2026-07-12, working
+> tree, ainda não commitada). Fases 1-6 pendentes.
+> A execução de cada fase precisa de aprovação explícita antes de começar.
 
 ## Princípio orientador (confirmado com o usuário)
 
@@ -73,10 +74,49 @@ tempo.
 
 ---
 
-## Fase 0 — Fundação assíncrona (fila + notificação + histórico)
+## Fase 0 — Fundação assíncrona (fila + notificação + histórico) ✅ IMPLEMENTADA
 
 **Objetivo:** mover a geração do request síncrono para fila, sem tocar em
 nenhuma lógica de posicionamento ainda. Risco baixíssimo — é só transporte.
+
+### O que foi entregue (2026-07-12)
+
+| Arquivo | Status |
+|---|---|
+| `database/migrations/2026_07_12_180000_create_planogram_generation_runs_table.php` | novo — aplicado nos 6 tenants |
+| `src/Enums/GenerationRunStatus.php` | novo (queued/running/completed/failed) |
+| `src/Models/PlanogramGenerationRun.php` | novo (tenant-scoped, ULID, SoftDeletes) |
+| `src/Services/Generation/GenerationReportBuilder.php` | novo — `capacity_report` extraído do controller (era inline) + métricas de ocupação |
+| `src/Jobs/GenerateAutoPlanogramJob.php` | novo (`ShouldQueue`, `TenantAware`, fila `default`, `tries=1`, `timeout=600`) |
+| `src/Http/Controllers/Generation/PlanogramGenerationRunController.php` | novo (`index`/`show`/`latest`/`pending`) |
+| `src/Http/Controllers/Generation/AutoPlanogramController.php` | `generate()`/`regenerateAuto()` agora criam o run + despacham o job (via `queueGeneration()` privado); ~110 linhas de montagem de relatório removidas |
+| `routes/generation.php` | 4 rotas novas de `generation-runs` |
+| `resources/js/composables/plannerate/generation/useGenerationRun.ts` | novo — busca a última execução, faz polling enquanto pendente, recarrega ao concluir |
+| `resources/js/pages/tenant/editor/Plannerate.vue` | banner/validação hidratados da execução persistida (flash mantido como fallback) + estado "gerando..." |
+| `lang/pt_BR/plannerate/generation.php` | novo namespace de traduções |
+| `tests/Feature/Tenant/AutoPlanogramQueueTest.php` | novo — **5 testes verdes** |
+
+**Achado importante durante a implementação:** existiam **DOIS** caminhos de
+geração, não um. Além do `AutoPlanogramController` (botão "gerar" no editor), o
+`GondolaController::store` gerava **sincronamente** ao criar a gôndola já em modo
+automático. Por isso foi criado o `GenerationQueueDispatcher` como fonte única —
+hoje o **único** chamador do `AutoGenerationRunner` é o job (verificado por grep
+em todo o pacote + app). Sem isso, metade das gerações continuaria síncrona.
+
+**Verificações feitas:** Pint ✅; 6 testes novos ✅ (um deles cobrindo justamente
+o caminho da criação, para não regredir); suíte `AutoPlanogram` 274 passed /
+2 failed — as 2 falhas (`AutoPlanogramDimensionsReportCommandTest`) são
+**pré-existentes**, confirmado reproduzindo com as mudanças em `git stash`; build
+frontend ✅; `vue-tsc` limpo nos arquivos tocados; Horizon + Reverb reiniciados.
+
+**Gotcha de teste registrado:** em teste tenant `:memory:`, `makeCurrent()`
+reconecta a conexão `tenant` — construir o schema **depois** de `makeCurrent()`,
+nunca antes, ou as tabelas somem.
+
+**Validação no browser:** ✅ confirmada pelo usuário.
+**Pendente:** commit.
+
+### Passos originais planejados
 
 | Passo | Arquivo | Ação |
 |---|---|---|

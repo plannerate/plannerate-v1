@@ -2,13 +2,12 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation;
 
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use App\Models\Category;
-use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\AutoGenerationRunner;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\ExposureRedistributeService;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\VisualReorderService;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\AutoGeneratePlanogramRequest;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Layer;
@@ -16,141 +15,44 @@ use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramRejectedProduct;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
+use Callcocam\LaravelRaptorPlannerate\Services\Generation\GenerationQueueDispatcher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class AutoPlanogramController extends Controller
 {
     public function __construct(
-        private readonly AutoGenerationRunner $generationRunner,
         private readonly VisualReorderService $reorderService,
         private readonly ExposureRedistributeService $redistributeService,
+        private readonly GenerationQueueDispatcher $queueDispatcher,
     ) {}
 
+    /**
+     * Enfileira a geração do planograma da gôndola.
+     *
+     * A geração deixou de ser síncrona: o motor de posicionamento pode demorar (e, a
+     * partir da Fase 2/3 do plano, iterar até convergir) para fechar a gôndola com
+     * precisão — o que não cabe num request HTTP. O resultado é persistido em
+     * PlanogramGenerationRun e o usuário é notificado ao concluir.
+     */
     public function generate(AutoGeneratePlanogramRequest $request, string $gondola): RedirectResponse
     {
-        try {
-            $config = AutoGenerateConfigDTO::fromArray($request->validated());
+        $gondolaModel = Gondola::findOrFail($gondola);
 
-            $gondolaModel = Gondola::with(['sections.shelves'])->findOrFail($gondola);
+        $planogram = Planogram::find($gondolaModel->planogram_id);
 
-            $planogram = Planogram::with(['category'])->find($gondolaModel->planogram_id);
-
-            if (! $planogram) {
-                return back()->with('warning', __('app.messages.planogram_not_found'));
-            }
-
-            $templateId = $request->input('template_id');
-
-            $result = $this->generationRunner->run($gondolaModel, $planogram, $config, $templateId);
-
-            $output = $result->output;
-            $synthTemplateId = $result->synthTemplateId;
-
-            $report = $output->validationReport;
-            $totalProducts = $result->totalInputProducts;
-
-            // Produtos únicos definitivamente sem espaço: exclui rejeitados de um slot
-            // que acabaram colocados em outro slot da mesma categoria.
-            $placedProductIds = $output->placedSegments
-                ->flatMap(fn ($seg) => $seg->layers->map(fn ($l) => $l->productId))
-                ->flip()
-                ->all();
-            $trulyRejectedNoSpace = $output->rejectedProducts
-                ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace
-                    && $r['product'] !== null
-                    && ! isset($placedProductIds[$r['product']->id]))
-                ->unique(fn ($r) => $r['product']->id);
-            $rejectedSpace = $trulyRejectedNoSpace->count();
-            $rejectedHeight = $output->rejectedProducts
-                ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::HeightExceedsShelf)
-                ->count();
-            $rejectedMissingDimensions = $output->rejectedProducts
-                ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::MissingDimensions)
-                ->unique(fn ($r) => $r['product']?->id)
-                ->count();
-
-            Inertia::flash('toast', [
-                'type' => $report->errorCount > 0 ? 'warning' : 'success',
-                'message' => trans_choice(
-                    'app.messages.planogram_generated',
-                    $output->totalAllocated(),
-                    ['count' => $output->totalAllocated()]
-                ),
-            ]);
-
-            Inertia::flash('validation_report', $report->toArray());
-
-            $capacityReport = [
-                'total_produtos' => $totalProducts,
-                'posicionados' => $output->totalAllocated(),
-                'rejeitados_espaco' => $rejectedSpace,
-                'rejeitados_altura' => $rejectedHeight,
-                'rejeitados_sem_dimensao' => $rejectedMissingDimensions,
-                'mix_excede_gondola' => $rejectedSpace > 0,
-                'taxa_cobertura' => round($output->totalAllocated() / max($totalProducts, 1), 3),
-                'score_type' => $output->scoreType,
-                'has_sales_data' => $output->scoreType !== 'neutral',
-                'produtos_rejeitados_espaco' => $trulyRejectedNoSpace
-                    ->map(fn ($r) => [
-                        'id' => $r['product']->id,
-                        'name' => $r['product']->name,
-                        'category' => $r['product']->category?->name,
-                    ])->values(),
-            ];
-
-            // Modo template (incluindo template sintetizado pelo automático)
-            $effectiveTemplateId = $templateId ?? $synthTemplateId;
-            if ($effectiveTemplateId !== null) {
-                $capacityReport['suggestions'] = $output->suggestions;
-                $capacityReport['slot_analysis'] = $output->slotAnalysis;
-                $capacityReport['has_space'] = collect($output->slotAnalysis)->some(fn ($s) => $s['largura_livre'] > 10);
-                $capacityReport['has_rejects'] = $rejectedSpace > 0;
-                $capacityReport['template_id'] = $effectiveTemplateId;
-                $capacityReport['modules_mismatch'] = $output->modulesMismatch;
-                $capacityReport['template_modules'] = $output->templateModules;
-                $capacityReport['gondola_modules'] = $output->gondolaModules;
-                $capacityReport['subtemplate_id'] = $output->subtemplateId;
-                $capacityReport['explanation_report'] = $output->explanationReport;
-            }
-
-            // Informa o frontend que a gôndola foi promovida de automático para template-mode
-            if ($synthTemplateId !== null) {
-                $capacityReport['is_auto_generated'] = true;
-                $capacityReport['synth_template_id'] = $synthTemplateId;
-            }
-
-            Inertia::flash('capacity_report', $capacityReport);
-
-            Log::info('AutoPlanogramController: geração concluída', [
-                'gondola_id' => $gondola,
-                'segments_placed' => $output->totalAllocated(),
-                'errors' => $report->errorCount,
-                'warnings' => $report->warningCount,
-            ]);
-
-            return back();
-        } catch (\RuntimeException $e) {
-            Log::info('AutoPlanogramController: geração cancelada', [
-                'gondola_id' => $gondola,
-                'reason' => $e->getMessage(),
-            ]);
-
-            return back()->with('warning', $e->getMessage());
-        } catch (\Exception $e) {
-            Log::error('AutoPlanogramController: erro técnico', [
-                'gondola_id' => $gondola,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return back()->with('error', $e->getMessage());
+        if (! $planogram) {
+            return back()->with('warning', __('app.messages.planogram_not_found'));
         }
+
+        $config = AutoGenerateConfigDTO::fromArray($request->validated());
+        $templateId = $request->input('template_id');
+
+        return $this->queueGeneration($gondolaModel, $planogram, $config, $templateId);
     }
 
     public function rejectedProducts(Request $request, string $gondola): JsonResponse
@@ -391,53 +293,56 @@ class AutoPlanogramController extends Controller
      * Re-sintetiza o template automático da gôndola do zero, sem parâmetros de formulário.
      * Usa configuração padrão (strategy=abc, análise existente) e é idempotente via source_gondola_id.
      * Disponível somente enquanto template.origin === 'auto'.
+     *
+     * Também enfileirado — mesma justificativa de generate().
      */
     public function regenerateAuto(string $gondola): RedirectResponse
     {
-        try {
-            $gondolaModel = Gondola::with(['sections.shelves'])->findOrFail($gondola);
-            $planogram = Planogram::with(['category'])->find($gondolaModel->planogram_id);
+        $gondolaModel = Gondola::findOrFail($gondola);
+        $planogram = Planogram::find($gondolaModel->planogram_id);
 
-            if (! $planogram) {
-                return back()->with('warning', __('app.messages.planogram_not_found'));
-            }
-
-            // Força modo automático: o synthesizer reutiliza o mesmo template por source_gondola_id
-            $config = new AutoGenerateConfigDTO(
-                strategy: 'abc',
-                useExistingAnalysis: true,
-                startDate: null,
-                endDate: null,
-                minFacings: 1,
-                maxFacings: 10,
-                groupBySubcategory: true,
-                includeProductsWithoutSales: true,
-                tableType: 'monthly_summaries',
-                categoryId: null,
-            );
-
-            $output = $this->generationRunner->run($gondolaModel, $planogram, $config, templateId: null)->output;
-
-            Inertia::flash('toast', [
-                'type' => 'success',
-                'message' => trans_choice(
-                    'app.messages.planogram_generated',
-                    $output->totalAllocated(),
-                    ['count' => $output->totalAllocated()]
-                ),
-            ]);
-
-            return back();
-        } catch (\RuntimeException $e) {
-            return back()->with('warning', $e->getMessage());
-        } catch (\Exception $e) {
-            Log::error('AutoPlanogramController: regenerateAuto erro', [
-                'gondola_id' => $gondola,
-                'error' => $e->getMessage(),
-            ]);
-
-            return back()->with('error', $e->getMessage());
+        if (! $planogram) {
+            return back()->with('warning', __('app.messages.planogram_not_found'));
         }
+
+        // Força modo automático: o synthesizer reutiliza o mesmo template por source_gondola_id
+        $config = new AutoGenerateConfigDTO(
+            strategy: 'abc',
+            useExistingAnalysis: true,
+            startDate: null,
+            endDate: null,
+            minFacings: 1,
+            maxFacings: 10,
+            groupBySubcategory: true,
+            includeProductsWithoutSales: true,
+            tableType: 'monthly_summaries',
+            categoryId: null,
+        );
+
+        return $this->queueGeneration($gondolaModel, $planogram, $config, templateId: null);
+    }
+
+    /**
+     * Enfileira a geração e devolve `back()` imediatamente — o usuário é avisado pela
+     * notificação quando terminar. O registro/dispatch fica no GenerationQueueDispatcher,
+     * compartilhado com o GondolaController (criação de gôndola em modo automático).
+     */
+    private function queueGeneration(
+        Gondola $gondola,
+        Planogram $planogram,
+        AutoGenerateConfigDTO $config,
+        ?string $templateId,
+    ): RedirectResponse {
+        $run = $this->queueDispatcher->dispatch($gondola, $planogram, $config, $templateId);
+
+        Inertia::flash('toast', [
+            'type' => 'info',
+            'message' => __('plannerate.generation.queued'),
+        ]);
+
+        Inertia::flash('generation_run_id', $run->id);
+
+        return back();
     }
 
     public function swapProduct(Request $request, string $gondola): JsonResponse

@@ -6,6 +6,8 @@ import PlanogramSuggestions from '@/components/PlanogramSuggestions.vue';
 import PlanogramValidationReport from '@/components/PlanogramValidationReport.vue';
 import Planogram from '@/components/plannerate/Planogram.vue';
 import PlanogramAuto from '@/components/plannerate/PlanogramAuto.vue';
+import { useGenerationRun } from '@/composables/plannerate/generation/useGenerationRun';
+import { useT } from '@/composables/useT';
 // @ts-expect-error - BackendBreadcrumb type definition may not be available
 import SimpleLayout from '@/layouts/SimpleLayout.vue';
 import type {BackendBreadcrumb} from '@/composables/useBreadcrumbs';
@@ -70,8 +72,23 @@ const props = withDefaults(defineProps<Props>(), {
 const { record, products, analysis } = props;
 
 const page = usePage();
-const validationReport = computed(() => (page.props.flash as any)?.validation_report ?? null);
-const capacityReport = computed(() => (page.props.flash as any)?.capacity_report ?? null);
+const { t } = useT();
+
+// A geração roda em fila: os relatórios não vêm mais no flash do Inertia, e sim
+// persistidos na última execução (PlanogramGenerationRun). O flash é mantido como
+// fallback para qualquer fluxo legado que ainda o preencha.
+const {
+    capacityReport: runCapacityReport,
+    validationReport: runValidationReport,
+    isGenerating,
+} = useGenerationRun();
+
+const validationReport = computed(
+    () => runValidationReport.value ?? (page.props.flash as any)?.validation_report ?? null,
+);
+const capacityReport = computed(
+    () => runCapacityReport.value ?? (page.props.flash as any)?.capacity_report ?? null,
+);
 const suggestionsReport = computed(() => {
     const report = capacityReport.value;
     if (!report?.suggestions?.length || !report?.template_id) return null;
@@ -97,6 +114,13 @@ const editorComponent = computed(() =>
             :backRoute="backRoute"
             :permissions="permissions"
         />
+        <div
+            v-if="isGenerating"
+            class="mx-4 mb-2 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200"
+        >
+            <span class="size-2 animate-pulse rounded-full bg-blue-500" />
+            {{ t('plannerate.generation.history.in_progress') }}
+        </div>
         <PlanogramCapacityBanner
             :report="capacityReport"
             class="mx-4 mb-2"

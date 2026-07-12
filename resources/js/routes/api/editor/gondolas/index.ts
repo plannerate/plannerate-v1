@@ -77,7 +77,7 @@ store.form = storeForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::update
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:192
 * @route '/api/editor/gondolas/{gondola}'
 */
 export const update = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -92,7 +92,7 @@ update.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::update
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:192
 * @route '/api/editor/gondolas/{gondola}'
 */
 update.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -119,7 +119,7 @@ update.url = (args: { gondola: string | number } | [gondola: string | number ] |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::update
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:192
 * @route '/api/editor/gondolas/{gondola}'
 */
 update.put = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -129,7 +129,7 @@ update.put = (args: { gondola: string | number } | [gondola: string | number ] |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::update
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:192
 * @route '/api/editor/gondolas/{gondola}'
 */
 const updateForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -144,7 +144,7 @@ const updateForm = (args: { gondola: string | number } | [gondola: string | numb
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::update
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:198
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:192
 * @route '/api/editor/gondolas/{gondola}'
 */
 updateForm.put = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -161,7 +161,7 @@ update.form = updateForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::destroy
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:214
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:208
 * @route '/api/editor/gondolas/{gondola}'
 */
 export const destroy = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -176,7 +176,7 @@ destroy.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::destroy
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:214
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:208
 * @route '/api/editor/gondolas/{gondola}'
 */
 destroy.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -203,7 +203,7 @@ destroy.url = (args: { gondola: string | number } | [gondola: string | number ] 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::destroy
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:214
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:208
 * @route '/api/editor/gondolas/{gondola}'
 */
 destroy.delete = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -213,7 +213,7 @@ destroy.delete = (args: { gondola: string | number } | [gondola: string | number
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::destroy
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:214
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:208
 * @route '/api/editor/gondolas/{gondola}'
 */
 const destroyForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -228,7 +228,7 @@ const destroyForm = (args: { gondola: string | number } | [gondola: string | num
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::destroy
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:214
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:208
 * @route '/api/editor/gondolas/{gondola}'
 */
 destroyForm.delete = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -245,7 +245,7 @@ destroy.form = destroyForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::sections
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:228
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:222
 * @route '/api/editor/gondolas/{gondola}/sections'
 */
 export const sections = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -260,7 +260,7 @@ sections.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::sections
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:228
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:222
 * @route '/api/editor/gondolas/{gondola}/sections'
 */
 sections.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -287,7 +287,7 @@ sections.url = (args: { gondola: string | number } | [gondola: string | number ]
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::sections
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:228
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:222
 * @route '/api/editor/gondolas/{gondola}/sections'
 */
 sections.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -297,7 +297,7 @@ sections.get = (args: { gondola: string | number } | [gondola: string | number ]
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::sections
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:228
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:222
 * @route '/api/editor/gondolas/{gondola}/sections'
 */
 sections.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -307,7 +307,7 @@ sections.head = (args: { gondola: string | number } | [gondola: string | number 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::sections
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:228
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:222
 * @route '/api/editor/gondolas/{gondola}/sections'
 */
 const sectionsForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -317,7 +317,7 @@ const sectionsForm = (args: { gondola: string | number } | [gondola: string | nu
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::sections
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:228
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:222
 * @route '/api/editor/gondolas/{gondola}/sections'
 */
 sectionsForm.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -327,7 +327,7 @@ sectionsForm.get = (args: { gondola: string | number } | [gondola: string | numb
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::sections
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:228
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:222
 * @route '/api/editor/gondolas/{gondola}/sections'
 */
 sectionsForm.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -344,7 +344,7 @@ sections.form = sectionsForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::products
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:274
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:268
 * @route '/api/plannograma/{planogram}/editor/gondolas/{gondola}/products'
 */
 export const products = (args: { planogram: string | number, gondola: string | number } | [planogram: string | number, gondola: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -359,7 +359,7 @@ products.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::products
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:274
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:268
 * @route '/api/plannograma/{planogram}/editor/gondolas/{gondola}/products'
 */
 products.url = (args: { planogram: string | number, gondola: string | number } | [planogram: string | number, gondola: string | number ], options?: RouteQueryOptions) => {
@@ -385,7 +385,7 @@ products.url = (args: { planogram: string | number, gondola: string | number } |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::products
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:274
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:268
 * @route '/api/plannograma/{planogram}/editor/gondolas/{gondola}/products'
 */
 products.get = (args: { planogram: string | number, gondola: string | number } | [planogram: string | number, gondola: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -395,7 +395,7 @@ products.get = (args: { planogram: string | number, gondola: string | number } |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::products
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:274
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:268
 * @route '/api/plannograma/{planogram}/editor/gondolas/{gondola}/products'
 */
 products.head = (args: { planogram: string | number, gondola: string | number } | [planogram: string | number, gondola: string | number ], options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -405,7 +405,7 @@ products.head = (args: { planogram: string | number, gondola: string | number } 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::products
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:274
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:268
 * @route '/api/plannograma/{planogram}/editor/gondolas/{gondola}/products'
 */
 const productsForm = (args: { planogram: string | number, gondola: string | number } | [planogram: string | number, gondola: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -415,7 +415,7 @@ const productsForm = (args: { planogram: string | number, gondola: string | numb
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::products
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:274
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:268
 * @route '/api/plannograma/{planogram}/editor/gondolas/{gondola}/products'
 */
 productsForm.get = (args: { planogram: string | number, gondola: string | number } | [planogram: string | number, gondola: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -425,7 +425,7 @@ productsForm.get = (args: { planogram: string | number, gondola: string | number
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::products
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:274
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:268
 * @route '/api/plannograma/{planogram}/editor/gondolas/{gondola}/products'
 */
 productsForm.head = (args: { planogram: string | number, gondola: string | number } | [planogram: string | number, gondola: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -442,7 +442,7 @@ products.form = productsForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::updateImages
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:428
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:422
 * @route '/api/editor/gondolas/{gondola}/update-images'
 */
 export const updateImages = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -457,7 +457,7 @@ updateImages.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::updateImages
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:428
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:422
 * @route '/api/editor/gondolas/{gondola}/update-images'
 */
 updateImages.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -484,7 +484,7 @@ updateImages.url = (args: { gondola: string | number } | [gondola: string | numb
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::updateImages
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:428
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:422
 * @route '/api/editor/gondolas/{gondola}/update-images'
 */
 updateImages.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -494,7 +494,7 @@ updateImages.post = (args: { gondola: string | number } | [gondola: string | num
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::updateImages
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:428
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:422
 * @route '/api/editor/gondolas/{gondola}/update-images'
 */
 const updateImagesForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -504,7 +504,7 @@ const updateImagesForm = (args: { gondola: string | number } | [gondola: string 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::updateImages
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:428
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:422
 * @route '/api/editor/gondolas/{gondola}/update-images'
 */
 updateImagesForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

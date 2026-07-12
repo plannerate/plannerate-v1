@@ -10,6 +10,7 @@
 
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramGenerationRunController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('api')->name('api.')->group(function (): void {
@@ -33,6 +34,16 @@ Route::prefix('api')->name('api.')->group(function (): void {
         ->name('gondolas.redistribute-all');
     Route::post('gondolas/{gondola}/regenerate-auto', [AutoPlanogramController::class, 'regenerateAuto'])
         ->name('gondolas.regenerate-auto');
+
+    // ── Histórico de execuções da geração (assíncrona) ───────
+    Route::get('gondolas/{gondola}/generation-runs', [PlanogramGenerationRunController::class, 'index'])
+        ->name('gondolas.generation-runs.index');
+    Route::get('gondolas/{gondola}/generation-runs/latest', [PlanogramGenerationRunController::class, 'latest'])
+        ->name('gondolas.generation-runs.latest');
+    Route::get('gondolas/{gondola}/generation-runs/pending', [PlanogramGenerationRunController::class, 'pending'])
+        ->name('gondolas.generation-runs.pending');
+    Route::get('gondolas/{gondola}/generation-runs/{run}', [PlanogramGenerationRunController::class, 'show'])
+        ->name('gondolas.generation-runs.show');
 
     // ── Overrides de geração por categoria ───────────────────
     Route::put('gondolas/{gondola}/generation-overrides', [GondolaSlotOverrideController::class, 'upsert'])
