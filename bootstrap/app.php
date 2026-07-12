@@ -7,6 +7,7 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\InjectTenantUrlDefaults;
 use App\Http\Middleware\Modules\RequireActiveTenantModule;
 use App\Http\Middleware\RedirectClientRole;
+use App\Http\Middleware\RequireLandlordDomain;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -85,6 +86,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.client.redirect' => RedirectClientRole::class,
             'tenant.url.defaults' => InjectTenantUrlDefaults::class,
             'impersonation.block' => BlockActionsWhileImpersonating::class,
+            'landlord.only' => RequireLandlordDomain::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
