@@ -8,6 +8,7 @@ use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementSettings;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramInput;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\ScoringWeightsValue;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
+use Callcocam\LaravelRaptorPlannerate\Exceptions\GenerationCancelledException;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
@@ -79,7 +80,9 @@ final class AutoGenerationRunner
         );
 
         if ($rankedProducts->isEmpty()) {
-            throw new \RuntimeException(__('app.messages.no_products_found'));
+            // Cancelamento de NEGÓCIO (tipo próprio): capturar \RuntimeException aqui engolia
+            // erro técnico junto — QueryException também é RuntimeException. Ver a classe.
+            throw new GenerationCancelledException(__('app.messages.no_products_found'));
         }
 
         $products = $rankedProducts->map(fn ($dto) => $dto->product);

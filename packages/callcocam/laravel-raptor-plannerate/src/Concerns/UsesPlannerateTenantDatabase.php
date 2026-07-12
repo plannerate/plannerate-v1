@@ -26,4 +26,16 @@ trait UsesPlannerateTenantDatabase
     {
         return $this->plannerateTenantDatabase()->table($table);
     }
+
+    /**
+     * A tabela existe no banco do tenant?
+     *
+     * Para tabelas OPCIONAIS (caches que podem não ter sido criadas em todos os tenants):
+     * consultar direto uma tabela ausente derruba a operação inteira com "relation does not
+     * exist", em vez de cair no caminho alternativo que já existe.
+     */
+    protected function plannerateTenantHasTable(string $table): bool
+    {
+        return $this->plannerateTenantDatabase()->getSchemaBuilder()->hasTable($table);
+    }
 }

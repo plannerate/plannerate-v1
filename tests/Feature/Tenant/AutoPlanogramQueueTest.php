@@ -7,6 +7,7 @@ use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramOutput;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\ValidationReport;
 use Callcocam\LaravelRaptorPlannerate\Enums\GenerationRunStatus;
+use Callcocam\LaravelRaptorPlannerate\Exceptions\GenerationCancelledException;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController;
 use Callcocam\LaravelRaptorPlannerate\Jobs\GenerateAutoPlanogramJob;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
@@ -14,6 +15,7 @@ use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramGenerationRun;
 use Callcocam\LaravelRaptorPlannerate\Services\Generation\GenerationQueueDispatcher;
 use Callcocam\LaravelRaptorPlannerate\Services\Generation\GenerationReportBuilder;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Queue;
@@ -265,4 +267,35 @@ test('sem slot_analysis as métricas de ocupação ficam nulas em vez de zero', 
     expect($metrics['occupancy_avg'])->toBeNull()
         ->and($metrics['occupancy_min'])->toBeNull()
         ->and($metrics['occupancy_max'])->toBeNull();
+});
+
+/*
+ * Cancelamento de negócio × falha técnica.
+ *
+ * O job capturava `\RuntimeException` para tratar "nenhum produto elegível". Só que
+ * QueryException TAMBÉM é uma RuntimeException (via PDOException): uma falha real de banco
+ * (a tabela ausente `product_analyses`) era engolida e mostrada ao usuário como "geração
+ * cancelada", sem nunca ser tratada como o defeito que era.
+ */
+
+test('cancelamento de negócio é um tipo próprio, não uma RuntimeException qualquer', function (): void {
+    $cancelamento = new GenerationCancelledException('nenhum produto');
+
+    expect($cancelamento)->toBeInstanceOf(RuntimeException::class);
+
+    // A recíproca NÃO vale: erro de banco é RuntimeException, mas não é cancelamento.
+    $erroDeBanco = new QueryException('tenant', 'select 1', [], new Exception('relation does not exist'));
+
+    expect($erroDeBanco)->toBeInstanceOf(RuntimeException::class)
+        ->and($erroDeBanco)->not->toBeInstanceOf(GenerationCancelledException::class);
+});
+
+test('o job só trata como cancelamento a exceção de negócio — erro técnico estoura', function (): void {
+    $reflection = new ReflectionMethod(GenerateAutoPlanogramJob::class, 'handle');
+    $corpo = file_get_contents($reflection->getFileName());
+
+    // A guarda que impede a regressão: capturar RuntimeException aqui voltaria a engolir
+    // QueryException e a esconder falha de infraestrutura atrás de um aviso amigável.
+    expect($corpo)->toContain('catch (GenerationCancelledException')
+        ->and($corpo)->not->toContain('catch (\RuntimeException');
 });
