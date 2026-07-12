@@ -34,6 +34,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /** @var array<string, list<string>> Cache de descendentes por category_id dentro de uma geração */
     private array $descendantsCache = [];
 
+    /** @var array<string, string|null> Cache do pai por category_id — escopo `siblings` do overflow */
+    private array $parentCategoryCache = [];
+
     /** @var array<string, true> Produtos já posicionados na geração atual — evita duplicatas entre slots da mesma categoria */
     private array $globalPlacedProductIds = [];
 
@@ -811,12 +814,23 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     }
 
     /**
-     * Mapeia cada prateleira física para o conjunto de category_ids que seus slots aceitam.
+     * Mapeia cada prateleira física para o conjunto de category_ids que ela aceita no overflow.
      *
-     * Usado pelo overflow pass para restringir a realocação à mesma categoria: uma prateleira
-     * pode ter slots de múltiplas categorias (prateleira compartilhada), por isso o valor é um
-     * set. Cada slot contribui com sua categoria E todos os descendentes — o matching do
-     * placement principal é hierárquico, e o overflow precisa ser consistente.
+     * Uma prateleira pode ter slots de múltiplas categorias (prateleira compartilhada), por isso
+     * o valor é um set. Cada slot contribui com sua categoria E todos os descendentes — o
+     * matching do placement principal é hierárquico, e o overflow precisa ser consistente.
+     *
+     * ── Até onde o produto rejeitado pode andar (config `overflow_scope`) ────────────────────
+     * Medido numa gôndola real: 257cm de prateleira VAZIA convivendo com 11 produtos rejeitados
+     * por falta de espaço. Não faltava espaço — faltava PERMISSÃO. A categoria que não tinha
+     * produto para encher a prateleira dela segurava o espaço, e a categoria que transbordava
+     * não podia usá-lo.
+     *
+     *   strict   — só a própria categoria (e descendentes). Blocagem intacta, gôndola aberta.
+     *   siblings — também as categorias IRMÃS (mesmo pai no mercadológico). PADRÃO: fecha a
+     *              maior parte do vão sem virar bagunça na gaveta, porque irmãs já ficam juntas
+     *              na loja (LÍQUIDO ao lado de GEL, ambas filhas de CUIDADO COM O BANHEIRO).
+     *   any      — qualquer categoria do planograma. Fecha tudo, mas quebra a blocagem.
      *
      * @param  Collection<int, PlanogramTemplateSlot>  $slots
      * @param  Collection<int, Section>  $sections
@@ -824,7 +838,24 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
      */
     private function buildAllowedCategoriesByShelf(Collection $slots, Collection $sections): array
     {
+        $scope = (string) config('plannerate.auto_planogram.placement.overflow_scope', 'siblings');
         $map = [];
+
+        // `any`: o conjunto permitido é o mesmo em toda prateleira — a união das categorias de
+        // TODOS os slots. Calculado uma vez só, em vez de por prateleira.
+        $everyCategory = [];
+
+        if ($scope === 'any') {
+            foreach ($slots as $slot) {
+                if ($slot->category_id === null) {
+                    continue;
+                }
+
+                foreach ($this->getDescendantsCached($slot->category_id) as $categoryId) {
+                    $everyCategory[$categoryId] = true;
+                }
+            }
+        }
 
         foreach ($slots as $slot) {
             if ($slot->category_id === null) {
@@ -840,7 +871,21 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
             $shelfId = $shelf->getKey();
 
-            foreach ($this->getDescendantsCached($slot->category_id) as $categoryId) {
+            if ($scope === 'any') {
+                $map[$shelfId] = ($map[$shelfId] ?? []) + $everyCategory;
+
+                continue;
+            }
+
+            // `siblings`: descer a partir do PAI da categoria do slot alcança as irmãs (e os
+            // descendentes delas). Sem pai — categoria raiz — não há irmãs: cai no strict.
+            $scopeCategoryId = $slot->category_id;
+
+            if ($scope === 'siblings') {
+                $scopeCategoryId = $this->parentCategoryIdCached($slot->category_id) ?? $slot->category_id;
+            }
+
+            foreach ($this->getDescendantsCached($scopeCategoryId) as $categoryId) {
                 $map[$shelfId][$categoryId] = true;
             }
         }
@@ -960,6 +1005,27 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     {
         return $this->descendantsCache[$categoryId]
             ??= Category::getDescendantIds($categoryId);
+    }
+
+    /**
+     * Pai de uma categoria no mercadológico, cacheado por geração.
+     *
+     * A árvore é auto-referenciada pela coluna `category_id` (não `parent_id`) — mesma coluna
+     * que Category::getDescendantIds() percorre para descer. Sem o TenantScope, pelo mesmo
+     * motivo que lá: a árvore é lida no contexto do tenant já corrente.
+     *
+     * `null` quando a categoria é raiz (não tem irmãs) ou não foi encontrada. Usado pelo
+     * escopo `siblings` do overflow — ver buildAllowedCategoriesByShelf.
+     */
+    private function parentCategoryIdCached(string $categoryId): ?string
+    {
+        if (! array_key_exists($categoryId, $this->parentCategoryCache)) {
+            $this->parentCategoryCache[$categoryId] = Category::withoutGlobalScope(TenantScope::class)
+                ->whereKey($categoryId)
+                ->value('category_id');
+        }
+
+        return $this->parentCategoryCache[$categoryId];
     }
 
     private function orderCandidates(Collection $products, PlanogramTemplateSlot $slot, ?Section $section = null, ?Shelf $shelf = null): Collection
