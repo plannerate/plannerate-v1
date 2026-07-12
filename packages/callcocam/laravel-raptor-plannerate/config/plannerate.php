@@ -35,6 +35,19 @@ return [
              * do plano (docs/gondola-precisao-automatica/).
              */
             'target_occupancy_rate' => env('PLANNERATE_TARGET_OCCUPANCY_RATE', 0.90),
+
+            /*
+             * Empacotador da prateleira: 'knapsack' (padrão) ou 'greedy' (motor antigo).
+             *
+             * 'knapsack' resolve a prateleira inteira de uma vez (programação dinâmica), com as
+             * frentes como variável livre e os rejeitados por espaço reconsiderados — é o que
+             * fecha o vão que o guloso deixava aberto. Tudo que o guloso colocaria entra como
+             * obrigatório no modelo, então nenhum SKU é perdido em relação ao motor antigo.
+             *
+             * 'greedy' restaura o first-fit + round-robin sem precisar de deploy, caso alguma
+             * gôndola real saia pior do que na versão anterior.
+             */
+            'packer' => env('PLANNERATE_SHELF_PACKER', 'knapsack'),
         ],
 
         /*
