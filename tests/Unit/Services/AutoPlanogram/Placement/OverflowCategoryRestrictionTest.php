@@ -455,6 +455,10 @@ test('overflow mantém a frente mínima quando o produto não tem estoque alvo',
 });
 
 test('buildAllowedCategoriesByShelf mapeia prateleira para categoria do slot e descendentes', function (): void {
+    // Escopo estrito: cada prateleira só aceita a própria categoria. É o comportamento
+    // anterior, preservado como opção — hoje o padrão é 'siblings' (ver os testes abaixo).
+    config()->set('plannerate.auto_planogram.placement.overflow_scope', 'strict');
+
     $catA = (string) Str::ulid();
     $childA = (string) Str::ulid();
     $catB = (string) Str::ulid();
@@ -494,4 +498,131 @@ test('buildAllowedCategoriesByShelf mapeia prateleira para categoria do slot e d
 
     expect($map[$shelfTop])->toBe([$catA => true, $childA => true])
         ->and($map[$shelfBottom])->toBe([$catB => true]);
+});
+
+/*
+ * Escopo do overflow: até onde um produto rejeitado pode andar.
+ *
+ * Medido numa gôndola real: 257cm de prateleira VAZIA convivendo com 11 produtos rejeitados
+ * por falta de espaço. Não faltava espaço — faltava PERMISSÃO. A categoria sem produto para
+ * encher a prateleira dela segurava o vão; a categoria que transbordava não podia usá-lo.
+ */
+
+/**
+ * Monta a seção de 2 prateleiras + os 2 slots usados pelos testes de escopo.
+ *
+ * @return array{0: Section, 1: string, 2: string, 3: PlanogramTemplateSlot, 4: PlanogramTemplateSlot}
+ */
+function makeScopeFixture(string $catA, string $catB): array
+{
+    $shelfTop = (string) Str::ulid();
+    $shelfBottom = (string) Str::ulid();
+
+    $top = new Shelf;
+    $top->id = $shelfTop;
+    $top->shelf_position = 0;
+    $bottom = new Shelf;
+    $bottom->id = $shelfBottom;
+    $bottom->shelf_position = 50;
+
+    $section = new Section;
+    $section->id = (string) Str::ulid();
+    $section->width = 100.0;
+    $section->cremalheira_width = 0.0;
+    $section->setRelation('shelves', collect([$top, $bottom]));
+
+    $slotTop = new PlanogramTemplateSlot;
+    $slotTop->category_id = $catA;
+    $slotTop->module_number = 1;
+    $slotTop->shelf_order = 2;
+
+    $slotBottom = new PlanogramTemplateSlot;
+    $slotBottom->category_id = $catB;
+    $slotBottom->module_number = 1;
+    $slotBottom->shelf_order = 1;
+
+    return [$section, $shelfTop, $shelfBottom, $slotTop, $slotBottom];
+}
+
+/**
+ * Chama buildAllowedCategoriesByShelf com os caches de árvore pré-injetados (sem banco).
+ *
+ * @param  array<string, list<string>>  $descendants
+ * @param  array<string, string|null>  $parents
+ * @return array<string, array<string, true>>
+ */
+function callBuildAllowed(array $descendants, array $parents, Collection $slots, Collection $sections): array
+{
+    $engine = makeOverflowEngine($descendants);
+
+    $parentCache = new ReflectionProperty($engine, 'parentCategoryCache');
+    $parentCache->setAccessible(true);
+    $parentCache->setValue($engine, $parents);
+
+    $method = new ReflectionMethod($engine, 'buildAllowedCategoriesByShelf');
+    $method->setAccessible(true);
+
+    return $method->invoke($engine, $slots, $sections);
+}
+
+test('escopo siblings: a prateleira passa a aceitar as categorias IRMÃS (mesmo pai)', function (): void {
+    config()->set('plannerate.auto_planogram.placement.overflow_scope', 'siblings');
+
+    // CUIDADO COM O BANHEIRO ─┬─ LÍQUIDO
+    //                         └─ GEL
+    $pai = (string) Str::ulid();
+    $liquido = (string) Str::ulid();
+    $gel = (string) Str::ulid();
+
+    [$section, $shelfTop, $shelfBottom, $slotTop, $slotBottom] = makeScopeFixture($liquido, $gel);
+
+    $map = callBuildAllowed(
+        descendants: [$pai => [$pai, $liquido, $gel], $liquido => [$liquido], $gel => [$gel]],
+        parents: [$liquido => $pai, $gel => $pai],
+        slots: collect([$slotTop, $slotBottom]),
+        sections: collect([$section]),
+    );
+
+    // A prateleira de LÍQUIDO agora aceita GEL (e vice-versa): o vão de uma pode receber o
+    // produto que transbordou da outra, porque na loja elas já ficam lado a lado.
+    expect($map[$shelfTop])->toHaveKeys([$liquido, $gel])
+        ->and($map[$shelfBottom])->toHaveKeys([$liquido, $gel]);
+});
+
+test('escopo siblings: categoria RAIZ (sem pai) não ganha irmãs — cai no estrito', function (): void {
+    config()->set('plannerate.auto_planogram.placement.overflow_scope', 'siblings');
+
+    $catA = (string) Str::ulid();
+    $catB = (string) Str::ulid();
+
+    [$section, $shelfTop, $shelfBottom, $slotTop, $slotBottom] = makeScopeFixture($catA, $catB);
+
+    $map = callBuildAllowed(
+        descendants: [$catA => [$catA], $catB => [$catB]],
+        parents: [$catA => null, $catB => null],   // raízes
+        slots: collect([$slotTop, $slotBottom]),
+        sections: collect([$section]),
+    );
+
+    expect($map[$shelfTop])->toBe([$catA => true])
+        ->and($map[$shelfBottom])->toBe([$catB => true]);
+});
+
+test('escopo any: toda prateleira aceita qualquer categoria do planograma', function (): void {
+    config()->set('plannerate.auto_planogram.placement.overflow_scope', 'any');
+
+    $catA = (string) Str::ulid();
+    $catB = (string) Str::ulid();
+
+    [$section, $shelfTop, $shelfBottom, $slotTop, $slotBottom] = makeScopeFixture($catA, $catB);
+
+    $map = callBuildAllowed(
+        descendants: [$catA => [$catA], $catB => [$catB]],
+        parents: [],   // 'any' nem consulta o pai
+        slots: collect([$slotTop, $slotBottom]),
+        sections: collect([$section]),
+    );
+
+    expect($map[$shelfTop])->toHaveKeys([$catA, $catB])
+        ->and($map[$shelfBottom])->toHaveKeys([$catA, $catB]);
 });

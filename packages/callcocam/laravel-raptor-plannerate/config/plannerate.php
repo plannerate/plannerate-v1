@@ -48,6 +48,25 @@ return [
              * gôndola real saia pior do que na versão anterior.
              */
             'packer' => env('PLANNERATE_SHELF_PACKER', 'knapsack'),
+
+            /*
+             * Até onde um produto rejeitado por falta de espaço pode andar no overflow:
+             * 'strict' | 'siblings' (padrão) | 'any'.
+             *
+             * Medido numa gôndola real: 257cm de prateleira VAZIA convivendo com 11 produtos
+             * rejeitados por falta de espaço. Não faltava espaço — faltava PERMISSÃO. A
+             * categoria sem produto para encher a prateleira dela segurava o vão, e a categoria
+             * que transbordava não podia usá-lo, porque o overflow só realocava dentro da MESMA
+             * categoria.
+             *
+             * 'strict'   — só a própria categoria (e descendentes). Blocagem intacta, gôndola
+             *              aberta. É o comportamento anterior.
+             * 'siblings' — também as categorias IRMÃS (mesmo pai no mercadológico). Fecha a maior
+             *              parte do vão sem virar bagunça na gaveta: irmãs já ficam juntas na loja
+             *              (LÍQUIDO ao lado de GEL, ambas filhas de CUIDADO COM O BANHEIRO).
+             * 'any'      — qualquer categoria do planograma. Fecha tudo, mas quebra a blocagem.
+             */
+            'overflow_scope' => env('PLANNERATE_OVERFLOW_SCOPE', 'siblings'),
         ],
 
         /*
