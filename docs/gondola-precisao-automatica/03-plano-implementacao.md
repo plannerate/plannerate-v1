@@ -1,7 +1,10 @@
 # Plano de Implementação — Gôndola Precisa e Verdadeira
 
 > **Status:** Fase 0 ✅ COMMITADA (887621cf) e validada no browser.
-> Fase 1 ✅ IMPLEMENTADA (2026-07-12). Fases 2-6 pendentes.
+> Fase 1 ✅ COMMITADA (d7985ef8). Fase 2 ✅ COMMITADA (ba7e5f11).
+> Fases 3-6 pendentes — **mas o plano delas precisa ser revisto:** a medição da
+> Fase 2 derrubou a premissa da auditoria sobre onde a ocupação se perde.
+> Ver o quadro *"O que a medição mostrou"* na Fase 2.
 > A execução de cada fase precisa de aprovação explícita antes de começar.
 
 ## Princípio orientador (confirmado com o usuário)
@@ -204,33 +207,93 @@ visível o dado ruim de cadastro que sabotava a precisão em silêncio.
 
 ---
 
-## Fase 2 — Motor de empacotamento exato por prateleira (o conserto central)
+## Fase 2 — Motor de empacotamento exato por prateleira ✅ IMPLEMENTADA (ba7e5f11)
 
-Esta é a fase que **de fato** resolve "fechar a gôndola com precisão" —
-tudo antes é preparação/higiene.
+> ⚠️ **Esta fase entregou o que prometia, mas a medição derrubou a premissa do
+> plano.** Ela estava descrita aqui como "o conserto central". Não é. Leia o
+> quadro *"O que a medição mostrou"* abaixo antes de planejar as fases seguintes.
 
-| Passo | O que muda | Onde |
+### O que foi entregue
+
+| Passo | O que mudou | Onde |
 |---|---|---|
-| 2.1 | Novo serviço `Placement/ShelfKnapsackPacker.php` — resolve, por prateleira, um **bounded knapsack via DP**: única variável livre por candidato = contagem de frentes em `[min_facings, max_facings]`, maximizando largura ocupada (ou score ponderado), sujeito à capacidade da prateleira (mm, Fase 1) e ao espaçamento (Fase 1) | novo arquivo em `Placement/` |
-| 2.2 | Substituir a Fase 1 de `distributeInShelf()` (e o equivalente em `GreedyShelfPlacer`) para chamar o novo packer em vez do loop first-fit — **mantém a ordenação de candidatos existente como input**, não redesenha o ranking a montante | `TemplatePlacementEngine.php:1004-1077`, `GreedyShelfPlacer.php:406-437,491-520` |
-| 2.3 | Dispatch por tamanho de instância (padrão confirmado pela pesquisa): DP exato até um limiar (ex. 40 itens/prateleira), heurística construtiva mais rápida acima disso como fallback raro | `ShelfKnapsackPacker.php` |
-| 2.4 | Medir e persistir performance por prateleira/gôndola (`duration_ms` do `PlanogramGenerationRun`, já criado na Fase 0) — decide se cabe no timeout padrão do job (600s) ou se precisa de supervisor Horizon dedicado com timeout maior | `GenerateAutoPlanogramJob.php` |
+| 2.1 | `Placement/ShelfKnapsackPacker.php` — bounded knapsack por DP sobre a prateleira inteira. Frentes = variável livre em `[min, max]`; rejeitados por espaço voltam a concorrer. Trabalha em mm inteiros (arredondando o custo **para cima**, nunca prometendo encaixe que a prateleira não comporta) e devolve `null` para o motor guloso quando não consegue resolver | novo |
+| 2.2 | `distributeInShelf()` chama o packer entre o first-fit e o `expandFacings`. O ranking de candidatos a montante fica **intocado** — o packer recebe a ordem pronta | `TemplatePlacementEngine.php` |
+| 2.3 | Guardas de custo: acima de 60 candidatos ou 500cm de prateleira o DP aborta e o guloso segue valendo | `ShelfKnapsackPacker.php` |
+| 2.4 | Interruptor `plannerate.auto_planogram.placement.packer` = `knapsack` \| `greedy` (env `PLANNERATE_SHELF_PACKER`) — restaura o motor antigo sem deploy | `config/plannerate.php` |
 
-**Testes:**
-- Unitários do packer isolado: 0 candidatos, 1 candidato que não cabe nem no
-  mínimo, exact-fit (soma exata = largura disponível), muitos candidatos
-  pequenos, candidato único que sozinho excede a prateleira.
-- Regressão: comparar ocupação média antes/depois nos fixtures existentes
-  de `TemplatePlacementEngineTest.php` / `AutoPlanogramPlacementTest.php` —
-  meta: sair de ~70-80% para >95% de ocupação nos casos de teste.
-- Performance: benchmark de tempo com prateleiras de 40 itens e gôndolas de
-  "centenas de prateleiras" (simular volume real), documentado no relatório
-  da execução.
+### Garantia de não-regressão (por construção, não por teste)
 
-**Critério de pronto:** ocupação média medida nos testes sobe
-significativamente, sem estourar o timeout do job, zero regressão funcional
-(os mesmos produtos elegíveis continuam sendo posicionados — só a
-distribuição de frentes/gaps melhora).
+Tudo que o first-fit já colocaria entra no modelo como **obrigatório**. Logo a
+solução do motor antigo é sempre viável no espaço de busca do DP — e como o DP
+devolve a de maior valor, o resultado **empata ou melhora, nunca perde um SKU**.
+Um teste de propriedade sobre 60 prateleiras sortidas confirma
+(`empacotador nunca ocupa menos que o guloso`).
+
+### Modelo de valor: três prioridades, nesta ordem
+
+1. **Variedade** — estar na prateleira domina tudo (5000 contra um teto de ~690).
+2. **Ocupação** — fechar a gôndola é objetivo de 1ª classe, não efeito colateral.
+3. **Profundidade** — série harmônica: frentes têm retorno decrescente.
+
+A prioridade ② não estava no plano e **foi um teste que a exigiu**: sem ela o DP
+maximiza só valor comercial e chega a *preferir deixar 1cm vazio* se isso
+concentrar mais frentes no produto melhor ranqueado. Estava certo pelo modelo —
+o modelo é que não refletia o objetivo do projeto.
+
+### Bug real corrigido de quebra
+
+O fallback `reduce_facings` montava seus segmentos **fora** da esteira do cursor e
+os posicionava a partir de `x=0` — **sobrepondo os produtos já colocados** — e
+ainda escapava do espelhamento direita→esquerda. Agora devolve itens (não
+segmentos) e entra na mesma esteira dos demais.
+
+### O que a medição mostrou (e por que o plano precisa mudar)
+
+Benchmark em prateleiras sortidas (larguras de 4 a 28cm, 4-12 SKUs, `max_facings`
+de 3 a 12), guloso × empacotador, medindo ocupação **do slot**:
+
+| `max_facings` | guloso | empacotador | ganho |
+|---|---|---|---|
+| 3 | 97,3% | 98,2% | +0,9 pp |
+| 4 | 97,0% | 98,0% | +1,0 pp |
+| 6 | 97,1% | 98,1% | +1,0 pp |
+| 12 | 97,1% | 98,2% | +1,0 pp |
+
+**O guloso já ocupava ~97% do espaço que lhe é dado.** O empacotador entrega o
+encaixe exato (+1pp) e a garantia de não-regressão — ganho real, mas pequeno.
+
+Isso **contradiz a auditoria** (`01-auditoria-codigo-atual.md`), que apontava o
+first-fit como causa-raiz da ocupação de 70-80%. A razão do erro, agora clara:
+o first-fit coloca todo mundo com a frente **mínima antes** de expandir qualquer
+frente. Ou seja, ele já é "variedade primeiro", e o momento em que ele rejeita um
+produto é justamente quando a prateleira está mais vazia. Um produto que ele
+rejeita **não caberia de jeito nenhum** — nem o DP consegue recuperá-lo (só com
+`reduce_facings`, que baixa o piso para 1 frente).
+
+**Conclusão: a perda grande NÃO está dentro da prateleira. Está a montante** —
+em quanto espaço cada slot recebe e em quanta demanda a categoria tem para
+preencher:
+
+- **Tetos de frentes** (`max_facings`, teto por estoque alvo): se a categoria tem
+  4 SKUs de 8cm e teto de 3 frentes, a demanda máxima é 96cm. Numa prateleira de
+  130cm, **34cm ficam vazios e nenhum empacotador do mundo os preenche.**
+- **Plano de slots** (`SlotPlanBuilder`): categoria espalhada por mais prateleiras
+  do que precisa → cada uma fica rala.
+- **`SHELF_FILL_RATE_ESTIMATE = 0.75`** (`AutoTemplateSynthesisOrchestrator:50`):
+  usado em `computeNumModules`, ele infla o número de módulos em 33%. Mais gôndola
+  para o mesmo mix = ocupação menor. **A profecia se autorrealiza:** o hack existe
+  porque a ocupação é baixa, e a ocupação é baixa porque o hack dá gôndola demais.
+  (Só afeta gôndolas **novas**; regeneração usa a estrutura existente.)
+- **Reserva de micro-categoria** (`MICRO_CATEGORY_WIDTH_THRESHOLD = 0.35`): 35% da
+  prateleira compartilhada é segurado para a micro-categoria. Se ela não usar,
+  fica vazio.
+
+**Antes de implementar a Fase 3, medir uma gôndola real.** A Fase 0 já persiste
+`capacity_report` com `percentual_uso` por slot em `planogram_generation_runs` —
+é só gerar uma gôndola de verdade e ler onde o vão realmente está, em vez de
+continuar deduzindo. Sem esse dado, a Fase 3 corre o risco de ser mais uma fase
+consertando o lugar errado.
 
 ---
 
