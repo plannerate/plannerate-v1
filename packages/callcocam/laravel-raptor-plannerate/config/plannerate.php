@@ -9,6 +9,35 @@ return [
     ],
     'auto_planogram' => [
         /*
+         * Parâmetros físicos do posicionamento na prateleira.
+         */
+        'placement' => [
+            /*
+             * Folga (em cm) entre produtos vizinhos na mesma prateleira.
+             *
+             * O motor empacotava os produtos encostados (folga zero), o que é
+             * fisicamente irreal: na loja há uma pequena folga entre facings para o
+             * repositor conseguir tirar/repor a peça. Ignorá-la faz o planograma
+             * prometer mais produto do que a prateleira comporta de verdade.
+             *
+             * A folga só é cobrada ENTRE produtos — não sobra folga no fim da prateleira.
+             *
+             * Default 0.0 = comportamento anterior (nada muda até o cliente calibrar).
+             */
+            'product_spacing_cm' => env('PLANNERATE_PRODUCT_SPACING_CM', 0.0),
+
+            /*
+             * Meta de ocupação das prateleiras (0-1).
+             *
+             * Quanto da largura útil a gôndola deveria usar para ser considerada "fechada".
+             * Hoje é usada para MEDIR (o relatório da geração aponta quantas prateleiras
+             * ficaram abaixo do alvo); agir para fechar o vão é o objetivo das Fases 2 e 3
+             * do plano (docs/gondola-precisao-automatica/).
+             */
+            'target_occupancy_rate' => env('PLANNERATE_TARGET_OCCUPANCY_RATE', 0.90),
+        ],
+
+        /*
          * Parâmetros do cálculo de Estoque Alvo por classe ABC.
          *
          * service_levels: nível de serviço usado no z-score do estoque de segurança.

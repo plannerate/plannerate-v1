@@ -238,7 +238,7 @@ test('as métricas de ocupação são derivadas do slot_analysis da execução',
         ],
     );
 
-    $metrics = (new GenerationReportBuilder)->buildOccupancyMetrics(
+    $metrics = app(GenerationReportBuilder::class)->buildOccupancyMetrics(
         new AutoGenerationResult($output, synthTemplateId: null, totalInputProducts: 0),
     );
 
@@ -258,7 +258,7 @@ test('sem slot_analysis as métricas de ocupação ficam nulas em vez de zero', 
         slotAnalysis: [],
     );
 
-    $metrics = (new GenerationReportBuilder)->buildOccupancyMetrics(
+    $metrics = app(GenerationReportBuilder::class)->buildOccupancyMetrics(
         new AutoGenerationResult($output, synthTemplateId: null, totalInputProducts: 0),
     );
 

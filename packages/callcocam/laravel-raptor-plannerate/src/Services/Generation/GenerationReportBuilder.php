@@ -3,6 +3,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Services\Generation;
 
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\AutoGenerationResult;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ProductWidthResolver;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 
 /**
@@ -14,6 +15,10 @@ use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
  */
 final class GenerationReportBuilder
 {
+    public function __construct(
+        private readonly ProductWidthResolver $widthResolver,
+    ) {}
+
     /**
      * Relatório de capacidade — o que a UI exibe no banner/painel após a geração.
      *
@@ -89,7 +94,35 @@ final class GenerationReportBuilder
             $report['synth_template_id'] = $result->synthTemplateId;
         }
 
+        // Produtos que entraram com largura CHUTADA (cadastro sem width ou implausível).
+        // É a causa silenciosa nº1 de gôndola que "não fecha": o motor empacota com 10cm
+        // de palpite e o resultado não bate com a prateleira real. Antes isso só existia
+        // no log; agora o usuário vê exatamente quais produtos corrigir no cadastro.
+        $report['produtos_sem_dimensao_confiavel'] = $this->widthResolver->fallbackProducts();
+
+        // Alvo de ocupação: até então era campo morto (declarado e nunca lido).
+        $occupancy = $this->buildOccupancyMetrics($result);
+        $target = $this->targetOccupancyRate();
+
+        $report['ocupacao_alvo'] = $target;
+        $report['ocupacao_media'] = $occupancy['occupancy_avg'];
+        $report['prateleiras_abaixo_do_alvo'] = collect($result->output->slotAnalysis)
+            ->filter(fn (array $slot): bool => ($slot['percentual_uso'] ?? 0) / 100 < $target)
+            ->count();
+
         return $report;
+    }
+
+    /**
+     * Meta de ocupação das prateleiras (0-1).
+     *
+     * Fecha a lacuna do `PlacementSettings::targetOccupancyRate`, que existia mas nunca
+     * era consumido por lógica nenhuma. Nesta fase ele MEDE (quantas prateleiras ficaram
+     * abaixo do alvo); agir para fechar o vão é o objetivo das Fases 2 e 3 do plano.
+     */
+    public function targetOccupancyRate(): float
+    {
+        return (float) config('plannerate.auto_planogram.placement.target_occupancy_rate', 0.90);
     }
 
     /**

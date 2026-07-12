@@ -557,13 +557,16 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         //  B) profundidade — só então expande frentes até o estoque alvo com o espaço que sobrar.
         // Sem isso, a expansão do primeiro produto consumiria o espaço que caberia a outros
         // SKUs da mesma categoria, deixando-os rejeitados (variedade < profundidade — errado).
-        /** @var list<array{product: mixed, shelf_key: string, section_key: string, single_width: int, facings: int, cap: int|null}> $placements */
+        /** @var list<array{product: mixed, shelf_key: string, section_key: string, single_width: float, facings: int, cap: int|null}> $placements */
         $placements = [];
 
         // === PASSE A: variedade — cada produto rejeitado entra com a frente mínima ===
         foreach ($retryOrdered as $item) {
             $product = $item['product'];
-            $singleWidth = (int) round($this->widthResolver->resolve($product));
+            // Largura EXATA: arredondar a largura UNITÁRIA antes de multiplicar pelas frentes
+            // distorcia a conta (um produto de 3,4cm × 5 frentes "ocupava" 15cm em vez de 17cm),
+            // fazendo produtos entrarem em prateleiras onde na verdade não cabiam.
+            $singleWidth = $this->widthResolver->resolve($product);
 
             if ($singleWidth <= 0) {
                 continue;
@@ -574,11 +577,11 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             // facings mínimos em nenhuma prateleira permanecem rejeitados.
             $abcClass = $this->abcClassMap[$product->id] ?? '';
             $minFacings = SlotPlanBuilder::ABC_MIN_FACINGS[$abcClass] ?? SlotPlanBuilder::ABC_MIN_FACINGS[''];
-            $widthWithFacings = (int) round($singleWidth * $minFacings);
+            $widthWithFacings = $singleWidth * $minFacings;
 
             // Tenta a prateleira com maior espaço disponível
             foreach ($shelfMeta as $i => $meta) {
-                if ($meta['remaining'] < $widthWithFacings) {
+                if (! PlacementMath::fits(0.0, $widthWithFacings, $meta['remaining'])) {
                     continue;
                 }
 
@@ -685,13 +688,17 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         foreach ($placements as $p) {
             $shelfKey = $p['shelf_key'];
             $start = $shelfCursor[$shelfKey] ?? (float) $occupiedPerShelf->get($shelfKey, 0.0);
-            $width = $p['single_width'] * $p['facings'];
+            $exactWidth = $p['single_width'] * $p['facings'];
+
+            // Mesma soma de prefixos do placement principal: arredonda os PONTOS (início/fim),
+            // não cada largura isolada — segmentos contíguos, sem erro acumulado.
+            [$startCm, $width] = PlacementMath::segmentBounds($start, $exactWidth);
 
             $overflowPlaced->push(new PlacedSegment(
                 sectionId: $p['section_key'],
                 shelfId: $shelfKey,
                 ordering: $orderingOffset++,
-                position: (int) round($start),
+                position: $startCm,
                 width: $width,
                 distributedWidth: $width,
                 layers: collect([
@@ -704,7 +711,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 ]),
             ));
 
-            $shelfCursor[$shelfKey] = $start + $width;
+            $shelfCursor[$shelfKey] = $start + $exactWidth;
         }
 
         if ($overflowPlaced->isEmpty()) {
@@ -1000,6 +1007,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $rejected = collect();
         $occupied = 0.0;
         $ordering = 0;
+        $spacing = PlacementMath::productSpacingCm();
 
         // Phase 1: place with min_facings
         foreach ($products as $product) {
@@ -1030,16 +1038,23 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
             $facing = max($slot->min_facings, 1);
             $singleWidth = $this->widthResolver->resolve($product);
-            $width = (int) round($singleWidth * $facing);
 
-            if ($occupied + $width <= $available) {
+            // Largura EXATA (float): arredondar aqui para cm inteiro rejeitava produtos
+            // que cabiam por fração de cm e deixava sobra acumulada ao longo da prateleira.
+            // O arredondamento acontece só na persistência (ver soma de prefixos abaixo).
+            $width = $singleWidth * $facing;
+
+            // Folga entre produtos (0 por padrão) — cobrada só a partir do segundo produto.
+            $gap = PlacementMath::gapBefore($occupied, $spacing);
+
+            if (PlacementMath::fits($occupied + $gap, $width, $available)) {
                 $placedItems[] = [
                     'product' => $product,
                     'facings' => $facing,
                     'singleWidth' => $singleWidth,
                     'ordering' => $ordering++,
                 ];
-                $occupied += $width;
+                $occupied += $gap + $width;
             } else {
                 // Log de diagnóstico quando o slot está vazio mas o produto não coube.
                 if ($occupied < 0.01) {
@@ -1091,17 +1106,32 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         // categoria já ocupa [0, startPosition), este slot começa a partir de startPosition.
         $placed = collect();
         $x = (float) $startPosition;
+        $isFirst = true;
 
         foreach ($placedItems as $item) {
             $product = $item['product'];
             $facings = $item['facings'];
-            $width = (int) round($item['singleWidth'] * $facings);
+            $exactWidth = $item['singleWidth'] * $facings;
+
+            // Folga entre produtos: avança o cursor antes de posicionar (nunca antes do 1º).
+            if (! $isFirst) {
+                $x += $spacing;
+            }
+
+            $isFirst = false;
+
+            // As colunas segments.position/width são inteiras (em cm), mas arredondar cada
+            // largura isoladamente e somá-las acumula erro (até 0,5cm por segmento) e faz a
+            // prateleira "andar". Arredondando os PONTOS (início/fim) da posição exata, os
+            // segmentos ficam contíguos por construção — sem gaps nem sobreposição — e o
+            // total continua fiel à largura real ocupada.
+            [$startCm, $width] = PlacementMath::segmentBounds($x, $exactWidth);
 
             $placed->push(new PlacedSegment(
                 sectionId: $section->getKey(),
                 shelfId: $shelf->getKey(),
                 ordering: $item['ordering'],
-                position: (int) round($x),
+                position: $startCm,
                 width: $width,
                 distributedWidth: $width,
                 layers: collect([
@@ -1113,7 +1143,8 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                     ),
                 ]),
             ));
-            $x += $width;
+
+            $x += $exactWidth;
         }
 
         // Espelhar posições físicas quando o fluxo é direita → esquerda
@@ -1452,7 +1483,8 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 }
 
                 $singleWidth = $this->widthResolver->resolve($product);
-                $width = (int) round($singleWidth * $minFacings);
+                // Largura exata (float): ver WIDTH_EPSILON_CM e a soma de prefixos na escrita.
+                $width = $singleWidth * $minFacings;
 
                 // Mais largo que a própria coluna: nem 1 conjunto de frentes mínimas cabe
                 if ($width > $colWidth[$brand] + 0.01) {
@@ -1500,7 +1532,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                     $occupied = 0.0;
 
                     foreach ($items as $item) {
-                        $occupied += round($item['singleWidth'] * $item['facings']);
+                        // Exato: arredondar por item subestimava/superestimava o ocupado e a
+                        // expansão de frentes decidia em cima de um espaço livre errado.
+                        $occupied += $item['singleWidth'] * $item['facings'];
                     }
 
                     [$cells[$rowIdx][$brand]] = $this->expandFacings(
@@ -1578,13 +1612,16 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 $cellX = $startX;
 
                 foreach ($items as $item) {
-                    $width = (int) round($item['singleWidth'] * $item['facings']);
+                    $exactWidth = $item['singleWidth'] * $item['facings'];
+
+                    // Soma de prefixos (ver placement principal): arredonda os pontos, não as larguras.
+                    [$startCm, $width] = PlacementMath::segmentBounds($cellX, $exactWidth);
 
                     $placed->push(new PlacedSegment(
                         sectionId: $section->getKey(),
                         shelfId: $row['shelf']->getKey(),
                         ordering: 0, // reatribuído após o espelhamento
-                        position: (int) round($cellX),
+                        position: $startCm,
                         width: $width,
                         distributedWidth: $width,
                         layers: collect([
@@ -1598,9 +1635,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                     ));
 
                     $this->globalPlacedProductIds[$item['product']->id] = true;
-                    $cellX += $width;
+                    $cellX += $exactWidth;
                     $rowStats[$rowIdx]['placed']++;
-                    $rowStats[$rowIdx]['occupied'] += $width;
+                    $rowStats[$rowIdx]['occupied'] += $exactWidth;
                 }
 
                 $zone = $this->resolveZoneForShelf($section, $row['shelf']);
