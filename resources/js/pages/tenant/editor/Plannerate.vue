@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import PlanogramCapacityBanner from '@/components/PlanogramCapacityBanner.vue';
-import PlanogramSuggestions from '@/components/PlanogramSuggestions.vue';
-import PlanogramValidationReport from '@/components/PlanogramValidationReport.vue';
+import PlanogramGenerationSummary from '@/components/PlanogramGenerationSummary.vue';
 import Planogram from '@/components/plannerate/Planogram.vue';
 import PlanogramAuto from '@/components/plannerate/PlanogramAuto.vue';
 import { useGenerationRun } from '@/composables/plannerate/generation/useGenerationRun';
@@ -89,11 +87,6 @@ const validationReport = computed(
 const capacityReport = computed(
     () => runCapacityReport.value ?? (page.props.flash as any)?.capacity_report ?? null,
 );
-const suggestionsReport = computed(() => {
-    const report = capacityReport.value;
-    if (!report?.suggestions?.length || !report?.template_id) return null;
-    return report;
-});
 
 const editorComponent = computed(() =>
     props.record?.generation_mode && props.record.generation_mode !== 'manual'
@@ -121,19 +114,16 @@ const editorComponent = computed(() =>
             <span class="size-2 animate-pulse rounded-full bg-blue-500" />
             {{ t('plannerate.generation.history.in_progress') }}
         </div>
-        <PlanogramCapacityBanner
+        <!--
+            O relatório completo (capacidade, alocados, sugestões, validação) mora em
+            página própria: aqui fica só a linha-resumo com o link, para não empurrar
+            o planograma para fora da tela.
+        -->
+        <PlanogramGenerationSummary
+            v-if="record?.id"
             :report="capacityReport"
-            class="mx-4 mb-2"
-        />
-        <PlanogramSuggestions
-            v-if="suggestionsReport"
-            :suggestions="suggestionsReport.suggestions"
-            :template-id="suggestionsReport.template_id"
-            class="mx-4 mb-2"
-        />
-        <PlanogramValidationReport
-            v-if="validationReport"
-            :report="validationReport"
+            :validation-report="validationReport"
+            :gondola-id="record.id"
             class="mx-4 mb-4"
         />
     </SimpleLayout>

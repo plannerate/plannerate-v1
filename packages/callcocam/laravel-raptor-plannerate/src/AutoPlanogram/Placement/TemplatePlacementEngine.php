@@ -219,6 +219,34 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             }
         }
 
+        /*
+         * Quantos slots do caminho horizontal cada categoria AINDA tem pela frente.
+         *
+         * O plano de slots dá N prateleiras a uma categoria dimensionando pela largura total
+         * dos produtos dela (com as frentes já expandidas). Mas o motor coloca cada produto
+         * com a frente MÍNIMA — e aí o sortimento inteiro cabe na primeira prateleira. O que
+         * acontecia: o 1º slot levava TUDO e os N−1 seguintes não achavam mais nenhum produto
+         * (`slots_sem_matching`), ficando VAZIOS. Numa gôndola medida, 7 de 16 prateleiras
+         * zeradas — 39,7% de ocupação com o mix inteiro cabendo.
+         *
+         * Com este contador cada slot leva só a fatia dele (ver takeCategoryShare) e a expansão
+         * de frentes engorda a fatia até encher a prateleira.
+         *
+         * A blocagem vertical fica de fora: ela já distribui a categoria pelas prateleiras do
+         * grupo por conta própria.
+         *
+         * @var array<string, int>
+         */
+        $pendingSlotsByCategory = [];
+
+        foreach ($slots as $s) {
+            if (isset($verticalProcessedSlotIds[$s->id]) || $s->category_id === null) {
+                continue;
+            }
+
+            $pendingSlotsByCategory[$s->category_id] = ($pendingSlotsByCategory[$s->category_id] ?? 0) + 1;
+        }
+
         foreach ($slots as $slot) {
             // Slots já processados pela blocagem vertical não passam pelo caminho horizontal
             if (isset($verticalProcessedSlotIds[$slot->id])) {
@@ -226,6 +254,14 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             }
 
             $this->applySlotOverride($slot);
+
+            // Consome a cota da categoria já aqui: um slot que acabe sem produto (sem prateleira,
+            // sem candidato) não pode continuar "reservando" fatia para si e encolher a dos outros.
+            $pendingSlots = $pendingSlotsByCategory[$slot->category_id] ?? 1;
+
+            if ($slot->category_id !== null) {
+                $pendingSlotsByCategory[$slot->category_id] = max(0, $pendingSlots - 1);
+            }
 
             $section = $this->resolveSection($sections, $slot->module_number);
             $shelf = $section ? $this->resolveShelf($section, $slot->shelf_order) : null;
@@ -263,12 +299,42 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                     'shelf_order' => $slot->shelf_order,
                 ]);
 
+                /*
+                 * O slot vazio PRECISA entrar na análise, com 0% de uso.
+                 *
+                 * Antes ele era pulado — e a ocupação média do relatório era a média só dos
+                 * slots que receberam produto. Numa gôndola real com 7 de 16 prateleiras
+                 * ZERADAS, o relatório anunciava 78% de ocupação enquanto a gôndola estava em
+                 * 39,7%. A métrica escondia justamente o defeito que ela deveria denunciar.
+                 */
+                $slotAnalysis[] = [
+                    'slot_id' => $slot->id,
+                    'category_id' => $slot->category_id,
+                    'category_name' => $slot->category?->name ?? $slot->category_id,
+                    'role' => $slot->effectiveRole()?->value,
+                    'module_number' => $slot->module_number,
+                    'shelf_order' => $slot->shelf_order,
+                    'shelf_id' => $shelf->getKey(),
+                    'largura_total' => round($this->getShelfAvailableWidth($section), 1),
+                    'largura_usada' => 0.0,
+                    'largura_livre' => round($this->getShelfAvailableWidth($section), 1),
+                    'percentual_uso' => 0,
+                    'produtos_posicionados' => 0,
+                    'produtos_rejeitados' => 0,
+                    'rejeitados_sem_dimensao' => 0,
+                    'produtos_rejeitados_nomes' => [],
+                ];
+
                 continue;
             }
 
-            $ordered = $this->applySpaceFallbackOrdering(
-                $this->orderCandidates($candidates, $slot, $section, $shelf),
+            $ordered = $this->takeCategoryShare(
+                $this->applySpaceFallbackOrdering(
+                    $this->orderCandidates($candidates, $slot, $section, $shelf),
+                    $slot,
+                ),
                 $slot,
+                $pendingSlots,
             );
 
             // Suporte a prateleiras compartilhadas: múltiplos slots (de categorias diferentes)
@@ -1439,6 +1505,76 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         }
 
         return array_map(fn (float $value): float => max(0.05, $value / $max), $raw);
+    }
+
+    /**
+     * Reparte o sortimento da categoria entre os slots que ela ainda tem pela frente.
+     *
+     * ── O bug que isto conserta ──────────────────────────────────────────────────────────
+     * O `SlotPlanBuilder` dá N prateleiras a uma categoria dimensionando pela largura TOTAL
+     * dos produtos dela. Só que o posicionamento coloca cada produto com a frente MÍNIMA — e
+     * com 1 frente o sortimento inteiro costuma caber numa prateleira só.
+     *
+     * Resultado: o 1º slot da categoria levava TODOS os produtos, e do 2º em diante o
+     * `findCandidates` não achava mais nada (os produtos já estavam em `globalPlacedProductIds`).
+     * Os slots irmãos ficavam VAZIOS — é o `slots_sem_matching` do log. A expansão de frentes
+     * não salvava, porque ela só trabalha DENTRO da prateleira onde o produto já está: enchia
+     * a primeira até 96-100% e não tinha como transbordar para as irmãs vazias ao lado.
+     *
+     * Medido numa gôndola real (mix cabendo inteiro na gôndola): 7 de 16 prateleiras ZERADAS,
+     * 39,7% de ocupação, 672cm de prateleira morta.
+     *
+     * ── O conserto ───────────────────────────────────────────────────────────────────────
+     * Cada slot leva a fatia dele: os melhores ranqueados ainda não usados, até cobrir 1/N da
+     * largura que resta (mesma métrica de largura que o plano usou para pedir as N prateleiras).
+     * O resto fica para os slots seguintes da categoria, e a expansão de frentes engorda cada
+     * fatia até encher a sua prateleira.
+     *
+     * O último slot da categoria (`$pendingSlots === 1`) leva tudo o que sobrou — ninguém fica
+     * para trás.
+     *
+     * @param  Collection<int, mixed>  $ordered  Candidatos já ranqueados para ESTE slot.
+     * @param  int  $pendingSlots  Slots da categoria ainda por processar, incluindo este.
+     * @return Collection<int, mixed>
+     */
+    private function takeCategoryShare(Collection $ordered, PlanogramTemplateSlot $slot, int $pendingSlots): Collection
+    {
+        if ($pendingSlots <= 1 || $ordered->count() <= 1) {
+            return $ordered;
+        }
+
+        $totalWidth = (float) $ordered->sum(fn ($product): float => $this->widthResolver->resolve($product));
+
+        if ($totalWidth <= 0.0) {
+            return $ordered;
+        }
+
+        $targetWidth = $totalWidth / $pendingSlots;
+        $share = collect();
+        $accumulated = 0.0;
+
+        foreach ($ordered as $product) {
+            // Pelo menos um produto sempre entra: devolver fatia vazia deixaria a prateleira
+            // zerada — exatamente o defeito que este método existe para eliminar.
+            if ($share->isNotEmpty() && $accumulated >= $targetWidth) {
+                break;
+            }
+
+            $share->push($product);
+            $accumulated += $this->widthResolver->resolve($product);
+        }
+
+        Log::debug('TemplatePlacementEngine: sortimento repartido entre os slots da categoria', [
+            'slot_id' => $slot->id,
+            'category_id' => $slot->category_id,
+            'slots_restantes' => $pendingSlots,
+            'candidatos' => $ordered->count(),
+            'fatia_deste_slot' => $share->count(),
+            'largura_alvo_cm' => round($targetWidth, 1),
+            'largura_da_fatia_cm' => round($accumulated, 1),
+        ]);
+
+        return $share->values();
     }
 
     /**

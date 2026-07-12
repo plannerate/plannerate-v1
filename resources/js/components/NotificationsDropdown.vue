@@ -216,7 +216,13 @@ function destroy(id: string) {
     });
 }
 
-const getDownloadUrl = (id: string) => routeUrl('download', id);
+/**
+ * URL de download da notificação. Tolera id ausente: uma notificação malformada
+ * (ex.: payload de broadcast sem id) derrubava a renderização do painel inteiro —
+ * o dropdown não abria. Sem id, o item aparece apenas sem link de download.
+ */
+const getDownloadUrl = (id: string | null | undefined): string =>
+    id ? routeUrl('download', id) : '';
 </script>
 
 <template>

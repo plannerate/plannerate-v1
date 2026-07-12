@@ -5,6 +5,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation;
 use Callcocam\LaravelRaptorPlannerate\Enums\GenerationRunStatus;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramGenerationRun;
+use Callcocam\LaravelRaptorPlannerate\Services\Generation\GenerationRunPresenter;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -16,6 +17,10 @@ use Illuminate\Http\JsonResponse;
  */
 class PlanogramGenerationRunController extends Controller
 {
+    public function __construct(
+        private readonly GenerationRunPresenter $presenter,
+    ) {}
+
     /**
      * Histórico de execuções da gôndola (mais recentes primeiro), sem os relatórios
      * completos — só o resumo que a listagem precisa.
@@ -25,9 +30,10 @@ class PlanogramGenerationRunController extends Controller
         $runs = PlanogramGenerationRun::query()
             ->where('gondola_id', $gondola)
             ->latest()
+            ->orderByDesc('id')
             ->limit(50)
             ->get()
-            ->map(fn (PlanogramGenerationRun $run) => $this->toSummary($run));
+            ->map(fn (PlanogramGenerationRun $run) => $this->presenter->summary($run));
 
         return response()->json(['data' => $runs]);
     }
@@ -41,12 +47,12 @@ class PlanogramGenerationRunController extends Controller
             ->where('gondola_id', $gondola)
             ->findOrFail($run);
 
-        return response()->json(['data' => $this->toDetail($model)]);
+        return response()->json(['data' => $this->presenter->detail($model)]);
     }
 
     /**
-     * Última execução da gôndola — o editor chama isto ao abrir para hidratar o
-     * banner de capacidade/validação, que antes vinha do flash do Inertia.
+     * Última execução da gôndola — o editor chama isto ao abrir para hidratar a
+     * barra-resumo da geração, que antes vinha do flash do Inertia.
      *
      * Devolve `data: null` (200) quando a gôndola nunca foi gerada.
      */
@@ -55,51 +61,11 @@ class PlanogramGenerationRunController extends Controller
         $run = PlanogramGenerationRun::query()
             ->where('gondola_id', $gondola)
             ->latest()
+            ->orderByDesc('id')
             ->first();
 
         return response()->json([
-            'data' => $run ? $this->toDetail($run) : null,
-        ]);
-    }
-
-    /**
-     * Resumo para listagem/polling — sem os JSONs pesados.
-     *
-     * @return array<string, mixed>
-     */
-    private function toSummary(PlanogramGenerationRun $run): array
-    {
-        return [
-            'id' => $run->id,
-            'status' => $run->status->value,
-            'status_label' => $run->status->label(),
-            'is_pending' => $run->status->isPending(),
-            'mode' => $run->mode,
-            'occupancy_avg' => $run->occupancy_avg,
-            'occupancy_min' => $run->occupancy_min,
-            'occupancy_max' => $run->occupancy_max,
-            'iterations_run' => $run->iterations_run,
-            'converged' => $run->converged,
-            'duration_ms' => $run->duration_ms,
-            'error_message' => $run->error_message,
-            'created_at' => $run->created_at?->toIso8601String(),
-            'finished_at' => $run->finished_at?->toIso8601String(),
-        ];
-    }
-
-    /**
-     * Detalhe completo — resumo + relatórios + snapshot da configuração usada.
-     *
-     * @return array<string, mixed>
-     */
-    private function toDetail(PlanogramGenerationRun $run): array
-    {
-        return array_merge($this->toSummary($run), [
-            'config_snapshot' => $run->config_snapshot,
-            'capacity_report' => $run->capacity_report,
-            'validation_report' => $run->validation_report,
-            'template_id' => $run->template_id,
-            'synth_template_id' => $run->synth_template_id,
+            'data' => $run ? $this->presenter->detail($run) : null,
         ]);
     }
 
@@ -113,10 +79,11 @@ class PlanogramGenerationRunController extends Controller
             ->where('gondola_id', $gondola)
             ->whereIn('status', [GenerationRunStatus::Queued, GenerationRunStatus::Running])
             ->latest()
+            ->orderByDesc('id')
             ->first();
 
         return response()->json([
-            'data' => $pending ? $this->toSummary($pending) : null,
+            'data' => $pending ? $this->presenter->summary($pending) : null,
         ]);
     }
 }

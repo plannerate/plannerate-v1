@@ -18,7 +18,7 @@ const props = defineProps<{
     notificationCount: number;
     unreadCount: number;
     connectionStatus: ConnectionStatus;
-    getDownloadUrl: (id: string) => string;
+    getDownloadUrl: (id: string | null | undefined) => string;
 }>();
 
 defineEmits<{
