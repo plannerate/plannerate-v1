@@ -82,7 +82,9 @@ return [
         'enabled' => env('WHATSAPP_CLOUD_WEBHOOK_ENABLED', true),
         'prefix' => env('WHATSAPP_CLOUD_WEBHOOK_PREFIX', 'webhooks/whatsapp/cloud'),
         'name' => 'whatsapp.cloud',
-        'middleware' => ['api'],
+        // landlord.only: a WABA é global (uma só, fora do contexto de tenant) —
+        // o webhook da Meta só deve ser alcançável pelo domínio raiz.
+        'middleware' => ['landlord.only', 'api'],
     ],
 
     /*
@@ -105,7 +107,9 @@ return [
         'enabled' => env('WHATSAPP_CLOUD_PANEL_ENABLED', true),
         'prefix' => env('WHATSAPP_CLOUD_PANEL_PREFIX', 'whatsapp/cloud/templates'),
         'name' => 'whatsapp.cloud.panel',
-        'middleware' => ['web', 'auth'],
+        // landlord.only: painel mexe numa WABA global, sem noção de tenant —
+        // só faz sentido acessível pelo domínio raiz.
+        'middleware' => ['landlord.only', 'web', 'auth'],
 
         // The Inertia component the panel renders. Ships with the self-contained
         // fallback page (published via `whatsapp-cloud-inertia`). A host with a
@@ -160,7 +164,8 @@ return [
     'sandbox' => [
         'display_phone_number' => env('WHATSAPP_CLOUD_SANDBOX_DISPLAY_NUMBER', '15550000000'),
         'prefix' => env('WHATSAPP_CLOUD_SANDBOX_PREFIX', 'whatsapp/cloud/sandbox'),
-        'middleware' => ['web', 'auth'],
+        // landlord.only: mesmo motivo do painel — sem noção de tenant.
+        'middleware' => ['landlord.only', 'web', 'auth'],
     ],
 
     /*
