@@ -27,6 +27,7 @@ final class AutoGenerationRunner
     public function __construct(
         private readonly AutoPlanogramService $service,
         private readonly ProductSelectionService $productSelection,
+        private readonly ProductWidthResolver $widthResolver,
     ) {}
 
     /**
@@ -41,6 +42,10 @@ final class AutoGenerationRunner
         AutoGenerateConfigDTO $config,
         ?string $templateId,
     ): AutoGenerationResult {
+        // O resolver é singleton e o worker atende várias gerações no mesmo processo:
+        // zera os produtos de largura suspeita para o relatório refletir só ESTA execução.
+        $this->widthResolver->reset();
+
         // Atualiza template_id e backfill de generation_mode para gôndolas antigas
         $gondola->forceFill([
             'template_id' => $templateId,

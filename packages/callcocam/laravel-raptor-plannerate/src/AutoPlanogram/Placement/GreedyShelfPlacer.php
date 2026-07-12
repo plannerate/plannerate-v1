@@ -595,11 +595,17 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
 
             $sectionId = $shelfToSection[$shelfLayout->id] ?? '';
             $ordering = 0;
-            $positionX = (int) round($reservedWidthPerShelf[$shelfLayout->id] ?? 0.0);
+            // Cursor em float: as posições/larguras persistidas são inteiras (cm), mas
+            // arredondar cada largura e somá-las acumula erro ao longo da prateleira.
+            // Arredondamos os PONTOS (início/fim) da posição exata — segmentos contíguos,
+            // sem gaps nem sobreposição. Mesmo critério do TemplatePlacementEngine.
+            $cursorX = (float) ($reservedWidthPerShelf[$shelfLayout->id] ?? 0.0);
             $shelfLevel = $shelfLevelMap[$shelfLayout->id] ?? null;
 
             foreach ($shelfLayout->products as $rankedProduct) {
-                $productWidth = (int) round($this->widthResolver->resolve($rankedProduct->product) * $rankedProduct->facings);
+                $exactWidth = $this->widthResolver->resolve($rankedProduct->product) * $rankedProduct->facings;
+
+                [$startCm, $productWidth] = PlacementMath::segmentBounds($cursorX, $exactWidth);
 
                 $layer = new PlacedLayer(
                     productId: $rankedProduct->product->id,
@@ -612,7 +618,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
                     sectionId: $sectionId,
                     shelfId: $shelfLayout->id,
                     ordering: $ordering,
-                    position: $positionX,
+                    position: $startCm,
                     width: $productWidth,
                     distributedWidth: $productWidth,
                     layers: collect([$layer]),
@@ -620,7 +626,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
                 ));
 
                 $ordering++;
-                $positionX += $productWidth;
+                $cursorX += $exactWidth;
             }
         }
 

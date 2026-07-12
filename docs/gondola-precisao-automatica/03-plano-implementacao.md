@@ -1,7 +1,7 @@
 # Plano de Implementação — Gôndola Precisa e Verdadeira
 
-> **Status:** Fase 0 ✅ IMPLEMENTADA E VALIDADA NO BROWSER (2026-07-12, working
-> tree, ainda não commitada). Fases 1-6 pendentes.
+> **Status:** Fase 0 ✅ COMMITADA (887621cf) e validada no browser.
+> Fase 1 ✅ IMPLEMENTADA (2026-07-12). Fases 2-6 pendentes.
 > A execução de cada fase precisa de aprovação explícita antes de começar.
 
 ## Princípio orientador (confirmado com o usuário)
@@ -114,7 +114,7 @@ reconecta a conexão `tenant` — construir o schema **depois** de `makeCurrent(
 nunca antes, ou as tabelas somem.
 
 **Validação no browser:** ✅ confirmada pelo usuário.
-**Pendente:** commit.
+**Commit:** ✅ `887621cf`.
 
 ### Passos originais planejados
 
@@ -158,25 +158,49 @@ existentes de `AutoPlanogram*` continuam verdes sem alteração.
 
 ---
 
-## Fase 1 — Correções rápidas de precisão (Tier 1, baixo risco)
+## Fase 1 — Correções rápidas de precisão ✅ IMPLEMENTADA
 
-Pode rodar em paralelo à Fase 0 (não depende da fila) ou logo depois.
+### O que foi entregue (2026-07-12)
 
-| Passo | O que muda | Onde |
+**Decisão de escopo:** o plano falava em "precisão em mm". As colunas
+`segments.position` / `segments.width` são **inteiras (cm)** e o editor,
+drag & drop e PDF dependem disso — migrar para decimal seria invasivo e
+arriscado. A solução equivalente, sem tocar no schema: **toda a aritmética de
+encaixe roda em float exato** e o arredondamento acontece **só na persistência**,
+por **soma de prefixos** (arredondando os PONTOS de início/fim, não cada largura
+isolada). Resultado: segmentos contíguos por construção, sem erro acumulado.
+
+| Passo | Entregue | Onde |
 |---|---|---|
-| 1.1 | Precisão em **mm** em vez de arredondar cada largura/posição pra cm inteiro; arredondar só na hora de persistir o valor final do segmento | `ShelfLayoutDTO.php`, `TemplatePlacementEngine.php:1033,1098,1104`, `GreedyShelfPlacer.php:602` |
-| 1.2 | Novo parâmetro de **espaçamento entre produtos** (default 0, configurável), efetivamente subtraído da largura disponível a cada item posicionado | `PlacementSettings.php`, `distributeInShelf()` |
-| 1.3 | `targetOccupancyRate` passa a ser **lido de verdade**: após a Fase 1 + `expandFacings`, comparar ocupação real contra o alvo e registrar no relatório (a ação de fato de tentar fechar mais fica pra Fase 2/3) | `PlacementSettings.php`, `TemplatePlacementEngine.php` |
-| 1.4 | `ProductWidthResolver`: logar warning estruturado (não silenciar) quando cai no fallback de 10cm, e listar produtos com dimensão suspeita no `PlanogramGenerationRun` | `ProductWidthResolver.php:16,29-61` |
+| 1.1 | `PlacementMath` (novo): fonte única da aritmética de encaixe — `fits()` com tolerância de float e `segmentBounds()` com soma de prefixos. Removidos os arredondamentos por item nos **4** pontos de empacotamento | `Placement/PlacementMath.php` (novo), `TemplatePlacementEngine.php` (principal, overflow e grid), `GreedyShelfPlacer.php`, `DTO/ShelfLayoutDTO.php` |
+| 1.2 | Folga configurável entre produtos, cobrada **só entre** produtos (nunca antes do 1º, nunca sobrando no fim). Default `0.0` = comportamento anterior | `config/plannerate.php` (`auto_planogram.placement.product_spacing_cm`), `PlacementMath::gapBefore()`, `distributeInShelf()` |
+| 1.3 | `targetOccupancyRate` deixa de ser código morto: vira config e o relatório passa a informar `ocupacao_alvo`, `ocupacao_media` e `prateleiras_abaixo_do_alvo` | `config/plannerate.php` (`target_occupancy_rate`), `GenerationReportBuilder` |
+| 1.4 | `ProductWidthResolver` rastreia os produtos que entraram com largura **chutada** (inclusive o caso `null`, que antes passava totalmente mudo) e eles vão para o relatório da geração (`produtos_sem_dimensao_confiavel`) | `ProductWidthResolver.php`, `AutoGenerationRunner` (chama `reset()`), `GenerationReportBuilder` |
 
-**Testes:** ajustar fixtures de `TemplatePlacementEngineTest.php` e
-`AutoPlanogramPlacementTest.php` para a nova precisão em mm; nenhuma
-regressão funcional esperada (mesmos produtos elegíveis, só menos erro de
-arredondamento).
+### Bugs reais encontrados e corrigidos no caminho
 
-**Critério de pronto:** ocupação medida sobe (parcialmente — ainda não é o
-conserto estrutural), erro de arredondamento cumulativo eliminado, dado ruim
-de largura fica visível no relatório em vez de silencioso.
+1. **`placeOverflow` arredondava a largura UNITÁRIA antes de multiplicar pelas
+   frentes** — um produto de 3,4cm × 5 frentes "ocupava" 15cm em vez de 17cm, e
+   o motor o encaixava em prateleiras onde ele **não cabia de verdade**.
+2. **O grid somava larguras arredondadas ao calcular o ocupado**, então a
+   expansão de frentes decidia em cima de um espaço livre errado.
+3. **Produto sem largura cadastrada (`null`) caía no fallback de 10cm em
+   silêncio total** — sem log, sem relatório. É a causa silenciosa nº1 de
+   gôndola que "não fecha", e agora aparece nomeada no relatório.
+
+### Verificações
+
+Pint ✅; **8 testes novos** (`PlacementMathTest` + rastreamento no
+`ProductWidthResolverTest`); suíte `AutoPlanogram` **287 passed / 2 failed** —
+as 2 falhas (`AutoPlanogramDimensionsReportCommandTest`) são **pré-existentes**;
+suíte de placement **209 passed / 3 failed** — as 3 também **pré-existentes**,
+ambas confirmadas com `git stash` (baseline: 201 passed / **as mesmas 3
+failed**). Build ✅.
+
+**Nota:** com o espaçamento em 0 (default), a Fase 1 não muda o *resultado* das
+gôndolas existentes — ela corrige a **base de cálculo** (encaixe exato, sem erro
+acumulado) sobre a qual a Fase 2 vai construir o empacotador exato, e torna
+visível o dado ruim de cadastro que sabotava a precisão em silêncio.
 
 ---
 
