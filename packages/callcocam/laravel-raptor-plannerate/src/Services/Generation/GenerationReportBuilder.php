@@ -103,12 +103,22 @@ final class GenerationReportBuilder
         // Alvo de ocupação: até então era campo morto (declarado e nunca lido).
         $occupancy = $this->buildOccupancyMetrics($result);
         $target = $this->targetOccupancyRate();
+        $shelfAnalysis = $result->output->shelfAnalysis;
 
         $report['ocupacao_alvo'] = $target;
         $report['ocupacao_media'] = $occupancy['occupancy_avg'];
-        $report['prateleiras_abaixo_do_alvo'] = collect($result->output->slotAnalysis)
-            ->filter(fn (array $slot): bool => ($slot['percentual_uso'] ?? 0) / 100 < $target)
+
+        // Contadas nas PRATELEIRAS FÍSICAS (não nos slots): uma prateleira que ficou vazia é
+        // exatamente o defeito que este número existe para denunciar — e o slot_analysis, por
+        // ser anterior ao overflow, não a enxerga direito. Ver buildOccupancyMetrics.
+        $report['prateleiras_abaixo_do_alvo'] = collect($shelfAnalysis !== [] ? $shelfAnalysis : $result->output->slotAnalysis)
+            ->filter(fn (array $item): bool => ($item['percentual_uso'] ?? 0) / 100 < $target)
             ->count();
+
+        if ($shelfAnalysis !== []) {
+            $report['shelf_analysis'] = $shelfAnalysis;
+            $report['prateleiras_vazias'] = collect($shelfAnalysis)->where('segmentos', 0)->count();
+        }
 
         return $report;
     }
@@ -126,18 +136,31 @@ final class GenerationReportBuilder
     }
 
     /**
-     * Métricas de ocupação das prateleiras, derivadas do slot_analysis.
+     * Métricas de ocupação — medidas nas PRATELEIRAS FÍSICAS, sobre os segmentos finais.
      *
-     * É a métrica que mede se a gôndola "fechou" com precisão — hoje tipicamente
-     * 70-80% (ver docs/gondola-precisao-automatica/). Persistir por execução é o que
-     * permite provar a melhoria das fases seguintes do plano.
+     * É a métrica que mede se a gôndola "fechou" com precisão, e a que precisa bater com o
+     * que o usuário vê na tela.
+     *
+     * Antes ela era derivada do `slot_analysis`, e isso a tornava cega: o slot_analysis é
+     * montado dentro do laço de slots, ANTES do overflow pass — nada do que o overflow coloca
+     * entra na conta. Medido numa gôndola real: ela subiu de 83,3% para 87,0% de ocupação e a
+     * métrica ficou cravada em 76,8% nas duas, porque os produtos acrescentados vieram
+     * justamente do overflow. O usuário via a gôndola mudar e o número não mexer.
+     *
+     * O `shelf_analysis` (calculado no fim de tudo, contra a largura real de cada prateleira)
+     * é a verdade física. O slot_analysis segue como fallback para o motor guloso, que não
+     * trabalha com slots.
      *
      * @return array{occupancy_avg: float|null, occupancy_min: float|null, occupancy_max: float|null}
      */
     public function buildOccupancyMetrics(AutoGenerationResult $result): array
     {
+        $source = $result->output->shelfAnalysis !== []
+            ? $result->output->shelfAnalysis
+            : $result->output->slotAnalysis;
+
         // percentual_uso vem em 0-100; normalizamos para 0-1 (coluna decimal(5,4)).
-        $usages = collect($result->output->slotAnalysis)
+        $usages = collect($source)
             ->pluck('percentual_uso')
             ->filter(fn ($v) => $v !== null)
             ->map(fn ($v) => round((float) $v / 100, 4));

@@ -503,6 +503,17 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
         $explanationReport = $this->buildExplanationReport($allPlacedExplanations, $rejected, $slotAnalysis);
 
+        // Medida DEPOIS do overflow: é a única que reflete a gôndola que o usuário vê.
+        $shelfAnalysis = $this->buildShelfAnalysis($placed, $sections);
+
+        Log::info('TemplatePlacementEngine: ocupação física da gôndola', [
+            'ocupacao_media' => $shelfAnalysis === []
+                ? 0
+                : round(collect($shelfAnalysis)->avg('percentual_uso')).'%',
+            'prateleiras_vazias' => collect($shelfAnalysis)->where('segmentos', 0)->count(),
+            'prateleiras' => count($shelfAnalysis),
+        ]);
+
         return new PlacementResult(
             placedSegments: $placed,
             rejectedProducts: $rejected,
@@ -513,7 +524,53 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             subtemplateId: $subtemplate->getKey(),
             explanationReport: $explanationReport,
             emptySlotIds: $emptySlotIds,
+            shelfAnalysis: $shelfAnalysis,
         );
+    }
+
+    /**
+     * Ocupação de cada prateleira FÍSICA, sobre os segmentos finais.
+     *
+     * Por que não dá para usar o slotAnalysis: ele é montado dentro do laço de slots, e o
+     * overflow pass roda DEPOIS — então nada do que o overflow coloca entra na conta dele.
+     * Medido numa gôndola real: ela subiu de 83,3% para 87,0% de ocupação e o relatório
+     * continuou cravado em 76,8%, porque os produtos acrescentados vieram justamente do
+     * overflow. O usuário via a gôndola mudar e o número não mexer.
+     *
+     * Aqui a conta é a física: o que sobrou em cada prateleira, no fim de tudo, contra a
+     * largura real dela. Prateleira sem nenhum segmento entra com 0% — ela é o defeito, não
+     * pode ser omitida da média.
+     *
+     * @param  Collection<int, PlacedSegment>  $placed
+     * @param  Collection<int, Section>  $sections
+     * @return list<array{shelf_id: string, section_id: string, largura_total: float, largura_usada: float, largura_livre: float, percentual_uso: int, segmentos: int}>
+     */
+    private function buildShelfAnalysis(Collection $placed, Collection $sections): array
+    {
+        $byShelf = $placed->groupBy(fn (PlacedSegment $segment): string => $segment->shelfId);
+        $analysis = [];
+
+        foreach ($sections as $section) {
+            $shelfWidth = $this->getShelfAvailableWidth($section);
+
+            foreach ($section->shelves as $shelf) {
+                $shelfId = (string) $shelf->getKey();
+                $segments = $byShelf->get($shelfId, collect());
+                $used = (float) $segments->sum('width');
+
+                $analysis[] = [
+                    'shelf_id' => $shelfId,
+                    'section_id' => (string) $section->getKey(),
+                    'largura_total' => round($shelfWidth, 1),
+                    'largura_usada' => round($used, 1),
+                    'largura_livre' => round(max(0.0, $shelfWidth - $used), 1),
+                    'percentual_uso' => $shelfWidth > 0 ? (int) round($used / $shelfWidth * 100) : 0,
+                    'segmentos' => $segments->count(),
+                ];
+            }
+        }
+
+        return $analysis;
     }
 
     /**

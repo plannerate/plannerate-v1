@@ -299,3 +299,58 @@ test('o job só trata como cancelamento a exceção de negócio — erro técnic
     expect($corpo)->toContain('catch (GenerationCancelledException')
         ->and($corpo)->not->toContain('catch (\RuntimeException');
 });
+
+/*
+ * A ocupação relatada tem que bater com a gôndola que o usuário vê.
+ *
+ * A métrica era derivada do slot_analysis, que é montado ANTES do overflow pass — então tudo
+ * que o overflow coloca ficava de fora da conta. Numa gôndola real ela subiu de 83,3% para
+ * 87,0% e o relatório ficou cravado em 76,8% nas duas: o usuário via a gôndola mudar e o
+ * número não mexer, e concluiu (com razão) que "não mudou nada".
+ */
+
+test('a ocupação vem das prateleiras físicas, não do slot_analysis anterior ao overflow', function (): void {
+    $output = new PlanogramOutput(
+        gondolaId: '01jgondola',
+        placedSegments: collect(),
+        rejectedProducts: collect(),
+        validationReport: new ValidationReport(true),
+        // O slot_analysis está DESATUALIZADO (é anterior ao overflow) e diz 50%…
+        slotAnalysis: [
+            ['percentual_uso' => 50, 'largura_livre' => 50.0],
+        ],
+        // …mas as prateleiras físicas, no fim de tudo, estão em 90%.
+        shelfAnalysis: [
+            ['shelf_id' => 's1', 'section_id' => 'sec1', 'largura_total' => 100.0, 'largura_usada' => 100.0, 'largura_livre' => 0.0, 'percentual_uso' => 100, 'segmentos' => 5],
+            ['shelf_id' => 's2', 'section_id' => 'sec1', 'largura_total' => 100.0, 'largura_usada' => 80.0, 'largura_livre' => 20.0, 'percentual_uso' => 80, 'segmentos' => 3],
+        ],
+    );
+
+    $metrics = app(GenerationReportBuilder::class)->buildOccupancyMetrics(
+        new AutoGenerationResult($output, synthTemplateId: null, totalInputProducts: 0),
+    );
+
+    expect($metrics['occupancy_avg'])->toBe(0.9)
+        ->and($metrics['occupancy_min'])->toBe(0.8)
+        ->and($metrics['occupancy_max'])->toBe(1.0);
+});
+
+test('prateleira vazia entra na média com 0% — ela é o defeito, não pode ser omitida', function (): void {
+    $output = new PlanogramOutput(
+        gondolaId: '01jgondola',
+        placedSegments: collect(),
+        rejectedProducts: collect(),
+        validationReport: new ValidationReport(true),
+        shelfAnalysis: [
+            ['shelf_id' => 's1', 'section_id' => 'sec1', 'largura_total' => 100.0, 'largura_usada' => 100.0, 'largura_livre' => 0.0, 'percentual_uso' => 100, 'segmentos' => 4],
+            ['shelf_id' => 's2', 'section_id' => 'sec1', 'largura_total' => 100.0, 'largura_usada' => 0.0, 'largura_livre' => 100.0, 'percentual_uso' => 0, 'segmentos' => 0],
+        ],
+    );
+
+    $metrics = app(GenerationReportBuilder::class)->buildOccupancyMetrics(
+        new AutoGenerationResult($output, synthTemplateId: null, totalInputProducts: 0),
+    );
+
+    // Metade da gôndola está zerada: a média TEM que denunciar isso (50%), não anunciar 100%.
+    expect($metrics['occupancy_avg'])->toBe(0.5);
+});
