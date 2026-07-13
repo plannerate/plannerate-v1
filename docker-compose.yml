@@ -15,9 +15,17 @@ name: plannerate-v1
 # O shared-postgres usa a imagem pgvector/pgvector:pg17 — a extensão `vector`
 # que este projeto precisa está lá.
 #
-# O MySQL saiu: a única coisa que usava a conexão `mysql_legacy` é o comando
-# ImportLegacyProductsCommand, uma importação pontual. Se for rodá-la, suba um
-# MySQL avulso na hora; não precisa ficar de pé o tempo todo.
+# O MySQL também é compartilhado. A conexão `mysql_legacy` (usada pelo
+# ImportLegacyProductsCommand) aponta para o `shared-mysql`, database `legacy` —
+# uma cópia local do banco `base` da VPS 177.7.58.29, baixada em 2026-07-13.
+#
+# Antes ela apontava direto para a VPS. Trabalhar contra a cópia local evita
+# rodar importação em cima do banco de produção; os valores originais estão
+# comentados no .env, se precisar voltar. Para atualizar a cópia:
+#
+#   docker exec shared-mysql mysqldump -h177.7.58.29 -upma -p<senha> \
+#       --single-transaction --skip-lock-tables --no-tablespaces \
+#       --column-statistics=0 base | docker exec -i shared-mysql mysql -uroot -proot legacy
 
 services:
 
