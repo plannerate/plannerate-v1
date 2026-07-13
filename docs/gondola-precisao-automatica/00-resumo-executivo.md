@@ -1,7 +1,15 @@
 # Precisão da Geração Automática de Gôndola — Resumo Executivo
 
-> **Status:** análise + plano concluídos. **Nada foi implementado ainda.**
-> Aguardando aprovação para iniciar pela Fase 0 (ver [03-plano-implementacao.md](03-plano-implementacao.md)).
+> **Status: RESOLVIDO NA PRÁTICA — 39,7% → 87% de ocupação, medido numa gôndola real
+> (branch `dev`, validação no browser pendente).**
+>
+> ⚠️ **A causa-raiz descrita abaixo estava ERRADA.** A auditoria culpou o first-fit da
+> prateleira; a medição mostrou que o guloso já ocupava ~97% do espaço que recebia — o
+> empacotador exato rendeu só ~1pp. O que realmente segurava a ocupação era a **alocação
+> de espaço entre categorias** (uma categoria recebia N prateleiras e usava 1) e uma
+> **métrica que mentia** (relatava 78% quando a realidade era 39,7%). O diagnóstico real
+> e o que foi entregue estão no topo de [03-plano-implementacao.md](03-plano-implementacao.md)
+> — comece por lá. O texto abaixo fica como registro do raciocínio original.
 
 ## O problema
 
