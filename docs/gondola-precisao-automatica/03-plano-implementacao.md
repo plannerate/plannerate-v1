@@ -1,11 +1,19 @@
 # Plano de Implementação — Gôndola Precisa e Verdadeira
 
-> **Status:** Fase 0 ✅ COMMITADA (887621cf) e validada no browser.
-> Fase 1 ✅ COMMITADA (d7985ef8). Fase 2 ✅ COMMITADA (ba7e5f11).
-> Fases 3-6 pendentes — **mas o plano delas precisa ser revisto:** a medição da
-> Fase 2 derrubou a premissa da auditoria sobre onde a ocupação se perde.
-> Ver o quadro *"O que a medição mostrou"* na Fase 2.
-> A execução de cada fase precisa de aprovação explícita antes de começar.
+> **Status: RESOLVIDO na prática — 39,7% → 87% de ocupação, medido.** Mas NÃO pelo
+> caminho que este plano previa. A medição da Fase 2 derrubou a premissa da auditoria
+> (o packer exato não era o gargalo; rendeu ~1pp). O conserto real foram três bugs de
+> **alocação de espaço entre categorias** e de **métrica**, não de empacotamento.
+>
+> Commitado em `dev`: Fase 0 (887621cf), Fase 1 (d7985ef8), Fase 2 (ba7e5f11) +
+> `a53b2be4` (reparte sortimento), `875a6e50` (overflow p/ irmãs), `a94564fa`
+> (product_analyses ausente), `4e465fed` (métrica física).
+>
+> **Leia primeiro o quadro "As fases 3-6 abaixo eram do plano ORIGINAL" mais abaixo** —
+> ele explica o que a medição mudou e o que ainda sobra. As fases 3-6 escritas aqui
+> refletem o diagnóstico ANTIGO e errado; ficam como registro histórico.
+>
+> Validação no browser pendente (tudo foi medido via banco).
 
 ## Princípio orientador (confirmado com o usuário)
 
@@ -297,76 +305,69 @@ consertando o lugar errado.
 
 ---
 
-## Fase 3 — Loop de convergência do overflow
+## ⚠️ As fases 3-6 abaixo eram do plano ORIGINAL — a medição as tornou obsoletas
 
-| Passo | O que muda | Onde |
-|---|---|---|
-| 3.1 | Transformar `placeOverflow()` de passe único em **loop**: tenta encaixar rejeitados (agora de **qualquer** categoria com espaço, não só a mesma) → recheca se houve melhoria → repete até não melhorar mais OU bater limite de iterações/tempo | `TemplatePlacementEngine.php:473-736` |
-| 3.2 | Expor limite como config: `maxOverflowIterations` (default razoável, ex. 5) e/ou `overflowTimeBudgetMs` | `PlacementSettings.php` |
-| 3.3 | Persistir `iterations_run` e `converged` no `PlanogramGenerationRun` (campos já criados na Fase 0) — informação de auditoria explicitamente pedida pelo usuário | `GenerateAutoPlanogramJob.php` |
+O plano previa: packer exato (Fase 2) → loop de convergência do overflow (3) →
+observabilidade (4) → reotimização profunda GA/MILP (5) → rollout (6).
 
-**Critério de pronto:** produtos antes presos atrás de outra categoria cheia
-agora são reconsiderados quando espaço libera em qualquer prateleira; testes
-cobrindo cenário de convergência multi-iteração e o caso de "bateu o limite
-sem convergir" (deve terminar graciosamente, não travar).
+Aí a Fase 2 foi medida e **o gargalo não era nenhum desses**. O que de fato
+levou a gôndola de **39,7% para 87% de ocupação** foram três bugs a MONTANTE
+e a jusante da prateleira, não um empacotador mais esperto:
 
----
+1. **Categoria com N prateleiras usava 1** (commit `a53b2be4`) — o plano de slots
+   dava N prateleiras a uma categoria, mas o motor empilhava o sortimento inteiro
+   na primeira e deixava as N−1 irmãs VAZIAS. `takeCategoryShare()` reparte.
+   **Esse foi o conserto grande: 39,7% → 83,3%.**
+2. **Overflow preso na mesma categoria** (commit `875a6e50`) — 257cm de prateleira
+   vazia convivendo com produtos rejeitados, só por falta de PERMISSÃO. Escopo
+   `siblings` deixa transbordar para categorias irmãs. **83,3% → 87%.**
+3. **A métrica mentia** (commits `a53b2be4` + `4e465fed`) — a ocupação relatada
+   ignorava tudo que o overflow colocava e pulava slots vazios, então anunciava
+   78% quando a realidade era 39,7%. `shelfAnalysis` mede a prateleira física no
+   fim de tudo. Sem isso, nenhuma das melhorias acima seria visível.
 
-## Fase 4 — Observabilidade / histórico de execuções
+E o `product_analyses` ausente (commit `a94564fa`), que derrubava a geração sempre
+que "usar análise existente" estava marcado, com o erro mascarado de "cancelado".
 
-| Passo | O que muda |
-|---|---|
-| 4.1 | Tela/endpoint de histórico por gôndola: lista de execuções com ocupação atingida, duração, convergiu?, link pro relatório completo — a peça que fecha "salvar pra futuras consultas" |
-| 4.2 | (Opcional) Enquanto o usuário está na tela do editor aguardando, escutar broadcast (`useEcho`) do evento de conclusão para auto-abrir o relatório sem precisar ir ao sino |
-| 4.3 | Remover/reduzir o hack `SHELF_FILL_RATE_ESTIMATE = 0.75` em `AutoTemplateSynthesisOrchestrator.php:39-50` agora que o packer real atinge ocupação alta — recalibrar a estimativa de número de módulos para refletir a precisão real |
+**Lição para quem retomar:** o custo real da imprecisão estava na **alocação de
+espaço entre categorias** (plano de slots + permissão de overflow), não no
+empacotamento dentro da prateleira. O packer exato (Fase 2) rendeu ~1pp. Antes de
+otimizar qualquer coisa aqui, **gerar uma gôndola real e ler o `shelf_analysis` do
+run** — foi a medição, não a leitura de código, que apontou cada bug.
 
----
+### O que sobra de verdade
 
-## Fase 5 (opcional) — Reotimização profunda
+- **Últimos ~13%** (5 prateleiras abaixo do alvo de 90%): é o teto de frentes por
+  **estoque alvo** funcionando — não empilha produto sem giro. **Decisão de produto
+  tomada: DEIXAR COMO ESTÁ.** 87% reflete a demanda real do mix; fechar além disso
+  exporia produto além do que o giro pede. `target_occupancy_rate` segue só medindo,
+  de propósito.
+- **`SHELF_FILL_RATE_ESTIMATE = 0.75`** (`AutoTemplateSynthesisOrchestrator:50`):
+  ainda infla o número de módulos em 33% em gôndola nova. Sob compressão não faz mal;
+  sem compressão dá gôndola a mais para o mesmo mix. Candidato a revisão FUTURA, mas
+  não é urgente e mexer aqui muda a estrutura da gôndola — validar bem antes.
+- **`Pusher error: Payload too large`** no broadcast da notificação: o
+  `capacity_report` cresceu demais para o push em tempo real. Não quebra nada (a
+  notificação persiste e aparece no sino; só o push falha). Enxugar o payload do
+  broadcast se quiser que o relatório abra sozinho na tela sem F5.
 
-Só entra em jogo se a Fase 2/3 não bastar para casos extremos, ou como
-diferencial de produto ("otimizar com precisão máxima").
+### Ideias do plano original que continuam válidas SE precisar de mais
 
-| Passo | O que muda |
-|---|---|
-| 5.1 | Modo opcional, disparado explicitamente (botão dedicado) ou como batch noturno: usa GA ou o ciclo alternado RS↔MILP (padrão da patente Oracle) com orçamento de tempo maior (minutos) — não roda no caminho padrão de geração |
-| 5.2 | Curva de retornos decrescentes por produto (power-law, achado da patente Walmart) para tornar a expansão de frentes mais inteligente sobre qual produto merece frente extra, em vez de round-robin por score |
+- **Loop de convergência do overflow** (era a Fase 3): hoje `placeOverflow()` roda
+  uma vez. Viraria loop até não melhorar. Ganho esperado agora é pequeno (o overflow
+  já recupera a maior parte), mas é o caminho se aparecer um caso que não fecha.
+- **Reotimização profunda GA/MILP** (era a Fase 5): só como diferencial de produto
+  ("otimização máxima" em batch), nunca no caminho padrão. Fora de escopo hoje.
 
----
+## Estado final (medido, não estimado)
 
-## Fase 6 — Validação e rollout
+| Marco | Ocupação | Prateleiras vazias | Commit |
+|---|---|---|---|
+| Início | 39,7% | 8 de 16 | — |
+| Reparte sortimento entre slots | 83,3% | 0 | `a53b2be4` |
+| Transbordo p/ irmãs (`siblings`) | 87,0% | 0 | `875a6e50` |
+| Métrica passa a bater com a realidade | 87,0% (relatado = real) | 0 | `4e465fed` |
 
-1. Validação manual no browser (Horizon rodando) comparando gôndolas
-   antes/depois lado a lado.
-2. Rollout: pode ser direto se os testes automatizados (ocupação medida nos
-   fixtures) derem confiança suficiente; considerar feature flag por tenant
-   só se quiser cautela extra num primeiro tenant piloto.
-3. Atualizar esta pasta de docs com os números reais medidos (ocupação
-   antes/depois, tempo de geração antes/depois) — fecha o loop de "salvar
-   pra futuras consultas" também no nível de documentação técnica.
-
----
-
-## Ordem recomendada e dependências
-
-```
-Fase 0 (fila+notificação+histórico) ──┐
-                                        ├──► Fase 2 (packer exato) ──► Fase 3 (convergência overflow) ──► Fase 4 (observabilidade) ──► Fase 6 (validação/rollout)
-Fase 1 (correções rápidas) ───────────┘                                                                        │
-                                                                                                                 └──► Fase 5 (opcional, reotimização profunda)
-```
-
-Fase 0 e Fase 1 são independentes entre si e de baixo risco — podem ser
-feitas em qualquer ordem ou em paralelo. Fase 2 é o conserto central e
-depende conceitualmente de Fase 1 (larguras em mm, espaçamento) já
-existirem, mas tecnicamente pode ser feita antes se preferir — a ordem
-sugerida só evita retrabalho. Fase 0 precisa existir **antes** de Fase 2
-entrar em produção, porque é ela que garante que um packer mais lento (DP
-exato, loop de convergência) não trava o request HTTP nem a UI.
-
-## Próximo passo
-
-Aprovar o início pela **Fase 0**. Ao final dela, o comportamento observável
-para o usuário já muda (geração assíncrona + notificação + histórico
-consultável), mesmo que a precisão do empacotamento em si só melhore de
-verdade a partir da Fase 2.
+Tudo no branch `dev`. **Validação no browser pendente** — todos os números acima
+foram medidos via banco. O transbordo entre irmãs em especial precisa de olho
+humano (produto de uma subcategoria na prateleira da irmã pode ficar estranho).
