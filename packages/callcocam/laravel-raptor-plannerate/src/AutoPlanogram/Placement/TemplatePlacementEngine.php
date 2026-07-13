@@ -189,15 +189,22 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         // horizontal legado intocado.
         $verticalProcessedSlotIds = [];
 
+        // Blocagem vertical foi PEDIDA (layout=vertical) e quantos grupos ela conseguiu formar.
+        // Serve para avisar o usuário na TELA quando ele pede vertical e recebe horizontal —
+        // antes esse aviso só existia no log, então parecia que o vertical tinha funcionado.
+        $verticalRequested = $this->layoutOrientation === LayoutOrientation::Vertical;
+        $verticalGroupsFormed = 0;
+
         if ($this->layoutOrientation === LayoutOrientation::Vertical) {
             $verticalGroups = $this->buildVerticalGroups($slots, $positionSlotCounts);
+            $verticalGroupsFormed = count($verticalGroups);
 
             if ($verticalGroups === []) {
                 // Sem grupo elegível a geração inteira sai horizontal — avisar em vez de
                 // silenciar, pois o usuário pediu vertical e não verá coluna nenhuma
                 Log::warning('TemplatePlacementEngine: blocagem vertical solicitada, mas nenhum grupo elegível', [
-                    'motivo' => 'nenhuma categoria ocupa 2+ prateleiras consecutivas no mesmo módulo',
-                    'dica' => 'sob compressão cada categoria tende a receber 1 prateleira — reduza o escopo de categorias ou use uma gôndola maior',
+                    'motivo' => 'nenhuma categoria ocupa 2+ prateleiras consecutivas exclusivas no mesmo módulo',
+                    'dica' => 'sob compressão cada categoria recebe 1 prateleira, ou a 2ª é compartilhada com micro-categoria (excluída do vertical) — reduza o escopo de categorias ou use uma gôndola maior',
                     'slots' => $slots->count(),
                 ]);
             }
@@ -501,7 +508,12 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $gondolaModules = $sections->count();
         $templateModules = $subtemplate->num_modules;
 
-        $explanationReport = $this->buildExplanationReport($allPlacedExplanations, $rejected, $slotAnalysis);
+        $explanationReport = $this->buildExplanationReport(
+            $allPlacedExplanations,
+            $rejected,
+            $slotAnalysis,
+            $this->buildLayoutAlerts($verticalRequested, $verticalGroupsFormed),
+        );
 
         // Medida DEPOIS do overflow: é a única que reflete a gôndola que o usuário vê.
         $shelfAnalysis = $this->buildShelfAnalysis($placed, $sections);
@@ -2645,17 +2657,44 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     }
 
     /**
+     * Alertas sobre o LAYOUT pedido versus o que foi possível aplicar.
+     *
+     * Hoje cobre a blocagem vertical: o usuário liga o modo vertical, mas ele só forma coluna
+     * quando uma categoria ocupa 2+ prateleiras exclusivas consecutivas no mesmo módulo. Sob
+     * compressão isso quase nunca acontece (cada categoria pega 1 prateleira, ou a 2ª vira
+     * compartilhada com micro-categoria e é excluída do vertical), e a geração cai no horizontal.
+     *
+     * Antes esse aviso só existia no log — na tela parecia que o vertical tinha funcionado.
+     * Aqui ele vira um alerta que o painel de sugestões já sabe exibir.
+     *
+     * @return list<array{type: string, message: string}>
+     */
+    private function buildLayoutAlerts(bool $verticalRequested, int $verticalGroupsFormed): array
+    {
+        if (! $verticalRequested || $verticalGroupsFormed > 0) {
+            return [];
+        }
+
+        return [[
+            'type' => 'vertical_nao_aplicado',
+            'message' => 'Blocagem vertical solicitada, mas nenhuma categoria ocupa 2+ prateleiras exclusivas consecutivas no mesmo módulo — a gôndola foi montada no layout horizontal. Reduza o número de categorias ou use uma gôndola maior para as marcas formarem colunas.',
+        ]];
+    }
+
+    /**
      * Consolida explicações e alertas da geração completa.
      *
      * @param  list<array<string, mixed>>  $allPlacedExplanations
      * @param  Collection<int, array{product: mixed, reason: PlacementFailureReason, slot_id?: string}>  $rejected
      * @param  list<array<string, mixed>>  $slotAnalysis
+     * @param  list<array{type: string, message: string}>  $extraAlerts  Alertas de layout já prontos (ex.: vertical não aplicado)
      * @return array{allocated: list<array<string, mixed>>, rejected: list<array<string, mixed>>, alerts: list<array<string, mixed>>}
      */
     private function buildExplanationReport(
         array $allPlacedExplanations,
         Collection $rejected,
         array $slotAnalysis,
+        array $extraAlerts = [],
     ): array {
         $slotCategoryMap = collect($slotAnalysis)->keyBy('slot_id')->map(fn ($s) => $s['category_name'])->all();
 
@@ -2673,7 +2712,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             ->values()
             ->all();
 
-        $alerts = [];
+        // Alertas de layout (ex.: vertical pedido mas não aplicado) vêm prontos e entram
+        // primeiro — são sobre a gôndola inteira, não sobre um produto específico.
+        $alerts = $extraAlerts;
 
         $missingDimCount = $rejected
             ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::MissingDimensions && $r['product'] !== null)

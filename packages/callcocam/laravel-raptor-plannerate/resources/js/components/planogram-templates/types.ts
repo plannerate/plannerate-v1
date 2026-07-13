@@ -32,11 +32,16 @@ export type FlowDirection = 'left_to_right' | 'right_to_left';
 export type LayoutOrientation = 'horizontal' | 'vertical';
 
 /** Tipo de alerta no relatório de explicação */
-export type ExplanationAlertType = 'missing_dimensions' | 'mix_excede_gondola' | 'target_stock_not_met';
+export type ExplanationAlertType =
+    | 'missing_dimensions'
+    | 'mix_excede_gondola'
+    | 'target_stock_not_met'
+    | 'vertical_nao_aplicado';
 
 export type ExplanationAlert = {
     type: ExplanationAlertType;
-    count: number;
+    /** Alertas por-produto trazem contagem; alertas de layout (ex.: vertical) não têm. */
+    count?: number;
     message: string;
 };
 

@@ -141,6 +141,19 @@
       </div>
     </div>
 
+    <!-- Blocagem vertical pedida mas não aplicada (caiu no layout horizontal) -->
+    <div
+      v-if="verticalNotAppliedAlert"
+      class="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950"
+    >
+      <div class="flex items-start gap-3">
+        <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-500 dark:text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+        </svg>
+        <p class="text-sm text-amber-700 dark:text-amber-300">{{ verticalNotAppliedAlert.message }}</p>
+      </div>
+    </div>
+
     <!-- Resumo ABC + detalhes individuais da alocação (apenas modo template) -->
     <div
       v-if="report.explanation_report && allocationSummary.total > 0"
@@ -269,6 +282,16 @@ const cloning = ref(false)
 const targetStockNotMetAlert = computed((): ExplanationAlert | null => {
   const alerts = props.report?.explanation_report?.alerts ?? []
   return alerts.find((a) => a.type === 'target_stock_not_met') ?? null
+})
+
+/**
+ * Alerta: usuário pediu blocagem vertical, mas nenhuma categoria tinha 2+ prateleiras
+ * exclusivas para formar coluna — a gôndola saiu horizontal. Antes esse aviso só existia
+ * no log, então parecia que o vertical havia funcionado.
+ */
+const verticalNotAppliedAlert = computed((): ExplanationAlert | null => {
+  const alerts = props.report?.explanation_report?.alerts ?? []
+  return alerts.find((a) => a.type === 'vertical_nao_aplicado') ?? null
 })
 
 /** Lista completa de produtos alocados */
