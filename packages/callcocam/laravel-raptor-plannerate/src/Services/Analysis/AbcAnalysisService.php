@@ -706,22 +706,23 @@ class AbcAnalysisService
             ]);
         }
 
-        // Primeiro passe: encontra o menor percentual individual da classe B,
-        // referência para a regra de retirar_do_mix.
+        // Primeiro passe: encontra o menor percentual individual da classe B, que é a
+        // referência da regra de retirar_do_mix.
+        //
+        // O default 1.0 NÃO é um valor neutro — é a regra do VBA (docs/ABC.md): quando a
+        // categoria não tem nenhum B, menorPercentualB fica em 1 e o corte vira "< 50% de
+        // participação", então praticamente todo C é marcado para sair. É o que a planilha
+        // do cliente faz no grupo AÇÚCAR CRISTAL (A,A,C,C, sem B): os dois C saem com "Sim".
         $acumulado = 0.0;
         $menorPercentualB = 1.0;
-        $hasClassB = false;
         $ranking = 1;
 
         foreach ($products as $product) {
             $percentualIndividual = $product['media_ponderada'] / $totalPonderado;
             $acumulado += $percentualIndividual;
 
-            if ($this->classifyAtRank($acumulado, $ranking) === 'B') {
-                $hasClassB = true;
-                if ($percentualIndividual < $menorPercentualB) {
-                    $menorPercentualB = $percentualIndividual;
-                }
+            if ($this->classifyAtRank($acumulado, $ranking) === 'B' && $percentualIndividual < $menorPercentualB) {
+                $menorPercentualB = $percentualIndividual;
             }
 
             $ranking++;
@@ -744,7 +745,7 @@ class AbcAnalysisService
                 'percentual_acumulado' => $acumulado,
                 'classificacao' => $classificacao,
                 'ranking' => $ranking,
-                'retirar_do_mix' => $this->shouldRemoveFromMix($classificacao, $percentualIndividual, $menorPercentualB, $hasClassB),
+                'retirar_do_mix' => $this->shouldRemoveFromMix($classificacao, $percentualIndividual, $menorPercentualB),
             ]);
 
             $ranking++;
@@ -797,23 +798,28 @@ class AbcAnalysisService
     }
 
     /**
-     * Determina se produto deve ser retirado do mix
+     * Determina se o produto deve ser retirado do mix — regra do VBA (docs/ABC.md):
      *
-     * Regra: Classe C com percentual individual menor que metade do menor percentual B.
-     * Se a categoria não possui nenhum produto classe B, não há referência (menor %B)
-     * para a regra — nesse caso nenhum produto é retirado, evitando remoção em massa.
+     *   If N = "C" And L < menorPercentualB / 2 Then "Sim" Else "Não"
+     *
+     * Classe C cuja participação individual é menor que METADE da participação do menor
+     * classe B da categoria.
+     *
+     * Categoria SEM classe B não é exceção: o VBA deixa menorPercentualB no default 1,
+     * então o corte vira "< 50% de participação" e praticamente todo C é marcado. Isso é
+     * proposital — uma categoria que nem chega a ter um B tem uma cauda fraca de verdade.
+     *
+     * Tínhamos um guard `if (! $hasClassB) return false` que NÃO existe no VBA e zerava o
+     * retirar_do_mix nessas categorias: o grupo AÇÚCAR CRISTAL da planilha do cliente
+     * (A,A,C,C, sem B) marca os dois C com "Sim", e nós devolvíamos "Não" nos dois.
      */
-    private function shouldRemoveFromMix(string $classificacao, float $percentualIndividual, float $menorPercentualB, bool $hasClassB): bool
+    private function shouldRemoveFromMix(string $classificacao, float $percentualIndividual, float $menorPercentualB): bool
     {
-        if (! $hasClassB) {
+        if ($classificacao !== 'C') {
             return false;
         }
 
-        if ($classificacao === 'C' && $menorPercentualB > 0) {
-            return $percentualIndividual < ($menorPercentualB / 2);
-        }
-
-        return false;
+        return $percentualIndividual < ($menorPercentualB / 2);
     }
 
     /**

@@ -50,10 +50,10 @@ class ProductSelectionService
      *                                               slots do template. Restringe o pool a elas
      *                                               (e suas descendentes) em vez do departamento
      *                                               inteiro do planograma.
-     * @param  Collection<int, RankedProductDTO>|null  $removedFromMix  Out-param: preenchido com
-     *                                                                  os produtos retirados do mix pela recomendação
-     *                                                                  do ABC (retirar_do_mix), para que o chamador os
-     *                                                                  registre como rejeitados.
+     * @param  Collection<int, RankedProductDTO>|null  $removedFromMix  Out-param mantido por
+     *                                                                  compatibilidade, hoje SEMPRE vazio: o
+     *                                                                  retirar_do_mix do ABC virou sugestão e não
+     *                                                                  remove mais ninguém do pool (ver passo 4b).
      * @return Collection<RankedProductDTO>
      */
     public function selectAndRankProducts(
@@ -121,12 +121,21 @@ class ProductSelectionService
             $rankedProducts = $rankedProducts->filter(fn ($p) => $p->salesTotal > 0);
         }
 
-        // 4b. Recomendação explícita do ABC: produtos marcados para retirar do mix
-        //     (retirar_do_mix = true) saem SEMPRE, independente da opção excludeClassC.
-        //     A análise já apontou que não justificam espaço na gôndola. Os removidos são
-        //     expostos via $removedFromMix para o chamador registrá-los como rejeitados.
-        $removedFromMix = $rankedProducts->filter(fn (RankedProductDTO $p) => $p->retirarDoMix)->values();
-        $rankedProducts = $this->removeFlaggedForMixRemoval($rankedProducts);
+        // 4b. `retirar_do_mix` é SUGESTÃO da análise, não exclusão do auto-planograma.
+        //
+        //     A regra vem do VBA do cliente (docs/ABC.md): classe C com participação abaixo
+        //     de metade do menor B da categoria — e, em categoria SEM classe B, o corte vira
+        //     "< 50% de participação". Com o agrupamento no 5º nível, 40 de 53 subcategorias
+        //     de uma gôndola real não têm classe B, e a regra marca 20% do sortimento —
+        //     incluindo produtos com quase metade do peso da própria categoria.
+        //
+        //     Isso é razoável como DIAGNÓSTICO na tela de ABC (é o que a planilha do cliente
+        //     mostra), mas era destrutivo como exclusão automática: o auto-planograma
+        //     derrubava esses produtos SEMPRE, furando inclusive a presença mínima por
+        //     subcategoria. Agora quem exclui curva C é a opção excludeClassC, e ela respeita
+        //     a presença mínima. Todo produto marcado é necessariamente classe C, então nada
+        //     escapa do filtro — ele apenas deixou de ter um atalho sem freio.
+        $removedFromMix = collect();
 
         // 4c. Exclusão ampla da curva C do pool (opcional), com presença mínima por subcategoria.
         if ($config->excludeClassC) {
@@ -149,49 +158,20 @@ class ProductSelectionService
     }
 
     /**
-     * Remove do pool os produtos que o ABC marcou explicitamente para retirar do mix
-     * (retirar_do_mix = true) — tipicamente classe C com participação irrelevante.
-     *
-     * É recomendação explícita da análise e vale SEMPRE, independente da opção
-     * excludeClassC — inclusive se a subcategoria ficar sem nenhum produto, pois o ABC
-     * já apontou que esses itens não justificam espaço na gôndola. Por isso NÃO passa
-     * pela regra de presença mínima (que protege subcategorias na exclusão ampla de C).
-     *
-     * @param  Collection<int, RankedProductDTO>  $rankedProducts
-     * @return Collection<int, RankedProductDTO>
-     */
-    protected function removeFlaggedForMixRemoval(Collection $rankedProducts): Collection
-    {
-        $removidos = $rankedProducts->filter(fn (RankedProductDTO $p) => $p->retirarDoMix)->count();
-
-        if ($removidos === 0) {
-            return $rankedProducts;
-        }
-
-        $result = $rankedProducts->reject(fn (RankedProductDTO $p) => $p->retirarDoMix)->values();
-
-        Log::info('ProductSelectionService: produtos retirados do mix (recomendação ABC)', [
-            'antes' => $rankedProducts->count(),
-            'depois' => $result->count(),
-            'removidos' => $removidos,
-        ]);
-
-        return $result;
-    }
-
-    /**
      * Exclui produtos curva C do pool garantindo presença mínima por subcategoria.
      *
      * Padrão de mercado (cobertura de mix): nenhuma subcategoria ativa deve sumir
      * da gôndola apenas por causa do corte da curva C.
      *
      * Regras:
-     *   1. Produtos com retirar_do_mix = true saem sempre (recomendação explícita do
-     *      ABC) — inclusive se a subcategoria ficar vazia, pois o ABC já apontou que
-     *      esses itens não justificam espaço;
-     *   2. Demais produtos C saem, EXCETO o de maior venda de cada subcategoria que
-     *      ficaria sem nenhum produto após o filtro;
-     *   3. Produtos sem ABC (abcClass = null) não são afetados.
+     *   1. Produtos C saem, EXCETO o de maior venda de cada subcategoria que ficaria
+     *      sem nenhum produto após o filtro;
+     *   2. Produtos sem ABC (abcClass = null) não são afetados.
+     *
+     * `retirar_do_mix` NÃO tem tratamento especial aqui. Todo produto marcado é
+     * necessariamente classe C (a regra do VBA só marca C), então ele já cai na regra 1
+     * — a diferença é que agora respeita a presença mínima em vez de furá-la. Ver o
+     * comentário do passo 4b em selectAndRankProducts.
      *
      * @param  Collection<int, RankedProductDTO>  $rankedProducts
      * @return Collection<int, RankedProductDTO>
@@ -200,16 +180,13 @@ class ProductSelectionService
     {
         $before = $rankedProducts->count();
 
-        // Passo A: recomendação explícita do ABC — sai sempre, sem exceção
-        $afterMixRemoval = $rankedProducts->reject(fn (RankedProductDTO $p) => $p->retirarDoMix);
+        // Passo A: remove os C
+        $filtered = $rankedProducts->filter(fn (RankedProductDTO $p) => $p->abcClass !== 'C');
 
-        // Passo B: remove os demais C
-        $filtered = $afterMixRemoval->filter(fn (RankedProductDTO $p) => $p->abcClass !== 'C');
-
-        // Passo C: presença mínima — devolve o melhor C de cada subcategoria que zerou
+        // Passo B: presença mínima — devolve o melhor C de cada subcategoria que zerou
         $survivingSubcategories = $filtered->pluck('subcategoryId')->filter()->unique()->flip();
 
-        $keptForPresence = $afterMixRemoval
+        $keptForPresence = $rankedProducts
             ->filter(fn (RankedProductDTO $p) => $p->abcClass === 'C'
                 && $p->subcategoryId !== null
                 && ! $survivingSubcategories->has($p->subcategoryId))
@@ -223,7 +200,7 @@ class ProductSelectionService
             'antes' => $before,
             'depois' => $result->count(),
             'removidos' => $before - $result->count(),
-            'retirar_do_mix' => $rankedProducts->filter(fn (RankedProductDTO $p) => $p->retirarDoMix)->count(),
+            'sugeridos_retirar_do_mix' => $rankedProducts->filter(fn (RankedProductDTO $p) => $p->retirarDoMix)->count(),
             'mantidos_por_presenca_minima' => $keptForPresence->count(),
         ]);
 

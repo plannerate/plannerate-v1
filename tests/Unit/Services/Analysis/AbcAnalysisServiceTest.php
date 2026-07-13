@@ -114,15 +114,36 @@ it('retirar_do_mix marca apenas C com percentual menor que metade do menor B', f
         ->and($result[5]['retirar_do_mix'])->toBeTrue();  // C de 1% < 7,5%
 });
 
-it('categoria sem classe B não retira ninguém do mix', function (): void {
+it('categoria SEM classe B retira os C com menos de 50% de participação (regra do VBA)', function (): void {
     // Acumulado APÓS: 95 (rank 1 → A pela exceção) | 98, 100 (C).
-    // Nenhum B → não há referência de corte, ninguém sai do mix.
+    // Sem classe B, o VBA deixa menorPercentualB no default 1 → o corte vira "< 50%".
+    // Os dois C (3% e 2%) ficam bem abaixo disso e saem do mix.
+    //
+    // Tínhamos um guard `if (! $hasClassB) return false` que não existe no VBA: ele
+    // zerava o retirar_do_mix aqui. O grupo AÇÚCAR CRISTAL da planilha do cliente é
+    // exatamente este caso (A,A,C,C, sem B) e marca os dois C com "Sim".
     $input = abcInput(['p1' => 95.0, 'p2' => 3.0, 'p3' => 2.0]);
 
     $result = $this->service->classifyRankedProducts($input, 100.0);
 
     expect($result->pluck('classificacao')->all())->toBe(['A', 'C', 'C'])
-        ->and($result->pluck('retirar_do_mix')->filter()->all())->toBe([]);
+        ->and($result[0]['retirar_do_mix'])->toBeFalse()  // classe A nunca sai
+        ->and($result[1]['retirar_do_mix'])->toBeTrue()   // C de 3% < 50%
+        ->and($result[2]['retirar_do_mix'])->toBeTrue();  // C de 2% < 50%
+});
+
+it('classe A e B nunca são retiradas do mix, por menor que seja a participação', function (): void {
+    // O corte só se aplica a C — o VBA testa `If N = "C" And ...`.
+    $input = abcInput(['p1' => 79.0, 'p2' => 5.0, 'p3' => 15.0, 'p4' => 1.0]);
+
+    $result = $this->service->classifyRankedProducts($input, 100.0);
+
+    // Acumulado APÓS: 79 (A) | 94 (C) | 99 (C) | 100 (C) — cortes 0.80/0.90
+    foreach ($result as $row) {
+        if ($row['classificacao'] !== 'C') {
+            expect($row['retirar_do_mix'])->toBeFalse();
+        }
+    }
 });
 
 it('o acumulado retornado é o mesmo que decidiu a classe', function (): void {

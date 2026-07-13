@@ -107,6 +107,41 @@ it('o acumulado exibido é o MESMO número que decide a classe', function (): vo
     }
 });
 
+it('reproduz o "Retirar do Mix" da planilha no grupo CRISTAL (categoria sem classe B)', function (): void {
+    // O grupo sai A,A,C,C — nenhum B. Pelo VBA (docs/ABC.md), sem classe B o
+    // menorPercentualB fica no default 1 e o corte vira "< 50% de participação".
+    // Os dois C (16,70% e 6,84%) ficam abaixo disso → "Sim" nos dois, como na planilha.
+    $input = planilhaAbc([
+        'CRISTAL ALTO ALEGRE 2KG' => 1910.89,
+        'CRISTAL EUROCUCAR 5KG' => 1484.18,
+        'CRISTAL ALTO ALEGRE 5KG' => 741.51,
+        'CRISTAL UNIAO 1KG' => 303.87,
+    ]);
+
+    $result = $this->service->classifyRankedProducts($input, 4440.45)->keyBy('product_id');
+
+    expect($result['CRISTAL ALTO ALEGRE 2KG']['retirar_do_mix'])->toBeFalse()
+        ->and($result['CRISTAL EUROCUCAR 5KG']['retirar_do_mix'])->toBeFalse()
+        ->and($result['CRISTAL ALTO ALEGRE 5KG']['retirar_do_mix'])->toBeTrue()
+        ->and($result['CRISTAL UNIAO 1KG']['retirar_do_mix'])->toBeTrue();
+});
+
+it('reproduz o "Retirar do Mix" da planilha no grupo REFINADO (categoria com classe B)', function (): void {
+    // O grupo tem um B (REFINADO DA BARRA, 19,28% de participação) → o corte vira
+    // 19,28% / 2 = 9,64%. O único C (REF ALTO ALEGRE 5KG) participa com 16,13%, acima
+    // do corte → fica no mix. A planilha diz "Não" — é o contraste com o grupo CRISTAL.
+    $input = planilhaAbc([
+        'REF ALTO ALEGRE 1KG' => 1180.09,
+        'REF UNIAO 1KG' => 562.13,
+        'REFINADO DA BARRA 1KG' => 520.13,
+        'REF ALTO ALEGRE 5KG' => 435.03,
+    ]);
+
+    $result = $this->service->classifyRankedProducts($input, 2697.38)->keyBy('product_id');
+
+    expect($result->pluck('retirar_do_mix')->filter()->all())->toBe([]);
+});
+
 it('os percentuais acumulados batem com os da planilha', function (): void {
     $input = planilhaAbc([
         'CRISTAL ALTO ALEGRE 2KG' => 1910.89,
