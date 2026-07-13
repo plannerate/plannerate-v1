@@ -466,6 +466,7 @@ class ProductController extends Controller
             'status' => $product->status,
             'sync_source' => $product->sync_source,
             'sync_at' => $product->sync_at?->format('Y-m-d\TH:i'),
+            'last_purchase_date' => $product->last_purchase_date?->format('Y-m-d'),
             'no_sales' => (bool) $product->no_sales,
             'no_purchases' => (bool) $product->no_purchases,
             'url' => $product->url,

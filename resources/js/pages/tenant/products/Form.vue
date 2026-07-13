@@ -37,6 +37,7 @@ type ProductPayload = {
     status: 'draft' | 'published' | 'synced' | 'error';
     sync_source: string | null;
     sync_at: string | null;
+    last_purchase_date: string | null;
     no_sales: boolean;
     no_purchases: boolean;
     url: string | null;
@@ -163,7 +164,7 @@ const fieldTabMap: Record<string, TabKey> = {
     depth: 'dimensions',
     weight: 'dimensions',
     unit: 'dimensions',
-    dimensions_status: 'dimensions',
+    dimension_publish_status: 'dimensions',
     dimensions_description: 'dimensions',
 
     type: 'additional',
@@ -178,6 +179,7 @@ const fieldTabMap: Record<string, TabKey> = {
     packaging_content: 'additional',
     measurement_unit: 'additional',
     unit_measure: 'additional',
+    last_purchase_date: 'additional',
     description: 'additional',
     auxiliary_description: 'additional',
     additional_information: 'additional',
@@ -247,14 +249,14 @@ function validateCurrentTab(): boolean {
     }
 
     if (activeTab.value === 'dimensions') {
-        delete localErrors.value.dimensions_status;
+        delete localErrors.value.dimension_publish_status;
         delete localErrors.value.width;
         delete localErrors.value.height;
         delete localErrors.value.depth;
         delete localErrors.value.weight;
 
         if (dimensionsStatus.value.trim() === '') {
-            localErrors.value.dimensions_status = t(
+            localErrors.value.dimension_publish_status = t(
                 'app.tenant.products.form.tabs_validation.dimensions_status_required',
             );
         }
@@ -265,7 +267,7 @@ function validateCurrentTab(): boolean {
         validateNumberField('weight', weight.value);
 
         return (
-            !localErrors.value.dimensions_status &&
+            !localErrors.value.dimension_publish_status &&
             !localErrors.value.width &&
             !localErrors.value.height &&
             !localErrors.value.depth &&
@@ -627,16 +629,18 @@ const pageMeta = useCrudPageMeta({
                             class="md:col-span-4"
                         />
                         <FormStatusToggleField
-                            id="dimensions_status"
+                            id="dimension_publish_status"
                             v-model="dimensionsStatus"
-                            name="dimensions_status"
+                            name="dimension_publish_status"
                             :label="
                                 t(
                                     'app.tenant.products.fields.dimensions_status',
                                 )
                             "
                             :required="true"
-                            :error="resolveError('dimensions_status', errors)"
+                            :error="
+                                resolveError('dimension_publish_status', errors)
+                            "
                             class="md:col-span-6"
                             :checked-label="
                                 t(
@@ -790,6 +794,26 @@ const pageMeta = useCrudPageMeta({
                             <option value="MT">MT – Metro</option>
                             <option value="CM">CM – Centímetro</option>
                         </FormSelectField>
+                        <FormTextField
+                            id="last_purchase_date"
+                            name="last_purchase_date"
+                            type="date"
+                            :label="
+                                t(
+                                    'app.tenant.products.fields.last_purchase_date',
+                                )
+                            "
+                            :hint="
+                                t(
+                                    'app.tenant.products.form.hints.last_purchase_date',
+                                )
+                            "
+                            :default-value="
+                                props.product?.last_purchase_date ?? ''
+                            "
+                            :error="resolveError('last_purchase_date', errors)"
+                            class="md:col-span-3"
+                        />
 
                         <FormTextareaField
                             id="description"
