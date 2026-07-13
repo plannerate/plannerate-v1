@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Planogram;
 use App\Models\Scopes\TenantScope;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\OrderedBlock;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PackCandidate;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacedLayer;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacedSegment;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementResult;
@@ -32,6 +33,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 {
     /** @var array<string, list<string>> Cache de descendentes por category_id dentro de uma geração */
     private array $descendantsCache = [];
+
+    /** @var array<string, string|null> Cache do pai por category_id — escopo `siblings` do overflow */
+    private array $parentCategoryCache = [];
 
     /** @var array<string, true> Produtos já posicionados na geração atual — evita duplicatas entre slots da mesma categoria */
     private array $globalPlacedProductIds = [];
@@ -80,6 +84,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         private readonly ProductSizeResolver $sizeResolver,
         private readonly GreedyShelfPlacer $greedyPlacer,
         private readonly ProductOrderingService $ordering,
+        private readonly ShelfKnapsackPacker $packer = new ShelfKnapsackPacker,
     ) {}
 
     /** @param Collection<int, Section> $sections */
@@ -184,15 +189,22 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         // horizontal legado intocado.
         $verticalProcessedSlotIds = [];
 
+        // Blocagem vertical foi PEDIDA (layout=vertical) e quantos grupos ela conseguiu formar.
+        // Serve para avisar o usuário na TELA quando ele pede vertical e recebe horizontal —
+        // antes esse aviso só existia no log, então parecia que o vertical tinha funcionado.
+        $verticalRequested = $this->layoutOrientation === LayoutOrientation::Vertical;
+        $verticalGroupsFormed = 0;
+
         if ($this->layoutOrientation === LayoutOrientation::Vertical) {
             $verticalGroups = $this->buildVerticalGroups($slots, $positionSlotCounts);
+            $verticalGroupsFormed = count($verticalGroups);
 
             if ($verticalGroups === []) {
                 // Sem grupo elegível a geração inteira sai horizontal — avisar em vez de
                 // silenciar, pois o usuário pediu vertical e não verá coluna nenhuma
                 Log::warning('TemplatePlacementEngine: blocagem vertical solicitada, mas nenhum grupo elegível', [
-                    'motivo' => 'nenhuma categoria ocupa 2+ prateleiras consecutivas no mesmo módulo',
-                    'dica' => 'sob compressão cada categoria tende a receber 1 prateleira — reduza o escopo de categorias ou use uma gôndola maior',
+                    'motivo' => 'nenhuma categoria ocupa 2+ prateleiras consecutivas exclusivas no mesmo módulo',
+                    'dica' => 'sob compressão cada categoria recebe 1 prateleira, ou a 2ª é compartilhada com micro-categoria (excluída do vertical) — reduza o escopo de categorias ou use uma gôndola maior',
                     'slots' => $slots->count(),
                 ]);
             }
@@ -217,6 +229,34 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             }
         }
 
+        /*
+         * Quantos slots do caminho horizontal cada categoria AINDA tem pela frente.
+         *
+         * O plano de slots dá N prateleiras a uma categoria dimensionando pela largura total
+         * dos produtos dela (com as frentes já expandidas). Mas o motor coloca cada produto
+         * com a frente MÍNIMA — e aí o sortimento inteiro cabe na primeira prateleira. O que
+         * acontecia: o 1º slot levava TUDO e os N−1 seguintes não achavam mais nenhum produto
+         * (`slots_sem_matching`), ficando VAZIOS. Numa gôndola medida, 7 de 16 prateleiras
+         * zeradas — 39,7% de ocupação com o mix inteiro cabendo.
+         *
+         * Com este contador cada slot leva só a fatia dele (ver takeCategoryShare) e a expansão
+         * de frentes engorda a fatia até encher a prateleira.
+         *
+         * A blocagem vertical fica de fora: ela já distribui a categoria pelas prateleiras do
+         * grupo por conta própria.
+         *
+         * @var array<string, int>
+         */
+        $pendingSlotsByCategory = [];
+
+        foreach ($slots as $s) {
+            if (isset($verticalProcessedSlotIds[$s->id]) || $s->category_id === null) {
+                continue;
+            }
+
+            $pendingSlotsByCategory[$s->category_id] = ($pendingSlotsByCategory[$s->category_id] ?? 0) + 1;
+        }
+
         foreach ($slots as $slot) {
             // Slots já processados pela blocagem vertical não passam pelo caminho horizontal
             if (isset($verticalProcessedSlotIds[$slot->id])) {
@@ -224,6 +264,14 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             }
 
             $this->applySlotOverride($slot);
+
+            // Consome a cota da categoria já aqui: um slot que acabe sem produto (sem prateleira,
+            // sem candidato) não pode continuar "reservando" fatia para si e encolher a dos outros.
+            $pendingSlots = $pendingSlotsByCategory[$slot->category_id] ?? 1;
+
+            if ($slot->category_id !== null) {
+                $pendingSlotsByCategory[$slot->category_id] = max(0, $pendingSlots - 1);
+            }
 
             $section = $this->resolveSection($sections, $slot->module_number);
             $shelf = $section ? $this->resolveShelf($section, $slot->shelf_order) : null;
@@ -261,12 +309,42 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                     'shelf_order' => $slot->shelf_order,
                 ]);
 
+                /*
+                 * O slot vazio PRECISA entrar na análise, com 0% de uso.
+                 *
+                 * Antes ele era pulado — e a ocupação média do relatório era a média só dos
+                 * slots que receberam produto. Numa gôndola real com 7 de 16 prateleiras
+                 * ZERADAS, o relatório anunciava 78% de ocupação enquanto a gôndola estava em
+                 * 39,7%. A métrica escondia justamente o defeito que ela deveria denunciar.
+                 */
+                $slotAnalysis[] = [
+                    'slot_id' => $slot->id,
+                    'category_id' => $slot->category_id,
+                    'category_name' => $slot->category?->name ?? $slot->category_id,
+                    'role' => $slot->effectiveRole()?->value,
+                    'module_number' => $slot->module_number,
+                    'shelf_order' => $slot->shelf_order,
+                    'shelf_id' => $shelf->getKey(),
+                    'largura_total' => round($this->getShelfAvailableWidth($section), 1),
+                    'largura_usada' => 0.0,
+                    'largura_livre' => round($this->getShelfAvailableWidth($section), 1),
+                    'percentual_uso' => 0,
+                    'produtos_posicionados' => 0,
+                    'produtos_rejeitados' => 0,
+                    'rejeitados_sem_dimensao' => 0,
+                    'produtos_rejeitados_nomes' => [],
+                ];
+
                 continue;
             }
 
-            $ordered = $this->applySpaceFallbackOrdering(
-                $this->orderCandidates($candidates, $slot, $section, $shelf),
+            $ordered = $this->takeCategoryShare(
+                $this->applySpaceFallbackOrdering(
+                    $this->orderCandidates($candidates, $slot, $section, $shelf),
+                    $slot,
+                ),
                 $slot,
+                $pendingSlots,
             );
 
             // Suporte a prateleiras compartilhadas: múltiplos slots (de categorias diferentes)
@@ -430,7 +508,23 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $gondolaModules = $sections->count();
         $templateModules = $subtemplate->num_modules;
 
-        $explanationReport = $this->buildExplanationReport($allPlacedExplanations, $rejected, $slotAnalysis);
+        $explanationReport = $this->buildExplanationReport(
+            $allPlacedExplanations,
+            $rejected,
+            $slotAnalysis,
+            $this->buildLayoutAlerts($verticalRequested, $verticalGroupsFormed),
+        );
+
+        // Medida DEPOIS do overflow: é a única que reflete a gôndola que o usuário vê.
+        $shelfAnalysis = $this->buildShelfAnalysis($placed, $sections);
+
+        Log::info('TemplatePlacementEngine: ocupação física da gôndola', [
+            'ocupacao_media' => $shelfAnalysis === []
+                ? 0
+                : round(collect($shelfAnalysis)->avg('percentual_uso')).'%',
+            'prateleiras_vazias' => collect($shelfAnalysis)->where('segmentos', 0)->count(),
+            'prateleiras' => count($shelfAnalysis),
+        ]);
 
         return new PlacementResult(
             placedSegments: $placed,
@@ -442,7 +536,53 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             subtemplateId: $subtemplate->getKey(),
             explanationReport: $explanationReport,
             emptySlotIds: $emptySlotIds,
+            shelfAnalysis: $shelfAnalysis,
         );
+    }
+
+    /**
+     * Ocupação de cada prateleira FÍSICA, sobre os segmentos finais.
+     *
+     * Por que não dá para usar o slotAnalysis: ele é montado dentro do laço de slots, e o
+     * overflow pass roda DEPOIS — então nada do que o overflow coloca entra na conta dele.
+     * Medido numa gôndola real: ela subiu de 83,3% para 87,0% de ocupação e o relatório
+     * continuou cravado em 76,8%, porque os produtos acrescentados vieram justamente do
+     * overflow. O usuário via a gôndola mudar e o número não mexer.
+     *
+     * Aqui a conta é a física: o que sobrou em cada prateleira, no fim de tudo, contra a
+     * largura real dela. Prateleira sem nenhum segmento entra com 0% — ela é o defeito, não
+     * pode ser omitida da média.
+     *
+     * @param  Collection<int, PlacedSegment>  $placed
+     * @param  Collection<int, Section>  $sections
+     * @return list<array{shelf_id: string, section_id: string, largura_total: float, largura_usada: float, largura_livre: float, percentual_uso: int, segmentos: int}>
+     */
+    private function buildShelfAnalysis(Collection $placed, Collection $sections): array
+    {
+        $byShelf = $placed->groupBy(fn (PlacedSegment $segment): string => $segment->shelfId);
+        $analysis = [];
+
+        foreach ($sections as $section) {
+            $shelfWidth = $this->getShelfAvailableWidth($section);
+
+            foreach ($section->shelves as $shelf) {
+                $shelfId = (string) $shelf->getKey();
+                $segments = $byShelf->get($shelfId, collect());
+                $used = (float) $segments->sum('width');
+
+                $analysis[] = [
+                    'shelf_id' => $shelfId,
+                    'section_id' => (string) $section->getKey(),
+                    'largura_total' => round($shelfWidth, 1),
+                    'largura_usada' => round($used, 1),
+                    'largura_livre' => round(max(0.0, $shelfWidth - $used), 1),
+                    'percentual_uso' => $shelfWidth > 0 ? (int) round($used / $shelfWidth * 100) : 0,
+                    'segmentos' => $segments->count(),
+                ];
+            }
+        }
+
+        return $analysis;
     }
 
     /**
@@ -557,13 +697,16 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         //  B) profundidade — só então expande frentes até o estoque alvo com o espaço que sobrar.
         // Sem isso, a expansão do primeiro produto consumiria o espaço que caberia a outros
         // SKUs da mesma categoria, deixando-os rejeitados (variedade < profundidade — errado).
-        /** @var list<array{product: mixed, shelf_key: string, section_key: string, single_width: int, facings: int, cap: int|null}> $placements */
+        /** @var list<array{product: mixed, shelf_key: string, section_key: string, single_width: float, facings: int, cap: int|null}> $placements */
         $placements = [];
 
         // === PASSE A: variedade — cada produto rejeitado entra com a frente mínima ===
         foreach ($retryOrdered as $item) {
             $product = $item['product'];
-            $singleWidth = (int) round($this->widthResolver->resolve($product));
+            // Largura EXATA: arredondar a largura UNITÁRIA antes de multiplicar pelas frentes
+            // distorcia a conta (um produto de 3,4cm × 5 frentes "ocupava" 15cm em vez de 17cm),
+            // fazendo produtos entrarem em prateleiras onde na verdade não cabiam.
+            $singleWidth = $this->widthResolver->resolve($product);
 
             if ($singleWidth <= 0) {
                 continue;
@@ -574,11 +717,11 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             // facings mínimos em nenhuma prateleira permanecem rejeitados.
             $abcClass = $this->abcClassMap[$product->id] ?? '';
             $minFacings = SlotPlanBuilder::ABC_MIN_FACINGS[$abcClass] ?? SlotPlanBuilder::ABC_MIN_FACINGS[''];
-            $widthWithFacings = (int) round($singleWidth * $minFacings);
+            $widthWithFacings = $singleWidth * $minFacings;
 
             // Tenta a prateleira com maior espaço disponível
             foreach ($shelfMeta as $i => $meta) {
-                if ($meta['remaining'] < $widthWithFacings) {
+                if (! PlacementMath::fits(0.0, $widthWithFacings, $meta['remaining'])) {
                     continue;
                 }
 
@@ -685,13 +828,17 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         foreach ($placements as $p) {
             $shelfKey = $p['shelf_key'];
             $start = $shelfCursor[$shelfKey] ?? (float) $occupiedPerShelf->get($shelfKey, 0.0);
-            $width = $p['single_width'] * $p['facings'];
+            $exactWidth = $p['single_width'] * $p['facings'];
+
+            // Mesma soma de prefixos do placement principal: arredonda os PONTOS (início/fim),
+            // não cada largura isolada — segmentos contíguos, sem erro acumulado.
+            [$startCm, $width] = PlacementMath::segmentBounds($start, $exactWidth);
 
             $overflowPlaced->push(new PlacedSegment(
                 sectionId: $p['section_key'],
                 shelfId: $shelfKey,
                 ordering: $orderingOffset++,
-                position: (int) round($start),
+                position: $startCm,
                 width: $width,
                 distributedWidth: $width,
                 layers: collect([
@@ -704,7 +851,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 ]),
             ));
 
-            $shelfCursor[$shelfKey] = $start + $width;
+            $shelfCursor[$shelfKey] = $start + $exactWidth;
         }
 
         if ($overflowPlaced->isEmpty()) {
@@ -736,12 +883,23 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     }
 
     /**
-     * Mapeia cada prateleira física para o conjunto de category_ids que seus slots aceitam.
+     * Mapeia cada prateleira física para o conjunto de category_ids que ela aceita no overflow.
      *
-     * Usado pelo overflow pass para restringir a realocação à mesma categoria: uma prateleira
-     * pode ter slots de múltiplas categorias (prateleira compartilhada), por isso o valor é um
-     * set. Cada slot contribui com sua categoria E todos os descendentes — o matching do
-     * placement principal é hierárquico, e o overflow precisa ser consistente.
+     * Uma prateleira pode ter slots de múltiplas categorias (prateleira compartilhada), por isso
+     * o valor é um set. Cada slot contribui com sua categoria E todos os descendentes — o
+     * matching do placement principal é hierárquico, e o overflow precisa ser consistente.
+     *
+     * ── Até onde o produto rejeitado pode andar (config `overflow_scope`) ────────────────────
+     * Medido numa gôndola real: 257cm de prateleira VAZIA convivendo com 11 produtos rejeitados
+     * por falta de espaço. Não faltava espaço — faltava PERMISSÃO. A categoria que não tinha
+     * produto para encher a prateleira dela segurava o espaço, e a categoria que transbordava
+     * não podia usá-lo.
+     *
+     *   strict   — só a própria categoria (e descendentes). Blocagem intacta, gôndola aberta.
+     *   siblings — também as categorias IRMÃS (mesmo pai no mercadológico). PADRÃO: fecha a
+     *              maior parte do vão sem virar bagunça na gaveta, porque irmãs já ficam juntas
+     *              na loja (LÍQUIDO ao lado de GEL, ambas filhas de CUIDADO COM O BANHEIRO).
+     *   any      — qualquer categoria do planograma. Fecha tudo, mas quebra a blocagem.
      *
      * @param  Collection<int, PlanogramTemplateSlot>  $slots
      * @param  Collection<int, Section>  $sections
@@ -749,7 +907,24 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
      */
     private function buildAllowedCategoriesByShelf(Collection $slots, Collection $sections): array
     {
+        $scope = (string) config('plannerate.auto_planogram.placement.overflow_scope', 'siblings');
         $map = [];
+
+        // `any`: o conjunto permitido é o mesmo em toda prateleira — a união das categorias de
+        // TODOS os slots. Calculado uma vez só, em vez de por prateleira.
+        $everyCategory = [];
+
+        if ($scope === 'any') {
+            foreach ($slots as $slot) {
+                if ($slot->category_id === null) {
+                    continue;
+                }
+
+                foreach ($this->getDescendantsCached($slot->category_id) as $categoryId) {
+                    $everyCategory[$categoryId] = true;
+                }
+            }
+        }
 
         foreach ($slots as $slot) {
             if ($slot->category_id === null) {
@@ -765,7 +940,21 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
             $shelfId = $shelf->getKey();
 
-            foreach ($this->getDescendantsCached($slot->category_id) as $categoryId) {
+            if ($scope === 'any') {
+                $map[$shelfId] = ($map[$shelfId] ?? []) + $everyCategory;
+
+                continue;
+            }
+
+            // `siblings`: descer a partir do PAI da categoria do slot alcança as irmãs (e os
+            // descendentes delas). Sem pai — categoria raiz — não há irmãs: cai no strict.
+            $scopeCategoryId = $slot->category_id;
+
+            if ($scope === 'siblings') {
+                $scopeCategoryId = $this->parentCategoryIdCached($slot->category_id) ?? $slot->category_id;
+            }
+
+            foreach ($this->getDescendantsCached($scopeCategoryId) as $categoryId) {
                 $map[$shelfId][$categoryId] = true;
             }
         }
@@ -887,6 +1076,27 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             ??= Category::getDescendantIds($categoryId);
     }
 
+    /**
+     * Pai de uma categoria no mercadológico, cacheado por geração.
+     *
+     * A árvore é auto-referenciada pela coluna `category_id` (não `parent_id`) — mesma coluna
+     * que Category::getDescendantIds() percorre para descer. Sem o TenantScope, pelo mesmo
+     * motivo que lá: a árvore é lida no contexto do tenant já corrente.
+     *
+     * `null` quando a categoria é raiz (não tem irmãs) ou não foi encontrada. Usado pelo
+     * escopo `siblings` do overflow — ver buildAllowedCategoriesByShelf.
+     */
+    private function parentCategoryIdCached(string $categoryId): ?string
+    {
+        if (! array_key_exists($categoryId, $this->parentCategoryCache)) {
+            $this->parentCategoryCache[$categoryId] = Category::withoutGlobalScope(TenantScope::class)
+                ->whereKey($categoryId)
+                ->value('category_id');
+        }
+
+        return $this->parentCategoryCache[$categoryId];
+    }
+
     private function orderCandidates(Collection $products, PlanogramTemplateSlot $slot, ?Section $section = null, ?Shelf $shelf = null): Collection
     {
         // Delegado ao ProductOrderingService — mesma fonte usada por VisualReorderService e
@@ -1000,6 +1210,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $rejected = collect();
         $occupied = 0.0;
         $ordering = 0;
+        $spacing = PlacementMath::productSpacingCm();
 
         // Phase 1: place with min_facings
         foreach ($products as $product) {
@@ -1030,16 +1241,23 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
             $facing = max($slot->min_facings, 1);
             $singleWidth = $this->widthResolver->resolve($product);
-            $width = (int) round($singleWidth * $facing);
 
-            if ($occupied + $width <= $available) {
+            // Largura EXATA (float): arredondar aqui para cm inteiro rejeitava produtos
+            // que cabiam por fração de cm e deixava sobra acumulada ao longo da prateleira.
+            // O arredondamento acontece só na persistência (ver soma de prefixos abaixo).
+            $width = $singleWidth * $facing;
+
+            // Folga entre produtos (0 por padrão) — cobrada só a partir do segundo produto.
+            $gap = PlacementMath::gapBefore($occupied, $spacing);
+
+            if (PlacementMath::fits($occupied + $gap, $width, $available)) {
                 $placedItems[] = [
                     'product' => $product,
                     'facings' => $facing,
                     'singleWidth' => $singleWidth,
                     'ordering' => $ordering++,
                 ];
-                $occupied += $width;
+                $occupied += $gap + $width;
             } else {
                 // Log de diagnóstico quando o slot está vazio mas o produto não coube.
                 if ($occupied < 0.01) {
@@ -1076,9 +1294,39 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             }
         }
 
-        // Phase 2: expand facings with leftover space
+        // Rejeitados por ESPAÇO voltam a concorrer (no empacotador e no fallback); rejeitados
+        // por física — sem dimensão, mais alto que o vão — são definitivos.
+        $noSpaceRejected = $rejected->where('reason', PlacementFailureReason::NoHorizontalSpace)->values();
+        $otherRejected = $rejected
+            ->filter(fn (array $r): bool => $r['reason'] !== PlacementFailureReason::NoHorizontalSpace)
+            ->values();
+
+        // Phase 2: empacotador exato — reabre a decisão da prateleira INTEIRA, com as frentes
+        // como variável livre e os rejeitados por espaço de volta ao jogo. Tudo que o first-fit
+        // acima já colocou entra como obrigatório, então isto nunca perde um SKU que o motor
+        // antigo colocaria: só pode fechar o vão que ele deixava aberto.
+        if ($this->packerEnabled()) {
+            $packed = $this->packShelf($products, $placedItems, $noSpaceRejected, $slot, $shelf, $available);
+
+            if ($packed !== null) {
+                $placedItems = $packed['items'];
+                $noSpaceRejected = $packed['rejected'];
+                $occupied = $packed['occupied'];
+            }
+        }
+
+        // Phase 3: expande as frentes com o vão que ainda sobrar. Depois do empacotador sobra
+        // pouco — só a folga do arredondamento em mm —, mas é ela que fecha o último centímetro.
         if ($slot->facing_expansion !== FacingExpansion::None && $placedItems !== []) {
             [$placedItems, $occupied] = $this->expandFacings($placedItems, $slot, $available, $occupied, $shelf);
+        }
+
+        // Phase 4: fallback "reduzir frentes" — quem ficou de fora entra com 1 frente no resto.
+        if ($noSpaceRejected->isNotEmpty() && $slot->space_fallback === SpaceFallback::ReduceFacings) {
+            $fallback = $this->applyReduceFacingsFallback($noSpaceRejected, $placedItems, $available, $occupied);
+            $placedItems = $fallback['items'];
+            $noSpaceRejected = $fallback['remaining'];
+            $occupied = $fallback['occupied'];
         }
 
         // Anotar explicações dos produtos posicionados (após expansão de frentes)
@@ -1091,17 +1339,32 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         // categoria já ocupa [0, startPosition), este slot começa a partir de startPosition.
         $placed = collect();
         $x = (float) $startPosition;
+        $isFirst = true;
 
         foreach ($placedItems as $item) {
             $product = $item['product'];
             $facings = $item['facings'];
-            $width = (int) round($item['singleWidth'] * $facings);
+            $exactWidth = $item['singleWidth'] * $facings;
+
+            // Folga entre produtos: avança o cursor antes de posicionar (nunca antes do 1º).
+            if (! $isFirst) {
+                $x += $spacing;
+            }
+
+            $isFirst = false;
+
+            // As colunas segments.position/width são inteiras (em cm), mas arredondar cada
+            // largura isoladamente e somá-las acumula erro (até 0,5cm por segmento) e faz a
+            // prateleira "andar". Arredondando os PONTOS (início/fim) da posição exata, os
+            // segmentos ficam contíguos por construção — sem gaps nem sobreposição — e o
+            // total continua fiel à largura real ocupada.
+            [$startCm, $width] = PlacementMath::segmentBounds($x, $exactWidth);
 
             $placed->push(new PlacedSegment(
                 sectionId: $section->getKey(),
                 shelfId: $shelf->getKey(),
                 ordering: $item['ordering'],
-                position: (int) round($x),
+                position: $startCm,
                 width: $width,
                 distributedWidth: $width,
                 layers: collect([
@@ -1113,7 +1376,8 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                     ),
                 ]),
             ));
-            $x += $width;
+
+            $x += $exactWidth;
         }
 
         // Espelhar posições físicas quando o fluxo é direita → esquerda
@@ -1131,25 +1395,321 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             ));
         }
 
-        // Fallback only for NoHorizontalSpace — MissingDimensions must not be retried
-        $noSpaceRejected = $rejected->where('reason', PlacementFailureReason::NoHorizontalSpace)->values();
-
-        if ($noSpaceRejected->isNotEmpty()) {
-            $fallback = $this->applyFallback($noSpaceRejected, $available - $occupied, $slot, $section, $shelf, $ordering);
-            $placed = $placed->merge($fallback['placed']);
-            $noSpaceRejected = $fallback['remaining'];
-        }
-
-        // Demais motivos (MissingDimensions, HeightExceedsShelf) não passam pelo fallback de espaço.
-        $otherRejected = $rejected
-            ->filter(fn (array $r): bool => $r['reason'] !== PlacementFailureReason::NoHorizontalSpace)
-            ->values();
-
         return [
             'placed' => $placed,
             'rejected' => $noSpaceRejected->merge($otherRejected),
             'placed_explanations' => $placedExplanations,
         ];
+    }
+
+    /**
+     * O empacotador exato está ligado?
+     *
+     * Interruptor de segurança: `greedy` restaura o motor antigo inteiro (first-fit + round-robin)
+     * sem precisar de deploy, caso alguma gôndola real saia pior do que a versão anterior.
+     */
+    private function packerEnabled(): bool
+    {
+        return config('plannerate.auto_planogram.placement.packer', 'knapsack') === 'knapsack';
+    }
+
+    /**
+     * Fase 2 — resolve a prateleira com o empacotador exato (bounded knapsack).
+     *
+     * Traduz a regra de negócio (ranking, ABC, estoque alvo, limites do slot) em números que o
+     * ShelfKnapsackPacker entende, resolve, e traduz a resposta de volta em itens posicionáveis.
+     *
+     * Os produtos que o first-fit já colocou entram como OBRIGATÓRIOS — daí a garantia de que o
+     * resultado nunca é pior. Os rejeitados por falta de espaço entram como opcionais: é assim
+     * que um produto estreito que foi descartado cedo volta a tapar o vão que sobrou no fim.
+     *
+     * @param  Collection<int, mixed>  $products  Pool na ordem de ranking (define a prioridade).
+     * @param  array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}>  $placedItems
+     * @param  Collection<int, array{product: mixed, reason: PlacementFailureReason, slot_id?: string}>  $noSpaceRejected
+     * @return array{items: array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}>, rejected: Collection<int, array>, occupied: float}|null
+     */
+    private function packShelf(
+        Collection $products,
+        array $placedItems,
+        Collection $noSpaceRejected,
+        PlanogramTemplateSlot $slot,
+        Shelf $shelf,
+        float $available,
+    ): ?array {
+        if ($placedItems === [] && $noSpaceRejected->isEmpty()) {
+            return null;
+        }
+
+        $spacing = PlacementMath::productSpacingCm();
+        $minFacings = max($slot->min_facings, 1);
+        $maxFacings = max($slot->max_facings, 1);
+        $expansion = $slot->facing_expansion ?? FacingExpansion::Score;
+
+        /*
+         * Frentes congeladas no mínimo (o DP só decide QUEM entra) quando:
+         *  - o slot não quer expansão nenhuma; ou
+         *  - há limite de participação por MARCA ou SUBCATEGORIA. Esses limites são agregados
+         *    (dependem das frentes dos outros produtos), e uma mochila só sabe lidar com custo
+         *    por item — não dá para representá-los sem mentir. Nesse caso a profundidade fica
+         *    com o expandFacings, que os checa de verdade a cada frente.
+         * O limite por SKU não entra aqui: esse é por item, e vira teto de frentes lá embaixo.
+         */
+        $freezeFacings = $expansion === FacingExpansion::None
+            || ($slot->max_share_per_brand !== null && $slot->max_share_per_brand > 0)
+            || ($slot->max_share_per_subcategory !== null && $slot->max_share_per_subcategory > 0);
+
+        // A posição no pool ordenado É a prioridade do produto — o empacotador a recebe como
+        // valor de inclusão, para que ao disputar o mesmo vão vença o mais bem ranqueado.
+        $rankById = [];
+
+        foreach ($products as $rank => $product) {
+            $rankById[$product->id] = $rank;
+        }
+
+        /** @var list<array{product: mixed, width: float, forced: bool, rank: int}> $entries */
+        $entries = [];
+
+        foreach ($placedItems as $item) {
+            $entries[] = [
+                'product' => $item['product'],
+                'width' => $item['singleWidth'],
+                'forced' => true,
+                'rank' => $rankById[$item['product']->id] ?? PHP_INT_MAX,
+            ];
+        }
+
+        foreach ($noSpaceRejected as $rejection) {
+            $product = $rejection['product'];
+
+            if ($product === null) {
+                continue;
+            }
+
+            $entries[] = [
+                'product' => $product,
+                'width' => $this->widthResolver->resolve($product),
+                'forced' => false,
+                'rank' => $rankById[$product->id] ?? PHP_INT_MAX,
+            ];
+        }
+
+        // Ordem de ranking: define tanto a prioridade no DP quanto o X final na prateleira.
+        usort($entries, fn (array $a, array $b): int => $a['rank'] <=> $b['rank']);
+
+        $total = count($entries);
+        $facingWeights = $this->facingWeights($entries, $expansion);
+        $candidates = [];
+
+        foreach ($entries as $position => $entry) {
+            $width = $entry['width'];
+
+            if ($width <= 0) {
+                return null;
+            }
+
+            /*
+             * `reduce_facings` significa exatamente "quem não coube entra com 1 frente" — no
+             * empacotador isso é só um piso menor para os opcionais, e sai de graça: o DP já
+             * escolhe a melhor combinação entre entrar com 1 frente ou não entrar.
+             */
+            $entryMin = (! $entry['forced'] && $slot->space_fallback === SpaceFallback::ReduceFacings)
+                ? 1
+                : $minFacings;
+
+            $entryMax = $freezeFacings
+                ? $entryMin
+                : max($entryMin, $this->facingCeiling($entry['product'], $slot, $shelf, $maxFacings, $minFacings, $width, $available));
+
+            $candidates[] = new PackCandidate(
+                singleWidth: $width,
+                minFacings: $entryMin,
+                maxFacings: $entryMax,
+                // (0,5 … 1,0]: o piso de 0,5 garante que incluir QUALQUER SKU ainda vale mais
+                // que qualquer quantidade de frentes extras (ver INCLUSION_WEIGHT no packer).
+                inclusionScore: 0.5 + 0.5 * (($total - $position) / $total),
+                facingWeight: $facingWeights[$position],
+                forced: $entry['forced'],
+            );
+        }
+
+        $solution = $this->packer->pack($candidates, $available, $spacing);
+
+        if ($solution === null) {
+            return null;
+        }
+
+        $items = [];
+        $stillRejected = collect();
+        $occupied = 0.0;
+        $ordering = 0;
+
+        foreach ($entries as $position => $entry) {
+            $facings = $solution[$position] ?? 0;
+
+            if ($facings <= 0) {
+                $stillRejected->push([
+                    'product' => $entry['product'],
+                    'reason' => PlacementFailureReason::NoHorizontalSpace,
+                    'slot_id' => $slot->id,
+                ]);
+
+                continue;
+            }
+
+            $occupied += PlacementMath::gapBefore($occupied, $spacing) + $entry['width'] * $facings;
+
+            $items[] = [
+                'product' => $entry['product'],
+                'facings' => $facings,
+                'singleWidth' => $entry['width'],
+                'ordering' => $ordering++,
+            ];
+        }
+
+        return ['items' => $items, 'rejected' => $stillRejected, 'occupied' => $occupied];
+    }
+
+    /**
+     * Teto de frentes de um produto, consolidando todos os limites que são POR ITEM.
+     *
+     * Fica de fora o limite por marca/subcategoria, que é agregado — ver `$freezeFacings`.
+     */
+    private function facingCeiling(
+        mixed $product,
+        PlanogramTemplateSlot $slot,
+        Shelf $shelf,
+        int $maxFacings,
+        int $minFacings,
+        float $singleWidth,
+        float $available,
+    ): int {
+        $ceiling = $maxFacings;
+
+        if ($slot->use_target_stock) {
+            $cap = $this->targetStockFacingCap($product, $shelf, $minFacings);
+
+            if ($cap !== null) {
+                $ceiling = min($ceiling, $cap);
+            }
+        }
+
+        // Participação máxima de um SKU no slot: vira teto de frentes direto (limite por item).
+        if ($slot->max_share_per_sku !== null && $slot->max_share_per_sku > 0) {
+            $maxWidth = $available * $slot->max_share_per_sku / 100;
+            $ceiling = min($ceiling, max(1, (int) floor(($maxWidth + PlacementMath::WIDTH_EPSILON_CM) / $singleWidth)));
+        }
+
+        return $ceiling;
+    }
+
+    /**
+     * Peso de cada frente extra por produto, traduzindo o `facing_expansion` do slot.
+     *
+     * Normalizado em (0, 1] — o valor absoluto não importa, só a proporção entre produtos.
+     * O piso de 0,05 evita que um produto com métrica zerada fique permanentemente sem
+     * poder receber frentes (ele ainda perde a disputa, mas não é excluído por construção).
+     *
+     * @param  list<array{product: mixed, width: float, forced: bool, rank: int}>  $entries
+     * @return list<float>
+     */
+    private function facingWeights(array $entries, FacingExpansion $expansion): array
+    {
+        $total = count($entries);
+        $raw = [];
+
+        foreach ($entries as $position => $entry) {
+            $product = $entry['product'];
+
+            $raw[$position] = match ($expansion) {
+                FacingExpansion::CurrentStock => (float) ($product->current_stock ?? 0),
+                FacingExpansion::TargetStock => max(
+                    0.0,
+                    ($this->targetStockMap[$product->id] ?? 0.0) - (float) ($product->current_stock ?? 0),
+                ),
+                FacingExpansion::Equal => 1.0,
+                // Score (e None, onde as frentes ficam congeladas de todo jeito): a própria
+                // posição no ranking — o mais bem colocado ganha as frentes extras primeiro.
+                default => ($total - $position) / $total,
+            };
+        }
+
+        $max = max($raw);
+
+        if ($max <= 0.0) {
+            return array_fill(0, $total, 1.0);
+        }
+
+        return array_map(fn (float $value): float => max(0.05, $value / $max), $raw);
+    }
+
+    /**
+     * Reparte o sortimento da categoria entre os slots que ela ainda tem pela frente.
+     *
+     * ── O bug que isto conserta ──────────────────────────────────────────────────────────
+     * O `SlotPlanBuilder` dá N prateleiras a uma categoria dimensionando pela largura TOTAL
+     * dos produtos dela. Só que o posicionamento coloca cada produto com a frente MÍNIMA — e
+     * com 1 frente o sortimento inteiro costuma caber numa prateleira só.
+     *
+     * Resultado: o 1º slot da categoria levava TODOS os produtos, e do 2º em diante o
+     * `findCandidates` não achava mais nada (os produtos já estavam em `globalPlacedProductIds`).
+     * Os slots irmãos ficavam VAZIOS — é o `slots_sem_matching` do log. A expansão de frentes
+     * não salvava, porque ela só trabalha DENTRO da prateleira onde o produto já está: enchia
+     * a primeira até 96-100% e não tinha como transbordar para as irmãs vazias ao lado.
+     *
+     * Medido numa gôndola real (mix cabendo inteiro na gôndola): 7 de 16 prateleiras ZERADAS,
+     * 39,7% de ocupação, 672cm de prateleira morta.
+     *
+     * ── O conserto ───────────────────────────────────────────────────────────────────────
+     * Cada slot leva a fatia dele: os melhores ranqueados ainda não usados, até cobrir 1/N da
+     * largura que resta (mesma métrica de largura que o plano usou para pedir as N prateleiras).
+     * O resto fica para os slots seguintes da categoria, e a expansão de frentes engorda cada
+     * fatia até encher a sua prateleira.
+     *
+     * O último slot da categoria (`$pendingSlots === 1`) leva tudo o que sobrou — ninguém fica
+     * para trás.
+     *
+     * @param  Collection<int, mixed>  $ordered  Candidatos já ranqueados para ESTE slot.
+     * @param  int  $pendingSlots  Slots da categoria ainda por processar, incluindo este.
+     * @return Collection<int, mixed>
+     */
+    private function takeCategoryShare(Collection $ordered, PlanogramTemplateSlot $slot, int $pendingSlots): Collection
+    {
+        if ($pendingSlots <= 1 || $ordered->count() <= 1) {
+            return $ordered;
+        }
+
+        $totalWidth = (float) $ordered->sum(fn ($product): float => $this->widthResolver->resolve($product));
+
+        if ($totalWidth <= 0.0) {
+            return $ordered;
+        }
+
+        $targetWidth = $totalWidth / $pendingSlots;
+        $share = collect();
+        $accumulated = 0.0;
+
+        foreach ($ordered as $product) {
+            // Pelo menos um produto sempre entra: devolver fatia vazia deixaria a prateleira
+            // zerada — exatamente o defeito que este método existe para eliminar.
+            if ($share->isNotEmpty() && $accumulated >= $targetWidth) {
+                break;
+            }
+
+            $share->push($product);
+            $accumulated += $this->widthResolver->resolve($product);
+        }
+
+        Log::debug('TemplatePlacementEngine: sortimento repartido entre os slots da categoria', [
+            'slot_id' => $slot->id,
+            'category_id' => $slot->category_id,
+            'slots_restantes' => $pendingSlots,
+            'candidatos' => $ordered->count(),
+            'fatia_deste_slot' => $share->count(),
+            'largura_alvo_cm' => round($targetWidth, 1),
+            'largura_da_fatia_cm' => round($accumulated, 1),
+        ]);
+
+        return $share->values();
     }
 
     /**
@@ -1452,7 +2012,8 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 }
 
                 $singleWidth = $this->widthResolver->resolve($product);
-                $width = (int) round($singleWidth * $minFacings);
+                // Largura exata (float): ver WIDTH_EPSILON_CM e a soma de prefixos na escrita.
+                $width = $singleWidth * $minFacings;
 
                 // Mais largo que a própria coluna: nem 1 conjunto de frentes mínimas cabe
                 if ($width > $colWidth[$brand] + 0.01) {
@@ -1500,7 +2061,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                     $occupied = 0.0;
 
                     foreach ($items as $item) {
-                        $occupied += round($item['singleWidth'] * $item['facings']);
+                        // Exato: arredondar por item subestimava/superestimava o ocupado e a
+                        // expansão de frentes decidia em cima de um espaço livre errado.
+                        $occupied += $item['singleWidth'] * $item['facings'];
                     }
 
                     [$cells[$rowIdx][$brand]] = $this->expandFacings(
@@ -1578,13 +2141,16 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 $cellX = $startX;
 
                 foreach ($items as $item) {
-                    $width = (int) round($item['singleWidth'] * $item['facings']);
+                    $exactWidth = $item['singleWidth'] * $item['facings'];
+
+                    // Soma de prefixos (ver placement principal): arredonda os pontos, não as larguras.
+                    [$startCm, $width] = PlacementMath::segmentBounds($cellX, $exactWidth);
 
                     $placed->push(new PlacedSegment(
                         sectionId: $section->getKey(),
                         shelfId: $row['shelf']->getKey(),
                         ordering: 0, // reatribuído após o espelhamento
-                        position: (int) round($cellX),
+                        position: $startCm,
                         width: $width,
                         distributedWidth: $width,
                         layers: collect([
@@ -1598,9 +2164,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                     ));
 
                     $this->globalPlacedProductIds[$item['product']->id] = true;
-                    $cellX += $width;
+                    $cellX += $exactWidth;
                     $rowStats[$rowIdx]['placed']++;
-                    $rowStats[$rowIdx]['occupied'] += $width;
+                    $rowStats[$rowIdx]['occupied'] += $exactWidth;
                 }
 
                 $zone = $this->resolveZoneForShelf($section, $row['shelf']);
@@ -1942,57 +2508,60 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     }
 
     /**
-     * @param  Collection<int, array{product: mixed, reason: PlacementFailureReason}>  $rejected
-     * @return array{placed: Collection<int, PlacedSegment>, remaining: Collection<int, array{product: mixed, reason: PlacementFailureReason}>}
+     * Fallback `reduce_facings`: quem ficou de fora entra com 1 frente no vão que sobrou.
+     *
+     * Devolve ITENS (não segmentos) para entrar na mesma esteira dos demais: assim herdam o
+     * cursor de X, a folga entre produtos e o espelhamento do fluxo direita→esquerda.
+     * A versão anterior montava os segmentos por fora dessa esteira e os posicionava a partir
+     * de x=0 — eles SOBREPUNHAM os produtos já colocados e ainda escapavam do espelhamento.
+     *
+     * Com o empacotador ligado este passe quase nunca encontra o que fazer: o DP já testou
+     * incluir esses produtos com 1 frente (é o mesmo piso) e usou o vão. Ele continua aqui
+     * para o caso de o empacotador estar desligado ou abortar.
+     *
+     * @param  Collection<int, array{product: mixed, reason: PlacementFailureReason, slot_id?: string}>  $rejected
+     * @param  array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}>  $placedItems
+     * @return array{items: array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}>, remaining: Collection<int, array>, occupied: float}
      */
-    private function applyFallback(
+    private function applyReduceFacingsFallback(
         Collection $rejected,
-        float $remainingWidth,
-        PlanogramTemplateSlot $slot,
-        Section $section,
-        Shelf $shelf,
-        int $orderingOffset,
+        array $placedItems,
+        float $available,
+        float $occupied,
     ): array {
-        $placed = collect();
-        $remaining = $rejected;
+        $spacing = PlacementMath::productSpacingCm();
+        $ordering = count($placedItems);
+        $stillRejected = collect();
 
-        if ($slot->space_fallback?->value === 'reduce_facings') {
-            $occupied = 0.0;
-            $ordering = $orderingOffset;
-            $stillRejected = collect();
+        foreach ($rejected as $item) {
+            $product = $item['product'];
 
-            foreach ($rejected as $item) {
-                $product = $item['product'];
-                $width = (int) round($this->widthResolver->resolve($product));
+            if ($product === null) {
+                $stillRejected->push($item);
 
-                if ($occupied + $width <= $remainingWidth) {
-                    $placed->push(new PlacedSegment(
-                        sectionId: $section->getKey(),
-                        shelfId: $shelf->getKey(),
-                        ordering: $ordering++,
-                        position: (int) round($occupied),
-                        width: $width,
-                        distributedWidth: $width,
-                        layers: collect([
-                            new PlacedLayer(
-                                productId: $product->id,
-                                ean: (string) ($product->ean ?? ''),
-                                quantity: 1,
-                                height: 1,
-                            ),
-                        ]),
-                    ));
-                    $occupied += $width;
-                } else {
-                    $stillRejected->push($item);
-                }
+                continue;
             }
 
-            $remaining = $stillRejected;
+            $width = $this->widthResolver->resolve($product);
+            $gap = PlacementMath::gapBefore($occupied, $spacing);
+
+            if (! PlacementMath::fits($occupied + $gap, $width, $available)) {
+                $stillRejected->push($item);
+
+                continue;
+            }
+
+            $placedItems[] = [
+                'product' => $product,
+                'facings' => 1,
+                'singleWidth' => $width,
+                'ordering' => $ordering++,
+            ];
+
+            $occupied += $gap + $width;
         }
 
-        // reduce_c and skip: do not attempt re-placement
-        return ['placed' => $placed, 'remaining' => $remaining];
+        return ['items' => $placedItems, 'remaining' => $stillRejected, 'occupied' => $occupied];
     }
 
     private function getShelfAvailableWidth(Section $section): float
@@ -2088,17 +2657,44 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     }
 
     /**
+     * Alertas sobre o LAYOUT pedido versus o que foi possível aplicar.
+     *
+     * Hoje cobre a blocagem vertical: o usuário liga o modo vertical, mas ele só forma coluna
+     * quando uma categoria ocupa 2+ prateleiras exclusivas consecutivas no mesmo módulo. Sob
+     * compressão isso quase nunca acontece (cada categoria pega 1 prateleira, ou a 2ª vira
+     * compartilhada com micro-categoria e é excluída do vertical), e a geração cai no horizontal.
+     *
+     * Antes esse aviso só existia no log — na tela parecia que o vertical tinha funcionado.
+     * Aqui ele vira um alerta que o painel de sugestões já sabe exibir.
+     *
+     * @return list<array{type: string, message: string}>
+     */
+    private function buildLayoutAlerts(bool $verticalRequested, int $verticalGroupsFormed): array
+    {
+        if (! $verticalRequested || $verticalGroupsFormed > 0) {
+            return [];
+        }
+
+        return [[
+            'type' => 'vertical_nao_aplicado',
+            'message' => 'Blocagem vertical solicitada, mas nenhuma categoria ocupa 2+ prateleiras exclusivas consecutivas no mesmo módulo — a gôndola foi montada no layout horizontal. Reduza o número de categorias ou use uma gôndola maior para as marcas formarem colunas.',
+        ]];
+    }
+
+    /**
      * Consolida explicações e alertas da geração completa.
      *
      * @param  list<array<string, mixed>>  $allPlacedExplanations
      * @param  Collection<int, array{product: mixed, reason: PlacementFailureReason, slot_id?: string}>  $rejected
      * @param  list<array<string, mixed>>  $slotAnalysis
+     * @param  list<array{type: string, message: string}>  $extraAlerts  Alertas de layout já prontos (ex.: vertical não aplicado)
      * @return array{allocated: list<array<string, mixed>>, rejected: list<array<string, mixed>>, alerts: list<array<string, mixed>>}
      */
     private function buildExplanationReport(
         array $allPlacedExplanations,
         Collection $rejected,
         array $slotAnalysis,
+        array $extraAlerts = [],
     ): array {
         $slotCategoryMap = collect($slotAnalysis)->keyBy('slot_id')->map(fn ($s) => $s['category_name'])->all();
 
@@ -2116,7 +2712,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             ->values()
             ->all();
 
-        $alerts = [];
+        // Alertas de layout (ex.: vertical pedido mas não aplicado) vêm prontos e entram
+        // primeiro — são sobre a gôndola inteira, não sobre um produto específico.
+        $alerts = $extraAlerts;
 
         $missingDimCount = $rejected
             ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::MissingDimensions && $r['product'] !== null)

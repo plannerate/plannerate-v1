@@ -37,6 +37,15 @@ final readonly class PlanogramOutput
         public array $explanationReport = [],
         /** @var list<string> IDs de planogram_template_slots removidos por não ter produto (modo automático) */
         public array $emptySlotIds = [],
+        /**
+         * Ocupação por PRATELEIRA FÍSICA, medida sobre os segmentos finais (pós-overflow).
+         *
+         * É a métrica que bate com a gôndola que o usuário vê. O slotAnalysis não serve para
+         * isso: ele é montado antes do overflow pass e ignora tudo que o overflow coloca.
+         *
+         * @var list<array{shelf_id: string, section_id: string, largura_total: float, largura_usada: float, largura_livre: float, percentual_uso: int, segmentos: int}>
+         */
+        public array $shelfAnalysis = [],
     ) {}
 
     public function totalAllocated(): int

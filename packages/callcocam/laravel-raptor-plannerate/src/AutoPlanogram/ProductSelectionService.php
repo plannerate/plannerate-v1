@@ -578,7 +578,15 @@ class ProductSelectionService
     {
         $productIds = $products->pluck('id')->toArray();
 
-        if ($config->useExistingAnalysis) {
+        /*
+         * `product_analyses` é uma tabela de CACHE que nunca chegou a existir: não há migration
+         * dela em lugar nenhum do repositório e nada no código escreve nela — só esta leitura.
+         * Consultá-la direto explodia com "relation does not exist" e derrubava a geração
+         * inteira sempre que o usuário marcava "usar análise existente".
+         *
+         * Sem a tabela, o caminho correto é o mesmo que já existe: calcular o ABC na hora.
+         */
+        if ($config->useExistingAnalysis && $this->plannerateTenantHasTable('product_analyses')) {
             $cached = $this->plannerateTenantTable('product_analyses')
                 ->whereIn('product_id', $productIds)
                 ->select(['product_id', 'abc_classification', 'target_stock', 'safety_stock'])
@@ -596,6 +604,12 @@ class ProductSelectionService
 
                 return $result;
             }
+        }
+
+        if ($config->useExistingAnalysis) {
+            Log::info('ProductSelectionService: sem cache de análise — calculando ABC na hora', [
+                'produtos' => count($productIds),
+            ]);
         }
 
         return $this->computeAbcOnTheFly($productIds, $config);

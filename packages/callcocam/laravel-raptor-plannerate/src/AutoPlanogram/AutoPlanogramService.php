@@ -297,6 +297,7 @@ final class AutoPlanogramService
             subtemplateId: $result->subtemplateId,
             explanationReport: $result->explanationReport,
             emptySlotIds: $result->emptySlotIds,
+            shelfAnalysis: $result->shelfAnalysis,
         );
 
         $this->plannerateTenantDatabase()->transaction(function () use ($input, $allSegments, $templateOutput): void {

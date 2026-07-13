@@ -9,6 +9,67 @@ return [
     ],
     'auto_planogram' => [
         /*
+         * Parâmetros físicos do posicionamento na prateleira.
+         */
+        'placement' => [
+            /*
+             * Folga (em cm) entre produtos vizinhos na mesma prateleira.
+             *
+             * O motor empacotava os produtos encostados (folga zero), o que é
+             * fisicamente irreal: na loja há uma pequena folga entre facings para o
+             * repositor conseguir tirar/repor a peça. Ignorá-la faz o planograma
+             * prometer mais produto do que a prateleira comporta de verdade.
+             *
+             * A folga só é cobrada ENTRE produtos — não sobra folga no fim da prateleira.
+             *
+             * Default 0.0 = comportamento anterior (nada muda até o cliente calibrar).
+             */
+            'product_spacing_cm' => env('PLANNERATE_PRODUCT_SPACING_CM', 0.0),
+
+            /*
+             * Meta de ocupação das prateleiras (0-1).
+             *
+             * Quanto da largura útil a gôndola deveria usar para ser considerada "fechada".
+             * Hoje é usada para MEDIR (o relatório da geração aponta quantas prateleiras
+             * ficaram abaixo do alvo); agir para fechar o vão é o objetivo das Fases 2 e 3
+             * do plano (docs/gondola-precisao-automatica/).
+             */
+            'target_occupancy_rate' => env('PLANNERATE_TARGET_OCCUPANCY_RATE', 0.90),
+
+            /*
+             * Empacotador da prateleira: 'knapsack' (padrão) ou 'greedy' (motor antigo).
+             *
+             * 'knapsack' resolve a prateleira inteira de uma vez (programação dinâmica), com as
+             * frentes como variável livre e os rejeitados por espaço reconsiderados — é o que
+             * fecha o vão que o guloso deixava aberto. Tudo que o guloso colocaria entra como
+             * obrigatório no modelo, então nenhum SKU é perdido em relação ao motor antigo.
+             *
+             * 'greedy' restaura o first-fit + round-robin sem precisar de deploy, caso alguma
+             * gôndola real saia pior do que na versão anterior.
+             */
+            'packer' => env('PLANNERATE_SHELF_PACKER', 'knapsack'),
+
+            /*
+             * Até onde um produto rejeitado por falta de espaço pode andar no overflow:
+             * 'strict' | 'siblings' (padrão) | 'any'.
+             *
+             * Medido numa gôndola real: 257cm de prateleira VAZIA convivendo com 11 produtos
+             * rejeitados por falta de espaço. Não faltava espaço — faltava PERMISSÃO. A
+             * categoria sem produto para encher a prateleira dela segurava o vão, e a categoria
+             * que transbordava não podia usá-lo, porque o overflow só realocava dentro da MESMA
+             * categoria.
+             *
+             * 'strict'   — só a própria categoria (e descendentes). Blocagem intacta, gôndola
+             *              aberta. É o comportamento anterior.
+             * 'siblings' — também as categorias IRMÃS (mesmo pai no mercadológico). Fecha a maior
+             *              parte do vão sem virar bagunça na gaveta: irmãs já ficam juntas na loja
+             *              (LÍQUIDO ao lado de GEL, ambas filhas de CUIDADO COM O BANHEIRO).
+             * 'any'      — qualquer categoria do planograma. Fecha tudo, mas quebra a blocagem.
+             */
+            'overflow_scope' => env('PLANNERATE_OVERFLOW_SCOPE', 'siblings'),
+        ],
+
+        /*
          * Parâmetros do cálculo de Estoque Alvo por classe ABC.
          *
          * service_levels: nível de serviço usado no z-score do estoque de segurança.

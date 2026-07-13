@@ -8,6 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO;
 
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\PlacementMath;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -74,8 +75,9 @@ class ShelfLayoutDTO
             return false;
         }
 
-        // Validar largura
-        if ($this->occupiedWidth + $productWidth <= $this->availableWidth) {
+        // Validar largura (tolerância de float: um produto que ocupa exatamente o espaço
+        // restante não pode ser rejeitado por erro de representação — ver PlacementMath).
+        if (PlacementMath::fits($this->occupiedWidth, $productWidth, $this->availableWidth)) {
             $this->products[] = $product;
             $this->occupiedWidth += $productWidth;
 
@@ -92,7 +94,7 @@ class ShelfLayoutDTO
     {
         $productWidth = ($singleWidth > 0 ? $singleWidth : ($product->product->width ?? 10)) * $product->facings;
 
-        return ($this->occupiedWidth + $productWidth) <= $this->availableWidth;
+        return PlacementMath::fits($this->occupiedWidth, $productWidth, $this->availableWidth);
     }
 
     /**

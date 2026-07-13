@@ -1,9 +1,10 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 import rejectedProducts39b35f from './rejected-products'
+import generationRuns from './generation-runs'
 import generationOverrides from './generation-overrides'
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::autoGenerate
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:35
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:42
 * @route '/api/gondolas/{gondola}/auto-generate'
 */
 export const autoGenerate = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -18,7 +19,7 @@ autoGenerate.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::autoGenerate
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:35
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:42
 * @route '/api/gondolas/{gondola}/auto-generate'
 */
 autoGenerate.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -45,7 +46,7 @@ autoGenerate.url = (args: { gondola: string | number } | [gondola: string | numb
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::autoGenerate
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:35
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:42
 * @route '/api/gondolas/{gondola}/auto-generate'
 */
 autoGenerate.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -55,7 +56,7 @@ autoGenerate.post = (args: { gondola: string | number } | [gondola: string | num
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::autoGenerate
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:35
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:42
 * @route '/api/gondolas/{gondola}/auto-generate'
 */
 const autoGenerateForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -65,7 +66,7 @@ const autoGenerateForm = (args: { gondola: string | number } | [gondola: string 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::autoGenerate
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:35
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:42
 * @route '/api/gondolas/{gondola}/auto-generate'
 */
 autoGenerateForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -77,7 +78,7 @@ autoGenerate.form = autoGenerateForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::rejectedProducts
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:156
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:58
 * @route '/api/gondolas/{gondola}/rejected-products'
 */
 export const rejectedProducts = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -92,7 +93,7 @@ rejectedProducts.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::rejectedProducts
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:156
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:58
 * @route '/api/gondolas/{gondola}/rejected-products'
 */
 rejectedProducts.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -119,7 +120,7 @@ rejectedProducts.url = (args: { gondola: string | number } | [gondola: string | 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::rejectedProducts
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:156
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:58
 * @route '/api/gondolas/{gondola}/rejected-products'
 */
 rejectedProducts.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -129,7 +130,7 @@ rejectedProducts.get = (args: { gondola: string | number } | [gondola: string | 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::rejectedProducts
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:156
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:58
 * @route '/api/gondolas/{gondola}/rejected-products'
 */
 rejectedProducts.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -139,7 +140,7 @@ rejectedProducts.head = (args: { gondola: string | number } | [gondola: string |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::rejectedProducts
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:156
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:58
 * @route '/api/gondolas/{gondola}/rejected-products'
 */
 const rejectedProductsForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -149,7 +150,7 @@ const rejectedProductsForm = (args: { gondola: string | number } | [gondola: str
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::rejectedProducts
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:156
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:58
 * @route '/api/gondolas/{gondola}/rejected-products'
 */
 rejectedProductsForm.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -159,7 +160,7 @@ rejectedProductsForm.get = (args: { gondola: string | number } | [gondola: strin
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::rejectedProducts
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:156
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:58
 * @route '/api/gondolas/{gondola}/rejected-products'
 */
 rejectedProductsForm.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -176,7 +177,7 @@ rejectedProducts.form = rejectedProductsForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::templateGroupings
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:187
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:89
 * @route '/api/gondolas/{gondola}/template-groupings'
 */
 export const templateGroupings = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -191,7 +192,7 @@ templateGroupings.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::templateGroupings
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:187
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:89
 * @route '/api/gondolas/{gondola}/template-groupings'
 */
 templateGroupings.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -218,7 +219,7 @@ templateGroupings.url = (args: { gondola: string | number } | [gondola: string |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::templateGroupings
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:187
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:89
 * @route '/api/gondolas/{gondola}/template-groupings'
 */
 templateGroupings.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -228,7 +229,7 @@ templateGroupings.get = (args: { gondola: string | number } | [gondola: string |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::templateGroupings
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:187
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:89
 * @route '/api/gondolas/{gondola}/template-groupings'
 */
 templateGroupings.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -238,7 +239,7 @@ templateGroupings.head = (args: { gondola: string | number } | [gondola: string 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::templateGroupings
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:187
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:89
 * @route '/api/gondolas/{gondola}/template-groupings'
 */
 const templateGroupingsForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -248,7 +249,7 @@ const templateGroupingsForm = (args: { gondola: string | number } | [gondola: st
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::templateGroupings
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:187
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:89
 * @route '/api/gondolas/{gondola}/template-groupings'
 */
 templateGroupingsForm.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -258,7 +259,7 @@ templateGroupingsForm.get = (args: { gondola: string | number } | [gondola: stri
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::templateGroupings
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:187
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:89
 * @route '/api/gondolas/{gondola}/template-groupings'
 */
 templateGroupingsForm.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -275,7 +276,7 @@ templateGroupings.form = templateGroupingsForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::swapProduct
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:443
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:348
 * @route '/api/gondolas/{gondola}/swap-product'
 */
 export const swapProduct = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -290,7 +291,7 @@ swapProduct.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::swapProduct
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:443
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:348
 * @route '/api/gondolas/{gondola}/swap-product'
 */
 swapProduct.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -317,7 +318,7 @@ swapProduct.url = (args: { gondola: string | number } | [gondola: string | numbe
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::swapProduct
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:443
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:348
 * @route '/api/gondolas/{gondola}/swap-product'
 */
 swapProduct.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -327,7 +328,7 @@ swapProduct.post = (args: { gondola: string | number } | [gondola: string | numb
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::swapProduct
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:443
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:348
 * @route '/api/gondolas/{gondola}/swap-product'
 */
 const swapProductForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -337,7 +338,7 @@ const swapProductForm = (args: { gondola: string | number } | [gondola: string |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::swapProduct
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:443
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:348
 * @route '/api/gondolas/{gondola}/swap-product'
 */
 swapProductForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -349,7 +350,7 @@ swapProduct.form = swapProductForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::reorderVisual
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:278
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:180
 * @route '/api/gondolas/{gondola}/reorder-visual'
 */
 export const reorderVisual = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -364,7 +365,7 @@ reorderVisual.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::reorderVisual
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:278
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:180
 * @route '/api/gondolas/{gondola}/reorder-visual'
 */
 reorderVisual.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -391,7 +392,7 @@ reorderVisual.url = (args: { gondola: string | number } | [gondola: string | num
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::reorderVisual
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:278
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:180
 * @route '/api/gondolas/{gondola}/reorder-visual'
 */
 reorderVisual.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -401,7 +402,7 @@ reorderVisual.post = (args: { gondola: string | number } | [gondola: string | nu
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::reorderVisual
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:278
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:180
 * @route '/api/gondolas/{gondola}/reorder-visual'
 */
 const reorderVisualForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -411,7 +412,7 @@ const reorderVisualForm = (args: { gondola: string | number } | [gondola: string
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::reorderVisual
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:278
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:180
 * @route '/api/gondolas/{gondola}/reorder-visual'
 */
 reorderVisualForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -423,7 +424,7 @@ reorderVisual.form = reorderVisualForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::redistribute
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:300
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:202
 * @route '/api/gondolas/{gondola}/redistribute'
 */
 export const redistribute = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -438,7 +439,7 @@ redistribute.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::redistribute
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:300
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:202
 * @route '/api/gondolas/{gondola}/redistribute'
 */
 redistribute.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -465,7 +466,7 @@ redistribute.url = (args: { gondola: string | number } | [gondola: string | numb
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::redistribute
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:300
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:202
 * @route '/api/gondolas/{gondola}/redistribute'
 */
 redistribute.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -475,7 +476,7 @@ redistribute.post = (args: { gondola: string | number } | [gondola: string | num
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::redistribute
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:300
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:202
 * @route '/api/gondolas/{gondola}/redistribute'
 */
 const redistributeForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -485,7 +486,7 @@ const redistributeForm = (args: { gondola: string | number } | [gondola: string 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::redistribute
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:300
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:202
 * @route '/api/gondolas/{gondola}/redistribute'
 */
 redistributeForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -497,7 +498,7 @@ redistribute.form = redistributeForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::reorderAll
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:322
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:224
 * @route '/api/gondolas/{gondola}/reorder-all'
 */
 export const reorderAll = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -512,7 +513,7 @@ reorderAll.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::reorderAll
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:322
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:224
 * @route '/api/gondolas/{gondola}/reorder-all'
 */
 reorderAll.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -539,7 +540,7 @@ reorderAll.url = (args: { gondola: string | number } | [gondola: string | number
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::reorderAll
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:322
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:224
 * @route '/api/gondolas/{gondola}/reorder-all'
 */
 reorderAll.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -549,7 +550,7 @@ reorderAll.post = (args: { gondola: string | number } | [gondola: string | numbe
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::reorderAll
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:322
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:224
 * @route '/api/gondolas/{gondola}/reorder-all'
 */
 const reorderAllForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -559,7 +560,7 @@ const reorderAllForm = (args: { gondola: string | number } | [gondola: string | 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::reorderAll
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:322
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:224
 * @route '/api/gondolas/{gondola}/reorder-all'
 */
 reorderAllForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -571,7 +572,7 @@ reorderAll.form = reorderAllForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::redistributeAll
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:344
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:246
 * @route '/api/gondolas/{gondola}/redistribute-all'
 */
 export const redistributeAll = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -586,7 +587,7 @@ redistributeAll.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::redistributeAll
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:344
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:246
 * @route '/api/gondolas/{gondola}/redistribute-all'
 */
 redistributeAll.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -613,7 +614,7 @@ redistributeAll.url = (args: { gondola: string | number } | [gondola: string | n
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::redistributeAll
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:344
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:246
 * @route '/api/gondolas/{gondola}/redistribute-all'
 */
 redistributeAll.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -623,7 +624,7 @@ redistributeAll.post = (args: { gondola: string | number } | [gondola: string | 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::redistributeAll
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:344
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:246
 * @route '/api/gondolas/{gondola}/redistribute-all'
 */
 const redistributeAllForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -633,7 +634,7 @@ const redistributeAllForm = (args: { gondola: string | number } | [gondola: stri
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::redistributeAll
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:344
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:246
 * @route '/api/gondolas/{gondola}/redistribute-all'
 */
 redistributeAllForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -645,7 +646,7 @@ redistributeAll.form = redistributeAllForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::regenerateAuto
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:395
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:299
 * @route '/api/gondolas/{gondola}/regenerate-auto'
 */
 export const regenerateAuto = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -660,7 +661,7 @@ regenerateAuto.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::regenerateAuto
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:395
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:299
 * @route '/api/gondolas/{gondola}/regenerate-auto'
 */
 regenerateAuto.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -687,7 +688,7 @@ regenerateAuto.url = (args: { gondola: string | number } | [gondola: string | nu
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::regenerateAuto
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:395
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:299
 * @route '/api/gondolas/{gondola}/regenerate-auto'
 */
 regenerateAuto.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -697,7 +698,7 @@ regenerateAuto.post = (args: { gondola: string | number } | [gondola: string | n
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::regenerateAuto
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:395
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:299
 * @route '/api/gondolas/{gondola}/regenerate-auto'
 */
 const regenerateAutoForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -707,7 +708,7 @@ const regenerateAutoForm = (args: { gondola: string | number } | [gondola: strin
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::regenerateAuto
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:395
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:299
 * @route '/api/gondolas/{gondola}/regenerate-auto'
 */
 regenerateAutoForm.post = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -727,6 +728,7 @@ const gondolas = {
     reorderAll: Object.assign(reorderAll, reorderAll),
     redistributeAll: Object.assign(redistributeAll, redistributeAll),
     regenerateAuto: Object.assign(regenerateAuto, regenerateAuto),
+    generationRuns: Object.assign(generationRuns, generationRuns),
     generationOverrides: Object.assign(generationOverrides, generationOverrides),
 }
 

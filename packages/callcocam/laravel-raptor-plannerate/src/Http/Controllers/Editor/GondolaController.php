@@ -17,7 +17,6 @@ use App\Models\WorkflowPlanogramStep;
 use App\Support\Authorization\PermissionName;
 use App\Support\Modules\ModuleSlug;
 use App\Support\Modules\TenantModuleService;
-use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\AutoGenerationRunner;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\Editor\StoreGondolaRequest;
@@ -36,6 +35,7 @@ use Callcocam\LaravelRaptorPlannerate\Models\Shelf;
 use Callcocam\LaravelRaptorPlannerate\Models\User;
 use Callcocam\LaravelRaptorPlannerate\Services\Editor\GondolaPayloadService;
 use Callcocam\LaravelRaptorPlannerate\Services\Editor\GondolaService;
+use Callcocam\LaravelRaptorPlannerate\Services\Generation\GenerationQueueDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -137,21 +137,15 @@ class GondolaController extends Controller
             $mode = 'manual';
         }
 
-        // Modo automático: o motor dirige a estrutura — cria + gera no mesmo fluxo e
-        // redireciona para a gôndola já preenchida (sem reabrir o modal de geração).
+        // Modo automático: o motor dirige a estrutura — cria a gôndola e ENFILEIRA a
+        // geração, redirecionando ao editor, que acompanha o progresso e se atualiza
+        // ao concluir (a geração pode demorar; ver docs/gondola-precisao-automatica/).
         if ($mode === 'automatic') {
-            try {
-                $config = AutoGenerateConfigDTO::fromArray($request->validated());
+            $config = AutoGenerateConfigDTO::fromArray($request->validated());
 
-                $gondola->load('sections.shelves');
+            app(GenerationQueueDispatcher::class)->dispatch($gondola, $planogramModel, $config, templateId: null);
 
-                app(AutoGenerationRunner::class)->run($gondola, $planogramModel, $config, templateId: null);
-
-                return redirect($editorUrl)->with('success', __('Gôndola criada e gerada com sucesso!'));
-            } catch (\RuntimeException $e) {
-                // Gôndola criada, mas sem produtos elegíveis para gerar — leva ao editor com aviso.
-                return redirect($editorUrl)->with('warning', $e->getMessage());
-            }
+            return redirect($editorUrl)->with('info', __('plannerate.generation.queued'));
         }
 
         // Modo template: cria a estrutura e abre o modal de geração no editor.
