@@ -8,6 +8,7 @@ use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Sale;
 use Callcocam\LaravelRaptorPlannerate\Sales\ProductSalesAggregateQuery;
 use Callcocam\LaravelRaptorPlannerate\Sales\SalesStatistics;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,12 @@ use Illuminate\Support\Facades\Log;
  */
 class AbcAnalysisService
 {
+    /**
+     * Janela de recência do VBA (docs/ABC.md): venda ou compra dentro destes dias conta
+     * como movimento recente e mantém o produto Ativo.
+     */
+    public const RECENCIA_DIAS = 120;
+
     /**
      * Pesos padrão para cálculo da média ponderada
      */
@@ -873,49 +880,111 @@ class AbcAnalysisService
     }
 
     /**
-     * Calcula status do produto (Ativo/Inativo) - versão otimizada
+     * Status e justificativa do produto — regra do VBA do cliente (docs/ABC.md, bloco
+     * ">>> Status do Produto"). São as colunas Q (Status) e S (Justificativa) da planilha.
      *
-     * Usa dados pré-carregados em vez de fazer query individual
+     * Cruza três sinais, com a janela de RECENCIA_DIAS (120 dias) do VBA:
      *
-     * @param  Product|null  $product  Modelo do produto
-     * @param  object|null  $lastSaleData  Dados da última venda (pré-carregados)
+     *   última venda recente + última compra recente  → Ativo   / Venda e compra recentes
+     *   última venda recente + sem compra recente     → Ativo   / Venda recente, sem compra
+     *   última compra recente + sem venda recente     → Ativo   / Compra recente, sem venda
+     *   nenhum dos dois                               → Sem venda e sem compra
+     *                                                   Inativo se estoque = 0, Ativo se > 0
+     *
+     * A implementação anterior era uma "lógica simplificada": só olhava a última venda e
+     * tratava o estoque como 0 fixo, então nunca chegava aos casos de compra. As datas
+     * saem de `products.last_purchase_date` e o estoque de `products.current_stock`.
+     *
+     * ATENÇÃO: `last_purchase_date` ainda NÃO é populada pela importação (0 de 8.592
+     * produtos no tenant de dev). Enquanto isso, os dois casos que dependem de compra não
+     * disparam e todo produto vendido recentemente cai em "Venda recente, sem compra" —
+     * que é exatamente o que o VBA faz quando a data de compra vem vazia. A lógica está
+     * correta; falta o dado (a tabela `purchases` do legado tem `last_purchase_date` e
+     * `current_stock` por produto).
+     *
+     * @param  Product|null  $product  Modelo do produto (traz last_purchase_date e current_stock)
+     * @param  object|null  $lastSaleData  Última venda pré-carregada (evita N+1)
+     * @return array{status: string, motivo: string}
      */
     private function calculateProductStatusOptimized(?Product $product, ?object $lastSaleData): array
     {
         if (! $product) {
             return [
-                'status' => 'Inativo',
-                'motivo' => 'Produto não encontrado',
+                'status' => trans('plannerate.analysis.product_status.inactive'),
+                'motivo' => trans('plannerate.analysis.product_status.not_found'),
             ];
         }
 
-        $dataHoje = now();
+        return $this->productStatus(
+            $lastSaleData?->last_sale_date ?? null,
+            $product->last_purchase_date,
+            (float) ($product->current_stock ?? 0),
+        );
+    }
 
-        // Usa dados pré-carregados da última venda
-        $ultimaVendaDate = $lastSaleData?->last_sale_date ?? null;
-        $diasSemVenda = $ultimaVendaDate ? $dataHoje->diffInDays($ultimaVendaDate) : null;
+    /**
+     * A decisão de status em si — pura, sem banco, testável isolada.
+     *
+     * @param  mixed  $ultimaVenda  Data da última venda (null = nunca vendeu)
+     * @param  mixed  $ultimaCompra  Data da última compra (null = sem registro de compra)
+     * @param  float  $estoqueAtual  Estoque atual; só decide no caso sem movimento nenhum
+     * @return array{status: string, motivo: string}
+     */
+    public function productStatus(mixed $ultimaVenda, mixed $ultimaCompra, float $estoqueAtual): array
+    {
+        $ativo = trans('plannerate.analysis.product_status.active');
+        $vendaRecente = $this->isRecent($ultimaVenda);
+        $compraRecente = $this->isRecent($ultimaCompra);
 
-        $estoqueAtual = 0;
-
-        // Lógica simplificada de status baseada apenas em vendas
-        if ($diasSemVenda !== null && $diasSemVenda <= 120) {
+        if ($vendaRecente && $compraRecente) {
             return [
-                'status' => 'Ativo',
-                'motivo' => 'Venda recente',
+                'status' => $ativo,
+                'motivo' => trans('plannerate.analysis.product_status.recent_sale_and_purchase'),
             ];
         }
 
-        if ($estoqueAtual > 0) {
+        if ($vendaRecente) {
             return [
-                'status' => 'Ativo',
-                'motivo' => 'Com estoque',
+                'status' => $ativo,
+                'motivo' => trans('plannerate.analysis.product_status.recent_sale_no_purchase'),
             ];
         }
 
+        if ($compraRecente) {
+            return [
+                'status' => $ativo,
+                'motivo' => trans('plannerate.analysis.product_status.recent_purchase_no_sale'),
+            ];
+        }
+
+        // Sem movimento nos dois lados: só o estoque decide se o produto ainda está vivo.
         return [
-            'status' => 'Inativo',
-            'motivo' => $diasSemVenda === null ? 'Sem vendas' : 'Sem venda há mais de 120 dias',
+            'status' => $estoqueAtual > 0
+                ? $ativo
+                : trans('plannerate.analysis.product_status.inactive'),
+            'motivo' => trans('plannerate.analysis.product_status.no_sale_no_purchase'),
         ];
+    }
+
+    /**
+     * A data caiu dentro da janela de recência do VBA (120 dias)?
+     *
+     * Data ausente é "não recente" — é o `ultimaVenda <> 0` / `ultimaCompra <> 0` do VBA,
+     * que trata célula vazia como ausência de movimento, não como movimento antigo.
+     */
+    private function isRecent(mixed $data): bool
+    {
+        if (blank($data)) {
+            return false;
+        }
+
+        try {
+            $dias = Carbon::parse($data)->startOfDay()->diffInDays(now()->startOfDay());
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return $dias <= self::RECENCIA_DIAS;
     }
 
     /**

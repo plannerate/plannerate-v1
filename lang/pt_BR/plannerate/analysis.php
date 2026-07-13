@@ -267,6 +267,20 @@ return [
         'export_report' => 'Exportar Relatório',
         'export_report_tooltip' => 'Exportar resultados filtrados em CSV',
     ],
+    /*
+     * Status e justificativa do produto — colunas Q e S da planilha do cliente.
+     * Os textos são a saída literal do VBA (docs/ABC.md) e aparecem assim no relatório
+     * dele: não reescrever sem combinar antes, ou o relatório deixa de casar com o dele.
+     */
+    'product_status' => [
+        'active' => 'Ativo',
+        'inactive' => 'Inativo',
+        'recent_sale_and_purchase' => 'Venda e compra recentes',
+        'recent_sale_no_purchase' => 'Venda recente, sem compra',
+        'recent_purchase_no_sale' => 'Compra recente, sem venda',
+        'no_sale_no_purchase' => 'Sem venda e sem compra',
+        'not_found' => 'Produto não encontrado',
+    ],
     'target_stock_results' => [
         'product_description' => 'Descrição Produto',
         'avg_demand' => 'Demanda média',
