@@ -711,20 +711,18 @@ class AbcAnalysisService
         $acumulado = 0.0;
         $menorPercentualB = 1.0;
         $hasClassB = false;
-        $ranking = 1;
 
         foreach ($products as $product) {
             $percentualIndividual = $product['media_ponderada'] / $totalPonderado;
+            $acumuladoAntes = $acumulado;
             $acumulado += $percentualIndividual;
 
-            if ($this->classifyAtRank($acumulado, $ranking) === 'B') {
+            if ($this->classify($acumuladoAntes) === 'B') {
                 $hasClassB = true;
                 if ($percentualIndividual < $menorPercentualB) {
                     $menorPercentualB = $percentualIndividual;
                 }
             }
-
-            $ranking++;
         }
 
         // Segundo passe: classificação final + retirar_do_mix
@@ -734,9 +732,10 @@ class AbcAnalysisService
 
         foreach ($products as $product) {
             $percentualIndividual = $product['media_ponderada'] / $totalPonderado;
+            $acumuladoAntes = $acumulado;
             $acumulado += $percentualIndividual;
 
-            $classificacao = $this->classifyAtRank($acumulado, $ranking);
+            $classificacao = $this->classify($acumuladoAntes);
 
             $result->push([
                 'product_id' => $product['product_id'],
@@ -754,42 +753,16 @@ class AbcAnalysisService
     }
 
     /**
-     * Classificação final: a regra do acumulado, com a exceção do líder do grupo.
+     * Classifica produto em A, B ou C baseado no percentual acumulado ANTES do item.
      *
-     * O 1º do ranking é SEMPRE A. Pela regra pura do acumulado, um produto que sozinho
-     * responde por mais que o corte A (ou o único produto de uma categoria, com 100%)
-     * cairia em C — o dono da categoria classificado como o pior dela. A exceção fica
-     * confinada aqui, no caso degenerado, em vez de distorcer a regra para todo mundo
-     * (que foi o erro do commit 01da121b: promover TODO item que cruza um corte).
-     *
-     * Não afeta a paridade com a planilha de referência: nos dois grupos de açúcar o
-     * líder já é A pelo acumulado (43,03% e 43,75%).
-     */
-    private function classifyAtRank(float $acumulado, int $ranking): string
-    {
-        if ($ranking === 1) {
-            return 'A';
-        }
-
-        return $this->classify($acumulado);
-    }
-
-    /**
-     * Classifica produto em A, B ou C pelo percentual acumulado APÓS somar o item.
-     *
-     * Os cortes são INCLUSIVOS (<=): o item cujo acumulado fecha exatamente sobre o
-     * corte ainda pertence à classe. É a regra da planilha de referência do cliente
-     * (ver AbcSpreadsheetParityTest) e a que o sistema usava até 12/06/2026.
-     *
-     * Classificar pelo acumulado ANTES do item — como passou a fazer o commit
-     * 01da121b — promove indevidamente quem cruza o corte e dá um A a mais em CADA
-     * grupo, além de exibir na tela um acumulado diferente do que decidiu a classe.
+     * Os cortes usam comparação estrita (<): um item cujo acumulado anterior está
+     * exatamente sobre o corte já pertence à classe seguinte.
      */
     private function classify(float $acumulado): string
     {
-        if ($acumulado <= $this->corteA) {
+        if ($acumulado < $this->corteA) {
             return 'A';
-        } elseif ($acumulado <= $this->corteB) {
+        } elseif ($acumulado < $this->corteB) {
             return 'B';
         }
 
