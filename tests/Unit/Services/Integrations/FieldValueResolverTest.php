@@ -35,3 +35,21 @@ it('resolves expressions with multiplication and division using operator precede
 
     expect($value)->toBe(14.0);
 });
+
+it('resolves a wildcard path instead of misreading ".*." as multiplication', function (): void {
+    $resolver = new FieldValueResolver;
+
+    $value = $resolver->resolve(
+        [
+            'fornecedores' => [
+                ['data_ultima_compra' => '2018-10-11'],
+                ['data_ultima_compra' => null],
+                ['data_ultima_compra' => '2021-06-10'],
+            ],
+        ],
+        'fornecedores.*.data_ultima_compra',
+        ['filter_filled', 'max_date'],
+    );
+
+    expect($value)->toBe('2021-06-10');
+});
