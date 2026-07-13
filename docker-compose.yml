@@ -1,4 +1,24 @@
- 
+name: plannerate-v1
+
+# Postgres, Redis, Mailpit e pgAdmin NÃO vivem aqui — são compartilhados entre
+# todos os projetos e sobem uma vez só em ~/docker/shared. Este compose declara
+# apenas o que é do projeto (php, nginx, horizon, reverb).
+#
+# Pré-requisito:  cd ~/docker/shared && docker compose up -d
+# Provisionamento: ~/docker/shared/newdb.sh plannerate-v1 --createdb
+#
+#   O --createdb é obrigatório AQUI: este projeto é multi-tenant com um banco
+#   por tenant, e quem cria o banco `tenant_<slug>` é a própria aplicação, em
+#   runtime (ProvisionTenantDatabaseJob). Sem CREATEDB no role, cadastrar um
+#   tenant novo falha.
+#
+# O shared-postgres usa a imagem pgvector/pgvector:pg17 — a extensão `vector`
+# que este projeto precisa está lá.
+#
+# O MySQL saiu: a única coisa que usava a conexão `mysql_legacy` é o comando
+# ImportLegacyProductsCommand, uma importação pontual. Se for rodá-la, suba um
+# MySQL avulso na hora; não precisa ficar de pé o tempo todo.
+
 services:
 
   nginx:
@@ -11,12 +31,16 @@ services:
       - ./:/var/www
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
 
+    restart: unless-stopped
+
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=web"
-      - "traefik.http.routers.app.rule=Host(`plannerate.localhost`) || HostRegexp(`{subdomain:.+}.plannerate.localhost`)"
-      - "traefik.http.routers.app.priority=1"
-      - "traefik.http.services.app.loadbalancer.server.port=80"
+      # O HostRegexp é o que faz os subdomínios de tenant caírem aqui — é assim
+      # que o DomainTenantWithDomainsFinder identifica o tenant.
+      - "traefik.http.routers.plannerate-web.rule=Host(`plannerate.localhost`) || HostRegexp(`{subdomain:.+}.plannerate.localhost`)"
+      - "traefik.http.routers.plannerate-web.priority=1"
+      - "traefik.http.services.plannerate-web.loadbalancer.server.port=80"
 
     networks:
       - web
@@ -31,22 +55,25 @@ services:
     volumes:
       - ./:/var/www
 
-    depends_on:
-      postgres:
-        condition: service_started
-      redis:
-        condition: service_started
-      mysql:
-        condition: service_started
-
     extra_hosts:
       - "base-teste-api.localhost:host-gateway"
 
     working_dir: /var/www
 
-    networks:
-      - web
+    restart: unless-stopped
 
+    networks:
+      # Alias único: os três projetos têm um serviço chamado `php`, e todos estão
+      # na rede `web`. Sem isto, os três respondem pelo mesmo nome `php` e o DNS
+      # do Docker faz round-robin — o nginx de um projeto acaba falando com o
+      # php-fpm de outro, servindo o app errado.
+      web:
+        aliases:
+          - plannerate-php
+
+  # Horizon: gerencia as filas do redis. É ele quem processa o
+  # ProvisionTenantDatabaseJob — sem Horizon no ar, um tenant novo fica preso
+  # em `status = provisioning` para sempre.
   horizon:
     build:
       context: .
@@ -60,7 +87,6 @@ services:
       - ./:/var/www
 
     depends_on:
-      - redis
       - php
 
     extra_hosts:
@@ -68,9 +94,12 @@ services:
 
     working_dir: /var/www
 
+    restart: unless-stopped
+
     networks:
       - web
 
+  # Reverb: websockets (broadcasting).
   reverb:
     build:
       context: .
@@ -83,139 +112,19 @@ services:
     volumes:
       - ./:/var/www
 
-    depends_on:
-      - redis
-
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=web"
-      - "traefik.http.routers.reverb.rule=Host(`ws.plannerate.localhost`)"
-      - "traefik.http.routers.reverb.priority=100"
-      - "traefik.http.services.reverb.loadbalancer.server.port=8080"
-
     working_dir: /var/www
 
-    networks:
-      - web
-
-  postgres:
-    image: pgvector/pgvector:pg17
-
-    environment:
-      POSTGRES_DB: landlord
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-    ports:
-      - "5432:5432"
-
-    networks:
-      - web
-
-  pgadmin:
-    image: dpage/pgadmin4:9.14
-
-    depends_on:
-      - postgres
-
-    environment:
-      PGADMIN_DEFAULT_EMAIL: '${PGADMIN_DEFAULT_EMAIL:-admin@plannerate.com}'
-      PGADMIN_DEFAULT_PASSWORD: '${PGADMIN_DEFAULT_PASSWORD:-password}'
-
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-
-    ports:
-      - "5050:80"
+    restart: unless-stopped
 
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=web"
-      - "traefik.http.routers.pgadmin.rule=Host(`pgadmin.plannerate.localhost`)"
-      - "traefik.http.routers.pgadmin.priority=100"
-      - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
+      - "traefik.http.routers.plannerate-reverb.rule=Host(`ws.plannerate.localhost`)"
+      - "traefik.http.routers.plannerate-reverb.priority=100"
+      - "traefik.http.services.plannerate-reverb.loadbalancer.server.port=8080"
 
     networks:
       - web
-
-  mysql:
-    image: mysql:8.0
-
-    command: --default-authentication-plugin=mysql_native_password
-
-    environment:
-      MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD:-root}'
-      MYSQL_DATABASE: '${MYSQL_DATABASE:-legacy}'
-      MYSQL_USER: '${MYSQL_USER:-root}'
-      MYSQL_PASSWORD: '${MYSQL_PASSWORD:-password}'
-
-    volumes:
-      - mysql_data:/var/lib/mysql
-
-    ports:
-      - "3306:3306"
-
-    networks:
-      - web
-
-  phpmyadmin:
-    image: phpmyadmin:latest
-
-    depends_on:
-      - mysql
-
-    environment:
-      PMA_HOST: '${PMA_HOST:-mysql}'
-      PMA_PORT: '${PMA_PORT:-3306}'
-      PMA_USER: '${PMA_USER:-root}'
-      PMA_PASSWORD: '${PMA_PASSWORD:-root}'
-      UPLOAD_LIMIT: '${PHPMYADMIN_UPLOAD_LIMIT:-256M}'
-    ports:
-      - "8081:80"
-
-
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=web"
-      - "traefik.http.routers.phpmyadmin.rule=Host(`phpmyadmin.plannerate.localhost`)"
-      - "traefik.http.routers.phpmyadmin.priority=100"
-      - "traefik.http.services.phpmyadmin.loadbalancer.server.port=80"
-
-    networks:
-      - web
-
-  redis:
-    image: redis:7-alpine
-
-    command: redis-server --appendonly yes
-
-    volumes:
-      - redis_data:/data
-
-    ports:
-      - "6379:6379"
-
-    networks:
-      - web
-
-  mailpit:
-    image: axllent/mailpit
-
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-
-    networks:
-      - web
-
-volumes:
-  postgres_data:
-  pgadmin_data:
-  mysql_data:
-  redis_data:
 
 networks:
   web:
