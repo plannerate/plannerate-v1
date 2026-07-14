@@ -14,6 +14,7 @@ import {
     hasMultipleProductsData,
     hasProductData,
     hasSegmentData,
+    isCopyModifier,
     setMultipleProductsDragData,
     setProductDragData,
     setRejectedProductDragData,
@@ -94,10 +95,9 @@ describe('múltiplos produtos', () => {
 });
 
 describe('segmento', () => {
-    it('move por padrão; Ctrl marca cópia e muda o effectAllowed', () => {
+    it('registra o modificador de cópia sem travar o effectAllowed', () => {
         const move = dt();
         setSegmentDragData(move, 'SEG1', 'SHELF1', false);
-        expect(move.effectAllowed).toBe('move');
         expect(getSegmentDragData(move)).toEqual({
             segmentId: 'SEG1',
             sourceShelfId: 'SHELF1',
@@ -106,9 +106,29 @@ describe('segmento', () => {
 
         const copy = dt();
         setSegmentDragData(copy, 'SEG2', 'SHELF2', true);
-        expect(copy.effectAllowed).toBe('copy');
         expect(getSegmentDragData(copy)?.isCopy).toBe(true);
         expect(hasSegmentData(copy)).toBe(true);
+
+        // 'copyMove' nos DOIS casos: travar em 'move' fazia o browser recusar
+        // dropEffect='copy' quando o modificador só era pressionado no meio do
+        // arraste — o caso normal no macOS, onde Ctrl+mousedown é clique secundário.
+        expect(move.effectAllowed).toBe('copyMove');
+        expect(copy.effectAllowed).toBe('copyMove');
+    });
+
+    it('aceita Alt (macOS), Ctrl e Cmd como modificador de cópia', () => {
+        const event = (mods: Partial<MouseEvent>) =>
+            ({
+                altKey: false,
+                ctrlKey: false,
+                metaKey: false,
+                ...mods,
+            }) as MouseEvent;
+
+        expect(isCopyModifier(event({ altKey: true }))).toBe(true);
+        expect(isCopyModifier(event({ ctrlKey: true }))).toBe(true);
+        expect(isCopyModifier(event({ metaKey: true }))).toBe(true);
+        expect(isCopyModifier(event({}))).toBe(false);
     });
 
     it('parser devolve null quando o drag não carrega segmento', () => {

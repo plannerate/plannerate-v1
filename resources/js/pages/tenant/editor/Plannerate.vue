@@ -67,8 +67,14 @@ const props = withDefaults(defineProps<Props>(), {
     }),
 });
 
-// Separar props para ResourceLayout (sem record)
-const { record, products, analysis } = props;
+// Precisam ser computed, NÃO desestruturados: `const { record } = props` congela a
+// referência do setup. Depois de um `router.reload()` (o que a geração faz ao
+// concluir) o Inertia entrega um `record` novo em props, mas a const continuava
+// apontando para o objeto antigo — o PlanogramEditor nunca via a mudança, o watch
+// de `record` não disparava e a gôndola recém-gerada não aparecia na tela.
+const record = computed(() => props.record);
+const products = computed(() => props.products);
+const analysis = computed(() => props.analysis);
 
 const page = usePage();
 
