@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Modules\ModuleSlug;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -142,9 +143,11 @@ class Tenant extends ModelsTenant
 
     public function scopeWhereHasActiveModule(Builder $query, string $slug): void
     {
-        $query->whereHas('modules', function ($moduleQuery) use ($slug): void {
+        $variants = ModuleSlug::variants($slug);
+
+        $query->whereHas('modules', function ($moduleQuery) use ($variants): void {
             $moduleQuery
-                ->where('modules.slug', $slug)
+                ->whereIn('modules.slug', $variants)
                 ->where('modules.is_active', true);
         });
     }

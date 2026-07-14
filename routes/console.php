@@ -36,6 +36,13 @@ Schedule::command('planograms:trigger-periodic-review')
     ->withoutOverlapping()
     ->name('planograms-trigger-periodic-review');
 
+// Depois da revisão periódica (04:00) e antes do horário comercial: as propostas ficam prontas
+// para o gestor encontrar quando abrir o sistema.
+Schedule::command('planograms:trigger-reoptimization')
+    ->dailyAt('04:30')
+    ->withoutOverlapping()
+    ->name('planograms-trigger-reoptimization');
+
 Schedule::command('horizon:snapshot')
     ->everyFiveMinutes()
     ->name('horizon-snapshot');

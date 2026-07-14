@@ -28,6 +28,7 @@ class PlanogramGenerationRunController extends Controller
     public function index(string $gondola): JsonResponse
     {
         $runs = PlanogramGenerationRun::query()
+            ->applied()
             ->where('gondola_id', $gondola)
             ->latest()
             ->orderByDesc('id')
@@ -59,6 +60,7 @@ class PlanogramGenerationRunController extends Controller
     public function latest(string $gondola): JsonResponse
     {
         $run = PlanogramGenerationRun::query()
+            ->applied()
             ->where('gondola_id', $gondola)
             ->latest()
             ->orderByDesc('id')
@@ -76,6 +78,7 @@ class PlanogramGenerationRunController extends Controller
     public function pending(string $gondola): JsonResponse
     {
         $pending = PlanogramGenerationRun::query()
+            ->applied()
             ->where('gondola_id', $gondola)
             ->whereIn('status', [GenerationRunStatus::Queued, GenerationRunStatus::Running])
             ->latest()

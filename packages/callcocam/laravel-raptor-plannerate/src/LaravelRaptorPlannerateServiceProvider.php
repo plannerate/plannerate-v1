@@ -56,6 +56,7 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
         $this->registerExportRoutes();
         $this->registerEditorApiRoutes();
         $this->registerGenerationRoutes();
+        $this->registerReoptimizationRoutes();
         $this->registerTemplateRoutes();
     }
 
@@ -83,6 +84,22 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
         Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
             ->name('tenant.')
             ->group($generationRouteFile);
+    }
+
+    /**
+     * Rotas da reotimização contínua (mesmo grupo das rotas de geração).
+     */
+    protected function registerReoptimizationRoutes(): void
+    {
+        $reoptimizationRouteFile = __DIR__.'/../routes/reoptimization.php';
+
+        if (! file_exists($reoptimizationRouteFile)) {
+            return;
+        }
+
+        Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
+            ->name('tenant.')
+            ->group($reoptimizationRouteFile);
     }
 
     /**

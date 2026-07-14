@@ -47,5 +47,17 @@ final readonly class PlanogramInput
          * @var Collection<int, array{product: Product, reason: PlacementFailureReason}>
          */
         public Collection $preRejectedProducts = new Collection,
+        /**
+         * Modo simulação: calcula o layout completo mas NÃO persiste nada.
+         *
+         * Suportado apenas em modo template — o modo automático sintetiza o template no banco
+         * (cria subtemplate/slots, remove slots vazios, cria prateleiras), efeitos que não podem
+         * ser desfeitos pulando a transação de escrita. AutoPlanogramService::generate() rejeita
+         * a combinação dryRun + modo automático.
+         *
+         * Usado pela reotimização contínua para montar a proposta de layout que o usuário revisa
+         * antes de aplicar.
+         */
+        public bool $dryRun = false,
     ) {}
 }

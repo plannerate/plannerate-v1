@@ -2,6 +2,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\AutoPlanogram;
 
+use App\Models\Planogram;
 use App\Models\Scopes\TenantScope;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementResult;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramInput;
@@ -21,6 +22,7 @@ use Callcocam\LaravelRaptorPlannerate\Services\Editor\ShelfStructureService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use LogicException;
 
 /**
  * Orquestrador do pipeline de geração de planogramas.
@@ -55,6 +57,16 @@ final class AutoPlanogramService
 
     public function generate(PlanogramInput $input): PlanogramOutput
     {
+        // O dry-run se apoia no fato de que, em modo template, tudo antes da transação de escrita
+        // é leitura pura. O modo automático não tem essa propriedade: a síntese persiste subtemplate
+        // e slots, poda slots vazios e pode criar prateleiras. Pular a transação final não desfaria
+        // nada disso — a gôndola sairia alterada de uma "simulação".
+        if ($input->dryRun && ! $input->settings->usesTemplate()) {
+            throw new LogicException(
+                'Dry-run só é suportado em modo template: o modo automático sintetiza o template no banco.'
+            );
+        }
+
         Log::info('AutoPlanogramService: iniciando geração', [
             'gondola_id' => $input->gondolaId,
             'planogram_id' => $input->planogramId,
@@ -63,6 +75,7 @@ final class AutoPlanogramService
             'mode' => $input->settings->usesTemplate() ? 'template' : 'automatic',
             'template_id' => $input->settings->templateId,
             'score_mode' => $input->settings->usesTemplate() ? 'optional' : 'required',
+            'dry_run' => $input->dryRun,
         ]);
 
         $scored = $this->scorer->scoreOrNeutral($input->products, $input->settings);
@@ -134,6 +147,24 @@ final class AutoPlanogramService
         $this->pruneEmptySlots($output->emptySlotIds);
 
         return $output;
+    }
+
+    /**
+     * Registra no planograma qual subtemplate foi efetivamente aplicado.
+     *
+     * Bookkeeping — vivia dentro do TemplatePlacementEngine, mas escrita no meio do cálculo
+     * impedia um dry-run confiável. O engine agora devolve o subtemplate no PlacementResult e
+     * a persistência acontece aqui, junto com o resto da escrita (e portanto pulada no dry-run).
+     */
+    private function recordSubtemplateUsed(string $planogramId, ?string $subtemplateId): void
+    {
+        if ($subtemplateId === null) {
+            return;
+        }
+
+        Planogram::withoutGlobalScopes()
+            ->where('id', $planogramId)
+            ->update(['subtemplate_id' => $subtemplateId]);
     }
 
     /**
@@ -300,10 +331,15 @@ final class AutoPlanogramService
             shelfAnalysis: $result->shelfAnalysis,
         );
 
-        $this->plannerateTenantDatabase()->transaction(function () use ($input, $allSegments, $templateOutput): void {
-            $this->writer->write($input->gondolaId, $input->sections, $allSegments);
-            $this->rejectedProductsWriter->write($input->planogramId, $input->gondolaId, $input->tenantId, $templateOutput);
-        });
+        // Dry-run: o output acima já é o layout completo. Pular a escrita é suficiente para não
+        // deixar rastro — em modo template, nada antes daqui toca o banco.
+        if (! $input->dryRun) {
+            $this->plannerateTenantDatabase()->transaction(function () use ($input, $allSegments, $templateOutput, $result): void {
+                $this->writer->write($input->gondolaId, $input->sections, $allSegments);
+                $this->rejectedProductsWriter->write($input->planogramId, $input->gondolaId, $input->tenantId, $templateOutput);
+                $this->recordSubtemplateUsed($input->planogramId, $result->subtemplateId);
+            });
+        }
 
         Log::info('AutoPlanogramService: geração com template concluída', [
             'gondola_id' => $input->gondolaId,
@@ -312,6 +348,7 @@ final class AutoPlanogramService
             'validation_passed' => $report->passed,
             'score_type' => $scoreType,
             'sugestoes' => count($suggestions),
+            'dry_run' => $input->dryRun,
         ]);
 
         return $templateOutput;

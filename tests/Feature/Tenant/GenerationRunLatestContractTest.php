@@ -63,6 +63,8 @@ function buildOverlaySchema(): void
         $table->char('user_id', 26)->nullable();
         $table->string('status')->default('queued');
         $table->string('mode');
+        $table->string('kind')->default('apply');
+        $table->string('trigger')->default('manual');
         $table->json('config_snapshot');
         $table->char('template_id', 26)->nullable();
         $table->char('synth_template_id', 26)->nullable();
@@ -80,6 +82,9 @@ function buildOverlaySchema(): void
         $table->timestamps();
         $table->softDeletes();
     });
+
+    // Toda geração passa pelo GenerationQueueDispatcher, que invalida propostas pendentes.
+    buildReoptimizationProposalsTable();
 }
 
 /** Gôndola de teste com planograma pai. forceFill: `id` não é fillable nesses models. */
@@ -185,4 +190,45 @@ test('gôndola sem execução devolve data null — o overlay não deve aparecer
     $response = app(PlanogramGenerationRunController::class)->latest($gondola->id);
 
     expect($response->getData(true)['data'])->toBeNull();
+});
+
+/**
+ * A reotimização roda o pipeline em dry-run e registra a execução como kind=proposal.
+ * Se esses runs vazarem para latest()/pending(), o editor mostra "gerando..." e chega a
+ * recarregar a tela sozinho por causa de uma simulação de background que não mudou nada.
+ */
+test('run de proposta (dry-run da reotimização) não aparece como a geração corrente', function (): void {
+    $gondola = makeOverlayGondola('01jplanogramoverlayprop000', '01jgondolaoverlayprop00000');
+
+    (new PlanogramGenerationRun)->forceFill([
+        'id' => '01jrunoverlayapply00000000',
+        'planogram_id' => $gondola->planogram_id,
+        'gondola_id' => $gondola->id,
+        'status' => 'completed',
+        'mode' => 'template',
+        'kind' => 'apply',
+        'config_snapshot' => ['strategy' => 'abc'],
+        'created_at' => now()->subHour(),
+    ])->save();
+
+    // Simulação mais RECENTE que a geração real — sem o filtro, seria esta que apareceria.
+    (new PlanogramGenerationRun)->forceFill([
+        'id' => '01jrunoverlayproposal00000',
+        'planogram_id' => $gondola->planogram_id,
+        'gondola_id' => $gondola->id,
+        'status' => 'running',
+        'mode' => 'template',
+        'kind' => 'proposal',
+        'trigger' => 'scheduled',
+        'config_snapshot' => ['strategy' => 'abc'],
+        'created_at' => now(),
+    ])->save();
+
+    $latest = app(PlanogramGenerationRunController::class)->latest($gondola->id)->getData(true)['data'];
+    $pending = app(PlanogramGenerationRunController::class)->pending($gondola->id)->getData(true)['data'];
+    $index = app(PlanogramGenerationRunController::class)->index($gondola->id)->getData(true)['data'];
+
+    expect($latest['id'])->toBe('01jrunoverlayapply00000000')
+        ->and($pending)->toBeNull()
+        ->and($index)->toHaveCount(1);
 });

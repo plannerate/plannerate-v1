@@ -9,17 +9,35 @@ use Illuminate\Support\Str;
 /**
  * Persiste produtos rejeitados na geração do planograma.
  * Limpa registros anteriores da gôndola antes de inserir os novos.
+ *
+ * A separação rows()/writeRows() existe para a reotimização contínua: o dry-run monta as
+ * linhas (rows) e as guarda na proposta, e a aprovação escreve exatamente aquelas linhas
+ * (writeRows) — sem recalcular, para que o resultado bata com o diff que o usuário aprovou.
  */
 final class RejectedProductsWriter
 {
     public function write(string $planogramId, string $gondolaId, string $tenantId, PlanogramOutput $output): void
     {
-        PlanogramRejectedProduct::where('gondola_id', $gondolaId)
-            ->where('planogram_id', $planogramId)
-            ->delete();
+        $this->writeRows(
+            $planogramId,
+            $gondolaId,
+            $tenantId,
+            $this->rows($planogramId, $gondolaId, $tenantId, $output),
+        );
+    }
 
+    /**
+     * Monta as linhas de rejeitados sem tocar no banco.
+     *
+     * Sem `id`/timestamps: são gerados no writeRows, para que uma mesma lista possa ser
+     * persistida depois (ex.: aprovação de uma proposta gerada dias antes).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function rows(string $planogramId, string $gondolaId, string $tenantId, PlanogramOutput $output): array
+    {
         if ($output->rejectedProducts->isEmpty()) {
-            return;
+            return [];
         }
 
         // Produto que entrou em qualquer prateleira não é rejeitado — pode ter sido
@@ -29,17 +47,14 @@ final class RejectedProductsWriter
             ->flip()
             ->all();
 
-        $now = now();
         $slotAnalysisIndex = $this->buildSlotAnalysisIndex($output->slotAnalysis);
 
         // Agrupa por product_id para coletar todos os shelf_orders onde foi rejeitado,
         // excluindo produtos que foram alocados em outra prateleira.
-        $byProduct = $output->rejectedProducts
+        return $output->rejectedProducts
             ->filter(fn ($r) => $r['product'] !== null && ! isset($placedProductIds[$r['product']->id]))
-            ->groupBy(fn ($r) => $r['product']->id);
-
-        $records = $byProduct
-            ->map(function ($rejections) use ($planogramId, $gondolaId, $tenantId, $now, $slotAnalysisIndex): array {
+            ->groupBy(fn ($r) => $r['product']->id)
+            ->map(function ($rejections) use ($planogramId, $gondolaId, $tenantId, $slotAnalysisIndex): array {
                 $first = $rejections->first();
                 $product = $first['product'];
                 $slotId = $first['slot_id'] ?? null;
@@ -54,7 +69,6 @@ final class RejectedProductsWriter
                     ->all();
 
                 return [
-                    'id' => (string) Str::ulid(),
                     'tenant_id' => $tenantId,
                     'planogram_id' => $planogramId,
                     'gondola_id' => $gondolaId,
@@ -73,16 +87,38 @@ final class RejectedProductsWriter
                     'module_number' => $slotData['module_number'] ?? null,
                     'shelf_order' => $slotData['shelf_order'] ?? null,
                     'rejected_shelf_orders' => json_encode($allShelfOrders),
-                    'created_at' => $now,
-                    'updated_at' => $now,
                 ];
             })
             ->values()
-            ->toArray();
+            ->all();
+    }
 
-        if (empty($records)) {
+    /**
+     * Substitui os rejeitados da gôndola pelas linhas informadas.
+     *
+     * @param  list<array<string, mixed>>  $rows  Saída de rows() (ou o snapshot guardado numa proposta).
+     */
+    public function writeRows(string $planogramId, string $gondolaId, string $tenantId, array $rows): void
+    {
+        PlanogramRejectedProduct::where('gondola_id', $gondolaId)
+            ->where('planogram_id', $planogramId)
+            ->delete();
+
+        if (empty($rows)) {
             return;
         }
+
+        $now = now();
+
+        $records = array_map(fn (array $row): array => [
+            ...$row,
+            'id' => (string) Str::ulid(),
+            'tenant_id' => $row['tenant_id'] ?? $tenantId,
+            'planogram_id' => $row['planogram_id'] ?? $planogramId,
+            'gondola_id' => $row['gondola_id'] ?? $gondolaId,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ], $rows);
 
         PlanogramRejectedProduct::insert($records);
     }

@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import PlanogramGenerationSummary from '@/components/PlanogramGenerationSummary.vue';
 import GenerationOverlay from '@/components/plannerate/generation/GenerationOverlay.vue';
+import ReoptimizationBanner from '@/components/plannerate/reoptimization/ReoptimizationBanner.vue';
 import Planogram from '@/components/plannerate/Planogram.vue';
 import PlanogramAuto from '@/components/plannerate/PlanogramAuto.vue';
 import { useGenerationRun } from '@/composables/plannerate/generation/useGenerationRun';
@@ -147,6 +148,8 @@ const lockEditor = computed(() => isGenerating.value || justCompleted.value);
             página própria: aqui fica só a linha-resumo com o link, para não empurrar
             o planograma para fora da tela.
         -->
+        <ReoptimizationBanner v-if="record?.id" :gondola-id="record.id" class="mx-4 mb-3" />
+
         <PlanogramGenerationSummary
             v-if="record?.id"
             :report="capacityReport"

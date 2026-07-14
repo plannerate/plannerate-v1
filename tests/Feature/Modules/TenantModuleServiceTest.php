@@ -37,6 +37,37 @@ test('tenant module service returns true when tenant has active module', functio
     expect($service->tenantActiveModuleSlugs($tenant))->toContain(ModuleSlug::KANBAN);
 });
 
+test('tenant module service resolves legacy pt-br module slugs to the canonical slug', function () {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant Alfa',
+        'slug' => 'tenant-alfa',
+        'database' => 'tenant_alfa',
+        'status' => 'active',
+    ]);
+
+    $template = Module::query()->create([
+        'name' => 'Planograma template',
+        'slug' => 'planograma-template',
+        'is_active' => true,
+    ]);
+
+    $tenant->modules()->attach($template->id);
+
+    $service = app(TenantModuleService::class);
+
+    expect($service->tenantHasActiveModule($tenant, ModuleSlug::PLANOGRAM_TEMPLATE))->toBeTrue();
+    expect($service->tenantHasActiveModule($tenant, 'planograma-template'))->toBeTrue();
+    expect($service->tenantActiveModuleSlugs($tenant))->toBe([ModuleSlug::PLANOGRAM_TEMPLATE]);
+
+    $tenant->load('modules');
+
+    expect($service->tenantHasActiveModule($tenant, ModuleSlug::PLANOGRAM_TEMPLATE))->toBeTrue();
+    expect($service->tenantActiveModuleSlugs($tenant))->toBe([ModuleSlug::PLANOGRAM_TEMPLATE]);
+
+    expect(Tenant::query()->whereHasActiveModule(ModuleSlug::PLANOGRAM_TEMPLATE)->pluck('id')->all())
+        ->toBe([$tenant->id]);
+});
+
 test('tenant module service returns false when module is globally inactive', function () {
     $tenant = Tenant::query()->create([
         'name' => 'Tenant Alfa',

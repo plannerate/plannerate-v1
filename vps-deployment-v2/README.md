@@ -270,8 +270,12 @@ APP_SLUG=staging automation/install-monitoring-on-host.sh vps-deployment-v2/mani
 
 # health check completo
 automation/vps-health-check.sh vps-deployment-v2/manifest.env staging
-
-# estado dos backups no DO Spaces (idade, tamanho, integridade)
-automation/check-backups.sh vps-deployment-v2/manifest.env
-VERIFY_INTEGRITY=true automation/check-backups.sh vps-deployment-v2/manifest.env
 ```
+
+## Backup dos bancos (por tenant)
+
+Scripts em `db/postgres-backup-planogramas.sh` (tier rápido, tabelas de
+planograma+filhas) e `db/postgres-backup-completo.sh` (tier diário, todas as
+tabelas exceto as efêmeras do framework). Rodam via cron do usuário `postgres`
+diretamente na VPS do banco — descobrem os bancos automaticamente (landlord +
+cada tenant) e sobem pro DO Spaces. Ver comentários nos próprios scripts.

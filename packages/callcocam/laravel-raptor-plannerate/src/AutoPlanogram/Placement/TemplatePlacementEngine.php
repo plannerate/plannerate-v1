@@ -3,7 +3,6 @@
 namespace Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement;
 
 use App\Models\Category;
-use App\Models\Planogram;
 use App\Models\Scopes\TenantScope;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\OrderedBlock;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PackCandidate;
@@ -460,10 +459,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $allowedCategoriesByShelf = $this->buildAllowedCategoriesByShelf($slots, $sections);
         [$placed, $rejected] = $this->placeOverflow($placed, $rejected, $sections, $allowedCategoriesByShelf);
 
-        if ($settings->planogramId !== null) {
-            $this->recordSubtemplateUsed($settings->planogramId, $subtemplate->getKey());
-        }
-
+        // O subtemplate usado sai no PlacementResult (subtemplateId, abaixo) e é persistido pelo
+        // AutoPlanogramService junto com o resto da escrita. O engine não grava: ele é um
+        // calculador puro, e é isso que torna o dry-run da reotimização confiável.
         $placedProductIds = $placed
             ->flatMap(fn ($seg) => $seg->layers->map(fn ($l) => $l->productId))
             ->flip()
@@ -2571,11 +2569,6 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $cremalheiraWidth = (float) ($section->cremalheira_width ?? 0.0);
 
         return max(0.0, $sectionWidth - $cremalheiraWidth);
-    }
-
-    private function recordSubtemplateUsed(string $planogramId, string $subtemplateId): void
-    {
-        Planogram::withoutGlobalScopes()->where('id', $planogramId)->update(['subtemplate_id' => $subtemplateId]);
     }
 
     /**

@@ -44,11 +44,18 @@ final class PlanogramWriter implements PlanogramWriterInterface
             return;
         }
 
+        // Cascata explícita: soft-deletar só os Segments deixaria as Layers filhas com
+        // deleted_at NULL apontando para segments deletados — lixo que se acumula a cada
+        // geração. Mesma ordem de DeletesGondolaGraph (layers → segments).
+        $segmentIds = Segment::whereIn('shelf_id', $shelfIds)->pluck('id');
+
+        $deletedLayers = Layer::whereIn('segment_id', $segmentIds)->delete();
         $deletedSegments = Segment::whereIn('shelf_id', $shelfIds)->delete();
 
         Log::info('PlanogramWriter: segments removidos', [
             'gondola_id' => $gondolaId,
             'segments_deleted' => $deletedSegments,
+            'layers_deleted' => $deletedLayers,
         ]);
 
         $totalCreated = 0;

@@ -58,7 +58,9 @@ class GenerateAutoPlanogramJob implements ShouldQueue, TenantAware
      * @param  string  $planogramId  ULID do planograma alvo
      * @param  array<string, mixed>  $config  AutoGenerateConfigDTO->toArray() (snapshot do formulário)
      * @param  string|null  $templateId  Template escolhido (null = modo automático)
-     * @param  string  $userId  ULID do usuário que solicitou (será notificado)
+     * @param  string|null  $userId  ULID do usuário que solicitou (será notificado). Null quando
+     *                               a geração vem do agendador, que não tem sessão — nesse caso
+     *                               não há ninguém para notificar e notify() simplesmente sai.
      * @param  string  $tenantId  ULID do tenant corrente no momento do dispatch
      * @param  string  $runId  ULID do PlanogramGenerationRun criado pelo controller
      */
@@ -67,7 +69,7 @@ class GenerateAutoPlanogramJob implements ShouldQueue, TenantAware
         public string $planogramId,
         public array $config,
         public ?string $templateId,
-        public string $userId,
+        public ?string $userId,
         public string $tenantId,
         public string $runId,
     ) {
@@ -193,6 +195,10 @@ class GenerateAutoPlanogramJob implements ShouldQueue, TenantAware
      */
     private function notify(string $title, string $message, string $type): void
     {
+        if ($this->userId === null) {
+            return;
+        }
+
         $user = User::query()->find($this->userId);
 
         if (! $user) {

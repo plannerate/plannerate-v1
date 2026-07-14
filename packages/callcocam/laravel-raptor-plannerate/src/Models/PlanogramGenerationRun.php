@@ -5,7 +5,10 @@ namespace Callcocam\LaravelRaptorPlannerate\Models;
 use App\Models\Gondola;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
+use Callcocam\LaravelRaptorPlannerate\Enums\GenerationRunKind;
 use Callcocam\LaravelRaptorPlannerate\Enums\GenerationRunStatus;
+use Callcocam\LaravelRaptorPlannerate\Enums\GenerationRunTrigger;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,6 +34,8 @@ class PlanogramGenerationRun extends Model
         'user_id',
         'status',
         'mode',
+        'kind',
+        'trigger',
         'config_snapshot',
         'template_id',
         'synth_template_id',
@@ -51,6 +56,8 @@ class PlanogramGenerationRun extends Model
     {
         return [
             'status' => GenerationRunStatus::class,
+            'kind' => GenerationRunKind::class,
+            'trigger' => GenerationRunTrigger::class,
             'config_snapshot' => 'array',
             'capacity_report' => 'array',
             'validation_report' => 'array',
@@ -63,6 +70,18 @@ class PlanogramGenerationRun extends Model
             'iterations_run' => 'integer',
             'converged' => 'boolean',
         ];
+    }
+
+    /**
+     * Só as execuções que de fato escrevem na gôndola.
+     *
+     * As telas do editor ("última geração", "gerando...") têm que ignorar as simulações da
+     * reotimização: sem este filtro, um dry-run de background apareceria como a geração
+     * corrente e o editor recarregaria sozinho ao vê-lo concluir.
+     */
+    public function scopeApplied(Builder $query): Builder
+    {
+        return $query->where('kind', GenerationRunKind::Apply);
     }
 
     public function gondola(): BelongsTo

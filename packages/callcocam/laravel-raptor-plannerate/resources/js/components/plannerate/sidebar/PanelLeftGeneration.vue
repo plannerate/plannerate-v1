@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { useT } from '@/composables/useT';
 import type { Gondola } from '../../../types/planogram';
 import CategoryConfigPanel from './CategoryConfigPanel.vue';
+import ReoptimizationCadenceCard from './ReoptimizationCadenceCard.vue';
 
 interface Props {
     open: boolean;
@@ -304,6 +305,11 @@ function handleRegenerateAuto() {
 
                 <!-- Configurações por categoria -->
                 <CategoryConfigPanel :gondola="gondola" />
+
+                <Separator />
+
+                <!-- Reotimização contínua -->
+                <ReoptimizationCadenceCard :gondola="gondola" />
 
                 <!-- Relatório da última geração -->
                 <template v-if="storedReport">

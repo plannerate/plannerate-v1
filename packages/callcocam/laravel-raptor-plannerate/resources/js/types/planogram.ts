@@ -195,6 +195,10 @@ export interface Gondola {
     template_name?: string | null;
     generation_mode?: 'manual' | 'template' | 'automatic' | null;
     generation_overrides?: GondolaSlotOverride[];
+    reoptimization_enabled?: boolean;
+    reoptimization_frequency?: 'weekly' | 'biweekly' | 'monthly' | null;
+    reoptimization_last_run_at?: string | null;
+    reoptimization_next_run_at?: string | null;
     linked_map_gondola_id?: string | null;
     linked_map_gondola_category?: string | null;
     created_at?: string;

@@ -1,6 +1,8 @@
 <?php
 
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /*
@@ -14,9 +16,8 @@ use Tests\TestCase;
 |
 */
 
-pest()->extend(TestCase::class)->in("Unit", "Feature")
-    ->use(RefreshDatabase::class)
-    ;
+pest()->extend(TestCase::class)->in('Unit', 'Feature')
+    ->use(RefreshDatabase::class);
 
 /*
 |--------------------------------------------------------------------------
@@ -47,4 +48,44 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Tabela de propostas de reotimização no schema SQLite dos testes.
+ *
+ * Vive aqui, e não copiada dentro de cada builder de schema, porque QUALQUER teste que dispare
+ * uma geração passa pelo GenerationQueueDispatcher — que invalida as propostas pendentes da
+ * gôndola. Sem a tabela, a geração morre com "no such table" num teste que nem fala de
+ * reotimização.
+ */
+function buildReoptimizationProposalsTable(): void
+{
+    Schema::connection('tenant')->create('planogram_reoptimization_proposals', function (Blueprint $table): void {
+        $table->ulid('id')->primary();
+        $table->string('tenant_id')->nullable();
+        $table->string('planogram_id');
+        $table->string('gondola_id');
+        $table->string('generation_run_id')->nullable();
+        $table->string('applied_run_id')->nullable();
+        $table->string('status', 20)->default('pending');
+        $table->string('trigger', 20)->default('scheduled');
+        $table->json('config_snapshot')->nullable();
+        $table->json('baseline_layout')->nullable();
+        $table->string('baseline_hash', 64)->nullable();
+        $table->json('proposed_layout')->nullable();
+        $table->json('proposed_rejected')->nullable();
+        $table->json('diff_summary')->nullable();
+        $table->date('sales_period_start')->nullable();
+        $table->date('sales_period_end')->nullable();
+        $table->decimal('occupancy_before', 5, 4)->nullable();
+        $table->decimal('occupancy_after', 5, 4)->nullable();
+        $table->string('requested_by')->nullable();
+        $table->string('reviewed_by')->nullable();
+        $table->timestamp('reviewed_at')->nullable();
+        $table->timestamp('applied_at')->nullable();
+        $table->text('rejection_reason')->nullable();
+        $table->text('error_message')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
 }

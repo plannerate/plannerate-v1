@@ -64,6 +64,8 @@ function buildReportSchema(): void
         $table->char('user_id', 26)->nullable();
         $table->string('status')->default('queued');
         $table->string('mode');
+        $table->string('kind')->default('apply');
+        $table->string('trigger')->default('manual');
         $table->json('config_snapshot');
         $table->char('template_id', 26)->nullable();
         $table->char('synth_template_id', 26)->nullable();
@@ -81,6 +83,9 @@ function buildReportSchema(): void
         $table->timestamps();
         $table->softDeletes();
     });
+
+    // Toda geração passa pelo GenerationQueueDispatcher, que invalida propostas pendentes.
+    buildReoptimizationProposalsTable();
 }
 
 /** Gôndola de teste com planograma pai. forceFill: `id` não é fillable nesses models. */

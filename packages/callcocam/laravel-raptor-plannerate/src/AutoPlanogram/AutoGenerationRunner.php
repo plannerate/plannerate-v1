@@ -35,6 +35,9 @@ final class AutoGenerationRunner
      * Executa a geração. Atualiza template_id/generation_mode da gôndola e, no modo automático,
      * vincula a gôndola ao template sintetizado.
      *
+     * @param  bool  $dryRun  Simulação: calcula o layout sem persistir nem tocar na gôndola.
+     *                        Exige templateId (o modo automático persiste a síntese do template).
+     *
      * @throws \RuntimeException quando não há produtos elegíveis (mensagem traduzida).
      */
     public function run(
@@ -42,16 +45,20 @@ final class AutoGenerationRunner
         Planogram $planogram,
         AutoGenerateConfigDTO $config,
         ?string $templateId,
+        bool $dryRun = false,
     ): AutoGenerationResult {
         // O resolver é singleton e o worker atende várias gerações no mesmo processo:
         // zera os produtos de largura suspeita para o relatório refletir só ESTA execução.
         $this->widthResolver->reset();
 
-        // Atualiza template_id e backfill de generation_mode para gôndolas antigas
-        $gondola->forceFill([
-            'template_id' => $templateId,
-            'generation_mode' => $templateId ? 'template' : 'automatic',
-        ])->save();
+        // Atualiza template_id e backfill de generation_mode para gôndolas antigas.
+        // Num dry-run a gôndola não pode ser tocada — a simulação tem que ser invisível.
+        if (! $dryRun) {
+            $gondola->forceFill([
+                'template_id' => $templateId,
+                'generation_mode' => $templateId ? 'template' : 'automatic',
+            ])->save();
+        }
 
         // No modo template os slots definem as categorias — categoria do formulário é ignorada.
         // includeProductsWithoutSales=true para produtos sem histórico chegarem ao placer.
@@ -142,14 +149,16 @@ final class AutoGenerationRunner
             settings: $settings,
             planogramCategoryId: $planogram->category_id,
             preRejectedProducts: $preRejectedProducts,
+            dryRun: $dryRun,
         );
 
         $output = $this->service->generate($input);
 
         // No modo automático: vincular gôndola ao template sintetizado e mudar para template-mode.
         // A origem auto é preservada no template.origin; o generation_mode deixa de ser 'automatic'.
+        // Inalcançável em dry-run (que exige templateId), mas guardado por simetria.
         $synthTemplateId = null;
-        if ($templateId === null && $output->subtemplateId !== null) {
+        if (! $dryRun && $templateId === null && $output->subtemplateId !== null) {
             $synth = PlanogramSubtemplate::find($output->subtemplateId);
             if ($synth) {
                 $synthTemplateId = $synth->template_id;

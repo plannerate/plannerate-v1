@@ -10,6 +10,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Models;
 
 use App\Models\Tenant;
 use App\Models\Traits\BelongsToTenant;
+use Callcocam\LaravelRaptorPlannerate\Enums\ReoptimizationFrequency;
 use Callcocam\LaravelRaptorPlannerate\Models\Concerns\DeletesGondolaGraph;
 use Callcocam\LaravelRaptorPlannerate\Models\Traits\UsesPlannerateTenantConnection;
 use Illuminate\Database\Eloquent\Builder;
@@ -43,12 +44,20 @@ class Gondola extends Model
         'linked_map_gondola_id',
         'linked_map_gondola_category',
         'status',
+        'reoptimization_enabled',
+        'reoptimization_frequency',
+        'reoptimization_last_run_at',
+        'reoptimization_next_run_at',
     ];
 
     protected function casts(): array
     {
         return [
             'settings' => 'array',
+            'reoptimization_enabled' => 'boolean',
+            'reoptimization_frequency' => ReoptimizationFrequency::class,
+            'reoptimization_last_run_at' => 'datetime',
+            'reoptimization_next_run_at' => 'datetime',
         ];
     }
 

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
+use Callcocam\LaravelRaptorPlannerate\Enums\ReoptimizationFrequency;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola as EditorGondola;
 use Callcocam\LaravelRaptorPlannerate\Models\GondolaAnalysis;
 use Callcocam\LaravelRaptorPlannerate\Models\GondolaSlotOverride;
@@ -69,6 +70,10 @@ class Gondola extends EditorGondola
         'alignment',
         'scale_factor',
         'status',
+        'reoptimization_enabled',
+        'reoptimization_frequency',
+        'reoptimization_last_run_at',
+        'reoptimization_next_run_at',
     ];
 
     /**
@@ -81,6 +86,10 @@ class Gondola extends EditorGondola
         return [
             'num_modulos' => 'integer',
             'scale_factor' => 'float',
+            'reoptimization_enabled' => 'boolean',
+            'reoptimization_frequency' => ReoptimizationFrequency::class,
+            'reoptimization_last_run_at' => 'datetime',
+            'reoptimization_next_run_at' => 'datetime',
         ];
     }
 

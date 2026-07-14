@@ -23,6 +23,19 @@ class Segment extends Model
         return $this->hasOne(Layer::class);
     }
 
+    /**
+     * Todas as camadas do segmento.
+     *
+     * O editor trata um segmento como tendo UMA camada (layer()), mas o PlanogramWriter grava um
+     * loop de camadas por segmento — o schema permite várias. Quem precisa ler o layout como ele
+     * está de fato no banco (o snapshot da reotimização) usa esta relação, não a singular, que
+     * silenciosamente descartaria as demais.
+     */
+    public function layers()
+    {
+        return $this->hasMany(Layer::class);
+    }
+
     public function shelf()
     {
         return $this->belongsTo(Shelf::class);
