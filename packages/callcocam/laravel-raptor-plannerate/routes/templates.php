@@ -35,7 +35,8 @@ Route::get('planogram-templates/{planogramTemplate}/edit', [PlanogramTemplateCon
 Route::put('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'update'])
     ->name('planogram-templates.update');
 Route::delete('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'destroy'])
-    ->name('planogram-templates.destroy');
+    ->name('planogram-templates.destroy')
+    ->withTrashed();
 Route::get('planogram-templates/{planogramTemplate}/export', [PlanogramTemplateController::class, 'export'])
     ->name('planogram-templates.export');
 Route::post('planogram-templates/{planogramTemplate}/promote', [PlanogramTemplateController::class, 'promote'])

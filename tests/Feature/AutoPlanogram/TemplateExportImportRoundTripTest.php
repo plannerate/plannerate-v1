@@ -215,6 +215,36 @@ test('export → import preserva campos novos do slot e configurações do subte
         ->and($slot->category_id)->not->toBeNull();
 });
 
+test('reimportar um template excluído (soft delete) restaura ele em vez de deixá-lo invisível', function (): void {
+    $template = makeExportableTemplate();
+    $path = exportTemplateToFile($template);
+
+    $template->delete();
+    expect(PlanogramTemplate::query()->find($template->id))->toBeNull()
+        ->and(PlanogramTemplate::withoutGlobalScopes()->find($template->id)->trashed())->toBeTrue();
+
+    $subtemplate = PlanogramSubtemplate::withoutGlobalScopes()->firstOrFail();
+    $subtemplate->delete();
+    $slot = PlanogramTemplateSlot::withoutGlobalScopes()->firstOrFail();
+    $slot->delete();
+
+    app(TemplateImportService::class)->import($path, ROUND_TRIP_TENANT);
+    unlink($path);
+
+    // updateOrCreate() com withoutGlobalScopes() encontra os registros excluídos pelo
+    // código/chave — sem o restore() explícito eles ficariam "reimportados" mas
+    // continuariam soft-deleted (invisíveis na listagem).
+    expect(PlanogramTemplate::query()->find($template->id))
+        ->not->toBeNull()
+        ->trashed()->toBeFalse();
+    expect(PlanogramSubtemplate::query()->find($subtemplate->id))
+        ->not->toBeNull()
+        ->trashed()->toBeFalse();
+    expect(PlanogramTemplateSlot::query()->find($slot->id))
+        ->not->toBeNull()
+        ->trashed()->toBeFalse();
+});
+
 test('import de planilha legada (A–P) não sobrescreve configurações do subtemplate', function (): void {
     $template = makeExportableTemplate();
 

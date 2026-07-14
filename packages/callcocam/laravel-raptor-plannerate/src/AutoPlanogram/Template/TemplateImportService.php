@@ -79,6 +79,12 @@ final class TemplateImportService
                 ],
             );
 
+            // withoutGlobalScopes() encontra um template excluído com o mesmo código —
+            // sem isso ele fica "reimportado" mas continua invisível (soft deleted).
+            if ($template->trashed()) {
+                $template->restore();
+            }
+
             $report->templatesCreated++;
 
             foreach ($subtemplates as $subtemplateCode => $slots) {
@@ -94,6 +100,10 @@ final class TemplateImportService
                         'is_active' => true,
                     ],
                 );
+
+                if ($subtemplate->trashed()) {
+                    $subtemplate->restore();
+                }
 
                 $report->subtemplatesCreated++;
 
@@ -149,6 +159,10 @@ final class TemplateImportService
                             ...$this->extendedSlotFields($row),
                         ],
                     );
+
+                    if ($slot->trashed()) {
+                        $slot->restore();
+                    }
 
                     if ($slot->wasRecentlyCreated) {
                         $slotsCreatedForSub++;

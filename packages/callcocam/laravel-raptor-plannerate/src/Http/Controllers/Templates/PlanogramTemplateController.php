@@ -2,13 +2,17 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates;
 
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
+use App\Models\Gondola;
 use App\Models\Tenant;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Template\TemplateExportService;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Template\TemplateImportService;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -21,19 +25,23 @@ class PlanogramTemplateController extends Controller
 {
     use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
+    use InteractsWithTrashedFilter;
 
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', PlanogramTemplate::class);
 
         $search = $this->requestString($request, 'search');
+        $trashed = $this->resolveTrashedFilter($request);
 
         return $this->renderDeferredIndex('tenant/planogram-templates/Index', 'templates', fn (): LengthAwarePaginator => $this->templatesPaginator(
             $search,
+            $trashed,
             $this->resolvePerPage($request, 15),
         ), [
             'filters' => [
                 'search' => $search,
+                'trashed' => $trashed,
             ],
         ]);
     }
@@ -133,7 +141,7 @@ class PlanogramTemplateController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __('app.tenant.planogram-templates.messages.imported', [
+            'message' => __('app.tenant.planogram_templates.messages.imported', [
                 'templates' => $report->templatesCreated,
                 'subtemplates' => $report->subtemplatesCreated,
                 'slots' => $report->slotsCreated,
@@ -259,19 +267,59 @@ class PlanogramTemplateController extends Controller
     {
         $this->authorize('delete', $planogramTemplate);
 
+        // Template já na lixeira: exclui definitivamente (força a exclusão).
+        // Caso contrário, apenas envia para a lixeira (soft delete).
+        if ($planogramTemplate->trashed()) {
+            // Nunca apaga gôndolas — só bloqueia se alguma ainda usa este template.
+            if (Gondola::where('template_id', $planogramTemplate->id)->exists()) {
+                Inertia::flash('toast', [
+                    'type' => 'error',
+                    'message' => __('app.tenant.planogram_templates.messages.force_delete_blocked'),
+                ]);
+
+                return $this->toTenantRoute('tenant.planogram-templates.index');
+            }
+
+            // withoutGlobalScopes() pega até subtemplates/slots já soft-deleted
+            // individualmente — sem isso eles ficariam órfãos (nunca mais alcançáveis).
+            $subtemplateIds = PlanogramSubtemplate::withoutGlobalScopes()
+                ->where('template_id', $planogramTemplate->id)
+                ->pluck('id');
+
+            PlanogramTemplateSlot::withoutGlobalScopes()
+                ->whereIn('subtemplate_id', $subtemplateIds)
+                ->forceDelete();
+
+            PlanogramSubtemplate::withoutGlobalScopes()
+                ->where('template_id', $planogramTemplate->id)
+                ->forceDelete();
+
+            $planogramTemplate->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.tenant.planogram_templates.messages.force_deleted'),
+            ]);
+
+            return $this->toTenantRoute('tenant.planogram-templates.index');
+        }
+
         $planogramTemplate->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __('app.tenant.planogram-templates.messages.deleted'),
+            'message' => __('app.tenant.planogram_templates.messages.deleted'),
         ]);
 
         return $this->toTenantRoute('tenant.planogram-templates.index');
     }
 
-    private function templatesPaginator(string $search, int $perPage): LengthAwarePaginator
+    private function templatesPaginator(string $search, string $trashed, int $perPage): LengthAwarePaginator
     {
-        return PlanogramTemplate::withCount(['subtemplates'])
+        $query = PlanogramTemplate::withCount(['subtemplates']);
+        $this->applyTrashedToQuery($query, $trashed);
+
+        return $query
             ->where(function ($q): void {
                 $q->whereNull('origin')->orWhere('origin', '!=', 'auto');
             })

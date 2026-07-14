@@ -30,6 +30,7 @@ const props = defineProps<{
     templates?: Paginator<TemplateRow>;
     filters: {
         search: string;
+        trashed: 'without' | 'only' | 'with';
     };
 }>();
 
@@ -86,6 +87,7 @@ function handleDelete(id: string): void {
             :search-placeholder="t('app.tenant.planogram_templates.search_placeholder')"
             :filter-label="t('app.tenant.planogram_templates.filter_label')"
             :clear-label="t('app.tenant.planogram_templates.clear_label')"
+            :trashed-value="props.filters.trashed"
         >
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
