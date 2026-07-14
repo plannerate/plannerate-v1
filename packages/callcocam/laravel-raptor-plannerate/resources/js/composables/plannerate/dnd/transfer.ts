@@ -26,7 +26,7 @@ export const DND_KEYS = {
     SEGMENT_ID: 'application/x-segment-id',
     /** id da prateleira de origem do segmento arrastado */
     SEGMENT_SHELF_ID: 'application/x-segment-shelf-id',
-    /** flag 'true'/'false': Ctrl pressionado no dragstart = copiar em vez de mover */
+    /** flag 'true'/'false': modificador de cópia pressionado no dragstart */
     IS_COPY: 'application/x-is-copy',
     /** id do registro de produto rejeitado (drag a partir do drawer de rejeitados) */
     REJECTED_ID: 'application/x-rejected-id',
@@ -34,6 +34,24 @@ export const DND_KEYS = {
     SHELF_ID: 'shelfId',
     SECTION_ID: 'sectionId',
 } as const;
+
+// ─── Modificador de cópia ─────────────────────────────────────────────────────
+
+/**
+ * O usuário está pedindo CÓPIA em vez de MOVER?
+ *
+ * Aceita Alt/Option, Ctrl e Cmd porque a convenção muda por sistema: no macOS
+ * o gesto de copiar-arrastando é Option (Ctrl+mousedown é o clique secundário
+ * do sistema, que abre o menu de contexto e nem chega a iniciar o drag HTML5);
+ * no Windows/Linux é Ctrl.
+ *
+ * Deve ser consultado no dragstart E no dragover/drop: o modificador pode ser
+ * pressionado depois que o arraste começou — no Mac, na prática, é sempre esse
+ * o caso.
+ */
+export function isCopyModifier(event: DragEvent | MouseEvent): boolean {
+    return event.altKey || event.ctrlKey || event.metaKey;
+}
 
 // ─── Escrita (dragstart) ──────────────────────────────────────────────────────
 
@@ -53,14 +71,22 @@ export function setMultipleProductsDragData(dt: DataTransfer, products: Product[
     dt.setData('text/plain', label);
 }
 
-/** Prepara o dataTransfer para o drag de um segmento (move; Ctrl = copy). */
+/**
+ * Prepara o dataTransfer para o drag de um segmento (mover; com modificador,
+ * copiar — ver `isCopyModifier`).
+ *
+ * `effectAllowed` é sempre 'copyMove', NUNCA travado no efeito escolhido no
+ * dragstart: fixá-lo em 'move' fazia o browser recusar `dropEffect = 'copy'`
+ * (resolvendo para 'none') quando o modificador só era pressionado no meio do
+ * arraste — o caso normal no macOS.
+ */
 export function setSegmentDragData(
     dt: DataTransfer,
     segmentId: string,
     shelfId: string,
     isCopy: boolean,
 ): void {
-    dt.effectAllowed = isCopy ? 'copy' : 'move';
+    dt.effectAllowed = 'copyMove';
     dt.setData(DND_KEYS.SEGMENT_ID, segmentId);
     dt.setData(DND_KEYS.SEGMENT_SHELF_ID, shelfId);
     dt.setData(DND_KEYS.IS_COPY, String(isCopy));

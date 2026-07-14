@@ -24,6 +24,7 @@ type TemplateRow = {
     is_active: boolean;
     subtemplates_count: number;
     created_at: string | null;
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -140,6 +141,8 @@ function handleDelete(id: string): void {
                                 :delete-href="PlanogramTemplateController.destroy.url({ planogramTemplate: template.id })"
                                 :delete-label="template.name"
                                 :require-confirm-word="true"
+                                :is-trashed="template.trashed"
+                                :restore-href="PlanogramTemplateController.restore.url({ planogramTemplate: template.id })"
                             />
                         </td>
                     </tr>

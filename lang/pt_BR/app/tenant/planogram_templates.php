@@ -70,6 +70,7 @@ return [
         'created' => 'Template criado com sucesso.',
         'updated' => 'Template atualizado com sucesso.',
         'deleted' => 'Template removido com sucesso.',
+        'restored' => 'Template restaurado com sucesso.',
         'force_deleted' => 'Template excluído definitivamente.',
         'force_delete_blocked' => 'Não é possível excluir definitivamente: existem gôndolas usando este template.',
         'imported' => ':templates template(s), :subtemplates subtemplate(s) e :slots slot(s) importados com sucesso.',

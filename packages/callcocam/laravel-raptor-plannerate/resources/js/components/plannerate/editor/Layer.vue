@@ -7,36 +7,37 @@
             class="z-20 cursor-pointer"
         >
             <img
-                v-if="displayImageUrl"
-                :src="displayImageUrl"
+                v-if="hasImage"
+                :src="displayImageUrl!"
                 :alt="product?.name"
                 :style="style"
                 class="z-20 object-cover"
                 decoding="async"
                 :data-module="moduleNumber"
                 :data-shelf="shelfNumber"
-                :data-ean="product?.ean" 
+                :data-ean="product?.ean"
+                @error="onImageError"
             />
-            <div
+            <ProductPlaceholder
                 v-else
-                :style="style"
-                class="flex items-center justify-center border border-dashed bg-muted"
+                class="z-20"
+                :width="placeholderWidth"
+                :height="placeholderHeight"
+                :name="product?.name"
+                :ean="product?.ean"
                 :data-module="moduleNumber"
                 :data-shelf="shelfNumber"
-            >
-                <span class="text-xs text-muted-foreground">{{
-                    product?.name || t('plannerate.sidebar.product_image_card.no_image')
-                }}</span>
-            </div>
+                :data-ean="product?.ean"
+            />
         </div>
     </div>
 </template>
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
-import { useT } from '@/composables/useT';
+import { computed, ref, watch } from 'vue';
 import { useProductImageStore } from '@/composables/useProductImageStore';
 import type { Layer, Product, Segment } from '../../../types/planogram';
+import ProductPlaceholder from './ProductPlaceholder.vue';
 
 interface Props {
     segment: Segment;
@@ -56,7 +57,6 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const { t } = useT();
 const { getImage, listenForProductImages, listenForBatchComplete } = useProductImageStore();
 
 const product = computed<Product | undefined>(() => props.layer?.product);
@@ -71,6 +71,30 @@ if (userId) listenForBatchComplete(userId);
 const displayImageUrl = computed<string | null>(() => {
     const fromStore = getImage(product.value?.ean, product.value?.id);
     return fromStore ?? product.value?.image_url ?? null;
+});
+
+/**
+ * O accessor `image_url` do pacote devolve uma arte de fallback (img/fallback/*)
+ * quando o produto não tem imagem — esticá-la na caixa do produto distorce a
+ * arte. Tratamos essas URLs como "sem imagem" e desenhamos o placeholder SVG,
+ * que se adapta a qualquer proporção.
+ */
+const isFallbackUrl = (url: string): boolean => url.includes('/img/fallback/');
+
+const imageFailed = ref(false);
+
+watch(displayImageUrl, () => {
+    imageFailed.value = false;
+});
+
+const onImageError = (): void => {
+    imageFailed.value = true;
+};
+
+const hasImage = computed<boolean>(() => {
+    const url = displayImageUrl.value;
+
+    return Boolean(url) && !isFallbackUrl(url!) && !imageFailed.value;
 });
 
 const getQuantity = computed<number>(() => {
@@ -100,28 +124,11 @@ const productHeight = computed(
     () => (product.value?.height || 0) * scale.value,
 );
 
-const style = computed(() => {
-    const imageUrl = displayImageUrl.value;
+const placeholderWidth = computed(() => productWidth.value || 20);
+const placeholderHeight = computed(() => productHeight.value || 20);
 
-    if (!imageUrl || imageUrl.includes('fallback')) {
-        return {
-            width: `${productWidth.value || 20}px`,
-            height: `${productHeight.value || 20}px`,
-            backgroundPosition: 'center',
-            backgroundSize: 'cover',
-            backgroundRepeat: 'no-repeat',
-            backgroundImage: `url('/img/fallback/fall6.jpg')`,
-        };
-    }
-
-    return {
-        width: `${productWidth.value || 10}px`,
-        height: `${productHeight.value || 10}px`,
-    };
-});
-
-const getDefaultImage = (event: Event) => {
-    const target = event.target as HTMLImageElement;
-    target.src = '/img/fallback/fall6.jpg';
-};
+const style = computed(() => ({
+    width: `${productWidth.value || 10}px`,
+    height: `${productHeight.value || 10}px`,
+}));
 </script>

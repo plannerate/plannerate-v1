@@ -8,6 +8,7 @@ import {
     hasMultipleProductsData,
     hasProductData,
     hasSegmentData,
+    isCopyModifier,
 } from '../dnd/transfer';
 import { useRejectedProductsStore } from './useRejectedProductsStore';
 
@@ -55,9 +56,10 @@ export function useShelfDragDrop(shelfId: string) {
                 return;
             }
 
-            // Segments de outras shelves: copy se Ctrl pressionado, move caso contrário
-            const isCopy = event.ctrlKey || event.metaKey;
-            event.dataTransfer.dropEffect = isCopy ? 'copy' : 'move';
+            // Segments de outras shelves: copy com modificador, move caso contrário.
+            // Lido do evento ao vivo (o modificador costuma ser pressionado depois
+            // que o arraste já começou — no macOS, sempre).
+            event.dataTransfer.dropEffect = isCopyModifier(event) ? 'copy' : 'move';
             isDropTarget.value = true;
         }
     };
@@ -104,7 +106,12 @@ export function useShelfDragDrop(shelfId: string) {
                 return;
             }
 
-            handleSegmentDrop(segment.segmentId, segment.isCopy);
+            // O modificador vale no momento do drop; o flag gravado no dragstart
+            // é só o fallback (browser que não propague modificadores no drop).
+            handleSegmentDrop(
+                segment.segmentId,
+                isCopyModifier(event) || segment.isCopy,
+            );
         }
     };
 

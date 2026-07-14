@@ -172,7 +172,12 @@ class GondolaPrintService
     }
 
     /**
-     * Processa imagens de produtos convertendo para base64
+     * Processa imagens de produtos convertendo para base64.
+     *
+     * Produto sem arte fica com `image_url_encoded` nulo de propósito: o
+     * accessor `image_url` devolveria a imagem de fallback (img/fallback/*),
+     * que esticada na caixa do produto sai distorcida. Sem base64, o front
+     * desenha o placeholder SVG, que se adapta a qualquer proporção.
      */
     protected function processProductImages(Collection $sections): void
     {
@@ -181,7 +186,10 @@ class GondolaPrintService
                 foreach ($shelf->segments as $segment) {
                     if ($segment->layer && $segment->layer->product) {
                         $product = $segment->layer->product;
-                        $product->image_url_encoded = $this->getImageAsBase64OrUrl($product->image_url);
+
+                        $product->image_url_encoded = $product->url
+                            ? $this->getImageAsBase64OrUrl($product->image_url)
+                            : null;
                     }
                 }
             }

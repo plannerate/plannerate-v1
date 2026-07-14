@@ -20,6 +20,7 @@
         @focus="handleFocusSegment"
         @click="handleSegmentClick"
         @dblclick="handleSegmentDoubleClick"
+        @contextmenu="handleContextMenu"
         @dragstart="handleDragStart"
         @dragend="handleDragEnd"
         @dragover.prevent="handleDragOver"
@@ -108,7 +109,7 @@ import {
     draggingSegmentShelfId,
     eanSearchApplied,
 } from '../../../composables/plannerate/core/useGondolaState';
-import { DND_KEYS, hasSegmentData, setSegmentDragData } from '../../../composables/plannerate/dnd/transfer';
+import { DND_KEYS, hasSegmentData, isCopyModifier, setSegmentDragData } from '../../../composables/plannerate/dnd/transfer';
 import { useAbcClassification } from '../../../composables/plannerate/analysis/useAbcClassification';
 import { useBcgAnalysis } from '../../../composables/plannerate/analysis/useBcgAnalysis';
 import { usePaperAnalysis } from '../../../composables/plannerate/analysis/usePaperAnalysis';
@@ -280,6 +281,18 @@ function handleSegmentDoubleClick(event: MouseEvent) {
     openProperties?.();
 }
 
+/**
+ * No macOS, Ctrl + botão esquerdo é o clique secundário do sistema: abre o menu
+ * de contexto e aborta o arraste antes mesmo do dragstart — por isso "segurar
+ * Ctrl e arrastar para copiar" não funcionava lá. Suprimimos o menu só nesse
+ * caso (contextmenu com Ctrl pressionado); o botão direito puro segue normal.
+ */
+function handleContextMenu(event: MouseEvent) {
+    if (event.ctrlKey) {
+        event.preventDefault();
+    }
+}
+
 function handleDragStart(event: DragEvent) {
     event.stopPropagation();
     isDragging.value = true;
@@ -290,12 +303,13 @@ function handleDragStart(event: DragEvent) {
     draggingSegmentId.value = props.segment.id;
 
     if (event.dataTransfer) {
-        // Copy se Ctrl estiver pressionado, senão move (contrato em dnd/transfer)
+        // Copy com modificador (Alt/Ctrl/Cmd), senão move. A decisão final é
+        // reavaliada no drop — ver isCopyModifier (contrato em dnd/transfer).
         setSegmentDragData(
             event.dataTransfer,
             props.segment.id,
             props.segment.shelf_id || '',
-            event.ctrlKey || event.metaKey,
+            isCopyModifier(event),
         );
 
         // Define uma imagem de arrastar customizada

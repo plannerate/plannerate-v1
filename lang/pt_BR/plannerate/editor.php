@@ -10,6 +10,10 @@ return [
             'retirar' => 'Retirar',
         ],
     ],
+    'layer' => [
+        'no_image' => 'Sem imagem',
+    ],
+    'shelf_duplicate_no_free_hole' => 'Não há furo livre no módulo para duplicar esta prateleira.',
     'product_does_not_fit_selected_shelf' => 'O produto não cabe na prateleira selecionada.',
     'product_does_not_fit_destination_shelf' => 'O produto não cabe na prateleira de destino.',
     'shelf_width_exceeded' => 'A largura total dos produtos (:totalWidth cm) excede a largura do módulo (:sectionWidth cm). Ajuste as quantidades ou remova produtos para continuar.',

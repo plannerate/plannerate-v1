@@ -314,6 +314,20 @@ class PlanogramTemplateController extends Controller
         return $this->toTenantRoute('tenant.planogram-templates.index');
     }
 
+    public function restore(PlanogramTemplate $planogramTemplate): RedirectResponse
+    {
+        $this->authorize('delete', $planogramTemplate);
+
+        $planogramTemplate->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.planogram_templates.messages.restored'),
+        ]);
+
+        return $this->toTenantRoute('tenant.planogram-templates.index');
+    }
+
     private function templatesPaginator(string $search, string $trashed, int $perPage): LengthAwarePaginator
     {
         $query = PlanogramTemplate::withCount(['subtemplates']);
@@ -339,6 +353,7 @@ class PlanogramTemplateController extends Controller
                 'is_active' => $t->is_active,
                 'subtemplates_count' => $t->subtemplates_count,
                 'created_at' => $t->created_at?->toDateTimeString(),
+                'trashed' => $t->trashed(),
             ]);
     }
 

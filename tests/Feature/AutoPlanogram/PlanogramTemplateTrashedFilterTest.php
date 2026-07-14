@@ -88,6 +88,20 @@ function makeTrashedFilterTemplate(string $code): PlanogramTemplate
     ]);
 }
 
+test('restaurar um template excluído faz ele voltar a aparecer na listagem padrão', function (): void {
+    $template = makeTrashedFilterTemplate('T5');
+    $template->delete();
+
+    expect(PlanogramTemplate::query()->find($template->id))->toBeNull();
+
+    // Lógica equivalente a PlanogramTemplateController::restore()
+    $template->restore();
+
+    expect(PlanogramTemplate::query()->find($template->id))
+        ->not->toBeNull()
+        ->trashed()->toBeFalse();
+});
+
 test('template excluído some da listagem padrão mas aparece com o filtro "only"', function (): void {
     $ativo = makeTrashedFilterTemplate('ATIVO');
     $excluido = makeTrashedFilterTemplate('EXCLUIDO');

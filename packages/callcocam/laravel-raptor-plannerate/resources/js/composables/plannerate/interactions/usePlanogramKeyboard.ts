@@ -6,6 +6,8 @@ import type { Layer, Section, Segment, Shelf } from '@/types/planogram';
 import { validateShelfWidth } from '@plannerate/libs/validation';
 import { usePlanogramEditor } from '../core/usePlanogramEditor';
 import { usePlanogramSelection } from '../core/usePlanogramSelection';
+import { DEFAULT_SECTION_FIELDS, toCamelCase } from '../fields/useSectionFields';
+import { calculateHolePositions } from '../geometry/useSectionHoles';
 import { shouldShowDeleteConfirm } from '../shared/usePlanogramUtils';
 import { useSectionActions } from '../actions/useSectionActions';
 import { segmentsMoving, useSegmentActions } from '../actions/useSegmentActions';
@@ -529,8 +531,68 @@ return false;
     // ==================== HELPER FUNCTIONS ====================
 
     /**
-     * Duplica uma shelf completa (com todos os segments, layers e products)
-     * Posiciona a nova shelf logo abaixo da original
+     * Procura o furo livre mais próximo para a cópia da prateleira: primeiro
+     * abaixo da original (comportamento esperado), e — quando não há espaço
+     * abaixo — acima.
+     *
+     * Antes a posição era calculada às cegas (`posição + altura + espaçamento`)
+     * e comparada com um limite ainda mais estreito que o do movimento manual.
+     * Na prateleira do último furo (a mais baixa) o resultado sempre estourava o
+     * limite e o Ctrl+D não fazia nada, em silêncio. Agora o alvo é sempre um
+     * furo real, e só desistimos quando não existe nenhum livre.
+     */
+    function findPositionForShelfCopy(
+        section: Section,
+        originalShelf: Shelf,
+    ): number | null {
+        const shelfHeight = originalShelf.shelf_height || 0;
+        const sectionCamel = toCamelCase(section);
+        const baseHeight =
+            sectionCamel.baseHeight ?? DEFAULT_SECTION_FIELDS.baseHeight;
+
+        // Mesmo limite do movimento manual (moveDown), não um mais estreito.
+        const maxPosition = section.height - baseHeight - shelfHeight;
+
+        const occupied = (section.shelves ?? [])
+            .filter((s: Shelf) => !s.deleted_at)
+            .map((s: Shelf) => s.shelf_position);
+
+        // Um furo só serve se a cópia não invadir nenhuma prateleira existente.
+        const isFree = (position: number): boolean =>
+            occupied.every(
+                (taken) =>
+                    Math.abs(taken - position) >= Math.max(shelfHeight, 1) - 0.01,
+            );
+
+        const candidates = calculateHolePositions(section)
+            .map((hole) => baseHeight + hole)
+            .filter(
+                (position) =>
+                    position >= 0 && position <= maxPosition && isFree(position),
+            );
+
+        const current = originalShelf.shelf_position;
+
+        // Posição cresce para baixo (0 = topo): furo livre logo abaixo primeiro.
+        const below = candidates
+            .filter((position) => position > current + 0.01)
+            .sort((a, b) => a - b)[0];
+
+        if (below !== undefined) {
+            return below;
+        }
+
+        const above = candidates
+            .filter((position) => position < current - 0.01)
+            .sort((a, b) => b - a)[0];
+
+        return above ?? null;
+    }
+
+    /**
+     * Duplica uma shelf completa (com todos os segments, layers e products),
+     * encaixando a cópia no furo livre mais próximo (abaixo, ou acima quando a
+     * original já está no último furo).
      */
     function duplicateShelf(shelf: Shelf, section: Section): void {
         // Busca a shelf atual com todos os dados atualizados
@@ -541,19 +603,15 @@ return;
 }
 
         const originalShelf = currentShelfData.shelf;
+        const currentSection = currentShelfData.section ?? section;
+        const newPosition = findPositionForShelfCopy(
+            currentSection,
+            originalShelf,
+        );
 
-        // Calcula posição da nova shelf (abaixo da original)
-        const SPACING = section.hole_spacing || 10; // Espaçamento entre shelves
-        const newPosition =
-            originalShelf.shelf_position + originalShelf.shelf_height + SPACING;
+        if (newPosition === null) {
+            toast.error(t('plannerate.editor.shelf_duplicate_no_free_hole'));
 
-        // Valida se cabe na section
-        const sectionUsableHeight = section.height - section.base_height;
-        const maxPosition =
-            sectionUsableHeight - SPACING - originalShelf.shelf_height;
-
-        if (newPosition > maxPosition) {
-            // Não cabe - poderia mostrar um toast aqui
             return;
         }
 
@@ -563,7 +621,7 @@ return;
             id: shelfId,
             // Gera código no mesmo padrão do backend: SHELF-{timestamp_segundos}
             code: `SHELF-${Math.floor(Date.now() / 1000)}`,
-            section_id: section.id,
+            section_id: currentSection.id,
             shelf_position: newPosition,
             shelf_height: originalShelf.shelf_height,
             shelf_width: originalShelf.shelf_width,
@@ -594,7 +652,7 @@ return;
                 }) || [],
         };
         // Adiciona a nova shelf via editor
-        editor.addShelf(section.id, newShelf);
+        editor.addShelf(currentSection.id, newShelf);
     }
 
     /**
