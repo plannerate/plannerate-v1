@@ -8,6 +8,7 @@ use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Sale;
 use Callcocam\LaravelRaptorPlannerate\Sales\ProductSalesAggregateQuery;
 use Callcocam\LaravelRaptorPlannerate\Sales\SalesStatistics;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,12 @@ use Illuminate\Support\Facades\Log;
  */
 class AbcAnalysisService
 {
+    /**
+     * Janela de recência do VBA (docs/ABC.md): venda ou compra dentro destes dias conta
+     * como movimento recente e mantém o produto Ativo.
+     */
+    public const RECENCIA_DIAS = 120;
+
     /**
      * Pesos padrão para cálculo da média ponderada
      */
@@ -706,23 +713,26 @@ class AbcAnalysisService
             ]);
         }
 
-        // Primeiro passe: encontra o menor percentual individual da classe B,
-        // referência para a regra de retirar_do_mix.
+        // Primeiro passe: encontra o menor percentual individual da classe B, que é a
+        // referência da regra de retirar_do_mix.
+        //
+        // O default 1.0 NÃO é um valor neutro — é a regra do VBA (docs/ABC.md): quando a
+        // categoria não tem nenhum B, menorPercentualB fica em 1 e o corte vira "< 50% de
+        // participação", então praticamente todo C é marcado para sair. É o que a planilha
+        // do cliente faz no grupo AÇÚCAR CRISTAL (A,A,C,C, sem B): os dois C saem com "Sim".
         $acumulado = 0.0;
         $menorPercentualB = 1.0;
-        $hasClassB = false;
+        $ranking = 1;
 
         foreach ($products as $product) {
             $percentualIndividual = $product['media_ponderada'] / $totalPonderado;
-            $acumuladoAntes = $acumulado;
             $acumulado += $percentualIndividual;
 
-            if ($this->classify($acumuladoAntes) === 'B') {
-                $hasClassB = true;
-                if ($percentualIndividual < $menorPercentualB) {
-                    $menorPercentualB = $percentualIndividual;
-                }
+            if ($this->classifyAtRank($acumulado, $ranking) === 'B' && $percentualIndividual < $menorPercentualB) {
+                $menorPercentualB = $percentualIndividual;
             }
+
+            $ranking++;
         }
 
         // Segundo passe: classificação final + retirar_do_mix
@@ -732,10 +742,9 @@ class AbcAnalysisService
 
         foreach ($products as $product) {
             $percentualIndividual = $product['media_ponderada'] / $totalPonderado;
-            $acumuladoAntes = $acumulado;
             $acumulado += $percentualIndividual;
 
-            $classificacao = $this->classify($acumuladoAntes);
+            $classificacao = $this->classifyAtRank($acumulado, $ranking);
 
             $result->push([
                 'product_id' => $product['product_id'],
@@ -743,7 +752,7 @@ class AbcAnalysisService
                 'percentual_acumulado' => $acumulado,
                 'classificacao' => $classificacao,
                 'ranking' => $ranking,
-                'retirar_do_mix' => $this->shouldRemoveFromMix($classificacao, $percentualIndividual, $menorPercentualB, $hasClassB),
+                'retirar_do_mix' => $this->shouldRemoveFromMix($classificacao, $percentualIndividual, $menorPercentualB),
             ]);
 
             $ranking++;
@@ -753,16 +762,42 @@ class AbcAnalysisService
     }
 
     /**
-     * Classifica produto em A, B ou C baseado no percentual acumulado ANTES do item.
+     * Classificação final: a regra do acumulado, com a exceção do líder do grupo.
      *
-     * Os cortes usam comparação estrita (<): um item cujo acumulado anterior está
-     * exatamente sobre o corte já pertence à classe seguinte.
+     * O 1º do ranking é SEMPRE A. Pela regra pura do acumulado, um produto que sozinho
+     * responde por mais que o corte A (ou o único produto de uma categoria, com 100%)
+     * cairia em C — o dono da categoria classificado como o pior dela. A exceção fica
+     * confinada aqui, no caso degenerado, em vez de distorcer a regra para todo mundo
+     * (que foi o erro do commit 01da121b: promover TODO item que cruza um corte).
+     *
+     * Não afeta a paridade com a planilha de referência: nos dois grupos de açúcar o
+     * líder já é A pelo acumulado (43,03% e 43,75%).
+     */
+    private function classifyAtRank(float $acumulado, int $ranking): string
+    {
+        if ($ranking === 1) {
+            return 'A';
+        }
+
+        return $this->classify($acumulado);
+    }
+
+    /**
+     * Classifica produto em A, B ou C pelo percentual acumulado APÓS somar o item.
+     *
+     * Os cortes são INCLUSIVOS (<=): o item cujo acumulado fecha exatamente sobre o
+     * corte ainda pertence à classe. É a regra da planilha de referência do cliente
+     * (ver AbcSpreadsheetParityTest) e a que o sistema usava até 12/06/2026.
+     *
+     * Classificar pelo acumulado ANTES do item — como passou a fazer o commit
+     * 01da121b — promove indevidamente quem cruza o corte e dá um A a mais em CADA
+     * grupo, além de exibir na tela um acumulado diferente do que decidiu a classe.
      */
     private function classify(float $acumulado): string
     {
-        if ($acumulado < $this->corteA) {
+        if ($acumulado <= $this->corteA) {
             return 'A';
-        } elseif ($acumulado < $this->corteB) {
+        } elseif ($acumulado <= $this->corteB) {
             return 'B';
         }
 
@@ -770,23 +805,28 @@ class AbcAnalysisService
     }
 
     /**
-     * Determina se produto deve ser retirado do mix
+     * Determina se o produto deve ser retirado do mix — regra do VBA (docs/ABC.md):
      *
-     * Regra: Classe C com percentual individual menor que metade do menor percentual B.
-     * Se a categoria não possui nenhum produto classe B, não há referência (menor %B)
-     * para a regra — nesse caso nenhum produto é retirado, evitando remoção em massa.
+     *   If N = "C" And L < menorPercentualB / 2 Then "Sim" Else "Não"
+     *
+     * Classe C cuja participação individual é menor que METADE da participação do menor
+     * classe B da categoria.
+     *
+     * Categoria SEM classe B não é exceção: o VBA deixa menorPercentualB no default 1,
+     * então o corte vira "< 50% de participação" e praticamente todo C é marcado. Isso é
+     * proposital — uma categoria que nem chega a ter um B tem uma cauda fraca de verdade.
+     *
+     * Tínhamos um guard `if (! $hasClassB) return false` que NÃO existe no VBA e zerava o
+     * retirar_do_mix nessas categorias: o grupo AÇÚCAR CRISTAL da planilha do cliente
+     * (A,A,C,C, sem B) marca os dois C com "Sim", e nós devolvíamos "Não" nos dois.
      */
-    private function shouldRemoveFromMix(string $classificacao, float $percentualIndividual, float $menorPercentualB, bool $hasClassB): bool
+    private function shouldRemoveFromMix(string $classificacao, float $percentualIndividual, float $menorPercentualB): bool
     {
-        if (! $hasClassB) {
+        if ($classificacao !== 'C') {
             return false;
         }
 
-        if ($classificacao === 'C' && $menorPercentualB > 0) {
-            return $percentualIndividual < ($menorPercentualB / 2);
-        }
-
-        return false;
+        return $percentualIndividual < ($menorPercentualB / 2);
     }
 
     /**
@@ -840,49 +880,111 @@ class AbcAnalysisService
     }
 
     /**
-     * Calcula status do produto (Ativo/Inativo) - versão otimizada
+     * Status e justificativa do produto — regra do VBA do cliente (docs/ABC.md, bloco
+     * ">>> Status do Produto"). São as colunas Q (Status) e S (Justificativa) da planilha.
      *
-     * Usa dados pré-carregados em vez de fazer query individual
+     * Cruza três sinais, com a janela de RECENCIA_DIAS (120 dias) do VBA:
      *
-     * @param  Product|null  $product  Modelo do produto
-     * @param  object|null  $lastSaleData  Dados da última venda (pré-carregados)
+     *   última venda recente + última compra recente  → Ativo   / Venda e compra recentes
+     *   última venda recente + sem compra recente     → Ativo   / Venda recente, sem compra
+     *   última compra recente + sem venda recente     → Ativo   / Compra recente, sem venda
+     *   nenhum dos dois                               → Sem venda e sem compra
+     *                                                   Inativo se estoque = 0, Ativo se > 0
+     *
+     * A implementação anterior era uma "lógica simplificada": só olhava a última venda e
+     * tratava o estoque como 0 fixo, então nunca chegava aos casos de compra. As datas
+     * saem de `products.last_purchase_date` e o estoque de `products.current_stock`.
+     *
+     * ATENÇÃO: `last_purchase_date` ainda NÃO é populada pela importação (0 de 8.592
+     * produtos no tenant de dev). Enquanto isso, os dois casos que dependem de compra não
+     * disparam e todo produto vendido recentemente cai em "Venda recente, sem compra" —
+     * que é exatamente o que o VBA faz quando a data de compra vem vazia. A lógica está
+     * correta; falta o dado (a tabela `purchases` do legado tem `last_purchase_date` e
+     * `current_stock` por produto).
+     *
+     * @param  Product|null  $product  Modelo do produto (traz last_purchase_date e current_stock)
+     * @param  object|null  $lastSaleData  Última venda pré-carregada (evita N+1)
+     * @return array{status: string, motivo: string}
      */
     private function calculateProductStatusOptimized(?Product $product, ?object $lastSaleData): array
     {
         if (! $product) {
             return [
-                'status' => 'Inativo',
-                'motivo' => 'Produto não encontrado',
+                'status' => trans('plannerate.analysis.product_status.inactive'),
+                'motivo' => trans('plannerate.analysis.product_status.not_found'),
             ];
         }
 
-        $dataHoje = now();
+        return $this->productStatus(
+            $lastSaleData?->last_sale_date ?? null,
+            $product->last_purchase_date,
+            (float) ($product->current_stock ?? 0),
+        );
+    }
 
-        // Usa dados pré-carregados da última venda
-        $ultimaVendaDate = $lastSaleData?->last_sale_date ?? null;
-        $diasSemVenda = $ultimaVendaDate ? $dataHoje->diffInDays($ultimaVendaDate) : null;
+    /**
+     * A decisão de status em si — pura, sem banco, testável isolada.
+     *
+     * @param  mixed  $ultimaVenda  Data da última venda (null = nunca vendeu)
+     * @param  mixed  $ultimaCompra  Data da última compra (null = sem registro de compra)
+     * @param  float  $estoqueAtual  Estoque atual; só decide no caso sem movimento nenhum
+     * @return array{status: string, motivo: string}
+     */
+    public function productStatus(mixed $ultimaVenda, mixed $ultimaCompra, float $estoqueAtual): array
+    {
+        $ativo = trans('plannerate.analysis.product_status.active');
+        $vendaRecente = $this->isRecent($ultimaVenda);
+        $compraRecente = $this->isRecent($ultimaCompra);
 
-        $estoqueAtual = 0;
-
-        // Lógica simplificada de status baseada apenas em vendas
-        if ($diasSemVenda !== null && $diasSemVenda <= 120) {
+        if ($vendaRecente && $compraRecente) {
             return [
-                'status' => 'Ativo',
-                'motivo' => 'Venda recente',
+                'status' => $ativo,
+                'motivo' => trans('plannerate.analysis.product_status.recent_sale_and_purchase'),
             ];
         }
 
-        if ($estoqueAtual > 0) {
+        if ($vendaRecente) {
             return [
-                'status' => 'Ativo',
-                'motivo' => 'Com estoque',
+                'status' => $ativo,
+                'motivo' => trans('plannerate.analysis.product_status.recent_sale_no_purchase'),
             ];
         }
 
+        if ($compraRecente) {
+            return [
+                'status' => $ativo,
+                'motivo' => trans('plannerate.analysis.product_status.recent_purchase_no_sale'),
+            ];
+        }
+
+        // Sem movimento nos dois lados: só o estoque decide se o produto ainda está vivo.
         return [
-            'status' => 'Inativo',
-            'motivo' => $diasSemVenda === null ? 'Sem vendas' : 'Sem venda há mais de 120 dias',
+            'status' => $estoqueAtual > 0
+                ? $ativo
+                : trans('plannerate.analysis.product_status.inactive'),
+            'motivo' => trans('plannerate.analysis.product_status.no_sale_no_purchase'),
         ];
+    }
+
+    /**
+     * A data caiu dentro da janela de recência do VBA (120 dias)?
+     *
+     * Data ausente é "não recente" — é o `ultimaVenda <> 0` / `ultimaCompra <> 0` do VBA,
+     * que trata célula vazia como ausência de movimento, não como movimento antigo.
+     */
+    private function isRecent(mixed $data): bool
+    {
+        if (blank($data)) {
+            return false;
+        }
+
+        try {
+            $dias = Carbon::parse($data)->startOfDay()->diffInDays(now()->startOfDay());
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return $dias <= self::RECENCIA_DIAS;
     }
 
     /**

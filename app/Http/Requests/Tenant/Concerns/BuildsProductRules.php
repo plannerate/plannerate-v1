@@ -52,6 +52,7 @@ trait BuildsProductRules
             'status' => ['required', Rule::in(['draft', 'published', 'synced', 'error'])],
             'sync_source' => ['nullable', 'string', 'max:255'],
             'sync_at' => ['nullable', 'date'],
+            'last_purchase_date' => ['nullable', 'date'],
             'no_sales' => ['sometimes', 'boolean'],
             'no_purchases' => ['sometimes', 'boolean'],
             'url' => ['nullable', 'string', 'max:255'],

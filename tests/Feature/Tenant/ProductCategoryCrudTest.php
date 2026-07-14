@@ -163,6 +163,63 @@ test('tenant product store validates required fields', function (): void {
         ->assertSessionHasErrors(['name']);
 });
 
+test('tenant product store persists last_purchase_date', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenant('tenant-product-last-purchase');
+    assignTenantAdminRole($user, $tenant->id);
+
+    $host = 'tenant-product-last-purchase.'.config('app.landlord_domain');
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => $host])
+        ->post(route('tenant.products.store', ['subdomain' => 'tenant-product-last-purchase'], false), [
+            'name' => 'Produto com compra',
+            'status' => 'draft',
+            'dimension_publish_status' => 'draft',
+            'last_purchase_date' => '2026-05-10',
+        ]);
+
+    $response->assertRedirect(route('tenant.products.index', ['subdomain' => 'tenant-product-last-purchase'], false));
+
+    $product = Product::query()->where('tenant_id', $tenant->id)->where('name', 'Produto com compra')->firstOrFail();
+
+    expect($product->last_purchase_date?->format('Y-m-d'))->toBe('2026-05-10');
+});
+
+test('tenant product update persists last_purchase_date', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenant('tenant-product-last-purchase-update');
+    assignTenantAdminRole($user, $tenant->id);
+
+    $host = 'tenant-product-last-purchase-update.'.config('app.landlord_domain');
+
+    $product = Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Produto Existente',
+        'slug' => 'produto-existente',
+        'status' => 'published',
+        'dimension_publish_status' => 'published',
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => $host])
+        ->put(route('tenant.products.update', ['subdomain' => 'tenant-product-last-purchase-update', 'product' => $product->id], false), [
+            'name' => 'Produto Existente',
+            'status' => 'published',
+            'dimension_publish_status' => 'published',
+            'last_purchase_date' => '2026-06-01',
+        ]);
+
+    $response->assertRedirect(route('tenant.products.index', ['subdomain' => 'tenant-product-last-purchase-update'], false));
+
+    $product->refresh();
+    expect($product->last_purchase_date?->format('Y-m-d'))->toBe('2026-06-01');
+});
+
 test('sync single endpoint is mocked while import system is rebuilt', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);

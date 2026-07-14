@@ -29,6 +29,13 @@ class FieldValueResolver
 
     private function extractSource(array $item, string $source): mixed
     {
+        // Wildcard: "path.*.subfield". Must be checked before the arithmetic
+        // expression below — otherwise ".*." is misread as a multiplication
+        // between the surrounding path segments (e.g. "fornecedores.*.data_ultima_compra").
+        if (str_contains($source, '.*')) {
+            return $this->extractWildcard($item, $source);
+        }
+
         // Arithmetic expression: "field_a - field_b * field_c / field_d"
         if (preg_match('/\S\s*[+\-*\/]\s*\S/', $source)) {
             return $this->evalExpression($item, $source);
@@ -39,7 +46,7 @@ class FieldValueResolver
             return $this->extractWithFilter($item, $source, (int) $m[0][1], $m[1][0], $m[2][0]);
         }
 
-        // Wildcard: "path.*.subfield"
+        // Wildcard: "*.subfield" (no leading dot)
         if (str_contains($source, '*')) {
             return $this->extractWildcard($item, $source);
         }

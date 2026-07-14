@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\TenantIntegration;
 use App\Services\Integrations\Discovery\DailyModeDiscoverer;
 use App\Services\Integrations\Discovery\PageModeDiscoverer;
 
@@ -25,6 +26,24 @@ it('caps the discovered last page when max_page is lower', function (): void {
     expect($result)->toBe(3);
 });
 
+it('forceFull skips the changed_since resolution and returns null dates without touching the tenant', function (): void {
+    $discoverer = new PageModeDiscoverer('01testintegrationid000000000', 'products');
+
+    // A mock with no expectations set: forceFull must return before the
+    // integration is ever inspected (storeHasRecords, resolveChunkDates, ...).
+    $integration = Mockery::mock(TenantIntegration::class);
+
+    $method = new ReflectionMethod($discoverer, 'resolveEffectiveDates');
+    $method->setAccessible(true);
+
+    $result = $method->invoke($discoverer, $integration, [
+        'date_fields' => ['changed_since' => 'data_ultima_alteracao'],
+        'initial_days' => 0,
+    ], null, true);
+
+    expect($result)->toBe([null, null]);
+});
+
 it('generates distinct dates when building the all-dates range', function (): void {
     $discoverer = new DailyModeDiscoverer('01testintegrationid000000000', 'sales');
 
@@ -34,7 +53,7 @@ it('generates distinct dates when building the all-dates range', function (): vo
     // Simulate a DB that already has all dates filled — but we just need to check
     // the generated allDates range itself via the missing count when existingDates = [].
     // We do this by injecting a mock integration that returns no existing dates.
-    $integration = Mockery::mock(\App\Models\TenantIntegration::class);
+    $integration = Mockery::mock(TenantIntegration::class);
     $integration->shouldReceive('getAttribute')->with('tenant')->andReturn(null);
 
     $pathConfig = [

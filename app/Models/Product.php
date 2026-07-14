@@ -91,6 +91,7 @@ class Product extends Model
         'description_embedding',
         'current_stock',
         'price',
+        'last_purchase_date',
     ];
 
     protected $appends = [

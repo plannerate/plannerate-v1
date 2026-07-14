@@ -2,10 +2,10 @@
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import PlanogramGenerationSummary from '@/components/PlanogramGenerationSummary.vue';
+import GenerationOverlay from '@/components/plannerate/generation/GenerationOverlay.vue';
 import Planogram from '@/components/plannerate/Planogram.vue';
 import PlanogramAuto from '@/components/plannerate/PlanogramAuto.vue';
 import { useGenerationRun } from '@/composables/plannerate/generation/useGenerationRun';
-import { useT } from '@/composables/useT';
 // @ts-expect-error - BackendBreadcrumb type definition may not be available
 import SimpleLayout from '@/layouts/SimpleLayout.vue';
 import type {BackendBreadcrumb} from '@/composables/useBreadcrumbs';
@@ -70,15 +70,23 @@ const props = withDefaults(defineProps<Props>(), {
 const { record, products, analysis } = props;
 
 const page = usePage();
-const { t } = useT();
 
 // A geração roda em fila: os relatórios não vêm mais no flash do Inertia, e sim
 // persistidos na última execução (PlanogramGenerationRun). O flash é mantido como
 // fallback para qualquer fluxo legado que ainda o preencha.
 const {
+    latestRun,
     capacityReport: runCapacityReport,
     validationReport: runValidationReport,
     isGenerating,
+    hasFailed,
+    isStuck,
+    elapsedMs,
+    dismissed,
+    justCompleted,
+    reloadCountdown,
+    dismiss,
+    retry,
 } = useGenerationRun();
 
 const validationReport = computed(
@@ -93,26 +101,46 @@ const editorComponent = computed(() =>
         ? PlanogramAuto
         : Planogram,
 );
+
+// Overlay: aparece durante a geração, na falha e no flash de sucesso; some ao
+// concluir de fato (router.reload) ou quando o usuário o fecha explicitamente.
+const showOverlay = computed(
+    () => (isGenerating.value || hasFailed.value || justCompleted.value) && !dismissed.value,
+);
+
+// A trava só se justifica enquanto os segmentos ainda serão sobrescritos: run
+// pendente (queued/running) ou no flash de sucesso, antes do reload. Falha não
+// trava — nada será sobrescrito, e o usuário pode seguir editando ou tentar de novo.
+const lockEditor = computed(() => isGenerating.value || justCompleted.value);
 </script>
 
 <template>
     <SimpleLayout :maxWidth="props.maxWidth">
-        <component
-            :is="editorComponent"
-            :record="record"
-            :products="products"
-            :available-users="availableUsers"
-            :analysis="analysis"
-            :saveChangesRoute="saveChangesRoute"
-            :backRoute="backRoute"
-            :permissions="permissions"
-        />
-        <div
-            v-if="isGenerating"
-            class="mx-4 mb-2 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200"
-        >
-            <span class="size-2 animate-pulse rounded-full bg-blue-500" />
-            {{ t('plannerate.generation.history.in_progress') }}
+        <div class="relative w-full">
+            <div :inert="lockEditor" :aria-hidden="lockEditor" :class="lockEditor ? 'pointer-events-none' : ''">
+                <component
+                    :is="editorComponent"
+                    :record="record"
+                    :products="products"
+                    :available-users="availableUsers"
+                    :analysis="analysis"
+                    :saveChangesRoute="saveChangesRoute"
+                    :backRoute="backRoute"
+                    :permissions="permissions"
+                />
+            </div>
+
+            <GenerationOverlay
+                v-if="showOverlay"
+                :run="latestRun"
+                :elapsed-ms="elapsedMs"
+                :is-stuck="isStuck"
+                :reload-countdown="reloadCountdown"
+                :back-route="backRoute ?? ''"
+                class="absolute inset-0"
+                @dismiss="dismiss"
+                @retry="retry"
+            />
         </div>
         <!--
             O relatório completo (capacidade, alocados, sugestões, validação) mora em

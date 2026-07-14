@@ -22,6 +22,26 @@ return [
         'failed' => 'Falhou',
     ],
 
+    /*
+     * Overlay de proteção exibido sobre o editor enquanto a gôndola está sendo
+     * (re)montada — impede edição perdida e informa o andamento em tempo real.
+     */
+    'overlay' => [
+        'queued' => 'Na fila — aguardando um processador livre.',
+        'running' => 'Montando a gôndola…',
+        'completed' => 'Gôndola gerada!',
+        'reloading_in' => 'Recarregando em :seconds…',
+        'failed_title' => 'A geração falhou',
+        'stuck_title' => 'A fila parece parada',
+        'stuck_hint' => 'Isso não costuma acontecer. Você pode fechar e tentar de novo mais tarde.',
+        'wait_here' => 'Pode esperar aqui — a tela atualiza sozinha quando terminar.',
+        'elapsed' => 'há :time',
+        'back_to_planograms' => 'Voltar aos planogramas',
+        'retry' => 'Tentar novamente',
+        'dismiss' => 'Fechar',
+        'minimize' => 'Minimizar',
+    ],
+
     'history' => [
         'title' => 'Histórico de gerações',
         'empty' => 'Esta gôndola ainda não foi gerada.',
