@@ -219,8 +219,15 @@ class GenerateAutoPlanogramJob implements ShouldQueue, TenantAware
     }
 
     /**
-     * Link "Ver detalhes" da notificação: abre o editor do planograma, que carrega o
+     * Link "Ver detalhes" da notificação: abre o editor da gôndola, que carrega o
      * relatório da última execução (ver PlanogramGenerationRunController::latest).
+     *
+     * Apesar do nome da rota ('editor/planograms/{record}/gondolas/editor'), o
+     * segmento {record} é o ID DA GÔNDOLA, não do planograma — ver
+     * EditorPlanogramController::findGondolaOrFail() e o mesmo padrão em
+     * GondolaController::edit(), Gondola::getRouteGondolasAttribute() e nos demais
+     * jobs de notificação. Usar o planogramId aqui faz o
+     * AppGondola::find($id) devolver null e o controller abortar com 403.
      *
      * URL relativa montada à mão (e não via route()): a notificação pode ser gravada
      * num worker sem o host do tenant no request, e route() geraria o host errado —
@@ -228,6 +235,6 @@ class GenerateAutoPlanogramJob implements ShouldQueue, TenantAware
      */
     private function runActionUrl(): string
     {
-        return "/editor/planograms/{$this->planogramId}/gondolas/editor?run={$this->runId}";
+        return "/editor/planograms/{$this->gondolaId}/gondolas/editor?run={$this->runId}";
     }
 }

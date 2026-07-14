@@ -231,6 +231,35 @@ test('o job de geração roda na fila default, sem retry e é TenantAware', func
         ->and($job)->toBeInstanceOf(TenantAware::class);
 });
 
+test('o link de "ver detalhes" da notificação aponta para a gôndola, não para o planograma', function (): void {
+    // Regressão: a rota 'tenant.planograms.gondolas.editor' se chama assim, mas o
+    // segmento {record} é o ID DA GÔNDOLA (ver EditorPlanogramController::
+    // findGondolaOrFail — AppGondola::find($record)). runActionUrl() colocava o
+    // planogramId ali; a notificação levava a um AppGondola::find($planogramId),
+    // que devolve null, e o controller abortava com 403 — o usuário nunca conseguia
+    // abrir a gôndola recém-gerada a partir da notificação.
+    $job = new GenerateAutoPlanogramJob(
+        gondolaId: '01jgondolanotify00000000000',
+        planogramId: '01jplanogramnotify000000000',
+        config: (new AutoGenerateConfigDTO(
+            strategy: 'abc',
+            useExistingAnalysis: true,
+            startDate: null,
+            endDate: null,
+        ))->toArray(),
+        templateId: null,
+        userId: '01juser',
+        tenantId: '01jtenant',
+        runId: '01jrunnotify00000000000000',
+    );
+
+    $reflection = new ReflectionMethod($job, 'runActionUrl');
+    $url = $reflection->invoke($job);
+
+    expect($url)->toBe('/editor/planograms/01jgondolanotify00000000000/gondolas/editor?run=01jrunnotify00000000000000')
+        ->and($url)->not->toContain('01jplanogramnotify000000000');
+});
+
 test('as métricas de ocupação são derivadas do slot_analysis da execução', function (): void {
     // percentual_uso vem em 0-100 do placement engine; a coluna guarda 0-1.
     $output = new PlanogramOutput(
