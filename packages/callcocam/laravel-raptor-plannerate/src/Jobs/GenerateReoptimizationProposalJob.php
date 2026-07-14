@@ -54,6 +54,14 @@ class GenerateReoptimizationProposalJob implements ShouldQueue, TenantAware
 
     public int $timeout = 600;
 
+    /**
+     * Fila própria.
+     *
+     * Na `default`, uma madrugada com 30 gôndolas reprocessando ocuparia os workers e faria a
+     * geração pedida por um usuário esperar atrás de trabalho de fundo que ninguém aguarda.
+     */
+    public const QUEUE = 'reoptimization';
+
     public function __construct(
         public string $gondolaId,
         public string $planogramId,
@@ -64,7 +72,7 @@ class GenerateReoptimizationProposalJob implements ShouldQueue, TenantAware
         public string $runId,
         public GenerationRunTrigger $trigger = GenerationRunTrigger::Scheduled,
     ) {
-        $this->onQueue('default');
+        $this->onQueue(self::QUEUE);
     }
 
     public function handle(

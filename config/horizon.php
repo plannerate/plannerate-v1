@@ -103,6 +103,10 @@ return [
         'redis:imports-process' => 600,
         'redis:integrations' => 600,
         'redis:maintenance' => 300,
+        // Trabalho de fundo, disparado de madrugada: ninguém está esperando na tela. Alertar por
+        // "espera longa" com o mesmo rigor da fila `default` só produziria ruído — 30 gôndolas
+        // enfileiradas de uma vez fazem a última esperar bastante, e isso é normal.
+        'redis:reoptimization' => 1800,
     ],
 
     /*
@@ -263,6 +267,33 @@ return [
             'memory' => 512,
             'nice' => 10,
         ],
+        /*
+         * Fila dedicada da reotimização contínua.
+         *
+         * A análise dividia a fila `default` com a geração de planograma. Numa madrugada em que
+         * 30 gôndolas são reprocessadas de uma vez, elas ocupam os workers da `default` — e uma
+         * geração pedida por um usuário no meio disso fica ATRÁS de trabalho de fundo que ninguém
+         * está esperando. Separar as filas é o que garante que o pedido do usuário passe na frente.
+         *
+         * `tries: 1` casa com o job: sem retry, porque a análise é barata de refazer na próxima
+         * rodada e um retry cego só empilharia runs duplicados.
+         *
+         * `timeout: 660` > os 600s do job, como na `default` — o worker precisa sobreviver ao job
+         * que ele está executando, senão o job é morto no meio e marcado como falho sem motivo.
+         *
+         * `nice: 10`: cede CPU para as filas que atendem gente esperando na tela.
+         */
+        'supervisor-reoptimization' => [
+            'connection' => 'redis',
+            'queue' => ['reoptimization'],
+            'balance' => 'simple',
+            'minProcesses' => 1,
+            'maxProcesses' => env('REOPTIMIZATION_MAX_PROCESSES', 2),
+            'tries' => 1,
+            'timeout' => 660,
+            'memory' => 512,
+            'nice' => 10,
+        ],
         // Fila dedicada para pesquisa de dimensões com Gemini — respeita rate limit 15 req/min
         'supervisor-ai-research' => [
             'connection' => 'redis',
@@ -293,6 +324,9 @@ return [
             ],
             'supervisor-maintenance' => [
                 'maxProcesses' => 1,
+            ],
+            'supervisor-reoptimization' => [
+                'maxProcesses' => 2,
             ],
             'supervisor-ai-research' => [
                 'maxProcesses' => 3,

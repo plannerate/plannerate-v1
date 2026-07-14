@@ -111,6 +111,27 @@ test('enfileirar cria um run de proposta, avança a cadência e desloca a janela
     Queue::assertPushed(GenerateReoptimizationProposalJob::class, 1);
 });
 
+/**
+ * A análise vai para uma fila PRÓPRIA.
+ *
+ * Na `default`, uma madrugada com dezenas de gôndolas reprocessando ocuparia os workers e faria a
+ * geração pedida por um usuário esperar atrás de trabalho de fundo que ninguém está aguardando.
+ * Este teste é o que impede a separação de ser desfeita sem querer.
+ */
+test('a análise é enfileirada na fila dedicada, não na default', function (): void {
+    $gondola = makeReoptGondola();
+    makeCompletedRun($gondola);
+
+    app(ReoptimizationScheduler::class)->enqueue($gondola);
+
+    Queue::assertPushed(
+        GenerateReoptimizationProposalJob::class,
+        fn (GenerateReoptimizationProposalJob $job): bool => $job->queue === GenerateReoptimizationProposalJob::QUEUE
+    );
+
+    expect(GenerateReoptimizationProposalJob::QUEUE)->not->toBe('default');
+});
+
 test('rodar o agendador duas vezes não enfileira a mesma gôndola duas vezes', function (): void {
     $gondola = makeReoptGondola();
     makeCompletedRun($gondola);
