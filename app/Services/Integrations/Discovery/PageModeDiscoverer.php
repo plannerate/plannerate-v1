@@ -28,6 +28,7 @@ class PageModeDiscoverer
      * @param  array<string, mixed>  $requests
      * @param  array<string, mixed>  $pathConfig
      * @param  array{id: string, document: string}|null  $store
+     * @param  bool  $forceFull  Ignora o filtro incremental (changed_since) e busca o catálogo completo
      *
      * @throws RuntimeException quando a chamada HTTP falha
      */
@@ -38,6 +39,7 @@ class PageModeDiscoverer
         array $requests,
         array $pathConfig,
         ?array $store,
+        bool $forceFull = false,
     ): void {
         $storeDocument = data_get($store, 'document');
         $storeId = data_get($store, 'id');
@@ -45,7 +47,7 @@ class PageModeDiscoverer
         $minPageSize = max(1, (int) (data_get($pathConfig, 'min_page_size') ?? data_get($requests, 'min_page_size', 1)));
         $maxPageSize = max(1, (int) (data_get($pathConfig, 'max_page_size') ?? data_get($requests, 'max_page_size', 1000)));
 
-        [$effectiveDateStart, $effectiveDateEnd] = $this->resolveEffectiveDates($integration, $pathConfig, $store);
+        [$effectiveDateStart, $effectiveDateEnd] = $this->resolveEffectiveDates($integration, $pathConfig, $store, $forceFull);
 
         $url = $this->buildUrl($config, $pathConfig);
         $method = strtolower((string) data_get($requests, 'method', 'get'));
@@ -57,6 +59,7 @@ class PageModeDiscoverer
             'integration_id' => $this->integrationId,
             'path_key' => $this->pathKey,
             'store_id' => $storeId,
+            'force_full' => $forceFull,
             'payload' => $payload,
         ]);
 
@@ -114,8 +117,12 @@ class PageModeDiscoverer
      * @param  array{id: string, document: string}|null  $store
      * @return array{?string, ?string}
      */
-    private function resolveEffectiveDates(TenantIntegration $integration, array $pathConfig, ?array $store): array
+    private function resolveEffectiveDates(TenantIntegration $integration, array $pathConfig, ?array $store, bool $forceFull = false): array
     {
+        if ($forceFull) {
+            return [null, null];
+        }
+
         $dateFields = (array) data_get($pathConfig, 'date_fields', []);
         $initialDays = (int) data_get($pathConfig, 'initial_days', 0);
         $chunkDays = (int) data_get($pathConfig, 'chunk_days', 0);

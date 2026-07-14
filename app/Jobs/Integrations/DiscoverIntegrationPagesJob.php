@@ -33,6 +33,7 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         public readonly string $pathKey,
         public readonly ?string $dateStart = null,
         public readonly ?string $dateEnd = null,
+        public readonly bool $forceFull = false,
     ) {
         $this->onQueue('imports-fetch');
     }
@@ -63,7 +64,7 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
                 $dailyDiscoverer->discover($integration, $pathConfig, $store);
             } else {
                 try {
-                    $pageDiscoverer->discover($integration, $api, $config, $requests, $pathConfig, $store);
+                    $pageDiscoverer->discover($integration, $api, $config, $requests, $pathConfig, $store, $this->forceFull);
                 } catch (RuntimeException $e) {
                     $this->fail($e->getMessage());
 
@@ -156,6 +157,7 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
             'discover',
             "integration:{$this->integrationId}",
             "path:{$this->pathKey}",
+            ...($this->forceFull ? ['full-backfill'] : []),
         ];
     }
 }
