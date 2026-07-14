@@ -94,7 +94,7 @@ class GenerateReoptimizationProposalJob implements ShouldQueue, TenantAware
             $planogram = Planogram::with(['category'])->findOrFail($this->planogramId);
 
             // Baseline ANTES de rodar o motor: é o layout que o diff descreve e o hash protege.
-            $baseline = $layoutReader->read($gondola);
+            $baseline = $layoutReader->read($gondola, excludeLockedShelves: true);
             $baselineHash = $hasher->hash($baseline);
 
             $rejectedBefore = PlanogramRejectedProduct::query()

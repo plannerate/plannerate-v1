@@ -162,6 +162,14 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             ->orderBy('ordering')
             ->get();
 
+        // Prateleiras travadas saem da geração ANTES de qualquer caminho de placement.
+        //
+        // Filtrar os slots aqui (e não pular a prateleira lá dentro) é o que garante que os DOIS
+        // caminhos — horizontal e blocagem vertical — respeitem o lock: os grupos verticais são
+        // montados a partir desta mesma lista. Um `continue` no laço horizontal deixaria a
+        // blocagem vertical escrevendo por cima da prateleira travada.
+        $slots = $this->rejectLockedShelfSlots($slots, $sections);
+
         // Pré-scan: detecta posições (module_number, shelf_order) com múltiplos slots.
         // O primeiro slot de cada prateleira compartilhada precisa reservar espaço para o seguinte,
         // caso contrário o expandFacings consumirá toda a largura e a micro-categoria ficará sem espaço.
@@ -988,6 +996,38 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $index = $numShelves - $shelfOrder;
 
         return $shelves[$index] ?? null;
+    }
+
+    /**
+     * Remove os slots que caem em prateleiras travadas.
+     *
+     * Sem produtos rejeitados e sem entrada na análise: a prateleira travada não é uma falha de
+     * espaço nem um slot vazio — ela simplesmente não participa desta geração. Contá-la como
+     * "0% de ocupação" empurraria a métrica da gôndola para baixo por uma decisão deliberada do
+     * usuário.
+     *
+     * @param  Collection<int, PlanogramTemplateSlot>  $slots
+     * @param  Collection<int, Section>  $sections
+     * @return Collection<int, PlanogramTemplateSlot>
+     */
+    private function rejectLockedShelfSlots(Collection $slots, Collection $sections): Collection
+    {
+        $kept = $slots->reject(function (PlanogramTemplateSlot $slot) use ($sections): bool {
+            $section = $this->resolveSection($sections, $slot->module_number);
+            $shelf = $section ? $this->resolveShelf($section, $slot->shelf_order) : null;
+
+            return (bool) ($shelf?->is_locked);
+        })->values();
+
+        $skipped = $slots->count() - $kept->count();
+
+        if ($skipped > 0) {
+            Log::info('TemplatePlacementEngine: slots ignorados por prateleira travada', [
+                'slots_ignorados' => $skipped,
+            ]);
+        }
+
+        return $kept;
     }
 
     /**

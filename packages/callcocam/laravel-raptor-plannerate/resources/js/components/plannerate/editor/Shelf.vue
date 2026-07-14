@@ -78,6 +78,7 @@
                 'hover:border-slate-600 hover:bg-slate-700/95 hover:ring-1 hover:ring-slate-500':
                     !isDraggingShelf,
                 'ring-2 ring-inset ring-blue-500': isCategoryHighlighted,
+                'border-t-amber-500 dark:border-t-amber-400': isShelfLocked,
             }" @mousedown="handleMouseDown" @dragstart.stop="handleShelfDragStart" @dragend.stop="handleShelfDragEnd"
             @click.stop="handleSelectShelf">
             <!-- Shelf label -->
@@ -91,13 +92,37 @@
                 </span>
             </div>
 
+            <!--
+                Travar a prateleira contra a geração automática.
+                Travada: cadeado sempre visível (é um estado que muda o que a geração faz, então
+                não pode ficar escondido atrás do hover). Destravada: só no hover, para não poluir.
+            -->
+            <button
+                type="button"
+                class="absolute top-1/2 right-1 flex size-5 -translate-y-1/2 items-center justify-center rounded transition-opacity"
+                :class="isShelfLocked
+                    ? 'text-amber-400 opacity-100 hover:text-amber-300'
+                    : 'text-slate-400 opacity-0 group-hover/shelf:opacity-100 hover:text-slate-200'"
+                :title="isShelfLocked ? t('plannerate.reoptimization.lock.unlock_action') : t('plannerate.reoptimization.lock.lock_action')"
+                style="z-index: 2"
+                @mousedown.stop
+                @dragstart.stop.prevent
+                @click.stop="toggleShelfLock"
+            >
+                <Lock v-if="isShelfLocked" class="size-3.5" />
+                <LockOpen v-else class="size-3.5" />
+            </button>
+
             <!-- Indicador visual de arrasto (aparece no hover) -->
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed, toRef } from 'vue';
+import { router } from '@inertiajs/vue3';
+import { Lock, LockOpen } from 'lucide-vue-next';
+import { computed, ref, toRef, watch } from 'vue';
+import { useT } from '@/composables/useT';
 import { useShelfDrag } from '../../../composables/plannerate/interactions/useShelfDrag';
 import { useShelfDragDrop } from '../../../composables/plannerate/interactions/useShelfDragDrop';
 import { useShelfLayout } from '../../../composables/plannerate/geometry/useShelfLayout';
@@ -125,6 +150,39 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const { t } = useT();
+
+/**
+ * Estado do cadeado com atualização otimista.
+ *
+ * O editor não recarrega a gôndola a cada mutação (`preserveState`), então esperar o servidor
+ * responder deixaria o cadeado piscando no estado antigo. Se o PUT falhar, volta.
+ */
+const isShelfLocked = ref<boolean>(Boolean(props.shelf.is_locked));
+
+watch(() => props.shelf.is_locked, (value) => {
+    isShelfLocked.value = Boolean(value);
+});
+
+function toggleShelfLock(): void {
+    const previous = isShelfLocked.value;
+    const next = !previous;
+
+    isShelfLocked.value = next;
+
+    router.put(
+        `/api/editor/shelves/${props.shelf.id}/lock`,
+        { is_locked: next },
+        {
+            preserveScroll: true,
+            preserveState: true,
+            onError: () => {
+                isShelfLocked.value = previous;
+            },
+        },
+    );
+}
 
 const scale = computed(() => props.scale || 3);
 

@@ -101,6 +101,8 @@ export interface Shelf {
     segments?: Segment[];
     shelves?: Shelf[];
     product_type?: string;
+    /** Prateleira travada: a geração automática preserva os produtos dela. */
+    is_locked?: boolean;
     template_slot?: {
         id: string;
         subtemplate_id: string;

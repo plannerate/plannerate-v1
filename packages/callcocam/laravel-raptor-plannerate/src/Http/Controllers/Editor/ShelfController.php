@@ -35,6 +35,29 @@ class ShelfController extends Controller
         ]);
     }
 
+    /**
+     * Trava/destrava a prateleira contra a geração automática.
+     *
+     * Endpoint próprio, e não um campo a mais no update(): aquele trata da geometria física da
+     * prateleira (largura, altura, posição). Travar é uma decisão de merchandising com efeito
+     * destrutivo do outro lado — a próxima geração vai preservar ou reescrever esta prateleira
+     * conforme esta flag. Misturar as duas coisas faria um ajuste de altura carregar junto, sem
+     * querer, o estado do lock.
+     */
+    public function toggleLock(Request $request, string $shelf)
+    {
+        $validated = $request->validate([
+            'is_locked' => 'required|boolean',
+        ]);
+
+        $model = Shelf::findOrFail($shelf);
+        $model->forceFill(['is_locked' => $validated['is_locked']])->save();
+
+        return back()->with('success', $validated['is_locked']
+            ? __('plannerate.reoptimization.lock.locked')
+            : __('plannerate.reoptimization.lock.unlocked'));
+    }
+
     public function store(Request $request, ?string $sectionId)
     {
         $validated = $request->validate([

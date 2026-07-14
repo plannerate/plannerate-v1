@@ -16,15 +16,26 @@ use Illuminate\Support\Collection;
 final class GondolaLayoutReader
 {
     /**
+     * @param  bool  $excludeLockedShelves  Ignora prateleiras travadas.
+     *
+     * A reotimização usa `true`: prateleiras travadas não participam da geração, então não fazem
+     * parte da proposta. Incluí-las no baseline faria o diff anunciar que os produtos travados
+     * "saem da gôndola" — exatamente o contrário do que o lock garante.
+     *
+     * Como o hash de staleness também é calculado sobre este recorte, travar ou destravar uma
+     * prateleira depois da análise muda o hash e invalida a proposta. É o comportamento certo:
+     * destravar expõe uma prateleira que a proposta nunca considerou, e travar faria a aprovação
+     * duplicar produtos.
      * @return Collection<int, PlacedSegment>
      */
-    public function read(Gondola $gondola): Collection
+    public function read(Gondola $gondola, bool $excludeLockedShelves = false): Collection
     {
         $gondola->loadMissing('sections.shelves.segments.layers');
 
         return $gondola->sections
             ->sortBy('ordering')
             ->flatMap(fn ($section) => $section->shelves
+                ->when($excludeLockedShelves, fn ($shelves) => $shelves->reject(fn ($shelf) => (bool) $shelf->is_locked))
                 ->sortBy('ordering')
                 ->flatMap(fn ($shelf) => $shelf->segments
                     ->sortBy('ordering')

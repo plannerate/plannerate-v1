@@ -29,12 +29,14 @@ class Shelf extends Model
         'shelf_depth',
         'product_type',
         'settings',
+        'is_locked',
     ];
 
     protected function casts(): array
     {
         return [
             'settings' => 'array',
+            'is_locked' => 'boolean',
             'shelf_width' => 'integer',
             'shelf_height' => 'integer',
             'shelf_depth' => 'integer',

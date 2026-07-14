@@ -32,8 +32,11 @@ final class PlanogramWriter implements PlanogramWriterInterface
      */
     public function write(string $gondolaId, Collection $sections, Collection $placedSegments): void
     {
+        // Prateleiras travadas não entram na limpeza: o motor não gerou nada para elas (os slots
+        // foram filtrados) e apagar seus segments deixaria a prateleira VAZIA — o oposto exato do
+        // que "travar" promete. É aqui que o lock deixa de ser intenção e vira garantia.
         $shelfIds = $sections
-            ->flatMap(fn ($section) => $section->shelves->pluck('id'))
+            ->flatMap(fn ($section) => $section->shelves->reject(fn ($shelf) => (bool) $shelf->is_locked)->pluck('id'))
             ->filter()
             ->values()
             ->toArray();

@@ -47,6 +47,15 @@ return [
         'monthly' => 'Mensal',
     ],
 
+    'lock' => [
+        'locked' => 'Prateleira travada. A geração automática não vai mais alterá-la.',
+        'unlocked' => 'Prateleira destravada. A próxima geração pode reorganizá-la.',
+        'lock_action' => 'Travar prateleira',
+        'unlock_action' => 'Destravar prateleira',
+        'badge' => 'Travada',
+        'help' => 'Uma prateleira travada é preservada pela geração automática: seus produtos ficam como estão e saem do pool de candidatos, para não serem posicionados também em outro lugar. Use quando o arranjo foi decidido à mão.',
+    ],
+
     'banner' => [
         'title' => 'Proposta de reotimização aguardando revisão',
         'message' => ':count mudança(s) sugerida(s) com base nas vendas mais recentes.',

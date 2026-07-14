@@ -124,6 +124,8 @@ Route::prefix('api')->name('api.')
             ->name('editor.shelves.update');
         Route::delete('editor/shelves/{shelf}', [ShelfController::class, 'destroy'])
             ->name('editor.shelves.destroy');
+        Route::put('editor/shelves/{shelf}/lock', [ShelfController::class, 'toggleLock'])
+            ->name('editor.shelves.lock');
 
         // Editor API Routes - Segments
         Route::put('editor/segments/{id}', [SegmentController::class, 'update'])

@@ -83,7 +83,7 @@ final class ProposalApplier
 
         $gondola = Gondola::with(['sections.shelves'])->findOrFail($proposal->gondola_id);
 
-        $currentHash = $this->hasher->hash($this->layoutReader->read($gondola));
+        $currentHash = $this->hasher->hash($this->layoutReader->read($gondola, excludeLockedShelves: true));
 
         if ($currentHash !== $proposal->baseline_hash) {
             $proposal->forceFill([

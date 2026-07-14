@@ -6,6 +6,7 @@ use App\Models\Scopes\TenantScope;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementSettings;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramInput;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Locking\LockedShelfProducts;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\ScoringWeightsValue;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Exceptions\GenerationCancelledException;
@@ -29,6 +30,7 @@ final class AutoGenerationRunner
         private readonly AutoPlanogramService $service,
         private readonly ProductSelectionService $productSelection,
         private readonly ProductWidthResolver $widthResolver,
+        private readonly LockedShelfProducts $lockedShelfProducts,
     ) {}
 
     /**
@@ -85,6 +87,17 @@ final class AutoGenerationRunner
             scopeCategoryIds: $scopeCategoryIds,
             removedFromMix: $removedFromMix,
         );
+
+        // Produto que já está numa prateleira travada sai do pool: o motor não vai reposicioná-lo
+        // (o slot dela foi filtrado), então deixá-lo entre os candidatos faria ele ser colocado
+        // TAMBÉM em outro lugar — o mesmo SKU aparecendo duas vezes na gôndola.
+        $lockedProductIds = $this->lockedShelfProducts->forGondola($gondola);
+
+        if ($lockedProductIds !== []) {
+            $rankedProducts = $rankedProducts
+                ->reject(fn ($dto): bool => isset($lockedProductIds[$dto->product->id]))
+                ->values();
+        }
 
         if ($rankedProducts->isEmpty()) {
             // Cancelamento de NEGÓCIO (tipo próprio): capturar \RuntimeException aqui engolia
