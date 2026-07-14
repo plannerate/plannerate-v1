@@ -24,9 +24,11 @@ const { t } = useT()
  */
 const itemsInDepth = computed(() => {
   const depth = props.productDepth ?? 0
+
   if (!props.shelfDepth || !depth) {
     return 1
   }
+
   return Math.max(1, Math.floor(props.shelfDepth / depth))
 })
 

@@ -69,10 +69,12 @@ function addFiles(incoming: FileList | null): void {
     if (!incoming) {
         return;
     }
+
     for (const file of Array.from(incoming)) {
         if (files.value.length >= MAX_FILES) {
             break;
         }
+
         if (file.type.startsWith('image/') && file.size <= MAX_SIZE_MB * 1024 * 1024) {
             files.value.push(file);
         }
@@ -113,6 +115,7 @@ function uploadNext(index: number): void {
     if (index >= files.value.length) {
         uploading.value = false;
         close();
+
         return;
     }
 
@@ -143,6 +146,7 @@ function save(): void {
     if (!canSave.value) {
         return;
     }
+
     uploading.value = true;
     uploadedCount.value = 0;
     uploadNext(0);
@@ -152,6 +156,7 @@ function close(): void {
     if (uploading.value) {
         return;
     }
+
     files.value = [];
     moduleValue.value = '';
     notes.value = '';

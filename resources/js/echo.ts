@@ -9,15 +9,23 @@ declare global {
 }
 
 function metaContent(name: string): string | null {
-    if (typeof document === 'undefined') return null;
+    if (typeof document === 'undefined') {
+return null;
+}
+
     return document.querySelector(`meta[name="${name}"]`)?.getAttribute('content') ?? null;
 }
 
 function echoLog(level: 'info' | 'warn' | 'error', ...args: unknown[]): void {
     const prefix = '[Echo]';
-    if (level === 'error') console.error(prefix, ...args);
-    else if (level === 'warn') console.warn(prefix, ...args);
-    else console.log(prefix, ...args);
+
+    if (level === 'error') {
+console.error(prefix, ...args);
+} else if (level === 'warn') {
+console.warn(prefix, ...args);
+} else {
+console.log(prefix, ...args);
+}
 }
 
 type PusherErrorEvent = {
@@ -26,7 +34,10 @@ type PusherErrorEvent = {
 };
 
 function wsCloseCodeLabel(code?: number): string {
-    if (code === undefined) return '';
+    if (code === undefined) {
+return '';
+}
+
     const labels: Record<number, string> = {
         1006: '(Abnormal closure — SSL/TLS failure or server unreachable)',
         1015: '(TLS handshake failure)',
@@ -35,11 +46,14 @@ function wsCloseCodeLabel(code?: number): string {
         4009: '(Reverb: connection unauthorized)',
         4100: '(Reverb: over capacity)',
     };
+
     return labels[code] ?? `(close code ${code})`;
 }
 
 export function initializeEcho(): void {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') {
+return;
+}
 
     window.Pusher = Pusher;
     window.__plannerateEchoConfigured = false;
@@ -53,6 +67,7 @@ export function initializeEcho(): void {
 
     if (!key.trim()) {
         console.warn('[Echo] Reverb disabled — no app key configured.');
+
         return;
     }
 

@@ -14,7 +14,8 @@
 //                backend e keyed por EAN (veja `useSalesIndicators`).
 // ============================================================================
 
-import { AlertTriangle, Banknote, Coins, Package, Percent, Tag, type LucideIcon } from 'lucide-vue-next';
+import { AlertTriangle, Banknote, Coins, Package, Percent, Tag  } from 'lucide-vue-next';
+import type {LucideIcon} from 'lucide-vue-next';
 import type { SalesIndicatorData } from '@/composables/plannerate/analysis/useSalesIndicators';
 import type { Product } from '@/types/planogram';
 
@@ -60,9 +61,11 @@ export interface IndicatorConfig {
 /** Formata um número como moeda brasileira (R$). */
 function formatCurrency(value: unknown): string {
     const num = Number(value);
+
     if (!Number.isFinite(num)) {
         return '';
     }
+
     return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL',
@@ -72,9 +75,11 @@ function formatCurrency(value: unknown): string {
 /** Formata um número como percentual (ex.: 23,5%). */
 function formatPercent(value: unknown): string {
     const num = Number(value);
+
     if (!Number.isFinite(num)) {
         return '';
     }
+
     return (
         new Intl.NumberFormat('pt-BR', {
             minimumFractionDigits: 0,
@@ -86,15 +91,18 @@ function formatPercent(value: unknown): string {
 /** Formata um número inteiro de unidades (ex.: "12 un"). */
 function formatUnits(value: unknown): string {
     const num = Number(value);
+
     if (!Number.isFinite(num)) {
         return '';
     }
+
     return `${Math.round(num)} un`;
 }
 
 /** Helper de visibilidade: valor numérico finito e positivo. */
 function isPositiveNumber(value: unknown): boolean {
     const num = Number(value);
+
     return Number.isFinite(num) && num > 0;
 }
 
@@ -190,6 +198,7 @@ export function getIndicatorConfig(key: string | null): IndicatorConfig | undefi
     if (!key || key === INDICATOR_NONE) {
         return undefined;
     }
+
     return PRODUCT_INDICATORS.find((indicator) => indicator.key === key);
 }
 

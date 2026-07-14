@@ -28,7 +28,8 @@
 import { computed } from 'vue';
 import { useSalesIndicators } from '../../../composables/plannerate/analysis/useSalesIndicators';
 import { indicatorOrientation, selectedIndicator } from '../../../composables/plannerate/core/useGondolaState';
-import { getIndicatorConfig, type IndicatorContext } from '../../../composables/plannerate/editor/indicators';
+import { getIndicatorConfig  } from '../../../composables/plannerate/editor/indicators';
+import type {IndicatorContext} from '../../../composables/plannerate/editor/indicators';
 import type { Product } from '../../../types/planogram';
 
 interface Props {
@@ -90,6 +91,7 @@ const context = computed<IndicatorContext | null>(() => {
     if (!props.product) {
         return null;
     }
+
     return {
         product: props.product,
         sales: config.value?.source === 'sales' ? getIndicators(props.product.ean) : undefined,
@@ -104,9 +106,11 @@ const rawValue = computed(() => {
     if (!config.value || !context.value) {
         return undefined;
     }
+
     if (config.value.accessor) {
         return config.value.accessor(context.value);
     }
+
     return config.value.field ? context.value.product[config.value.field] : undefined;
 });
 
@@ -115,6 +119,7 @@ const displayValue = computed(() => {
     if (!config.value || !context.value) {
         return '';
     }
+
     return config.value.format
         ? config.value.format(rawValue.value, context.value)
         : String(rawValue.value ?? '');
@@ -128,9 +133,11 @@ const isVisible = computed(() => {
     if (!config.value || !context.value) {
         return false;
     }
+
     if (config.value.shouldShow) {
         return config.value.shouldShow(rawValue.value, context.value);
     }
+
     return rawValue.value !== null && rawValue.value !== undefined && rawValue.value !== '';
 });
 </script>

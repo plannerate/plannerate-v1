@@ -83,18 +83,23 @@ const appliedFilterParams = computed(() => {
     if (props.filters.file !== '') {
         params.set('file', props.filters.file);
     }
+
     if (props.filters.search !== '') {
         params.set('search', props.filters.search);
     }
+
     if (props.filters.level !== '') {
         params.set('level', props.filters.level);
     }
+
     if (props.filters.from !== '') {
         params.set('from', props.filters.from);
     }
+
     if (props.filters.to !== '') {
         params.set('to', props.filters.to);
     }
+
     if (props.filters.key_only) {
         params.set('key_only', '1');
     }

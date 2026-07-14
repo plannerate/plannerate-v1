@@ -3,7 +3,6 @@ import { useHttp } from '@inertiajs/vue3';
 import { router } from '@inertiajs/vue3';
 import { BarChart2 } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
-import { useT } from '@/composables/useT';
 import TemplateSlotController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Templates/TemplateSlotController';
 import {
     Sheet,
@@ -11,6 +10,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { useT } from '@/composables/useT';
 import ReviewSlotProductsPanel from './ReviewSlotProductsPanel.vue';
 import type { PlanogramTemplateSlot, SlotAnalysisData } from './types';
 

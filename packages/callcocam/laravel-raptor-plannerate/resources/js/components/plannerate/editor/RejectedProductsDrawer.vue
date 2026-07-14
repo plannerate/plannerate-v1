@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
-import { setRejectedProductDragData } from '@/composables/plannerate/dnd/transfer';
-import { useRejectedProductsStore } from '@/composables/plannerate/interactions/useRejectedProductsStore';
-import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
-import { selectedTemplateCategoryId } from '@/composables/plannerate/core/useGondolaState';
-import type { RejectedProduct } from '@/composables/plannerate/core/useGondolaState';
 import { ArrowLeftRight, Ban, ChevronDown, ChevronUp, GripVertical, Layers, Loader2, MoveHorizontal, RefreshCw, Ruler, Trash2, X } from 'lucide-vue-next';
-import { type Component, computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import {  computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import type {Component} from 'vue';
 import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { RejectedProduct } from '@/composables/plannerate/core/useGondolaState';
+import { selectedTemplateCategoryId } from '@/composables/plannerate/core/useGondolaState';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
+import { setRejectedProductDragData } from '@/composables/plannerate/dnd/transfer';
+import { useRejectedProductsStore } from '@/composables/plannerate/interactions/useRejectedProductsStore';
 import { useT } from '@/composables/useT';
 
 const props = defineProps<{ gondolaId: string }>();
@@ -30,7 +31,10 @@ const swapSource = ref<RejectedProduct | null>(null);
 const cardsContainer = ref<HTMLElement | null>(null);
 
 function handleWheel(event: WheelEvent) {
-    if (!cardsContainer.value) return;
+    if (!cardsContainer.value) {
+return;
+}
+
     event.preventDefault();
     cardsContainer.value.scrollLeft += event.deltaY;
 }
@@ -44,22 +48,32 @@ const selectedReason = ref<string | null>(null);
 const categoryFilteredProducts = computed(() => {
     const all = editor.rejectedProducts.value;
     const filter = selectedTemplateCategoryId.value;
-    if (!filter) return all;
+
+    if (!filter) {
+return all;
+}
+
     return all.filter((p) => p.category_id === filter);
 });
 
 // Motivos presentes na seleção atual, com contagem — alimenta os chips de filtro.
 const reasonsPresent = computed(() => {
     const counts = new Map<string, number>();
+
     for (const p of categoryFilteredProducts.value) {
         counts.set(p.rejection_reason, (counts.get(p.rejection_reason) ?? 0) + 1);
     }
+
     return Array.from(counts.entries()).map(([reason, count]) => ({ reason, count, meta: reasonMeta(reason) }));
 });
 
 const filteredRejectedProducts = computed(() => {
     const base = categoryFilteredProducts.value;
-    if (!selectedReason.value) return base;
+
+    if (!selectedReason.value) {
+return base;
+}
+
     return base.filter((p) => p.rejection_reason === selectedReason.value);
 });
 
@@ -74,15 +88,25 @@ watch(reasonsPresent, (list) => {
 const DRAWER_STATE_COOKIE = 'rejected-products-drawer-state';
 
 function getCookie(name: string): string | null {
-    if (typeof document === 'undefined') return null;
+    if (typeof document === 'undefined') {
+return null;
+}
+
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+
+    if (parts.length === 2) {
+return parts.pop()?.split(';').shift() || null;
+}
+
     return null;
 }
 
 function setCookie(name: string, value: string, days: number = 30): void {
-    if (typeof document === 'undefined') return;
+    if (typeof document === 'undefined') {
+return;
+}
+
     const date = new Date();
     date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
     const expires = `expires=${date.toUTCString()}`;
@@ -120,8 +144,10 @@ function handleCardClick(_event: MouseEvent, product: RejectedProduct) {
     if (clickTimer) {
         clearTimeout(clickTimer);
         clickTimer = null;
+
         return;
     }
+
     clickTimer = setTimeout(() => {
         selection.selectItem('product', product.product_id, buildProduct(product), {
             source: 'rejected_products',
@@ -158,14 +184,22 @@ type ReasonMeta = { icon: Component; label: string; variant: 'outline' | 'destru
 const _reasonMetaCache = new Map<string, ReasonMeta>();
 
 function buildReasonMeta(reason: string): ReasonMeta {
-    if (reason === 'no_horizontal_space')
-        return { icon: MoveHorizontal, label: t('plannerate.editor.rejected_products.reasons.no_horizontal_space'), variant: 'outline' };
-    if (reason === 'height_exceeds_shelf')
-        return { icon: Ruler, label: t('plannerate.editor.rejected_products.reasons.height_exceeds_shelf'), variant: 'destructive' };
-    if (reason === 'manually_removed')
-        return { icon: Trash2, label: t('plannerate.editor.rejected_products.reasons.manually_removed'), variant: 'secondary' };
-    if (reason === 'removed_from_mix')
-        return { icon: Ban, label: t('plannerate.editor.rejected_products.reasons.removed_from_mix'), variant: 'secondary' };
+    if (reason === 'no_horizontal_space') {
+return { icon: MoveHorizontal, label: t('plannerate.editor.rejected_products.reasons.no_horizontal_space'), variant: 'outline' };
+}
+
+    if (reason === 'height_exceeds_shelf') {
+return { icon: Ruler, label: t('plannerate.editor.rejected_products.reasons.height_exceeds_shelf'), variant: 'destructive' };
+}
+
+    if (reason === 'manually_removed') {
+return { icon: Trash2, label: t('plannerate.editor.rejected_products.reasons.manually_removed'), variant: 'secondary' };
+}
+
+    if (reason === 'removed_from_mix') {
+return { icon: Ban, label: t('plannerate.editor.rejected_products.reasons.removed_from_mix'), variant: 'secondary' };
+}
+
     return { icon: Layers, label: t('plannerate.editor.rejected_products.reasons.level'), variant: 'secondary' };
 }
 
@@ -198,7 +232,11 @@ function buildProduct(r: RejectedProduct) {
 // ── Drag ─────────────────────────────────────────────────────────────────────
 function handleDragStart(event: DragEvent, product: RejectedProduct) {
     draggingId.value = product.id;
-    if (!event.dataTransfer) return;
+
+    if (!event.dataTransfer) {
+return;
+}
+
     const productObj = buildProduct(product);
     setRejectedProductDragData(event.dataTransfer, product.id, productObj);
     event.dataTransfer.setData('text/plain', productObj.name ?? '');
@@ -212,13 +250,18 @@ function handleDragEnd() {
 function handleDoubleClick(product: RejectedProduct) {
     if (selection.selectedType.value !== 'shelf' || !selection.selectedId.value) {
         toast.error(t('plannerate.editor.rejected_products.select_shelf_first'));
+
         return;
     }
+
     if (!product.product_width || !product.product_height) {
         toast.error(t('plannerate.editor.rejected_products.no_dimensions', { product: product.product_name }));
+
         return;
     }
+
     const placed = editor.placeFromRejected(product, selection.selectedId.value);
+
     if (placed) {
         toast.success(t('plannerate.editor.rejected_products.added_to_shelf', { product: product.product_name }));
     }
@@ -227,7 +270,11 @@ function handleDoubleClick(product: RejectedProduct) {
 // ── Listen for drag-placed event from useShelfDragDrop ───────────────────────
 rejectedStore.setOnProductPlaced((productId: string) => {
     const found = editor.rejectedProducts.value.find((r) => r.product_id === productId);
-    if (!found) return;
+
+    if (!found) {
+return;
+}
+
     editor.patchRejectedProductToLastAction(found);
     void editor.deleteRejectedProduct(found.id);
 });
@@ -246,7 +293,10 @@ function cancelSwapMode() {
 }
 
 async function executeSwap(layerId: string) {
-    if (!swapSource.value) return;
+    if (!swapSource.value) {
+return;
+}
+
     isSwapping.value = true;
     const source = swapSource.value;
     swapSource.value = null;
@@ -267,12 +317,18 @@ async function executeSwap(layerId: string) {
 watch(
     () => selection.selectedItem.value,
     (item) => {
-        if (!swapModeActive.value || !item || item.type !== 'segment') return;
+        if (!swapModeActive.value || !item || item.type !== 'segment') {
+return;
+}
+
         const layerId: string | undefined = (item.item as any)?.layer?.id;
+
         if (!layerId) {
             toast.warning(t('plannerate.editor.rejected_products.segment_no_layer'));
+
             return;
         }
+
         void executeSwap(layerId);
     },
 );

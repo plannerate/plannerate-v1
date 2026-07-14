@@ -1,5 +1,6 @@
 import { useT } from '@/composables/useT'
-import { AXIS_LABEL_KEYS, isCanonicalPreset, type BcgAxis, type BcgQuadrant, type BcgSpaceAction } from './types'
+import { AXIS_LABEL_KEYS, isCanonicalPreset    } from './types'
+import type {BcgAxis, BcgQuadrant, BcgSpaceAction} from './types';
 
 /**
  * Rótulos, cores e descrições dos quadrantes da Análise BCG.

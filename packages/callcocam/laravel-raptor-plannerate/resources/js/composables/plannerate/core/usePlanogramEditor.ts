@@ -6,12 +6,20 @@ import { router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { calculateAbc } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
-import { usePlanogramChanges } from './usePlanogramChanges';
-import { usePlanogramHistory } from './usePlanogramHistory';
-import { findNearestHole } from '../geometry/useSectionHoles';
 import { useT } from '@/composables/useT';
 import type { Gondola, Product, Section, Shelf } from '@/types/planogram';
+import { captureElementAsCanvas } from '../export/useCanvasCapture';
+import { findNearestHole } from '../geometry/useSectionHoles';
 
+import { useRejectedProductsModule } from '../interactions/useRejectedProductsModule';
+import { useSectionOperations } from '../operations/useSectionOperations';
+import {
+    copySegmentToShelf as copySegmentOperation,
+    moveSegmentToShelf as moveSegmentOperation,
+    swapSegmentPositions as swapSegmentOp,
+} from '../operations/useSegmentOperations';
+import { useShelfOperations } from '../operations/useShelfOperations';
+import { useSnapshotManager } from '../operations/useSnapshotManager';
 import {
     currentGondola,
     isLoadingRejectedProducts,
@@ -29,20 +37,12 @@ import {
     findSegmentByLayerId,
     findShelfById,
 } from './useLookupHelpers';
+import { usePlanogramChanges } from './usePlanogramChanges';
+import { usePlanogramHistory } from './usePlanogramHistory';
 import {
     updateSectionReactive,
     updateSegmentReactive,
 } from './useReactivityHelpers';
-import { useRejectedProductsModule } from '../interactions/useRejectedProductsModule';
-import { useSectionOperations } from '../operations/useSectionOperations';
-import {
-    copySegmentToShelf as copySegmentOperation,
-    moveSegmentToShelf as moveSegmentOperation,
-    swapSegmentPositions as swapSegmentOp,
-} from '../operations/useSegmentOperations';
-import { useShelfOperations } from '../operations/useShelfOperations';
-import { useSnapshotManager } from '../operations/useSnapshotManager';
-import { captureElementAsCanvas } from '../export/useCanvasCapture';
 
 // ============================================================================
 // COMPOSABLE
@@ -251,7 +251,9 @@ export function usePlanogramEditor() {
 
     function invertShelvesOrder(sectionId: string): void {
         commitOptimistic({
-            apply: () => { shelfOps.invertShelvesOrder(sectionId, recordChange); },
+            apply: () => {
+ shelfOps.invertShelvesOrder(sectionId, recordChange); 
+},
         });
     }
 
@@ -577,7 +579,9 @@ export function usePlanogramEditor() {
 
     function invertSegmentsOrder(shelfId: string): void {
         commitOptimistic({
-            apply: () => { shelfOps.invertSegmentsOrder(shelfId, recordChange); },
+            apply: () => {
+ shelfOps.invertSegmentsOrder(shelfId, recordChange); 
+},
         });
     }
 
@@ -815,15 +819,23 @@ export function usePlanogramEditor() {
         }
     }
 
-    function increaseScale() { setScale(scaleFactor.value + 0.5); }
-    function decreaseScale() { setScale(scaleFactor.value - 0.5); }
+    function increaseScale() {
+ setScale(scaleFactor.value + 0.5); 
+}
+    function decreaseScale() {
+ setScale(scaleFactor.value - 0.5); 
+}
 
     // ========================================================================
     // TOOLBAR / UI STATE
     // ========================================================================
 
-    function toggleGrid() { showGrid.value = !showGrid.value; }
-    function toggleZoneIndicators() { showZoneIndicators.value = !showZoneIndicators.value; }
+    function toggleGrid() {
+ showGrid.value = !showGrid.value; 
+}
+    function toggleZoneIndicators() {
+ showZoneIndicators.value = !showZoneIndicators.value; 
+}
 
     // ========================================================================
     // ALINHAMENTO
@@ -835,7 +847,11 @@ export function usePlanogramEditor() {
         }
 
         const result = commitOptimistic({
-            apply: () => { currentGondola.value!.alignment = alignment; return true; },
+            apply: () => {
+ currentGondola.value!.alignment = alignment;
+
+ return true; 
+},
             historySnapshot: {
                 type: 'gondola_alignment',
                 description: `Alterar alinhamento para ${alignment}`,
@@ -853,10 +869,18 @@ export function usePlanogramEditor() {
         return result !== null;
     }
 
-    function alignLeft() { return setAlignment('left'); }
-    function alignRight() { return setAlignment('right'); }
-    function alignCenter() { return setAlignment('center'); }
-    function alignJustify() { return setAlignment('justify'); }
+    function alignLeft() {
+ return setAlignment('left'); 
+}
+    function alignRight() {
+ return setAlignment('right'); 
+}
+    function alignCenter() {
+ return setAlignment('center'); 
+}
+    function alignJustify() {
+ return setAlignment('justify'); 
+}
 
     // ========================================================================
     // FLUXO DA GÔNDOLA
@@ -870,7 +894,11 @@ export function usePlanogramEditor() {
         const flowLabel = flow === 'left_to_right' ? 'Esquerda → Direita' : 'Direita → Esquerda';
 
         const result = commitOptimistic({
-            apply: () => { currentGondola.value!.flow = flow; return true; },
+            apply: () => {
+ currentGondola.value!.flow = flow;
+
+ return true; 
+},
             historySnapshot: {
                 type: 'gondola_flow',
                 description: `Alterar direção para ${flowLabel}`,
@@ -939,7 +967,9 @@ export function usePlanogramEditor() {
         router.delete(`/api/editor/gondolas/${currentGondola.value.id}`, {
             preserveScroll: true,
             preserveState: false,
-            onSuccess: () => { showDeleteConfirmation.value = false; },
+            onSuccess: () => {
+ showDeleteConfirmation.value = false; 
+},
             onError: (errors) => {
                 console.error('Erro ao remover gôndola:', errors);
                 showDeleteConfirmation.value = false;
@@ -1005,7 +1035,9 @@ export function usePlanogramEditor() {
     // AÇÕES DE EXPORTAÇÃO / RELATÓRIOS
     // ========================================================================
 
-    function showPerformance() { showPerformanceModal.value = true; }
+    function showPerformance() {
+ showPerformanceModal.value = true; 
+}
 
     function print() {
         if (!currentGondola.value?.id) {

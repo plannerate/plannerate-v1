@@ -65,11 +65,17 @@ const page = usePage();
 const tenantId = (page.props.tenant as { id?: string } | null)?.id ?? null;
 const userId = (page.props.auth as { user?: { id: string } } | null)?.user?.id ?? null;
 
-if (tenantId) listenForProductImages(tenantId);
-if (userId) listenForBatchComplete(userId);
+if (tenantId) {
+listenForProductImages(tenantId);
+}
+
+if (userId) {
+listenForBatchComplete(userId);
+}
 
 const displayImageUrl = computed<string | null>(() => {
     const fromStore = getImage(product.value?.ean, product.value?.id);
+
     return fromStore ?? product.value?.image_url ?? null;
 });
 

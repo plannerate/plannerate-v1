@@ -11,9 +11,9 @@ import { Link } from '@inertiajs/vue3';
 import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, Loader2 } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
+import type { GenerationRun } from '@/composables/plannerate/generation/useGenerationRun';
 import { useT } from '@/composables/useT';
 import { wayfinderPath } from '../../../libs/wayfinderPath';
-import type { GenerationRun } from '@/composables/plannerate/generation/useGenerationRun';
 
 interface Props {
     run: GenerationRun | null;

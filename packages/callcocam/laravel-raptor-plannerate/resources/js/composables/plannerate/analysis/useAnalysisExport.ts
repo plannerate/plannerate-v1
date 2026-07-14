@@ -150,6 +150,7 @@ export function useAnalysisExport() {
             if (cell.includes(separator) || cell.includes('"') || cell.includes('\n')) {
                 return `"${cell.replace(/"/g, '""')}"`;
             }
+
             return cell;
         };
 

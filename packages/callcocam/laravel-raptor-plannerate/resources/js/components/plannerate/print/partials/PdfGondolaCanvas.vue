@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { Section } from '@/types/planogram'
 import PdfSection from './PdfSection.vue'
 
@@ -9,7 +8,7 @@ interface Props {
     alignment: string
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 /**
  * Folga (em cm) adicionada ao topo de cada módulo. No PDF em linha cada módulo
@@ -26,11 +25,6 @@ const props = defineProps<Props>()
  * Valores altos deixavam um vão enorme e vazio acima dos produtos.
  */
 const TOP_HEADROOM_CM = 12
-
-const footHeight = computed(() => {
-    const baseHeight = props.sections[0]?.base_height ?? 20
-    return Math.round(baseHeight * props.localScale)
-})
 </script>
 
 <template>

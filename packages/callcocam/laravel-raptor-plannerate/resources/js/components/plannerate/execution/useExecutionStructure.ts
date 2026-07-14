@@ -1,4 +1,5 @@
-import { computed, type Ref } from 'vue';
+import { computed  } from 'vue';
+import type {Ref} from 'vue';
 import type { Section } from '@/types/planogram';
 
 /**
@@ -40,7 +41,9 @@ export function useExecutionStructure(sections: Ref<Section[] | undefined>) {
         if (!moduleId) {
             return [];
         }
+
         const section = (sections.value ?? []).find((item) => item.id === moduleId);
+
         return [...(section?.shelves ?? [])]
             .sort((a, b) => (a.ordering ?? 0) - (b.ordering ?? 0))
             .map((shelf, index) => ({
@@ -54,8 +57,10 @@ export function useExecutionStructure(sections: Ref<Section[] | undefined>) {
         if (!moduleId || !shelfId) {
             return [];
         }
+
         const section = (sections.value ?? []).find((item) => item.id === moduleId);
         const shelf = section?.shelves?.find((item) => item.id === shelfId);
+
         return [...(shelf?.segments ?? [])]
             .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
             .map((segment, index) => ({
@@ -67,10 +72,12 @@ export function useExecutionStructure(sections: Ref<Section[] | undefined>) {
     /** Lista única de produtos da gôndola (para a busca da divergência). */
     const products = computed<StructureProduct[]>(() => {
         const byId = new Map<string, StructureProduct>();
+
         for (const section of sections.value ?? []) {
             for (const shelf of section.shelves ?? []) {
                 for (const segment of shelf.segments ?? []) {
                     const product = segment.layer?.product;
+
                     if (product?.id && !byId.has(product.id)) {
                         byId.set(product.id, {
                             id: product.id,
@@ -82,6 +89,7 @@ export function useExecutionStructure(sections: Ref<Section[] | undefined>) {
                 }
             }
         }
+
         return [...byId.values()];
     });
 
@@ -90,6 +98,7 @@ export function useExecutionStructure(sections: Ref<Section[] | undefined>) {
         if (!productId) {
             return null;
         }
+
         return products.value.find((product) => product.id === productId)?.name ?? productId;
     }
 

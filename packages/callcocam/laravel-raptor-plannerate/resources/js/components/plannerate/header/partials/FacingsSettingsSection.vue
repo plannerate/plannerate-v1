@@ -15,7 +15,7 @@ interface FacingsFormState {
     use_target_stock?: boolean;
 }
 
-const props = defineProps<{
+defineProps<{
     form: FacingsFormState;
     errors?: Record<string, string>;
     /** Quando true, exibe os campos de expansão de frentes, Se faltar espaço e Usar estoque alvo */

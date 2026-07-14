@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Plus } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import { useT } from '@/composables/useT';
 import { getShelfLevel, getZoneConfig } from '@/composables/plannerate/geometry/useShelfZone';
+import { useT } from '@/composables/useT';
 import SlotCard from './SlotCard.vue';
 import type { PlanogramTemplateSlot } from './types';
 
@@ -29,6 +29,7 @@ const slotMap = computed(() =>
     props.slots.reduce(
         (map, s) => {
             map[`${s.module_number}-${s.shelf_order}`] = s;
+
             return map;
         },
         {} as Record<string, PlanogramTemplateSlot>,
@@ -67,10 +68,18 @@ function onDragLeave(): void {
 function onDrop(event: DragEvent, toModule: number, toShelf: number): void {
     dragOver.value = null;
     const raw = event.dataTransfer?.getData('application/json');
-    if (!raw) return;
+
+    if (!raw) {
+return;
+}
+
     try {
         const from: DragPosition = JSON.parse(raw);
-        if (from.module_number === toModule && from.shelf_order === toShelf) return;
+
+        if (from.module_number === toModule && from.shelf_order === toShelf) {
+return;
+}
+
         emit('slot-drop', from, { module_number: toModule, shelf_order: toShelf });
     } catch {
         // malformed drag data
@@ -127,6 +136,7 @@ function isDragOver(module: number, shelf: number): boolean {
                     @click="getSlot(m, shelf) === null ? emit('cell-click', m, shelf, null) : undefined"
                 >
                     <!-- Slot card when occupied -->
+                    <!-- eslint-disable vue/no-deprecated-slot-attribute -- prop de domínio "slot" do SlotCard, não o atributo Vue 2 -->
                     <SlotCard
                         v-if="getSlot(m, shelf)"
                         :slot="getSlot(m, shelf)!"
@@ -134,6 +144,7 @@ function isDragOver(module: number, shelf: number): boolean {
                         @remove="emit('slot-remove', m, shelf)"
                         @analyze="emit('slot-analyze', getSlot(m, shelf)!)"
                     />
+                    <!-- eslint-enable vue/no-deprecated-slot-attribute -->
 
                     <!-- Empty cell — click to add -->
                     <button

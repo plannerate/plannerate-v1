@@ -176,9 +176,11 @@ const stacking = computed(() => props.segment?.quantity ?? 1);
 const itemsInDepth = computed(() => {
     const depth = Number(props.product?.depth ?? 0);
     const shelfDepth = Number(props.shelf?.shelf_depth ?? 0);
+
     if (!shelfDepth || !depth) {
         return 1;
     }
+
     return Math.max(1, Math.floor(shelfDepth / depth));
 });
 

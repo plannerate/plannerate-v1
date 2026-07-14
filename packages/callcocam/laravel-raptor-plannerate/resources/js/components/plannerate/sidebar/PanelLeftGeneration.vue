@@ -59,7 +59,8 @@ interface StoredReport {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
+
+defineEmits<Emits>();
 const { t } = useT();
 const page = usePage();
 
@@ -119,16 +120,22 @@ function saveReport(cr: any): void {
         allocated: cr.explanation_report?.allocated ?? [],
         rejected: cr.explanation_report?.rejected ?? [],
     };
+
     try {
         localStorage.setItem(STORAGE_KEY(props.gondola.id), JSON.stringify(report));
     } catch { /* quota exceeded — ignora */ }
+
     storedReport.value = report;
 }
 
 /** Quando o flash traz um novo capacity_report, persiste no localStorage */
 watch(
     () => (page.props.flash as any)?.capacity_report,
-    (cr) => { if (cr) saveReport(cr); },
+    (cr) => {
+ if (cr) {
+saveReport(cr);
+} 
+},
     { immediate: true },
 );
 
@@ -142,6 +149,7 @@ const abcStats = computed(() => {
     const b = list.filter((e) => e.abc_class === 'B').length;
     const c = list.filter((e) => e.abc_class === 'C').length;
     const sem = list.filter((e) => e.abc_class === null).length;
+
     return { total, a, b, c, sem };
 });
 
@@ -150,17 +158,27 @@ const zoneStats = computed(() => {
     const hot = list.filter((e) => e.zone === 'hot').length;
     const cold = list.filter((e) => e.zone === 'cold').length;
     const neutral = list.filter((e) => e.zone === 'neutral').length;
+
     return { hot, cold, neutral };
 });
 
 function barWidth(value: number, total: number): string {
-    if (total === 0) return '0%';
+    if (total === 0) {
+return '0%';
+}
+
     return `${Math.round((value / total) * 100)}%`;
 }
 
 function coverageColor(pct: number): string {
-    if (pct >= 0.8) return 'text-emerald-600 dark:text-emerald-400';
-    if (pct >= 0.5) return 'text-yellow-600 dark:text-yellow-400';
+    if (pct >= 0.8) {
+return 'text-emerald-600 dark:text-emerald-400';
+}
+
+    if (pct >= 0.5) {
+return 'text-yellow-600 dark:text-yellow-400';
+}
+
     return 'text-red-600 dark:text-red-400';
 }
 
@@ -172,6 +190,7 @@ function formattedDate(iso: string): string {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- card "Reordenar" parado, template comentado abaixo
 function handleReorder() {
     isReordering.value = true;
     router.post(reorderGondola.url(props.gondola.id), {}, {
@@ -179,10 +198,13 @@ function handleReorder() {
         only: ['record'],
         onSuccess: () => toast.success(t('plannerate.sidebar.generation.reorder.success')),
         onError: () => toast.error(t('plannerate.sidebar.generation.reorder.error')),
-        onFinish: () => { isReordering.value = false; },
+        onFinish: () => {
+ isReordering.value = false; 
+},
     });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- card "Redistribuir" parado, template comentado abaixo
 function handleRedistribute() {
     isRedistributing.value = true;
     router.post(redistributeGondola.url(props.gondola.id), {}, {
@@ -190,7 +212,9 @@ function handleRedistribute() {
         only: ['record'],
         onSuccess: () => toast.success(t('plannerate.sidebar.generation.redistribute.success')),
         onError: () => toast.error(t('plannerate.sidebar.generation.redistribute.error')),
-        onFinish: () => { isRedistributing.value = false; },
+        onFinish: () => {
+ isRedistributing.value = false; 
+},
     });
 }
 
@@ -198,13 +222,16 @@ function handlePromote() {
     if (!props.gondola.template_id) {
         return;
     }
+
     isPromoting.value = true;
     router.post(promoteUrl(props.gondola.template_id), {}, {
         preserveScroll: true,
         preserveState: false, 
         onSuccess: () => toast.success(t('plannerate.sidebar.generation.auto_generated.promote_success')),
         onError: () => toast.error(t('plannerate.sidebar.generation.auto_generated.promote_error')),
-        onFinish: () => { isPromoting.value = false; },
+        onFinish: () => {
+ isPromoting.value = false; 
+},
     });
 }
 
@@ -215,7 +242,9 @@ function handleRegenerateAuto() {
         only: ['record'],
         onSuccess: () => toast.success(t('plannerate.sidebar.generation.auto_generated.regenerate_auto_success')),
         onError: () => toast.error(t('plannerate.sidebar.generation.auto_generated.regenerate_auto_error')),
-        onFinish: () => { isRegeneratingAuto.value = false; },
+        onFinish: () => {
+ isRegeneratingAuto.value = false; 
+},
     });
 }
 </script>

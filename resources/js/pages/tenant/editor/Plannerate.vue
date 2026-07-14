@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import PlanogramGenerationSummary from '@/components/PlanogramGenerationSummary.vue';
 import GenerationOverlay from '@/components/plannerate/generation/GenerationOverlay.vue';
-import ReoptimizationBanner from '@/components/plannerate/reoptimization/ReoptimizationBanner.vue';
 import Planogram from '@/components/plannerate/Planogram.vue';
 import PlanogramAuto from '@/components/plannerate/PlanogramAuto.vue';
+import ReoptimizationBanner from '@/components/plannerate/reoptimization/ReoptimizationBanner.vue';
+import PlanogramGenerationSummary from '@/components/PlanogramGenerationSummary.vue';
 import { useGenerationRun } from '@/composables/plannerate/generation/useGenerationRun';
 // @ts-expect-error - BackendBreadcrumb type definition may not be available
 import SimpleLayout from '@/layouts/SimpleLayout.vue';

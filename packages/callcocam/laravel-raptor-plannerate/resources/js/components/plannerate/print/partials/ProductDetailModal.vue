@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TrendingDown, Loader2, Tag, Ruler, BarChart3, ShoppingCart, MessageSquare, Send, StickyNote, Box, Star, Target, CircleDollarSign, Weight, Coins, BadgeCheck, CalendarDays, Store } from 'lucide-vue-next'
+import { TrendingDown, Loader2, Tag, Ruler, BarChart3, ShoppingCart, MessageSquare, Send, StickyNote, Box, Star, Target, CircleDollarSign, Coins, BadgeCheck, CalendarDays, Store } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { Badge } from '@/components/ui/badge'
@@ -10,8 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useAbcClassification } from '@/composables/plannerate/analysis/useAbcClassification'
 import { useProductOccupation } from '@/composables/plannerate/analysis/useProductOccupation'
-import { useProductSales } from '@/composables/plannerate/products/useProductSales'
 import { useTargetStockAnalysis } from '@/composables/plannerate/analysis/useTargetStockAnalysis'
+import { useProductSales } from '@/composables/plannerate/products/useProductSales'
 import { useT } from '@/composables/useT'
 import type { Product } from '@/types/planogram'
 import ProductDimensions from './ProductDimensions.vue'
@@ -49,7 +49,11 @@ const abcClassification = computed(() => getClassification(props.product?.ean))
 
 const targetStockData = computed(() => {
   const ean = props.product?.ean
-  if (!ean) return null
+
+  if (!ean) {
+return null
+}
+
   return getTargetStockData(ean)
 })
 
@@ -65,11 +69,15 @@ const segmentCapacity = computed(() =>
 // Capacidade do produto em todo o planograma (define o status). Cai para o segmento se não localizado.
 const planogramCapacity = computed(() => {
   const total = getPlanogramStockCapacity(props.product?.id)
+
   return total > 0 ? total : segmentCapacity.value
 })
 
 const stockStatus = computed(() => {
-  if (!targetStockData.value) return null
+  if (!targetStockData.value) {
+return null
+}
+
   return getStockStatus(planogramCapacity.value, targetStockData.value.estoque_alvo, DEFAULT_TOLERANCE)
 })
 
@@ -95,7 +103,10 @@ const stockStatusInfo = computed(() => {
 
 // Capacidade atual vs alvo em percentual
 const capacityPercent = computed(() => {
-  if (!targetStockData.value?.estoque_alvo || !planogramCapacity.value) return null
+  if (!targetStockData.value?.estoque_alvo || !planogramCapacity.value) {
+return null
+}
+
   return Math.round((planogramCapacity.value / targetStockData.value.estoque_alvo) * 100)
 })
 
@@ -109,7 +120,10 @@ function formatPercent(value: number): string {
 }
 
 function formatDate(date: string | null): string {
-  if (!date) return '-'
+  if (!date) {
+return '-'
+}
+
   return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(date))
 }
 
@@ -120,10 +134,15 @@ const noteContent = ref('')
 const noteSending = ref(false)
 
 async function loadNotes() {
-  if (!props.segmentId) return
+  if (!props.segmentId) {
+return
+}
+
   notesLoading.value = true
+
   try {
     const res = await fetch(`/api/editor/segments/${props.segmentId}/notes`)
+
     if (res.ok) {
       const json = await res.json()
       notes.value = json.data ?? []
@@ -134,14 +153,19 @@ async function loadNotes() {
 }
 
 async function submitNote() {
-  if (!props.segmentId || !noteContent.value.trim()) return
+  if (!props.segmentId || !noteContent.value.trim()) {
+return
+}
+
   noteSending.value = true
+
   try {
     const res = await fetch(`/api/editor/segments/${props.segmentId}/notes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
       body: JSON.stringify({ content: noteContent.value.trim() }),
     })
+
     if (res.ok) {
       const json = await res.json()
       notes.value.unshift(json.data)

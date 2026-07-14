@@ -187,10 +187,13 @@ const rejectionDetails = computed(() => {
  * ou do localStorage (persistido pelo PanelLeftGeneration após cada geração).
  */
 const allocationEntry = computed(() => {
-    if (!product.value?.id) return null;
+    if (!product.value?.id) {
+return null;
+}
 
     // Flash tem prioridade (acaba de ser gerado)
     const flashAllocated: any[] = (page.props.flash as any)?.capacity_report?.explanation_report?.allocated ?? [];
+
     if (flashAllocated.length) {
         return flashAllocated.find((e: any) => e.product_id === product.value!.id) ?? null;
     }
@@ -198,10 +201,19 @@ const allocationEntry = computed(() => {
     // Fallback: localStorage (persiste entre navegações)
     try {
         const gondolaId = (page.props as any)?.record?.id;
-        if (!gondolaId) return null;
+
+        if (!gondolaId) {
+return null;
+}
+
         const raw = localStorage.getItem(`plannerate_gen_report_${gondolaId}`);
-        if (!raw) return null;
+
+        if (!raw) {
+return null;
+}
+
         const report = JSON.parse(raw);
+
         return (report?.allocated ?? []).find((e: any) => e.product_id === product.value!.id) ?? null;
     } catch {
         return null;

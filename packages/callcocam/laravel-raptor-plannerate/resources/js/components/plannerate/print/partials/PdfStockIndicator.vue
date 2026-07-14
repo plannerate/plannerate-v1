@@ -124,6 +124,7 @@ const segmentCapacity = computed(() => {
 // Cai para a capacidade do segmento quando o produto não é localizado na árvore.
 const planogramCapacity = computed(() => {
     const total = getPlanogramStockCapacity(props.segment?.layer?.product?.id);
+
     return total > 0 ? total : segmentCapacity.value;
 });
 

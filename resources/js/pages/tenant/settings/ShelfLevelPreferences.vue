@@ -168,6 +168,7 @@ const getShelfLevelLabel = (level: ShelfLevel): string => {
     low: 'Nível do chão',
     high: 'Nível alto',
   }
+
   return labels[level] || level
 }
 
@@ -178,6 +179,7 @@ const getShelfLevelColorClass = (level: ShelfLevel): string => {
     low: 'bg-yellow-100 text-yellow-800',
     high: 'bg-gray-100 text-gray-800',
   }
+
   return colors[level] || 'bg-gray-100 text-gray-800'
 }
 
@@ -189,9 +191,12 @@ const searchCategories = () => {
 }
 
 const savePreference = async () => {
-  if (!formData.value.categoryId) return
+  if (!formData.value.categoryId) {
+return
+}
 
   isLoading.value = true
+
   try {
     // TODO: Call API endpoint to save preference
     console.log('Saving preference:', formData.value)
@@ -214,7 +219,9 @@ const editPreference = (pref: any) => {
 }
 
 const deletePreference = async (id: string) => {
-  if (!confirm('Tem certeza que deseja remover esta preferência?')) return
+  if (!confirm('Tem certeza que deseja remover esta preferência?')) {
+return
+}
 
   try {
     // TODO: Call API endpoint to delete preference

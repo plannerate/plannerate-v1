@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { Link } from "@inertiajs/vue3";
-import { ArrowLeft, Edit, MapPin, Plus, RefreshCcw, Trash2, Upload } from 'lucide-vue-next';
+import { ArrowLeft, MapPin, Plus, RefreshCcw, Trash2, Upload } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import NotificationsDropdown from '@/components/NotificationsDropdown.vue';
 import GondolaCreateStepper from '@/components/plannerate/form/GondolaCreateStepper.vue';
 import GondolaEditForm from '@/components/plannerate/form/GondolaEditForm.vue';
-import NotificationsDropdown from '@/components/NotificationsDropdown.vue';
-import MapRegionSelectorModal from './MapRegionSelectorModal.vue';
-import ConfirmDeleteGondolaDialog from './ConfirmDeleteGondolaDialog.vue';
-import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -26,8 +23,11 @@ import {
     SheetDescription,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { useT } from '@/composables/useT';
 import { wayfinderPath } from '../../../libs/wayfinderPath';
+import ConfirmDeleteGondolaDialog from './ConfirmDeleteGondolaDialog.vue';
+import MapRegionSelectorModal from './MapRegionSelectorModal.vue';
 
 interface Props {
     title?: string;
@@ -83,10 +83,6 @@ const titleDisplay = computed(() => props.title || t('plannerate.header.planogra
 
 // Sheet de edição da gôndola
 const showGondolaEdit = ref(false);
-
-function openGondolaEdit() {
-    showGondolaEdit.value = true;
-}
 
 function closeGondolaEdit() {
     showGondolaEdit.value = false;

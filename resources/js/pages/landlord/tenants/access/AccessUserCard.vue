@@ -5,7 +5,6 @@ import { Edit, LogIn, Mail, RotateCcw, Trash2, XCircle } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import ResendPasswordSetupButton from '@/components/ResendPasswordSetupButton.vue';
-import WayfinderLink from '@/components/WayfinderLink.vue';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -17,6 +16,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import WayfinderLink from '@/components/WayfinderLink.vue';
 import { useT } from '@/composables/useT';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 

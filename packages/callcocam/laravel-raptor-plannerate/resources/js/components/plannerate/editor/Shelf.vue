@@ -123,14 +123,14 @@ import { router } from '@inertiajs/vue3';
 import { Lock, LockOpen } from 'lucide-vue-next';
 import { computed, ref, toRef, watch } from 'vue';
 import { useT } from '@/composables/useT';
-import { useShelfDrag } from '../../../composables/plannerate/interactions/useShelfDrag';
-import { useShelfDragDrop } from '../../../composables/plannerate/interactions/useShelfDragDrop';
-import { useShelfLayout } from '../../../composables/plannerate/geometry/useShelfLayout';
+import { selectedTemplateCategoryId, showZoneIndicators } from '../../../composables/plannerate/core/useGondolaState';
 import { usePlanogramEditor } from '../../../composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '../../../composables/plannerate/core/usePlanogramSelection';
+import { useShelfLayout } from '../../../composables/plannerate/geometry/useShelfLayout';
+import { useShelfDrag } from '../../../composables/plannerate/interactions/useShelfDrag';
+import { useShelfDragDrop } from '../../../composables/plannerate/interactions/useShelfDragDrop';
 import type { Section, Shelf as ShelfType } from '../../../types/planogram';
 import Segment from './Segment.vue';
-import { selectedTemplateCategoryId, showZoneIndicators } from '../../../composables/plannerate/core/useGondolaState';
 
 interface Props {
     shelf: ShelfType;
@@ -265,11 +265,13 @@ const shelfSegmentIdSet = computed<Set<string>>(
 /** IDs das layers desta shelf — idem, independente da seleção. */
 const shelfLayerIdSet = computed<Set<string>>(() => {
     const ids = new Set<string>();
+
     for (const s of segments.value) {
         if (s.layer?.id) {
             ids.add(s.layer.id);
         }
     }
+
     return ids;
 });
 
@@ -278,23 +280,29 @@ const selectedSegmentId = computed<string | null>(() => {
     if (selection.selectedType.value !== 'segment') {
         return null;
     }
+
     const id = selection.selectedId.value;
+
     return id && shelfSegmentIdSet.value.has(id) ? id : null;
 });
 
 /** IDs em multi-select restritos a esta shelf (Set para lookup O(1)). */
 const multiSelectedSegmentIds = computed<ReadonlySet<string>>(() => {
     const items = selection.selectedItems.value;
+
     if (!items.length) {
         return EMPTY_ID_SET;
     }
+
     const own = shelfSegmentIdSet.value;
     let mine: Set<string> | null = null;
+
     for (const i of items) {
         if (i.type === 'segment' && own.has(i.id)) {
             (mine ??= new Set()).add(i.id);
         }
     }
+
     return mine ?? EMPTY_ID_SET;
 });
 
@@ -303,7 +311,9 @@ const selectedLayerId = computed<string | null>(() => {
     if (selection.selectedType.value !== 'layer') {
         return null;
     }
+
     const id = selection.selectedId.value;
+
     return id && shelfLayerIdSet.value.has(id) ? id : null;
 });
 // ─────────────────────────────────────────────────────────────────────────────

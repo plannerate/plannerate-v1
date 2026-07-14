@@ -14,8 +14,8 @@
  * filtro/highlight de categoria — não é seleção de item e está fora deste contrato.
  */
 import { computed, readonly, ref } from 'vue';
-import { usePlanogramEditor } from './usePlanogramEditor';
 import type { Layer, Product, Section, Segment, Shelf } from '@/types/planogram';
+import { usePlanogramEditor } from './usePlanogramEditor';
 
 interface SelectedItem {
     id: string;

@@ -125,10 +125,13 @@ const categories = computed((): CategoryInfo[] => {
 /** Gera uma cor HSL determinística a partir de uma string (para diferenciar visualmente IDs duplicados) */
 function idColor(id: string): string {
     let hash = 0;
+
     for (let i = 0; i < id.length; i++) {
         hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
     }
+
     const hue = hash % 360;
+
     return `hsl(${hue}, 65%, 45%)`;
 }
 
@@ -136,18 +139,22 @@ function idColor(id: string): string {
 const duplicateNames = computed((): Set<string> => {
     const names = categories.value.map((c) => c.category_name);
     const counts = new Map<string, number>();
+
     for (const name of names) {
         counts.set(name, (counts.get(name) ?? 0) + 1);
     }
+
     return new Set([...counts.entries()].filter(([, n]) => n > 1).map(([name]) => name));
 });
 
 /** Lista filtrada pela busca */
 const filteredCategories = computed(() => {
     const q = searchQuery.value.trim().toLocaleLowerCase('pt-BR');
+
     if (!q) {
         return categories.value;
     }
+
     return categories.value.filter((c) => c.category_name.toLocaleLowerCase('pt-BR').includes(q));
 });
 
@@ -167,6 +174,7 @@ watch(categories, (newCategories) => {
     const stillValid = newCategories.some(
         (c) => c.category_id === selectedTemplateCategoryId.value,
     );
+
     if (!stillValid) {
         selectedTemplateCategoryId.value = null;
     }
@@ -210,6 +218,7 @@ watch(selectedTemplateCategoryId, (newCategoryId) => {
     if (!newCategoryId) {
         return;
     }
+
     nextTick(() => {
         categoryCardRefs.value[newCategoryId]?.scrollIntoView({
             block: 'nearest',
@@ -299,6 +308,7 @@ function setEditField(categoryId: string, field: keyof GondolaSlotOverride, valu
     if (!localEdits.value[categoryId]) {
         localEdits.value[categoryId] = { category_id: categoryId };
     }
+
     (localEdits.value[categoryId] as any)[field] = value || null;
 }
 

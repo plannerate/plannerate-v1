@@ -115,6 +115,7 @@ export function useTargetStockAnalysis() {
         tolerancePercentage: number = DEFAULT_TOLERANCE,
     ): number {
         const percentualMargin = targetStock * tolerancePercentage;
+
         return Math.max(percentualMargin, 5); // Mínimo de 5 unidades
     }
 

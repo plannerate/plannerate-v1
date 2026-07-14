@@ -262,10 +262,10 @@ import { toast } from 'vue-sonner';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
-import { usePlanogramKeyboard } from '@/composables/plannerate/interactions/usePlanogramKeyboard';
-import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
 import { useSectionActions } from '@/composables/plannerate/actions/useSectionActions';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
+import { usePlanogramKeyboard } from '@/composables/plannerate/interactions/usePlanogramKeyboard';
 import { useT } from '@/composables/useT';
 import type { Section } from '@/types/planogram';
 
@@ -278,6 +278,7 @@ const props = defineProps<Props>();
 // Busca sempre o valor mais atualizado do editor para garantir reatividade
 const section = computed(() => {
     const found = editor.findSectionById(props.item.id);
+
     return found || props.item;
 });
 const { t } = useT();

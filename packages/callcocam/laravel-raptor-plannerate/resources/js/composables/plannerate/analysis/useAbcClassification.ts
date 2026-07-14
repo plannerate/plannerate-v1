@@ -174,11 +174,13 @@ export function useAbcClassification() {
      */
     function toggleRecommendationFilter(recommendation: AbcRecommendation): void {
         const next = new Set(_activeRecommendations.value);
+
         if (next.has(recommendation)) {
             next.delete(recommendation);
         } else {
             next.add(recommendation);
         }
+
         _activeRecommendations.value = next;
     }
 
@@ -210,6 +212,7 @@ export function useAbcClassification() {
 
         for (const entry of store.rawValues.value) {
             const recommendation = resolveAbcRecommendation(entry);
+
             if (recommendation) {
                 counts[recommendation] += 1;
             }

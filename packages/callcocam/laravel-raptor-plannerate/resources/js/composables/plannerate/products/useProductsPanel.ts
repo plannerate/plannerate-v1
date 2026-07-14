@@ -1,8 +1,8 @@
 import { onMounted, reactive, ref, watch } from 'vue';
 import type { Ref } from 'vue';
+import { toast } from 'vue-sonner';
 import { products as productsRoute } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
 import { useT } from '@/composables/useT';
-import { toast } from 'vue-sonner';
 import type { Category, Product } from '@/types/planogram';
 
 interface UseProductsPanelOptions {

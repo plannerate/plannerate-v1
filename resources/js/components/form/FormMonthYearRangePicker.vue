@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
-import InputError from '@/components/InputError.vue';
 import MonthRangeFilter from '@/components/filters/MonthRangeFilter.vue';
+import InputError from '@/components/InputError.vue';
 import { cn } from '@/lib/utils';
 
 const props = withDefaults(

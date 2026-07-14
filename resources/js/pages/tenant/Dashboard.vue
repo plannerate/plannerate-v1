@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, setLayoutProps, usePage } from '@inertiajs/vue3';
+import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import { LayoutTemplate, Shapes, Package } from 'lucide-vue-next';
 import { computed } from 'vue';
 import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryController';
@@ -42,7 +42,6 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
-const page = usePage();
 const dashboardPath = dashboard.url().replace(/^\/\/[^/]+/, '');
 
 setLayoutProps({

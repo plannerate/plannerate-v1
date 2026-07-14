@@ -3,9 +3,9 @@ import { router, usePage } from '@inertiajs/vue3';
 import { Calendar, Grid2x2, Settings } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { calculateBcgApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
+import type { BcgAxis, BcgClassifyLevel, BcgThresholdMethod } from '@/components/plannerate/analysis/bcg/types';
 import BcgParamsModal from '@/components/plannerate/analysis/BcgParamsModal.vue';
 import BcgResultsList from '@/components/plannerate/analysis/BcgResultsList.vue';
-import type { BcgAxis, BcgClassifyLevel, BcgThresholdMethod } from '@/components/plannerate/analysis/bcg/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useT } from '@/composables/useT';
@@ -60,8 +60,15 @@ const isBrowser = typeof window !== 'undefined';
 
 const resolvedSubdomain = computed(() => {
     const subdomainFromPage = page.props.subdomain?.toString().trim();
-    if (subdomainFromPage) return subdomainFromPage;
-    if (!isBrowser) return '';
+
+    if (subdomainFromPage) {
+return subdomainFromPage;
+}
+
+    if (!isBrowser) {
+return '';
+}
+
     return window.location.hostname.split('.')[0] || '';
 });
 
@@ -74,11 +81,17 @@ const getStorageKey = (gondolaId: string): string =>
     `plannerate:performance:bcg:params:${gondolaId}`;
 
 function dateToMonth(dateString: string | null | undefined): string {
-    if (!dateString) return '';
+    if (!dateString) {
+return '';
+}
 
     try {
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) return '';
+
+        if (isNaN(date.getTime())) {
+return '';
+}
+
         return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
     } catch {
         return '';
@@ -100,21 +113,30 @@ const buildDefaultForm = (): BcgFormData => ({
 });
 
 const loadStoredForm = (): Partial<BcgFormData> => {
-    if (!isBrowser || !props.gondolaId) return {};
+    if (!isBrowser || !props.gondolaId) {
+return {};
+}
 
     const raw = window.localStorage.getItem(getStorageKey(props.gondolaId));
-    if (!raw) return {};
+
+    if (!raw) {
+return {};
+}
 
     try {
         return JSON.parse(raw) as Partial<BcgFormData>;
     } catch {
         window.localStorage.removeItem(getStorageKey(props.gondolaId));
+
         return {};
     }
 };
 
 const saveStoredForm = (data: BcgFormData): void => {
-    if (!isBrowser || !props.gondolaId) return;
+    if (!isBrowser || !props.gondolaId) {
+return;
+}
+
     window.localStorage.setItem(getStorageKey(props.gondolaId), JSON.stringify(data));
 };
 
@@ -126,16 +148,29 @@ const form = ref<BcgFormData>({
 watch(
     () => props.planogram,
     (newPlanogram: Planogram | null) => {
-        if (!newPlanogram) return;
+        if (!newPlanogram) {
+return;
+}
 
-        if (newPlanogram.start_date) form.value.date_from = newPlanogram.start_date;
-        if (newPlanogram.end_date) form.value.date_to = newPlanogram.end_date;
+        if (newPlanogram.start_date) {
+form.value.date_from = newPlanogram.start_date;
+}
 
-        if (newPlanogram.start_month) form.value.start_month = newPlanogram.start_month;
-        else if (newPlanogram.start_date) form.value.start_month = dateToMonth(newPlanogram.start_date);
+        if (newPlanogram.end_date) {
+form.value.date_to = newPlanogram.end_date;
+}
 
-        if (newPlanogram.end_month) form.value.end_month = newPlanogram.end_month;
-        else if (newPlanogram.end_date) form.value.end_month = dateToMonth(newPlanogram.end_date);
+        if (newPlanogram.start_month) {
+form.value.start_month = newPlanogram.start_month;
+} else if (newPlanogram.start_date) {
+form.value.start_month = dateToMonth(newPlanogram.start_date);
+}
+
+        if (newPlanogram.end_month) {
+form.value.end_month = newPlanogram.end_month;
+} else if (newPlanogram.end_date) {
+form.value.end_month = dateToMonth(newPlanogram.end_date);
+}
     },
     { deep: true },
 );
@@ -150,13 +185,20 @@ function openParametersModal(event: MouseEvent): void {
 }
 
 const formatDate = (dateString: string | null | undefined): string => {
-    if (!dateString) return t('plannerate.performance.common.not_defined_feminine');
+    if (!dateString) {
+return t('plannerate.performance.common.not_defined_feminine');
+}
 
     try {
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) return dateString;
+
+        if (isNaN(date.getTime())) {
+return dateString;
+}
+
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
+
         return `${day}/${month}/${date.getFullYear()}`;
     } catch {
         return dateString;
@@ -164,10 +206,16 @@ const formatDate = (dateString: string | null | undefined): string => {
 };
 
 const formatMonth = (monthString: string | null | undefined): string => {
-    if (!monthString) return t('plannerate.performance.common.not_defined');
+    if (!monthString) {
+return t('plannerate.performance.common.not_defined');
+}
 
     const [year, month] = monthString.split('-');
-    if (!year || !month) return monthString;
+
+    if (!year || !month) {
+return monthString;
+}
+
     return `${month}/${year}`;
 };
 
@@ -185,7 +233,9 @@ const thresholdSummary = computed(() =>
 const handleParamsSubmit = (data: Partial<BcgFormData>): void => {
     const subdomain = resolvedSubdomain.value;
 
-    if (!props.gondolaId || !subdomain) return;
+    if (!props.gondolaId || !subdomain) {
+return;
+}
 
     form.value = { ...form.value, ...data };
     saveStoredForm(form.value);
@@ -208,8 +258,12 @@ const handleParamsSubmit = (data: Partial<BcgFormData>): void => {
                     results.value = pageProps.analysis?.bcg?.results ?? [];
                 }
             },
-            onError: () => { results.value = []; },
-            onFinish: () => { loading.value = false; },
+            onError: () => {
+ results.value = []; 
+},
+            onFinish: () => {
+ loading.value = false; 
+},
         },
     );
 };

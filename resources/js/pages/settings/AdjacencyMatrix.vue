@@ -2,9 +2,9 @@
 import { Head, router, setLayoutProps, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AdjacencyMatrixController from '@/actions/App/Http/Controllers/Settings/AdjacencyMatrixController';
-import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -115,6 +115,7 @@ function handleRuleTypeChange(value: string) {
     form.rule_type = String(value);
 
     const selectedType = props.ruleTypes.find((type) => type.value === form.rule_type);
+
     if (selectedType && !editingRuleId.value) {
         form.weight = selectedType.default_weight;
     }
@@ -123,6 +124,7 @@ function handleRuleTypeChange(value: string) {
 function submit() {
     if (form.source_category_id === form.target_category_id) {
         form.setError('target_category_id', t('app.messages.adjacency_source_target_must_differ'));
+
         return;
     }
 
@@ -136,6 +138,7 @@ function submit() {
         form.put(AdjacencyMatrixController.update.url({
             adjacencyRule: editingRuleId.value,
         }), options);
+
         return;
     }
 

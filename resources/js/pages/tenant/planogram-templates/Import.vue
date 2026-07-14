@@ -8,9 +8,6 @@ import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 
-const props = defineProps<{
-}>();
-
 const { t } = useT();
 const indexPath = PlanogramTemplateController.index.url().replace(/^\/\/[^/]+/, '');
 const fileName = ref<string | null>(null);

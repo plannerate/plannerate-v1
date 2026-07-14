@@ -40,7 +40,10 @@ const exportAllPath = PlanogramTemplateController.exportAll
     ?.url()
     ?.replace(/^\/\/[^/]+/, '') ?? null;
 const exportTemplatePath = computed(() => {
-    if (!isEdit.value) return null;
+    if (!isEdit.value) {
+return null;
+}
+
     return PlanogramTemplateController.export
         .url({
             planogramTemplate: props.template!.id,

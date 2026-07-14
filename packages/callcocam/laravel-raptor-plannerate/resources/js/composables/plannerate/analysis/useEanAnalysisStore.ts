@@ -90,8 +90,10 @@ export function createEanAnalysisStore<T>(
         function set(ean: string, value: T): void {
             if (!ean) {
                 console.warn(`⚠️ [${name}] EAN vazio ao salvar entrada`);
+
                 return;
             }
+
             // Cria novo Map para disparar reatividade do shallowRef
             const next = new Map(_data.value);
             next.set(ean, value);
@@ -105,7 +107,9 @@ export function createEanAnalysisStore<T>(
         function setBatch(entries: Array<{ ean: string; value: T }>): void {
             const next = new Map(_data.value);
             entries.forEach(({ ean, value }) => {
-                if (ean) next.set(ean, value);
+                if (ean) {
+next.set(ean, value);
+}
             });
             _data.value = next;
             _lastAnalysisDate.value = new Date();
@@ -116,7 +120,10 @@ export function createEanAnalysisStore<T>(
          * Retorna undefined se o EAN for vazio ou não existir na store.
          */
         function get(ean: string | undefined): T | undefined {
-            if (!ean) return undefined;
+            if (!ean) {
+return undefined;
+}
+
             return _data.value.get(ean);
         }
 
@@ -124,7 +131,10 @@ export function createEanAnalysisStore<T>(
          * Verifica se existe entrada para o EAN.
          */
         function has(ean: string | undefined): boolean {
-            if (!ean) return false;
+            if (!ean) {
+return false;
+}
+
             return _data.value.has(ean);
         }
 
@@ -140,7 +150,10 @@ export function createEanAnalysisStore<T>(
          * Remove a entrada de um EAN específico.
          */
         function remove(ean: string): void {
-            if (!ean) return;
+            if (!ean) {
+return;
+}
+
             const next = new Map(_data.value);
             next.delete(ean);
             _data.value = next;

@@ -82,9 +82,18 @@ const buttonLabel = computed(() => {
     const start = startInputValue.value;
     const end = endInputValue.value;
 
-    if (start && end) return `${formatDate(start)} – ${formatDate(end)}`;
-    if (start) return `A partir de ${formatDate(start)}`;
-    if (end) return `Até ${formatDate(end)}`;
+    if (start && end) {
+return `${formatDate(start)} – ${formatDate(end)}`;
+}
+
+    if (start) {
+return `A partir de ${formatDate(start)}`;
+}
+
+    if (end) {
+return `Até ${formatDate(end)}`;
+}
+
     return props.placeholder;
 });
 
@@ -98,7 +107,11 @@ function formatDate(value: string): string {
     // deslocamento de UTC → sempre mostrar o dia correto independente do fuso.
     const datePart = value.length > 10 ? value.slice(0, 10) : value;
     const date = new Date(`${datePart}T00:00:00`);
-    if (Number.isNaN(date.getTime())) return value;
+
+    if (Number.isNaN(date.getTime())) {
+return value;
+}
+
     return dateFormatter.format(date);
 }
 

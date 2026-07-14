@@ -36,6 +36,7 @@ const expansionLabel: Record<SlotFacingExpansion, string> = {
 const facingsRange = computed(() => {
     const min = props.slot.min_facings;
     const max = props.slot.max_facings;
+
     return min === max ? `${min}f` : `${min}–${max}f`;
 });
 

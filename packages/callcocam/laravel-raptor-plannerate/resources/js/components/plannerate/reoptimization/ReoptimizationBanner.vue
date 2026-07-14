@@ -8,8 +8,8 @@
 import { Link } from '@inertiajs/vue3';
 import { Sparkles } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
-import { useT } from '@/composables/useT';
 import { useReoptimizationProposal } from '@/composables/plannerate/reoptimization/useReoptimizationProposal';
+import { useT } from '@/composables/useT';
 
 const props = defineProps<{ gondolaId: string }>();
 

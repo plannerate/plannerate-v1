@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { BookOpen, CalendarRange, LayoutTemplate, Store } from 'lucide-vue-next';
+import { ref } from 'vue';
 import ClientPlanogramController from '@/actions/App/Http/Controllers/Tenant/Editor/ClientPlanogramController';
 import ListTablePage from '@/components/ListPage.vue';
 import type ListPage from '@/components/ListPage.vue';
-import { ColumnDate, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
+import { ColumnDate, ColumnLabel } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,6 @@ import WayfinderLink from '@/components/WayfinderLink.vue';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Paginator } from '@/types';
-import { ref } from 'vue';
 
 type PlanogramRow = {
     id: string;

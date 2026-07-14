@@ -108,7 +108,9 @@ const axisLabel = (axis: BcgAxis): string => t(`plannerate.analysis.bcg_params.a
 const hasSameAxis = computed(() => form.value.x_axis === form.value.y_axis);
 
 const handleSubmit = () => {
-    if (hasSameAxis.value) return;
+    if (hasSameAxis.value) {
+return;
+}
 
     emit('submit', form.value);
     emit('update:open', false);

@@ -21,9 +21,9 @@ import {
 import { useAnalysisExport } from '@/composables/plannerate/analysis/useAnalysisExport';
 import { useAnalysisFilters } from '@/composables/plannerate/analysis/useAnalysisFilters';
 import { useProductOccupation } from '@/composables/plannerate/analysis/useProductOccupation';
+import { useTargetStockAnalysis } from '@/composables/plannerate/analysis/useTargetStockAnalysis';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
-import { useTargetStockAnalysis } from '@/composables/plannerate/analysis/useTargetStockAnalysis';
 import { useT } from '@/composables/useT';
 
 interface Props {
@@ -188,6 +188,7 @@ const toleranceMax = computed(() => {
  */
 const planogramCapacity = computed(() => {
     const total = getPlanogramStockCapacity(selectedResult.value?.product_id);
+
     return total > 0 ? total : segmentCapacity.value;
 });
 

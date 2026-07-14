@@ -414,12 +414,12 @@ import {
     Trash2,
 } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
-import Performance from '@/components/plannerate/header/Performance.vue';
 import type { AbcResult } from '@/components/plannerate/analysis/abc/types';
 import { useBcgLabels } from '@/components/plannerate/analysis/bcg/labels';
 import type { BcgQuadrant, BcgResult } from '@/components/plannerate/analysis/bcg/types';
 import type { PaperResult } from '@/components/plannerate/analysis/paper/types';
 import type { TargetStockResult } from '@/components/plannerate/analysis/target-stock/types';
+import Performance from '@/components/plannerate/header/Performance.vue';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -427,7 +427,8 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useAnalysisExport } from '@/composables/plannerate/analysis/useAnalysisExport';
 import { usePerformanceIndicators } from '@/composables/plannerate/analysis/usePerformanceIndicators';
-import { indicatorOrientation, type IndicatorOrientation } from '@/composables/plannerate/core/useGondolaState';
+import { indicatorOrientation  } from '@/composables/plannerate/core/useGondolaState';
+import type {IndicatorOrientation} from '@/composables/plannerate/core/useGondolaState';
 import { useT } from '@/composables/useT';
 import type { AbcAnalysis, Gondola, StockAnalysis } from '@/types/planogram';
 
@@ -491,6 +492,7 @@ function openAnalysesModal(): void {
  */
 function keepOpenOnInsideInteraction(event: Event): void {
     const target = (event as CustomEvent).detail?.originalEvent?.target as HTMLElement | null;
+
     if (target?.closest('[data-slot="popover-content"]')) {
         event.preventDefault();
     }
@@ -596,7 +598,9 @@ interface PerformanceVisibilityPreferences {
 }
 
 const saveVisibilityPreferences = (): void => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') {
+return;
+}
 
     const payload: PerformanceVisibilityPreferences = {
         abcVisible: performance.abc.isVisible.value,
@@ -609,18 +613,34 @@ const saveVisibilityPreferences = (): void => {
 };
 
 const loadVisibilityPreferences = (): void => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') {
+return;
+}
 
     const raw = window.localStorage.getItem(getStorageKey(props.gondola.id));
-    if (!raw) return;
+
+    if (!raw) {
+return;
+}
 
     try {
         const parsed = JSON.parse(raw) as Partial<PerformanceVisibilityPreferences>;
 
-        if (typeof parsed.abcVisible === 'boolean') performance.abc.setVisibility(parsed.abcVisible);
-        if (typeof parsed.targetStockVisible === 'boolean') performance.targetStock.setVisibility(parsed.targetStockVisible);
-        if (typeof parsed.paperVisible === 'boolean') performance.paper.setVisibility(parsed.paperVisible);
-        if (typeof parsed.bcgVisible === 'boolean') performance.bcg.setVisibility(parsed.bcgVisible);
+        if (typeof parsed.abcVisible === 'boolean') {
+performance.abc.setVisibility(parsed.abcVisible);
+}
+
+        if (typeof parsed.targetStockVisible === 'boolean') {
+performance.targetStock.setVisibility(parsed.targetStockVisible);
+}
+
+        if (typeof parsed.paperVisible === 'boolean') {
+performance.paper.setVisibility(parsed.paperVisible);
+}
+
+        if (typeof parsed.bcgVisible === 'boolean') {
+performance.bcg.setVisibility(parsed.bcgVisible);
+}
     } catch {
         window.localStorage.removeItem(getStorageKey(props.gondola.id));
     }
@@ -645,6 +665,7 @@ watch(
     () => props.analysis?.abc,
     (analysis) => {
         performance.abc.clearClassifications();
+
         if (analysis?.results?.length) {
             performance.abc.setClassifications(analysis.results);
         }
@@ -657,6 +678,7 @@ watch(
     () => props.analysis?.stock,
     (analysis) => {
         performance.targetStock.clearTargetStockData();
+
         if (analysis?.results?.length) {
             performance.targetStock.setTargetStockDataBatch(analysis.results as any[]);
         }
@@ -669,6 +691,7 @@ watch(
     () => props.analysis?.paper,
     (analysis) => {
         performance.paper.clearPaperRoles();
+
         if (analysis?.results?.length) {
             performance.paper.setPaperRoles(
                 (analysis.results as PaperResult[])
@@ -685,6 +708,7 @@ watch(
     () => props.analysis?.bcg,
     (analysis) => {
         performance.bcg.clearBcgQuadrants();
+
         if (analysis?.results?.length) {
             performance.bcg.setBcgQuadrants(analysis.results as BcgResult[]);
         }
@@ -707,7 +731,11 @@ onMounted(() => loadVisibilityPreferences());
 
 const planogram = computed(() => {
     const pg = props.gondola.planogram;
-    if (pg && 'id' in pg && 'name' in pg) return pg as any;
+
+    if (pg && 'id' in pg && 'name' in pg) {
+return pg as any;
+}
+
     return null;
 });
 
@@ -718,25 +746,41 @@ function setOrientation(orientation: IndicatorOrientation): void {
 
 function handleExportAbc(): void {
     const results = props.analysis?.abc?.results;
-    if (!results?.length) return;
+
+    if (!results?.length) {
+return;
+}
+
     exportAbcToCsv(results as AbcResult[]);
 }
 
 function handleExportStock(): void {
     const results = props.analysis?.stock?.results;
-    if (!results?.length) return;
+
+    if (!results?.length) {
+return;
+}
+
     exportStockToCsv(results as TargetStockResult[]);
 }
 
 function handleExportPaper(): void {
     const results = props.analysis?.paper?.results;
-    if (!results?.length) return;
+
+    if (!results?.length) {
+return;
+}
+
     exportPaperToCsv(results as PaperResult[]);
 }
 
 function handleExportBcg(): void {
     const results = props.analysis?.bcg?.results;
-    if (!results?.length) return;
+
+    if (!results?.length) {
+return;
+}
+
     exportBcgToCsv(results as BcgResult[]);
 }
 </script>

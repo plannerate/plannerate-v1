@@ -57,14 +57,28 @@ const ZONE_CONFIG: Record<ShelfLevel, ShelfZone> = {
  * numShelves: total de prateleiras ativas na seção.
  */
 export function getShelfLevel(indexFromTop: number, numShelves: number): ShelfLevel {
-    if (numShelves === 1) return 'hand';
-    if (numShelves === 2) return indexFromTop === 0 ? 'eye' : 'low';
+    if (numShelves === 1) {
+return 'hand';
+}
+
+    if (numShelves === 2) {
+return indexFromTop === 0 ? 'eye' : 'low';
+}
 
     const ratio = indexFromTop / (numShelves - 1);
 
-    if (ratio === 0) return 'high';
-    if (ratio <= 0.35) return 'eye';
-    if (ratio <= 0.70) return 'hand';
+    if (ratio === 0) {
+return 'high';
+}
+
+    if (ratio <= 0.35) {
+return 'eye';
+}
+
+    if (ratio <= 0.70) {
+return 'hand';
+}
+
     return 'low';
 }
 

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /* eslint-disable vue/no-mutating-props */
 
+import MonthRangeFilter from '@/components/filters/MonthRangeFilter.vue';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
-import MonthRangeFilter from '@/components/filters/MonthRangeFilter.vue';
 import { useT } from '@/composables/useT';
 
 interface SalesDataFormState {

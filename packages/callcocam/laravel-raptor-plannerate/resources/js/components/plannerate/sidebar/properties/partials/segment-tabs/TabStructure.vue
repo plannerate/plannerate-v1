@@ -91,8 +91,15 @@ const { t } = useT();
  */
 const categoryName = computed(() => {
     const cat = props.product?.category;
-    if (!cat) return null;
-    if (typeof cat === 'string') return cat;
+
+    if (!cat) {
+return null;
+}
+
+    if (typeof cat === 'string') {
+return cat;
+}
+
     return cat.name ?? null;
 });
 
@@ -140,6 +147,7 @@ const fullPathLabel = computed(() => {
     if (props.product?.category_full_path) {
         return props.product.category_full_path;
     }
+
     return categoryName.value || t('plannerate.sidebar.segment_details.structure.no_category');
 });
 </script>

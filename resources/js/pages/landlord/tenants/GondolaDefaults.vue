@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import { LayoutGrid, RotateCcw } from 'lucide-vue-next';
-import { Button } from '@/components/ui/button';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantGondolaDefaultsController from '@/actions/App/Http/Controllers/Landlord/TenantGondolaDefaultsController';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';

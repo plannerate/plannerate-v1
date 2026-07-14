@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { SlidersHorizontal, X } from 'lucide-vue-next';
+import { ref } from 'vue';
 import Header from './Header.vue';
 import Toolbar from './Toolbar.vue';
 

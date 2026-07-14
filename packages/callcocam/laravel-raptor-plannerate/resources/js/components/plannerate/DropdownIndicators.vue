@@ -103,9 +103,10 @@ import { useSalesIndicators } from '@/composables/plannerate/analysis/useSalesIn
 import {
     currentGondola,
     indicatorOrientation,
-    selectedIndicator,
-    type IndicatorOrientation,
+    selectedIndicator
+    
 } from '@/composables/plannerate/core/useGondolaState';
+import type {IndicatorOrientation} from '@/composables/plannerate/core/useGondolaState';
 import {
     getIndicatorConfig,
     INDICATOR_NONE,
@@ -151,10 +152,13 @@ function ensureSalesData(force = false) {
     if (!force && hasData.value) {
         return;
     }
+
     const gondola = effectiveGondola.value;
+
     if (!gondola?.id) {
         return;
     }
+
     loadForGondola(
         gondola.id,
         gondola.planogram?.start_date ?? null,

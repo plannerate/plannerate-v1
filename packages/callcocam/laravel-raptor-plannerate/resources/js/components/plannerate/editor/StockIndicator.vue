@@ -431,6 +431,7 @@ const segmentCapacity = computed(() => {
 const planogramCapacity = computed(() => {
     const productId = props.segment?.layer?.product?.id;
     const total = getPlanogramStockCapacity(productId);
+
     return total > 0 ? total : segmentCapacity.value;
 });
 

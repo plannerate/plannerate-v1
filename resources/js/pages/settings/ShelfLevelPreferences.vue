@@ -2,9 +2,9 @@
 import { Head, router, setLayoutProps, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import ShelfLevelPreferencesController from '@/actions/App/Http/Controllers/Settings/ShelfLevelPreferencesController';
-import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -104,6 +104,7 @@ function submit() {
         form.put(ShelfLevelPreferencesController.update.url({
             preference: editingPreferenceId.value,
         }), options);
+
         return;
     }
 
@@ -117,8 +118,14 @@ function destroy(preference: Preference) {
 }
 
 function badgeVariant(color: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-    if (color === 'warning') return 'outline';
-    if (color === 'secondary') return 'secondary';
+    if (color === 'warning') {
+return 'outline';
+}
+
+    if (color === 'secondary') {
+return 'secondary';
+}
+
     return 'default';
 }
 </script>

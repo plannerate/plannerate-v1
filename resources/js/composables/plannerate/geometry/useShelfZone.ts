@@ -21,11 +21,24 @@ export type ZoneConfig = {
  *   >  0.80 → low  (chão — zona fria)
  */
 export function getShelfLevel(indexFromTop: number, numShelves: number): ShelfLevel {
-    if (numShelves <= 1) return 'eye';
+    if (numShelves <= 1) {
+return 'eye';
+}
+
     const relative = indexFromTop / Math.max(1, numShelves - 1);
-    if (relative <= 0.2) return 'high';
-    if (relative <= 0.5) return 'eye';
-    if (relative <= 0.8) return 'hand';
+
+    if (relative <= 0.2) {
+return 'high';
+}
+
+    if (relative <= 0.5) {
+return 'eye';
+}
+
+    if (relative <= 0.8) {
+return 'hand';
+}
+
     return 'low';
 }
 
@@ -65,5 +78,6 @@ export function getZoneConfig(level: ShelfLevel): ZoneConfig {
             isHot: false,
         },
     };
+
     return configs[level];
 }

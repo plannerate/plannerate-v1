@@ -8,10 +8,10 @@ import {
     ZoomOut,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
+import NotificationsDropdown from '@/components/NotificationsDropdown.vue';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { useT } from '@/composables/useT';
 import type { AbcAnalysis, StockAnalysis } from '@/types/planogram';
-import NotificationsDropdown from '@/components/NotificationsDropdown.vue';
 import DropdownIndicators from '../../DropdownIndicators.vue';
 import DropdownPerformance from '../../DropdownPerformance.vue';
 import PdfPageHeader from './PdfPageHeader.vue';

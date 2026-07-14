@@ -284,12 +284,12 @@ import { toast } from 'vue-sonner';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
-import { usePlanogramKeyboard } from '@/composables/plannerate/interactions/usePlanogramKeyboard';
-import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
-import { selectedTemplateCategoryId } from '@/composables/plannerate/core/useGondolaState';
-import { findNearestHole } from '@/composables/plannerate/geometry/useSectionHoles';
 import { useShelfActions } from '@/composables/plannerate/actions/useShelfActions';
+import { selectedTemplateCategoryId } from '@/composables/plannerate/core/useGondolaState';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
+import { findNearestHole } from '@/composables/plannerate/geometry/useSectionHoles';
+import { usePlanogramKeyboard } from '@/composables/plannerate/interactions/usePlanogramKeyboard';
 import { useT } from '@/composables/useT';
 import type { Shelf } from '@/types/planogram';
 
@@ -506,6 +506,7 @@ function humanizeOrder(value?: string | null): string {
     if (value === 'asc') {
         return 'Crescente';
     }
+
     if (value === 'desc') {
         return 'Decrescente';
     }
@@ -517,6 +518,7 @@ function humanizeExposure(value?: string | null): string {
     if (value === 'vertical') {
         return 'Vertical';
     }
+
     if (value === 'horizontal') {
         return 'Horizontal';
     }
@@ -528,6 +530,7 @@ function humanizeFallback(value?: string | null): string {
     if (value === 'reduce_facings') {
         return 'Reduzir facings';
     }
+
     if (value === 'reduce_c') {
         return 'Reduzir classe C';
     }
@@ -539,9 +542,11 @@ function humanizeFacingExpansion(value?: string | null): string {
     if (value === 'score') {
         return 'Por score';
     }
+
     if (value === 'current_stock') {
         return 'Por estoque atual';
     }
+
     if (value === 'equal') {
         return 'Distribuição igual';
     }

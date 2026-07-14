@@ -48,6 +48,8 @@ export const validate = (data: GenerationFormState): boolean => {
 </script>
 
 <script setup lang="ts">
+/* eslint-disable vue/no-mutating-props */
+
 import { Sparkles } from 'lucide-vue-next';
 import AdvancedOptionsSection from '@/components/plannerate/header/partials/AdvancedOptionsSection.vue';
 import FacingsSettingsSection from '@/components/plannerate/header/partials/FacingsSettingsSection.vue';

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import PdfSection from '@/components/plannerate/print/partials/PdfSection.vue';
 import { useT } from '@/composables/useT';
 import type { Section } from '@/types/planogram';
-import PdfSection from '@/components/plannerate/print/partials/PdfSection.vue';
 
 interface GondolaMeta {
     id: string;
@@ -37,7 +37,11 @@ const { t } = useT();
  */
 function scaleForSection(section: Section): number {
     const totalMm = (section.width ?? 100) + 2 * (section.cremalheira_width ?? 0);
-    if (totalMm <= 0) return 1;
+
+    if (totalMm <= 0) {
+return 1;
+}
+
     return Math.min(3, Math.max(0.3, 680 / totalMm));
 }
 

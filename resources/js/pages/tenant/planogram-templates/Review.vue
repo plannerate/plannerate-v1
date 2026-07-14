@@ -262,6 +262,7 @@ function saveSlot(
         only: ['subtemplates'],
         onSuccess: () => {
             const targetSlotId = selectedSlotId.value ?? slot.id;
+
             if (targetSlotId) {
                 selectSlotForProducts(targetSlotId);
             }

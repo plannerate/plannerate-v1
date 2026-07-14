@@ -160,8 +160,15 @@ const isBrowser = typeof window !== 'undefined';
 
 const resolvedSubdomain = computed(() => {
     const subdomainFromPage = page.props.subdomain?.toString().trim();
-    if (subdomainFromPage) return subdomainFromPage;
-    if (!isBrowser) return '';
+
+    if (subdomainFromPage) {
+return subdomainFromPage;
+}
+
+    if (!isBrowser) {
+return '';
+}
+
     return window.location.hostname.split('.')[0] || '';
 });
 
@@ -189,10 +196,15 @@ const buildDefaultForm = (): PaperFormData => ({
 });
 
 const loadStoredForm = (): Partial<PaperFormData> => {
-    if (!isBrowser || !props.gondolaId) return {};
+    if (!isBrowser || !props.gondolaId) {
+return {};
+}
 
     const raw = window.localStorage.getItem(getStorageKey(props.gondolaId));
-    if (!raw) return {};
+
+    if (!raw) {
+return {};
+}
 
     try {
         const stored = JSON.parse(raw) as Partial<PaperFormData>;
@@ -206,12 +218,16 @@ const loadStoredForm = (): Partial<PaperFormData> => {
         return stored;
     } catch {
         window.localStorage.removeItem(getStorageKey(props.gondolaId));
+
         return {};
     }
 };
 
 const saveStoredForm = (data: PaperFormData): void => {
-    if (!isBrowser || !props.gondolaId) return;
+    if (!isBrowser || !props.gondolaId) {
+return;
+}
+
     window.localStorage.setItem(getStorageKey(props.gondolaId), JSON.stringify(data));
 };
 
@@ -221,11 +237,17 @@ function openParametersModal(event: MouseEvent): void {
 }
 
 function dateToMonth(dateString: string | null | undefined): string {
-    if (!dateString) return '';
+    if (!dateString) {
+return '';
+}
 
     try {
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) return '';
+
+        if (isNaN(date.getTime())) {
+return '';
+}
+
         return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
     } catch {
         return '';
@@ -241,12 +263,25 @@ watch(
     () => props.planogram,
     (newPlanogram: Planogram | null) => {
         if (newPlanogram) {
-            if (newPlanogram.start_date)  form.value.date_from    = newPlanogram.start_date;
-            if (newPlanogram.end_date)    form.value.date_to      = newPlanogram.end_date;
-            if (newPlanogram.start_month) form.value.start_month  = newPlanogram.start_month;
-            else if (newPlanogram.start_date) form.value.start_month = dateToMonth(newPlanogram.start_date);
-            if (newPlanogram.end_month)   form.value.end_month    = newPlanogram.end_month;
-            else if (newPlanogram.end_date)   form.value.end_month   = dateToMonth(newPlanogram.end_date);
+            if (newPlanogram.start_date)  {
+form.value.date_from    = newPlanogram.start_date;
+}
+
+            if (newPlanogram.end_date)    {
+form.value.date_to      = newPlanogram.end_date;
+}
+
+            if (newPlanogram.start_month) {
+form.value.start_month  = newPlanogram.start_month;
+} else if (newPlanogram.start_date) {
+form.value.start_month = dateToMonth(newPlanogram.start_date);
+}
+
+            if (newPlanogram.end_month)   {
+form.value.end_month    = newPlanogram.end_month;
+} else if (newPlanogram.end_date)   {
+form.value.end_month   = dateToMonth(newPlanogram.end_date);
+}
         }
     },
     { deep: true },
@@ -257,13 +292,20 @@ watch(() => props.gondolaId, () => {
 });
 
 const formatDate = (dateString: string | null | undefined): string => {
-    if (!dateString) return t('plannerate.performance.common.not_defined_feminine');
+    if (!dateString) {
+return t('plannerate.performance.common.not_defined_feminine');
+}
 
     try {
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) return dateString;
+
+        if (isNaN(date.getTime())) {
+return dateString;
+}
+
         const day   = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
+
         return `${day}/${month}/${date.getFullYear()}`;
     } catch {
         return dateString;
@@ -271,11 +313,17 @@ const formatDate = (dateString: string | null | undefined): string => {
 };
 
 const formatMonth = (monthString: string | null | undefined): string => {
-    if (!monthString) return t('plannerate.performance.common.not_defined');
+    if (!monthString) {
+return t('plannerate.performance.common.not_defined');
+}
 
     try {
         const [year, month] = monthString.split('-');
-        if (!year || !month) return monthString;
+
+        if (!year || !month) {
+return monthString;
+}
+
         return `${month}/${year}`;
     } catch {
         return monthString;
@@ -285,7 +333,9 @@ const formatMonth = (monthString: string | null | undefined): string => {
 const handleParamsSubmit = (data: Partial<PaperFormData>): void => {
     const subdomain = resolvedSubdomain.value;
 
-    if (!props.gondolaId || !subdomain) return;
+    if (!props.gondolaId || !subdomain) {
+return;
+}
 
     form.value = { ...form.value, ...data };
     saveStoredForm(form.value);
@@ -309,8 +359,12 @@ const handleParamsSubmit = (data: Partial<PaperFormData>): void => {
                     results.value = pageProps.analysis?.paper?.results ?? [];
                 }
             },
-            onError: () => { results.value = []; },
-            onFinish: () => { loading.value = false; },
+            onError: () => {
+ results.value = []; 
+},
+            onFinish: () => {
+ loading.value = false; 
+},
         },
     );
 };

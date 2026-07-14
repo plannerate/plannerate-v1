@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { Download, Plus, Upload } from 'lucide-vue-next';
 import { computed } from 'vue';
 import PlanogramTemplateController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Templates/PlanogramTemplateController';
@@ -39,6 +39,7 @@ const { t } = useT();
 const indexPath = PlanogramTemplateController.index.url().replace(/^\/\/[^/]+/, '');
 const exportPath = computed(() => {
     const search = props.filters.search;
+
     return PlanogramTemplateController.exportAll
         .url(search ? { query: { search } } : undefined)
         .replace(/^\/\/[^/]+/, '');
@@ -54,9 +55,6 @@ const pageMeta = useCrudPageMeta({
     ],
 });
 
-function handleDelete(id: string): void {
-    router.delete(PlanogramTemplateController.destroy.url({ planogramTemplate: id }));
-}
 </script>
 
 <template>

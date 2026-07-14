@@ -64,12 +64,15 @@ export function useSalesIndicators() {
         }
 
         const params = new URLSearchParams();
+
         if (startDate) {
             params.set('start_date', startDate);
         }
+
         if (endDate) {
             params.set('end_date', endDate);
         }
+
         const query = params.toString() ? `?${params.toString()}` : '';
 
         try {

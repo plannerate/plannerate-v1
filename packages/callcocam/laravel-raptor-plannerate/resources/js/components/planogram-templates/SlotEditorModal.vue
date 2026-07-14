@@ -11,8 +11,8 @@ import {
 } from '@/components/ui/dialog';
 import { useT } from '@/composables/useT';
 import type { SlotDraft } from './slot-editor';
-import type { VisualCriterionItem } from './types';
 import SlotEditorFields from './SlotEditorFields.vue';
+import type { VisualCriterionItem } from './types';
 import type { PlanogramSlotDefaults, PlanogramTemplateSlot } from './types';
 import { validateSlotDraft } from './validation';
 import type { SlotValidationErrors } from './validation';
@@ -102,6 +102,7 @@ function saveSlot(): void {
         // Garante feedback visível mesmo para erros sem campo no formulário
         // (ex.: module_number / shelf_order), que de outro modo falhariam em silêncio.
         const first = Object.values(result)[0];
+
         if (first) {
             toast.error(first);
         }

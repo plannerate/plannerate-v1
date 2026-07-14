@@ -68,7 +68,9 @@ export function useBcgAnalysis() {
 
     /** Sem filtro (conjunto vazio) → todos os quadrantes aparecem. */
     function isQuadrantActive(quadrant: BcgQuadrant | undefined): boolean {
-        if (!quadrant) return false;
+        if (!quadrant) {
+return false;
+}
 
         return _activeQuadrants.value.size === 0 || _activeQuadrants.value.has(quadrant);
     }

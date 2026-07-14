@@ -83,12 +83,15 @@ export function useProductSales() {
         try {
             // Filtra as vendas pelo período do planograma quando informado.
             const params = new URLSearchParams();
+
             if (startDate) {
                 params.set('start_date', startDate);
             }
+
             if (endDate) {
                 params.set('end_date', endDate);
             }
+
             const query = params.toString() ? `?${params.toString()}` : '';
 
             const response = await fetch(

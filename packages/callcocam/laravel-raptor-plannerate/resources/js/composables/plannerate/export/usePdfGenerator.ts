@@ -107,6 +107,7 @@ export function usePdfGenerator() {
         const footerCanvas = footerElement ? await capture(footerElement) : null;
 
         const moduleCanvases: HTMLCanvasElement[] = [];
+
         for (const element of moduleElements) {
             moduleCanvases.push(await capture(element));
         }

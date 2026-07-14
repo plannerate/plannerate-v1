@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { Head, router, setLayoutProps, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-import ShelfLevelPreferencesController from '@/actions/App/Http/Controllers/Settings/ShelfLevelPreferencesController';
 import ScoringWeightsController from '@/actions/App/Http/Controllers/Settings/ScoringWeightsController';
-import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
+import ShelfLevelPreferencesController from '@/actions/App/Http/Controllers/Settings/ShelfLevelPreferencesController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -110,11 +110,13 @@ const hierarchyWarning = computed(() => form.block_hierarchy_level > 5);
 
 const hierarchyLevelLabel = computed(() => {
     const level = props.hierarchy_levels.find((l) => l.value === form.block_hierarchy_level);
+
     return level?.label ?? String(form.block_hierarchy_level);
 });
 
 const adjacencyLevelLabel = computed(() => {
     const level = props.hierarchy_levels.find((l) => l.value === form.adjacency_hierarchy_level);
+
     return level?.label ?? String(form.adjacency_hierarchy_level);
 });
 
@@ -163,13 +165,16 @@ function openEditDialog(pref: Preference) {
 }
 
 function submitPref() {
-    const options = { onSuccess: () => { isDialogOpen.value = false; } };
+    const options = { onSuccess: () => {
+ isDialogOpen.value = false; 
+} };
 
     if (editingPreferenceId.value) {
         prefForm.put(
             ShelfLevelPreferencesController.update.url({ preference: editingPreferenceId.value }),
             options,
         );
+
         return;
     }
 
@@ -181,8 +186,14 @@ function destroyPref(pref: Preference) {
 }
 
 function badgeVariant(color: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-    if (color === 'warning') return 'outline';
-    if (color === 'secondary') return 'secondary';
+    if (color === 'warning') {
+return 'outline';
+}
+
+    if (color === 'secondary') {
+return 'secondary';
+}
+
     return 'default';
 }
 </script>

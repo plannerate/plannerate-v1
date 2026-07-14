@@ -1,5 +1,5 @@
-import { createEanAnalysisStore } from './useEanAnalysisStore';
 import type { ProductRole } from '@/components/plannerate/analysis/paper/types';
+import { createEanAnalysisStore } from './useEanAnalysisStore';
 
 /**
  * Store singleton para papéis estratégicos (Análise de Papel) por EAN.

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import InputError from '@/components/InputError.vue';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
@@ -69,8 +69,9 @@ const categoryId = ref<string | null>(props.template?.category_id ?? null);
                 id="description"
                 name="description"
                 rows="3"
+                :value="props.template?.description ?? ''"
                 class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-            >{{ props.template?.description ?? '' }}</textarea>
+            />
             <InputError :message="props.errors.description" />
         </div>
 

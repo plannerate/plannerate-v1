@@ -52,9 +52,13 @@ function monthStart(month: string): string {
 
 /** Retorna o último dia do mês: YYYY-MM-DD. */
 function monthEnd(month: string): string {
-    if (!month) return '';
+    if (!month) {
+return '';
+}
+
     const [year, monthValue] = month.split('-').map(Number);
     const lastDay = String(new Date(year, monthValue, 0).getDate()).padStart(2, '0');
+
     return `${month}-${lastDay}`;
 }
 
@@ -74,13 +78,19 @@ function updateSalesEnd(value: string): void {
 
 /** Valor exibido no picker mensal: prefere startMonth, fallback para dateFrom. */
 function monthlyStartValue(): string {
-    if (props.startMonth) return monthStart(props.startMonth);
+    if (props.startMonth) {
+return monthStart(props.startMonth);
+}
+
     return props.dateFrom || '';
 }
 
 /** Valor exibido no picker mensal: prefere endMonth, fallback para dateTo. */
 function monthlyEndValue(): string {
-    if (props.endMonth) return monthEnd(props.endMonth);
+    if (props.endMonth) {
+return monthEnd(props.endMonth);
+}
+
     return props.dateTo || '';
 }
 

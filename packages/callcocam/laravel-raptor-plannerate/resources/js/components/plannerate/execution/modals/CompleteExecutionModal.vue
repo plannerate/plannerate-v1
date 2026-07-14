@@ -41,12 +41,15 @@ const canComplete = computed(() => evidencesOk.value && divergencesOk.value);
 
 const slaLabel = computed(() => {
     const days = props.execution?.sla_days_remaining;
+
     if (days === null || days === undefined) {
         return t('plannerate.execution.bar.sla_none');
     }
+
     if (days < 0) {
         return t('plannerate.execution.bar.sla_overdue', { days: String(Math.abs(days)) });
     }
+
     return t('plannerate.execution.bar.sla_remaining', { days: String(days) });
 });
 
@@ -54,6 +57,7 @@ function confirm(): void {
     if (!canComplete.value || !props.execution) {
         return;
     }
+
     saving.value = true;
 
     router.post(
@@ -73,6 +77,7 @@ function close(): void {
     if (saving.value) {
         return;
     }
+
     emit('update:open', false);
 }
 </script>

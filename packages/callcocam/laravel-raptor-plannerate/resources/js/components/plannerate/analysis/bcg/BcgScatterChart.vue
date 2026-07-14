@@ -53,7 +53,9 @@ const width = ref(820);
 let observer: ResizeObserver | null = null;
 
 onMounted(() => {
-    if (!container.value || typeof ResizeObserver === 'undefined') return;
+    if (!container.value || typeof ResizeObserver === 'undefined') {
+return;
+}
 
     observer = new ResizeObserver((entries) => {
         const measured = entries[0]?.contentRect.width ?? 0;
@@ -154,11 +156,13 @@ const yDomain = computed(() => domain(points.value.map((p) => p.y_value), yThres
 
 const scaleX = (value: number): number => {
     const [min, max] = xDomain.value;
+
     return PAD.left + ((value - min) / (max - min)) * plotW.value;
 };
 
 const scaleY = (value: number): number => {
     const [min, max] = yDomain.value;
+
     // SVG cresce para baixo: inverte para o eixo Y apontar para cima
     return PAD.top + plotH.value - ((value - min) / (max - min)) * plotH.value;
 };
@@ -167,7 +171,9 @@ const maxShare = computed(() => Math.max(...points.value.map((p) => p.share_gond
 
 /** Raio ∝ √share para que a ÁREA da bolha seja proporcional ao espaço ocupado. */
 const radius = (item: BcgResult): number => {
-    if (item.sem_dimensao || maxShare.value <= 0) return R_MIN + 1;
+    if (item.sem_dimensao || maxShare.value <= 0) {
+return R_MIN + 1;
+}
 
     return R_MIN + (R_MAX - R_MIN) * Math.sqrt(Math.max(item.share_gondola, 0) / maxShare.value);
 };
@@ -231,7 +237,9 @@ const labelledPoints = computed(() => {
     const result: Array<{ item: BcgResult; text: string; x: number; y: number }> = [];
 
     for (const item of candidates) {
-        if (result.length >= MAX_LABELS) break;
+        if (result.length >= MAX_LABELS) {
+break;
+}
 
         const text = truncate(item.product_name);
         const labelWidth = text.length * 5.6 + LABEL_PAD_X;
@@ -241,6 +249,7 @@ const labelledPoints = computed(() => {
 
         // Acima da bolha; se estourar o topo do gráfico, vai para baixo dela
         let y = cy - r - 5;
+
         if (y - LABEL_H < PAD.top) {
             y = cy + r + 11;
         }
@@ -255,7 +264,9 @@ const labelledPoints = computed(() => {
                 other.y < box.y + box.h,
         );
 
-        if (collides) continue;
+        if (collides) {
+continue;
+}
 
         placed.push(box);
         result.push({ item, text, x: cx, y });
@@ -273,7 +284,9 @@ const yAxis = computed(() => points.value[0]?.y_axis ?? 'margem');
 
 /** Com o viewBox 1:1, as coordenadas do SVG JÁ são pixels do container. */
 const tooltipStyle = computed(() => {
-    if (!hovered.value) return {};
+    if (!hovered.value) {
+return {};
+}
 
     const px = scaleX(hovered.value.x_value);
     const py = scaleY(hovered.value.y_value);

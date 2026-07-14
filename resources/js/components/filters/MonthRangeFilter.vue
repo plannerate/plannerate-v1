@@ -33,9 +33,16 @@ const open = ref(false);
 const today = new Date();
 
 function parseYearMonth(value?: string | null): { year: number; month: number } | null {
-    if (!value) return null;
+    if (!value) {
+return null;
+}
+
     const match = value.match(/^(\d{4})-(\d{2})/);
-    if (!match) return null;
+
+    if (!match) {
+return null;
+}
+
     return { year: parseInt(match[1]), month: parseInt(match[2]) - 1 };
 }
 
@@ -58,6 +65,7 @@ watch(
     () => props.startValue,
     (val) => {
         const parsed = parseYearMonth(val);
+
         if (parsed) {
             startYear.value = parsed.year;
             startMonth.value = parsed.month;
@@ -73,6 +81,7 @@ watch(
     () => props.endValue,
     (val) => {
         const parsed = parseYearMonth(val);
+
         if (parsed) {
             endYear.value = parsed.year;
             endMonth.value = parsed.month;
@@ -85,25 +94,41 @@ watch(
 );
 
 const startInputValue = computed(() => {
-    if (startMonth.value === null) return props.startValue ?? '';
+    if (startMonth.value === null) {
+return props.startValue ?? '';
+}
+
     const m = String(startMonth.value + 1).padStart(2, '0');
+
     return `${startYear.value}-${m}-01`;
 });
 
 const endInputValue = computed(() => {
-    if (endMonth.value === null) return props.endValue ?? '';
+    if (endMonth.value === null) {
+return props.endValue ?? '';
+}
+
     const m = String(endMonth.value + 1).padStart(2, '0');
+
     return `${endYear.value}-${m}-${lastDayOfMonth(endYear.value, endMonth.value)}`;
 });
 
 const buttonLabel = computed(() => {
     const hasStart = startMonth.value !== null;
     const hasEnd = endMonth.value !== null;
+
     if (hasStart && hasEnd) {
         return `${MONTHS[startMonth.value!]}/${startYear.value} – ${MONTHS[endMonth.value!]}/${endYear.value}`;
     }
-    if (hasStart) return `A partir de ${MONTHS[startMonth.value!]}/${startYear.value}`;
-    if (hasEnd) return `Até ${MONTHS[endMonth.value!]}/${endYear.value}`;
+
+    if (hasStart) {
+return `A partir de ${MONTHS[startMonth.value!]}/${startYear.value}`;
+}
+
+    if (hasEnd) {
+return `Até ${MONTHS[endMonth.value!]}/${endYear.value}`;
+}
+
     return props.placeholder;
 });
 
@@ -116,20 +141,27 @@ function isEnd(year: number, month: number): boolean {
 }
 
 function isInRange(year: number, month: number): boolean {
-    if (startMonth.value === null || endMonth.value === null) return false;
+    if (startMonth.value === null || endMonth.value === null) {
+return false;
+}
+
     const t = abs(year, month);
+
     return t > abs(startYear.value, startMonth.value) && t < abs(endYear.value, endMonth.value);
 }
 
 function selectStart(month: number): void {
     startYear.value = startNavYear.value;
     startMonth.value = month;
+
     if (endMonth.value !== null && abs(startNavYear.value, month) > abs(endYear.value, endMonth.value)) {
         endYear.value = startNavYear.value;
         endMonth.value = month;
     }
+
     emit('update:startValue', startInputValue.value);
     emit('update:endValue', endInputValue.value);
+
     if (endMonth.value !== null) {
         triggerComplete();
     }
@@ -137,6 +169,7 @@ function selectStart(month: number): void {
 
 function selectEnd(month: number): void {
     const newAbs = abs(endNavYear.value, month);
+
     if (startMonth.value !== null && newAbs < abs(startYear.value, startMonth.value)) {
         endYear.value = startYear.value;
         endMonth.value = startMonth.value;
@@ -146,6 +179,7 @@ function selectEnd(month: number): void {
         endYear.value = endNavYear.value;
         endMonth.value = month;
     }
+
     if (startMonth.value !== null) {
         emit('update:startValue', startInputValue.value);
         emit('update:endValue', endInputValue.value);

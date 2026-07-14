@@ -1,6 +1,6 @@
 import { inject, ref } from 'vue';
-import { usePlanogramEditor } from '../core/usePlanogramEditor';
 import { draggingSegmentShelfId } from '../core/useGondolaState';
+import { usePlanogramEditor } from '../core/usePlanogramEditor';
 import {
     getMultipleProductsDragData,
     getProductDragData,

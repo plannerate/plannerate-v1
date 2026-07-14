@@ -13,6 +13,7 @@ import {
     X,
 } from 'lucide-vue-next';
 import { computed, nextTick, ref, watch } from 'vue';
+import * as DimensionApprovalController from '@/actions/App/Http/Controllers/Tenant/Products/DimensionApprovalController';
 import ListPage from '@/components/ListPage.vue';
 import ColumnHeader from '@/components/table/columns/ColumnHeader.vue';
 import ColumnStatusBadge from '@/components/table/columns/ColumnStatusBadge.vue';
@@ -23,7 +24,6 @@ import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
-import * as DimensionApprovalController from '@/actions/App/Http/Controllers/Tenant/Products/DimensionApprovalController';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
 

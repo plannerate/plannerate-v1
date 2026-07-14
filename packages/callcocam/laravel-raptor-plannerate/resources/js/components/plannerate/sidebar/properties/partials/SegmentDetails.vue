@@ -165,9 +165,9 @@ import { toast } from 'vue-sonner';
 import { deleteImage } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useSegmentActions } from '@/composables/plannerate/actions/useSegmentActions';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
-import { useSegmentActions } from '@/composables/plannerate/actions/useSegmentActions';
 import { useT } from '@/composables/useT';
 import type { Segment } from '@/types/planogram';
 import { wayfinderPath } from '../../../../../libs/wayfinderPath';
@@ -217,7 +217,11 @@ const planogramEndDate = computed(
  */
 const located = computed(() => {
     const searchId = props.item?.segment_id || props.item?.id;
-    if (!searchId) return null;
+
+    if (!searchId) {
+return null;
+}
+
     return editor.findSegmentById(searchId);
 });
 
@@ -234,19 +238,32 @@ const product = computed(() => segment.value?.layer?.product);
 /** Entrada de alocação do último relatório de geração (flash ou localStorage) */
 const allocationEntry = computed(() => {
     const pid = product.value?.id;
-    if (!pid) return null;
+
+    if (!pid) {
+return null;
+}
 
     const flashAllocated: any[] = (page.props.flash as any)?.capacity_report?.explanation_report?.allocated ?? [];
+
     if (flashAllocated.length) {
         return flashAllocated.find((e: any) => e.product_id === pid) ?? null;
     }
 
     try {
         const gondolaId = editor.currentGondola.value?.id;
-        if (!gondolaId) return null;
+
+        if (!gondolaId) {
+return null;
+}
+
         const raw = localStorage.getItem(`plannerate_gen_report_${gondolaId}`);
-        if (!raw) return null;
+
+        if (!raw) {
+return null;
+}
+
         const report = JSON.parse(raw);
+
         return (report?.allocated ?? []).find((e: any) => e.product_id === pid) ?? null;
     } catch {
         return null;
@@ -270,6 +287,7 @@ function handleUpdateProductDimension(
     if (!segment.value?.layer?.id || !product.value?.id) {
         return;
     }
+
     editor.updateProductDimension(segment.value.layer.id, dimension, value);
 }
 
@@ -280,6 +298,7 @@ function handleUpdateLayer(field: string, value: any) {
     if (!segment.value?.layer?.id) {
         return;
     }
+
     editor.updateLayer(segment.value.layer.id, { [field]: value });
 }
 
@@ -298,9 +317,11 @@ function handleDelete() {
     if (!segment.value?.id) {
         return;
     }
+
     if (shelf.value) {
         selection.selectItem('segment', segment.value.id, segment.value, { shelf: shelf.value });
     }
+
     selection.deleteSelected();
 }
 
@@ -311,6 +332,7 @@ function handleDeleteProductImage() {
     if (!product.value?.id || !deleteImageAction) {
         return;
     }
+
     router.delete(wayfinderPath(deleteImageAction.url(product.value.id)), {
         onSuccess: () => toast.success(t('plannerate.sidebar.product_image_upload.success.removed')),
         onError: () => toast.error(t('plannerate.sidebar.segment_details.remove_image_error')),

@@ -148,8 +148,9 @@
     "include": [
         "resources/js/**/*.ts",
         "resources/js/**/*.d.ts",
-        "resources/js/**/*.tsx", 
+        "resources/js/**/*.tsx",
         "resources/js/**/*.vue",
+        "tests/js/**/*.ts",
         "vendor/callcocam/laravel-raptor-flow/resources/js/**/*.ts",
         "vendor/callcocam/laravel-raptor-flow/resources/js/**/*.d.ts",
         "vendor/callcocam/laravel-raptor-flow/resources/js/**/*.tsx",

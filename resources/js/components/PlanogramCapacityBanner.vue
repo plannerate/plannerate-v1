@@ -242,8 +242,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import { router } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
 import { cloneSubtemplate } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Templates/TemplateSlotController'
 import type { AllocationEntry, ExplanationReport, ExplanationAlert } from '@/components/planogram-templates/types'
 
@@ -281,6 +281,7 @@ const cloning = ref(false)
 /** Alerta de estoque alvo não atendido, derivado do relatório de explicação */
 const targetStockNotMetAlert = computed((): ExplanationAlert | null => {
   const alerts = props.report?.explanation_report?.alerts ?? []
+
   return alerts.find((a) => a.type === 'target_stock_not_met') ?? null
 })
 
@@ -291,6 +292,7 @@ const targetStockNotMetAlert = computed((): ExplanationAlert | null => {
  */
 const verticalNotAppliedAlert = computed((): ExplanationAlert | null => {
   const alerts = props.report?.explanation_report?.alerts ?? []
+
   return alerts.find((a) => a.type === 'vertical_nao_aplicado') ?? null
 })
 
@@ -300,6 +302,7 @@ const allocatedProducts = computed((): AllocationEntry[] => props.report?.explan
 /** Resumo da curva ABC dos produtos alocados */
 const allocationSummary = computed(() => {
   const allocated = allocatedProducts.value
+
   return {
     total: allocated.length,
     a: allocated.filter((e) => e.abc_class === 'A').length,
@@ -313,22 +316,41 @@ const allocationSummary = computed(() => {
 
 /** Classes Tailwind para o badge ABC de cada produto */
 function abcBadgeClass(abc: 'A' | 'B' | 'C' | null): string {
-  if (abc === 'A') return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200'
-  if (abc === 'B') return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-  if (abc === 'C') return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+  if (abc === 'A') {
+return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200'
+}
+
+  if (abc === 'B') {
+return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+}
+
+  if (abc === 'C') {
+return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+}
+
   return 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
 }
 
 /** Cor do ponto de zona térmica */
 function zoneDotClass(zone: string): string {
-  if (zone === 'hot') return 'bg-orange-400'
-  if (zone === 'cold') return 'bg-blue-400'
+  if (zone === 'hot') {
+return 'bg-orange-400'
+}
+
+  if (zone === 'cold') {
+return 'bg-blue-400'
+}
+
   return 'bg-slate-300 dark:bg-slate-600'
 }
 
 const cloneUrl = computed(() => {
   const r = props.report
-  if (!r?.subtemplate_id || !r.template_id) return ''
+
+  if (!r?.subtemplate_id || !r.template_id) {
+return ''
+}
+
   return cloneSubtemplate.url({
     planogramTemplate: r.template_id,
     planogramSubtemplate: r.subtemplate_id,
@@ -337,12 +359,18 @@ const cloneUrl = computed(() => {
 
 function submitClone(): void {
   const r = props.report
-  if (!r?.subtemplate_id || !r.template_id || !r.gondola_modules) return
+
+  if (!r?.subtemplate_id || !r.template_id || !r.gondola_modules) {
+return
+}
+
   cloning.value = true
   router.post(
     cloneUrl.value,
     { target_modules: r.gondola_modules },
-    { onFinish: () => { cloning.value = false } },
+    { onFinish: () => {
+ cloning.value = false 
+} },
   )
 }
 </script>

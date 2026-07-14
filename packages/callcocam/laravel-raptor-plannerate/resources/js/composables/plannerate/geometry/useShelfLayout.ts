@@ -1,10 +1,10 @@
 import { computed  } from 'vue';
 import type {Ref} from 'vue';
+import type { Section, Shelf as ShelfType } from '@/types/planogram';
 import { DEFAULT_SECTION_FIELDS } from '../fields/useSectionFields';
 import { calculateHolePositions } from './useSectionHoles';
 import { useShelfAreaCalculation } from './useShelfAreaCalculation';
 import { getShelfLevel, getZoneConfig } from './useShelfZone';
-import type { Section, Shelf as ShelfType } from '@/types/planogram';
 
 interface UseShelfLayoutOptions {
     shelf: Ref<ShelfType>;
@@ -129,7 +129,10 @@ return 1;
     });
 
     const activeShelvesCount = computed(() => {
-        if (!options.section.value?.shelves) return 1;
+        if (!options.section.value?.shelves) {
+return 1;
+}
+
         return options.section.value.shelves.filter((s) => !s.deleted_at).length;
     });
 

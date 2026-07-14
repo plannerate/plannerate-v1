@@ -83,9 +83,11 @@ watch(shelfValue, () => {
 /** Produtos filtrados pela busca (código, nome ou EAN). */
 const filteredProducts = computed(() => {
     const query = productQuery.value.trim().toLowerCase();
+
     if (!query) {
         return products.value.slice(0, 20);
     }
+
     return products.value
         .filter((product) =>
             [product.name, product.ean, product.codigo_erp]
@@ -142,6 +144,7 @@ function save(keepOpen: boolean): void {
     if (!canSave.value) {
         return;
     }
+
     saving.value = true;
 
     router.post(
@@ -162,6 +165,7 @@ function save(keepOpen: boolean): void {
             only: ['execution'],
             onSuccess: () => {
                 resetForm();
+
                 if (!keepOpen) {
                     emit('update:open', false);
                 }
@@ -197,6 +201,7 @@ function close(): void {
     if (saving.value) {
         return;
     }
+
     resetForm();
     emit('update:open', false);
 }

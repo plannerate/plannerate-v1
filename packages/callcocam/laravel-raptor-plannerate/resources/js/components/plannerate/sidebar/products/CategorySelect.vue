@@ -67,9 +67,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
 import { Lock } from 'lucide-vue-next'
-import editorCategories from '@/routes/api/editor/categories'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Label } from '@/components/ui/label'
 import {
     Select,
@@ -79,6 +78,7 @@ import {
     SelectValue
 } from '@/components/ui/select'
 import { useT } from '@/composables/useT'
+import editorCategories from '@/routes/api/editor/categories'
 import { wayfinderPath } from '../../../../libs/wayfinderPath'
 
 interface Category {
@@ -158,6 +158,7 @@ function getCategoriesUrl(categoryId: string | null = null): string {
             categoryId,
         }))
     }
+
     return wayfinderPath(editorCategories.index.url(subdomain.value))
 }
 
@@ -194,7 +195,10 @@ const breadcrumbPath = computed(() => {
 
 /** Texto do caminho travado (do topo até rootCategoryId). */
 const rootBreadcrumb = computed((): string | null => {
-    if (!props.rootCategoryId || rootLevelIndex.value === -1) return null
+    if (!props.rootCategoryId || rootLevelIndex.value === -1) {
+return null
+}
+
     return storedRootHierarchy.value
         .map(item => item.name)
         .filter(Boolean)
@@ -206,6 +210,7 @@ onMounted(() => {
         initWithRoot()
     } else {
         loadOptions(0)
+
         if (props.modelValue) {
             loadCascadeForValue(props.modelValue)
         }
@@ -218,7 +223,9 @@ onMounted(() => {
  * Se modelValue aponta para uma subcategoria abaixo da raiz, carrega também essa cascata.
  */
 async function initWithRoot(): Promise<void> {
-    if (!props.rootCategoryId) return
+    if (!props.rootCategoryId) {
+return
+}
 
     await loadCascadeForValue(props.rootCategoryId)
 
@@ -232,26 +239,32 @@ async function initWithRoot(): Promise<void> {
 
     // Se modelValue aponta para uma subcategoria diferente da raiz, carrega sua cascata
     const initialValue = props.modelValue
+
     if (initialValue && initialValue !== props.rootCategoryId) {
         await loadCascadeForValue(initialValue)
     }
 }
 
 watch(() => props.modelValue, async (newVal, oldVal) => {
-    if (newVal === oldVal || newVal === getDeepestSelection()) return
+    if (newVal === oldVal || newVal === getDeepestSelection()) {
+return
+}
 
     if (props.rootCategoryId && rootLevelIndex.value >= 0) {
         // Modo ancorado: só reseta abaixo da raiz
         resetBelowRoot()
+
         if (newVal && newVal !== props.rootCategoryId) {
             await loadCascadeForValue(newVal)
         }
+
         return
     }
 
     if (!props.rootCategoryId) {
         // Modo normal: reset completo
         resetSelections()
+
         if (newVal) {
             await loadCascadeForValue(newVal)
         }
@@ -287,6 +300,7 @@ function resetSelections() {
  */
 function resetBelowRoot(): void {
     const startFrom = rootLevelIndex.value + 1
+
     for (let i = startFrom; i < levels.length; i++) {
         selections.value[levels[i].key] = null
         levelOptions.value[levels[i].key] = []
@@ -376,7 +390,7 @@ async function loadOptions(levelIndex: number): Promise<Category[]> {
 
             return []
         }
-    } catch (error) {
+    } catch {
         levelOptions.value[currentLevel.key] = []
         levelErrors.value[currentLevel.key] = t('plannerate.sidebar.products.errors.load_options')
 
@@ -443,7 +457,9 @@ async function loadCascadeForValue(categoryId: string): Promise<void> {
 
 function clearSelection(levelIndex: number): void {
     // Não permitir limpar níveis travados pela raiz
-    if (props.rootCategoryId && levelIndex <= rootLevelIndex.value) return
+    if (props.rootCategoryId && levelIndex <= rootLevelIndex.value) {
+return
+}
 
     const currentLevel = levels[levelIndex]
     selections.value[currentLevel.key] = null

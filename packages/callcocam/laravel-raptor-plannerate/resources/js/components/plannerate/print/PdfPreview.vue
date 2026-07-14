@@ -3,9 +3,8 @@ import { router, usePage } from '@inertiajs/vue3';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import SaveChangesController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/SaveChangesController';
 import { useAbcClassification } from '@/composables/plannerate/analysis/useAbcClassification';
-import { usePdfGenerator } from '@/composables/plannerate/export/usePdfGenerator';
-import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { useTargetStockAnalysis } from '@/composables/plannerate/analysis/useTargetStockAnalysis';
+import { usePdfGenerator } from '@/composables/plannerate/export/usePdfGenerator';
 import { useT } from '@/composables/useT';
 import type {
     AbcAnalysis,
@@ -55,7 +54,6 @@ interface Props {
 
 const props = defineProps<Props>();
 const { t } = useT();
-const editor = usePlanogramEditor();
 const pdfGenerator = usePdfGenerator();
 const abcClassification = useAbcClassification();
 const targetStockAnalysis = useTargetStockAnalysis();
@@ -227,6 +225,7 @@ function decreaseScale() {
     persistScale();
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- fallback html2canvas, ver comentário em handleDownloadPdf
 async function generatePDF(
     autoDownload = false,
     selectedSectionIds?: string[],
@@ -236,7 +235,6 @@ async function generatePDF(
         : pdfGenerator.isGenerating;
     const previousAbcVisibility = abcClassification.isVisible.value;
     const previousTargetStockVisibility = targetStockAnalysis.isVisible.value;
-    let scaleToRestore: number | null = null;
 
     try {
         generatedWithDownload = false;

@@ -5,10 +5,10 @@ import AppContent from '@/components/AppContent.vue';
 import AppShell from '@/components/AppShell.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
 import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
-import ImpersonationBanner from '@/components/ImpersonationBanner.vue';
 import LandlordIntegrationDiagnosticsListener from '@/components/broadcast/LandlordIntegrationDiagnosticsListener.vue';
 import TenantCategoriesImportListener from '@/components/broadcast/TenantCategoriesImportListener.vue';
 import TenantIntegrationProcessListener from '@/components/broadcast/TenantIntegrationProcessListener.vue'; 
+import ImpersonationBanner from '@/components/ImpersonationBanner.vue';
 import { Toaster } from '@/components/ui/sonner'; import type { BreadcrumbItem, LayoutPageHeader } from '@/types';
 
 type Props = {

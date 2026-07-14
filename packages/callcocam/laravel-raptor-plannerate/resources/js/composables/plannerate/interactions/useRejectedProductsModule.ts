@@ -7,21 +7,22 @@
 
 import { toast } from 'vue-sonner';
 import { useT } from '@/composables/useT';
-import type { ChangeType } from '../core/usePlanogramChanges';
-import type { usePlanogramHistory } from '../core/usePlanogramHistory';
 import type { EntityType } from '@/types/planogram';
-import type { useShelfOperations } from '../operations/useShelfOperations';
 import {
     currentGondola,
     isLoadingRejectedProducts,
-    rejectedProducts,
-    type RejectedProduct,
+    rejectedProducts
+    
 } from '../core/useGondolaState';
+import type {RejectedProduct} from '../core/useGondolaState';
 import {
     findSegmentByLayerId,
     findShelfById,
 } from '../core/useLookupHelpers';
+import type { ChangeType } from '../core/usePlanogramChanges';
+import type { usePlanogramHistory } from '../core/usePlanogramHistory';
 import { updateSegmentReactive } from '../core/useReactivityHelpers';
+import type { useShelfOperations } from '../operations/useShelfOperations';
 
 /** Shape mínimo de commitOptimistic para evitar acoplamento circular */
 type CommitFn = <T>(params: {

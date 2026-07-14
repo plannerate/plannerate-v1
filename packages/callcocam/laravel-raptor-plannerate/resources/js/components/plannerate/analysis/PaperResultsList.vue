@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Download, Search } from 'lucide-vue-next';
 import { computed, ref, useSlots, watch } from 'vue';
-import type { PaperResult, ProductRole } from '@/components/plannerate/analysis/paper/types';
 import PaperSelectionPanel from '@/components/plannerate/analysis/paper/PaperSelectionPanel.vue';
+import type { PaperResult, ProductRole } from '@/components/plannerate/analysis/paper/types';
 import TableHeadAnalysis from '@/components/plannerate/analysis/TableHeadAnalysis.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -111,6 +111,7 @@ watch(
     (items) => {
         if (!items.length) {
             selectedProductId.value = null;
+
             return;
         }
 
@@ -126,7 +127,9 @@ watch(
 );
 
 const handleSort = (key: string) => {
-    if (isSorting || !key) return;
+    if (isSorting || !key) {
+return;
+}
 
     isSorting = true;
 
@@ -143,6 +146,7 @@ const handleSort = (key: string) => {
 
     if (!validKeys.includes(key as keyof PaperResult)) {
         isSorting = false;
+
         return;
     }
 
@@ -155,7 +159,9 @@ const handleSort = (key: string) => {
             : 'desc',
     };
 
-    setTimeout(() => { isSorting = false; }, 100);
+    setTimeout(() => {
+ isSorting = false; 
+}, 100);
 };
 
 const formatPercent  = (value: number | null) => (value !== null ? `${value.toFixed(2)}%` : '—');

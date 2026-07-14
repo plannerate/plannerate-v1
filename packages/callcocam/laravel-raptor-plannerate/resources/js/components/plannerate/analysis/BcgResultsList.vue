@@ -145,6 +145,7 @@ watch(
     (items) => {
         if (!items.length) {
             selectedProductId.value = null;
+
             return;
         }
 
@@ -160,7 +161,9 @@ watch(
 );
 
 const handleSort = (key: string) => {
-    if (isSorting || !key) return;
+    if (isSorting || !key) {
+return;
+}
 
     isSorting = true;
 
@@ -178,6 +181,7 @@ const handleSort = (key: string) => {
 
     if (!validKeys.includes(key as keyof BcgResult)) {
         isSorting = false;
+
         return;
     }
 
@@ -188,7 +192,9 @@ const handleSort = (key: string) => {
             : 'desc',
     };
 
-    setTimeout(() => { isSorting = false; }, 100);
+    setTimeout(() => {
+ isSorting = false; 
+}, 100);
 };
 
 const formatPercent = (value: number) => `${(value ?? 0).toFixed(2)}%`;

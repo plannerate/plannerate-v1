@@ -51,7 +51,6 @@ import {
     currentGondola,
     eanSearchQuery,
     eanSearchApplied,
-    selectedTemplateCategoryId,
     showPerformanceModal,
 } from '@/composables/plannerate/core/useGondolaState';
 import { usePlanogramChanges } from '@/composables/plannerate/core/usePlanogramChanges';
@@ -67,16 +66,15 @@ import { useT } from '@/composables/useT';
 
 // Vue
 import type { Gondola } from '@/types/planogram';
-import DropdownActions from '../DropdownActions.vue';
 import DropdownDistribution from '../DropdownDistribution.vue';
 import DropdownIndicators from '../DropdownIndicators.vue';
-import DropdownReports from '../DropdownReports.vue';
 import DropdownPerformance from '../DropdownPerformance.vue';
+import DropdownReports from '../DropdownReports.vue';
 import AutomaticGenerateModal from './AutomaticGenerateModal.vue';
 // ConfirmDeleteGondolaDialog e MapRegionSelectorModal movidos para header/Header.vue
-import TemplateGenerateModal from './TemplateGenerateModal.vue';
 import TransferSectionDialog from './partials/TransferSectionDialog.vue';
 import Performance from './Performance.vue';
+import TemplateGenerateModal from './TemplateGenerateModal.vue';
 
 // ============================================================================
 // COMPOSABLES (ESTADO GLOBAL)
@@ -295,10 +293,6 @@ const canAutoGenerate = computed(() => {
     return mode === 'template' || mode === 'automatic';
 });
 
-const strategyOptions = computed(
-    () => (page.props as any)?.strategyOptions ?? [],
-);
-
 const planogramTemplates = computed(
     () => (page.props as any)?.planogramTemplates ?? [],
 );
@@ -338,11 +332,6 @@ const showRenameModal = ref(false);
  * Estado do modal de transferência de seção
  */
 const showTransferSectionDialog = ref(false);
-
-/**
- * Indica se há um grouping selecionado no template
- */
-const hasSelection = computed(() => !!selectedTemplateCategoryId.value);
 
 /**
  * Seção selecionada (se houver)

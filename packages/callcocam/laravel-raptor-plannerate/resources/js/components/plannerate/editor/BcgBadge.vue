@@ -2,7 +2,8 @@
 import { computed } from 'vue';
 import { useBcgLabels } from '@/components/plannerate/analysis/bcg/labels';
 import type { BcgQuadrant } from '@/components/plannerate/analysis/bcg/types';
-import { useBcgAnalysis, type BcgBadgeData } from '@/composables/plannerate/analysis/useBcgAnalysis';
+import { useBcgAnalysis  } from '@/composables/plannerate/analysis/useBcgAnalysis';
+import type {BcgBadgeData} from '@/composables/plannerate/analysis/useBcgAnalysis';
 import { useT } from '@/composables/useT';
 
 /**
@@ -46,7 +47,9 @@ const badgeClasses = computed(() => {
 
 /** Tooltip: quadrante + ação. É a leitura completa sem depender da cor. */
 const title = computed(() => {
-    if (!props.data) return '';
+    if (!props.data) {
+return '';
+}
 
     const quadrant = quadrantLabel(props.data.quadrant, props.data.x_axis, props.data.y_axis);
     const action = spaceActionLabel(props.data.acao_espaco);

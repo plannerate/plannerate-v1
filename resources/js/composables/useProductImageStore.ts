@@ -1,6 +1,6 @@
-import { effectScope, reactive, watchEffect } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { echo, echoIsConfigured } from '@laravel/echo-vue';
+import { effectScope, reactive, watchEffect } from 'vue';
 
 const _store = reactive<Record<string, string>>({});
 
@@ -13,24 +13,41 @@ const _scope = effectScope(true);
 
 export function useProductImageStore() {
     function setImage(ean: string, productId: string, imageUrl: string): void {
-        if (ean) _store[ean] = imageUrl;
-        if (productId) _store[productId] = imageUrl;
+        if (ean) {
+_store[ean] = imageUrl;
+}
+
+        if (productId) {
+_store[productId] = imageUrl;
+}
     }
 
     function getImage(ean?: string | null, productId?: string | null): string | null {
-        if (ean && _store[ean]) return _store[ean];
-        if (productId && _store[productId]) return _store[productId];
+        if (ean && _store[ean]) {
+return _store[ean];
+}
+
+        if (productId && _store[productId]) {
+return _store[productId];
+}
+
         return null;
     }
 
     // Escuta eventos individuais (cobre os que chegam antes da race condition fechar).
     function listenForProductImages(tenantId: string): void {
-        if (_individualListenerSetup || !tenantId) return;
+        if (_individualListenerSetup || !tenantId) {
+return;
+}
+
         _individualListenerSetup = true;
 
         _scope.run(() => {
             watchEffect(() => {
-                if (!echoIsConfigured() || _isIndividualListening) return;
+                if (!echoIsConfigured() || _isIndividualListening) {
+return;
+}
+
                 _isIndividualListening = true;
                 echo()
                     .private(`tenant.${tenantId}`)
@@ -49,12 +66,18 @@ export function useProductImageStore() {
     // Escuta o evento de conclusão do batch. Quando todos os produtos são processados,
     // faz reload parcial do Inertia para atualizar todos os image_url de uma vez.
     function listenForBatchComplete(userId: string): void {
-        if (_batchListenerSetup || !userId) return;
+        if (_batchListenerSetup || !userId) {
+return;
+}
+
         _batchListenerSetup = true;
 
         _scope.run(() => {
             watchEffect(() => {
-                if (!echoIsConfigured() || _isBatchListening) return;
+                if (!echoIsConfigured() || _isBatchListening) {
+return;
+}
+
                 _isBatchListening = true;
                 echo()
                     .private(`App.Models.User.${userId}`)

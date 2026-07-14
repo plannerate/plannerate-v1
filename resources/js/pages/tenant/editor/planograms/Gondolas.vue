@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { ExternalLink, FileText, LayoutTemplate, PanelTop } from 'lucide-vue-next';
+import { FileText, LayoutTemplate, PanelTop } from 'lucide-vue-next';
 import ClientPlanogramController from '@/actions/App/Http/Controllers/Tenant/Editor/ClientPlanogramController';
 import GondolaPdfPreviewController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
 import ListPage from '@/components/ListPage.vue';

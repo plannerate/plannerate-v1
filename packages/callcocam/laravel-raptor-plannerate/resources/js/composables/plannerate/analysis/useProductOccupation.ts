@@ -1,5 +1,5 @@
-import { currentGondola } from '../core/useGondolaState';
 import type { Gondola, Shelf } from '../../../types/planogram';
+import { currentGondola } from '../core/useGondolaState';
 
 /**
  * Resumo de ocupação de um produto num determinado escopo (prateleira ou planograma).
@@ -26,6 +26,7 @@ function itemsInDepth(productDepth: number, shelfDepth: number): number {
     if (!shelfDepth || !productDepth) {
         return 1;
     }
+
     return Math.max(1, Math.floor(shelfDepth / productDepth));
 }
 
@@ -37,6 +38,7 @@ function segmentUnits(segment: any, shelfDepth: number): number {
     const facings = Number(segment?.layer?.quantity ?? 1);
     const stacking = Number(segment?.quantity ?? 1);
     const depth = Number(segment?.layer?.product?.depth ?? 0);
+
     return facings * stacking * itemsInDepth(depth, shelfDepth);
 }
 
@@ -49,9 +51,11 @@ function segmentStockUnits(segment: any, shelfDepth: number): number {
     const facings = Number(segment?.layer?.quantity ?? 0);
     const stacking = Number(segment?.quantity ?? 0);
     const depth = Number(segment?.layer?.product?.depth ?? 0);
+
     if (!depth || !shelfDepth) {
         return 0;
     }
+
     return facings * stacking * Math.floor(shelfDepth / depth);
 }
 
@@ -83,9 +87,11 @@ export function useProductOccupation() {
             if (segment?.deleted_at || segment?.layer?.deleted_at) {
                 continue;
             }
+
             if (segment?.layer?.product?.id !== productId) {
                 continue;
             }
+
             summary.segments += 1;
             summary.facings += Number(segment?.layer?.quantity ?? 1);
             summary.units += segmentUnits(segment, shelfDepth);
@@ -103,6 +109,7 @@ export function useProductOccupation() {
         gondola?: Gondola | null,
     ): OccupationSummary {
         const target = gondola ?? currentGondola.value;
+
         if (!productId || !target?.sections?.length) {
             return emptySummary();
         }
@@ -113,18 +120,23 @@ export function useProductOccupation() {
             if (section?.deleted_at) {
                 continue;
             }
+
             for (const shelf of section.shelves ?? []) {
                 if (shelf?.deleted_at) {
                     continue;
                 }
+
                 const shelfDepth = Number(shelf.shelf_depth ?? 0);
+
                 for (const segment of shelf.segments ?? []) {
                     if (segment?.deleted_at || segment?.layer?.deleted_at) {
                         continue;
                     }
+
                     if (segment?.layer?.product?.id !== productId) {
                         continue;
                     }
+
                     summary.segments += 1;
                     summary.facings += Number(segment?.layer?.quantity ?? 1);
                     summary.units += segmentUnits(segment, shelfDepth);
@@ -145,6 +157,7 @@ export function useProductOccupation() {
         gondola?: Gondola | null,
     ): number {
         const target = gondola ?? currentGondola.value;
+
         if (!productId || !target?.sections?.length) {
             return 0;
         }
@@ -155,18 +168,23 @@ export function useProductOccupation() {
             if (section?.deleted_at) {
                 continue;
             }
+
             for (const shelf of section.shelves ?? []) {
                 if (shelf?.deleted_at) {
                     continue;
                 }
+
                 const shelfDepth = Number(shelf.shelf_depth ?? 0);
+
                 for (const segment of shelf.segments ?? []) {
                     if (segment?.deleted_at || segment?.layer?.deleted_at) {
                         continue;
                     }
+
                     if (segment?.layer?.product?.id !== productId) {
                         continue;
                     }
+
                     total += segmentStockUnits(segment, shelfDepth);
                 }
             }

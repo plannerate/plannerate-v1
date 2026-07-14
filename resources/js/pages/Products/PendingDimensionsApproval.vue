@@ -15,8 +15,8 @@ import {
     X,
 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
-import DimensionApprovalController from '@/actions/App/Http/Controllers/Tenant/Products/DimensionApprovalController';
 import ProductDimensionController from '@/actions/App/Http/Controllers/Tenant/ProductDimensionController';
+import DimensionApprovalController from '@/actions/App/Http/Controllers/Tenant/Products/DimensionApprovalController';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -139,7 +139,9 @@ function approve(product: ProductRow): void {
         {},
         {
             preserveScroll: true,
-            onFinish: () => { approvingId.value = null; },
+            onFinish: () => {
+ approvingId.value = null; 
+},
         },
     );
 }
@@ -171,7 +173,9 @@ function confirmReject(): void {
                 rejectDialogOpen.value = false;
                 rejectTarget.value = null;
             },
-            onFinish: () => { rejectingId.value = null; },
+            onFinish: () => {
+ rejectingId.value = null; 
+},
         },
     );
 }
@@ -190,7 +194,9 @@ function reResearch(product: ProductRow): void {
         {},
         {
             preserveScroll: true,
-            onFinish: () => { researchingId.value = null; },
+            onFinish: () => {
+ researchingId.value = null; 
+},
         },
     );
 }
@@ -226,8 +232,12 @@ function approveAll(): void {
         { product_ids: ids },
         {
             preserveScroll: true,
-            onSuccess: () => { selectedIds.value = new Set(); },
-            onFinish: () => { batchApproving.value = false; },
+            onSuccess: () => {
+ selectedIds.value = new Set(); 
+},
+            onFinish: () => {
+ batchApproving.value = false; 
+},
         },
     );
 }

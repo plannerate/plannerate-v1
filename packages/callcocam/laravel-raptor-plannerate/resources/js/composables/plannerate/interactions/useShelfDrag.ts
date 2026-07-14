@@ -1,12 +1,12 @@
 import { onBeforeUnmount, ref  } from 'vue';
 import type {Ref} from 'vue';
 import type { Shelf as ShelfType } from '@/types/planogram';
-import { setShelfDragData } from '../dnd/transfer';
 import {
     draggingShelfId,
     draggingShelfOffset,
     draggingShelfSectionId,
 } from '../core/useGondolaState';
+import { setShelfDragData } from '../dnd/transfer';
 
 interface UseShelfDragOptions {
     shelf: Ref<ShelfType>;

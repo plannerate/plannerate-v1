@@ -47,6 +47,7 @@ async function fetchChildren(parentId: string): Promise<Option[]> {
 
     const result = Array.isArray(childrenHttp.response) ? childrenHttp.response : [];
     _cache.set(parentId, result);
+
     return result;
 }
 
@@ -54,6 +55,7 @@ async function fetchPath(categoryId: string): Promise<Option[]> {
     const url = new URL('/categories/cascade/path', window.location.origin);
     url.searchParams.set('id', categoryId);
     await pathHttp.get(url.toString());
+
     return Array.isArray(pathHttp.response?.path) ? pathHttp.response!.path! : [];
 }
 
@@ -64,8 +66,11 @@ async function fetchPath(categoryId: string): Promise<Option[]> {
  */
 const leafCategoryId = computed((): string => {
     for (let i = selections.value.length - 1; i >= 0; i--) {
-        if (selections.value[i] !== '') return selections.value[i];
+        if (selections.value[i] !== '') {
+return selections.value[i];
+}
     }
+
     return props.templateCategoryId;
 });
 
@@ -84,6 +89,7 @@ async function hydrate(): Promise<void> {
     // Sem valor ou valor é a própria base → nada a pré-selecionar
     if (!currentValue || currentValue === props.templateCategoryId) {
         loading.value = false;
+
         return;
     }
 
@@ -94,6 +100,7 @@ async function hydrate(): Promise<void> {
 
         if (baseIdx === -1) {
             loading.value = false;
+
             return;
         }
 
@@ -130,6 +137,7 @@ async function onLevelChange(level: number, value: string): Promise<void> {
 
 function clearLevel(level: number): void {
     selections.value[level] = '';
+
     for (let j = level + 1; j < props.cascadeLevels; j++) {
         selections.value[j] = '';
         options.value[j] = [];
@@ -144,7 +152,10 @@ onMounted(hydrate);
 watch(
     () => props.modelValue,
     async (next) => {
-        if (next === leafCategoryId.value) return;
+        if (next === leafCategoryId.value) {
+return;
+}
+
         await hydrate();
     },
 );

@@ -104,22 +104,22 @@
 </template>
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useAbcClassification } from '../../../composables/plannerate/analysis/useAbcClassification';
+import { useBcgAnalysis } from '../../../composables/plannerate/analysis/useBcgAnalysis';
+import { usePaperAnalysis } from '../../../composables/plannerate/analysis/usePaperAnalysis';
 import {
     draggingSegmentId,
     draggingSegmentShelfId,
     eanSearchApplied,
 } from '../../../composables/plannerate/core/useGondolaState';
-import { DND_KEYS, hasSegmentData, isCopyModifier, setSegmentDragData } from '../../../composables/plannerate/dnd/transfer';
-import { useAbcClassification } from '../../../composables/plannerate/analysis/useAbcClassification';
-import { useBcgAnalysis } from '../../../composables/plannerate/analysis/useBcgAnalysis';
-import { usePaperAnalysis } from '../../../composables/plannerate/analysis/usePaperAnalysis';
 import { usePlanogramEditor } from '../../../composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '../../../composables/plannerate/core/usePlanogramSelection';
+import { DND_KEYS, hasSegmentData, isCopyModifier, setSegmentDragData } from '../../../composables/plannerate/dnd/transfer';
 import type { Layer, Segment } from '../../../types/planogram';
 import AbcBadge from './AbcBadge.vue';
 import BcgBadge from './BcgBadge.vue';
-import PaperRoleBadge from './PaperRoleBadge.vue';
 import LayerRenderer from './Layer.vue';
+import PaperRoleBadge from './PaperRoleBadge.vue';
 import ProductIndicatorBadge from './ProductIndicatorBadge.vue';
 import StockIndicator from './StockIndicator.vue';
 
@@ -187,6 +187,7 @@ const bcgBadgeData = computed(() => getBcgData(layer.value?.product?.ean));
 const isEanMatch = computed(() => {
     const query = eanSearchApplied.value.trim();
     const productEan = String(layer.value?.product?.ean ?? '').trim();
+
     return !!(query && productEan && productEan.includes(query));
 });
 
@@ -225,6 +226,7 @@ function selectThisSegment() {
     ) {
         return;
     }
+
     selection.selectItem('segment', props.segment.id, props.segment);
 }
 
@@ -242,9 +244,12 @@ function handlePointerDown(event: PointerEvent) {
     if (event.button !== 0) {
         return;
     }
+
     _skipFocusFromMouse = true;
     // Reset após o clique completar (focus acontece em < 50ms)
-    setTimeout(() => { _skipFocusFromMouse = false; }, 50);
+    setTimeout(() => {
+ _skipFocusFromMouse = false; 
+}, 50);
     selectThisSegment();
 }
 
@@ -261,7 +266,10 @@ onBeforeUnmount(() => {
 function handleFocusSegment() {
     // Ignora focus gerado por mouse — o pointerdown já tratou a seleção.
     // Só seleciona em focus por teclado (Tab).
-    if (_skipFocusFromMouse) return;
+    if (_skipFocusFromMouse) {
+return;
+}
+
     selectThisSegment();
 }
 

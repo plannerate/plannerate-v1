@@ -1,13 +1,15 @@
-import { createInertiaApp, router } from '@inertiajs/vue3';
+import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
 import { initializeEcho } from '@/echo';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
-import { setUrlDefaults } from '@/wayfinder';
 
 function metaContent(name: string): string | null {
-    if (typeof document === 'undefined') return null;
+    if (typeof document === 'undefined') {
+return null;
+}
+
     return document.querySelector(`meta[name="${name}"]`)?.getAttribute('content') ?? null;
 }
 

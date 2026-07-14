@@ -131,6 +131,7 @@ const getResultClass = (severity: string) => {
     warning: 'bg-yellow-50 border-l-4 border-yellow-400',
     info: 'bg-blue-50 border-l-4 border-blue-400',
   }
+
   return classes[severity] || 'bg-gray-50'
 }
 
@@ -140,6 +141,7 @@ const getSeverityIconClass = (severity: string) => {
     warning: 'text-yellow-600',
     info: 'text-blue-600',
   }
+
   return classes[severity] || 'text-gray-600'
 }
 
@@ -149,6 +151,7 @@ const getSeverityTextClass = (severity: string) => {
     warning: 'text-yellow-900',
     info: 'text-blue-900',
   }
+
   return classes[severity] || 'text-gray-900'
 }
 </script>

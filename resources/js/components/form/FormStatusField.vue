@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Check } from 'lucide-vue-next';
 import { useVModel } from '@vueuse/core';
+import { Check } from 'lucide-vue-next';
 import { computed } from 'vue';
 import type { HTMLAttributes } from 'vue';
 import InputError from '@/components/InputError.vue';

@@ -7,9 +7,9 @@ import PlanogramController from '@/actions/App/Http/Controllers/Tenant/Planogram
 import WorkflowKanbanController from '@/actions/App/Http/Controllers/Tenant/WorkflowKanbanController';
 import KankanNavigationLinks from '@/components/KankanNavigationLinks.vue';
 import ListTablePage from '@/components/ListPage.vue';
-import PlanLimitAlert from '@/components/PlanLimitAlert.vue';
 import type ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import PlanLimitAlert from '@/components/PlanLimitAlert.vue';
 import GondolaCreateStepper from '@/components/plannerate/form/GondolaCreateStepper.vue';
 import { ColumnActions, ColumnDate, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';

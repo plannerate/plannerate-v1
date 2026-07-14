@@ -17,7 +17,7 @@ type PlanItem = {
 
 const item = defineModel<PlanItem>({ required: true });
 
-const props = defineProps<{
+defineProps<{
     index: number;
     errors: Record<string, string>;
 }>();

@@ -34,6 +34,7 @@ const description = computed(() => t(`errors.${key.value}.description`));
 function goBack(): void {
     if (typeof window !== 'undefined' && window.history.length > 1) {
         window.history.back();
+
         return;
     }
 

@@ -10,7 +10,8 @@ import {
     StoreIcon,
     UserIcon,
 } from 'lucide-vue-next';
-import { computed, type Component } from 'vue';
+import { computed  } from 'vue';
+import type {Component} from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Popover,

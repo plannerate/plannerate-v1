@@ -64,6 +64,7 @@ const hasPreviousSlots = computed(
 const summaryColClass = computed(() => {
     const extra = (hasOutroSlot.value ? 1 : 0) + (hasPreviousSlots.value ? 1 : 0);
     const total = 4 + extra;
+
     return `lg:grid-cols-${total}`;
 });
 </script>

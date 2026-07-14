@@ -24,7 +24,6 @@ const props = defineProps<{
     host: string;
 }>();
 
-const isLoading = computed(() => props.cloudflareRecord === undefined);
 const recordExists = computed(
     () => props.cloudflareRecord !== null && props.cloudflareRecord !== undefined && props.cloudflareRecord.exists === true,
 );

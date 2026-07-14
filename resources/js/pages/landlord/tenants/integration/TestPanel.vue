@@ -26,6 +26,7 @@ const testResult = ref<unknown>(null);
 
 watch(selectedPathKey, (key) => {
     const found = availablePaths.value.find((p) => p.key === key);
+
     if (found) {
         testPath.value = found.path;
         testMethod.value = props.integration?.api_method ?? 'post';

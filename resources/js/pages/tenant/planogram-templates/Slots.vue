@@ -1,32 +1,31 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { ChevronLeft, ChevronRight, Download, Settings2, Trash2, Upload } from 'lucide-vue-next';
-import { toast } from 'vue-sonner';
 import { computed, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
+import PlanogramTemplateController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Templates/PlanogramTemplateController';
 import {
     ALTERATION_LEVEL_LABELS,
     classifyAlteration,
     diffSlotFields,
 } from '@/components/planogram-templates/alteration-classifier';
-import PlanogramTemplateController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Templates/PlanogramTemplateController';
 import GondolaGrid from '@/components/planogram-templates/GondolaGrid.vue';
 import ModuleDefaultsModal from '@/components/planogram-templates/ModuleDefaultsModal.vue';
 import ModuleSelectorButtons from '@/components/planogram-templates/ModuleSelectorButtons.vue';
 import PlanogramConfirmDialog from '@/components/planogram-templates/PlanogramConfirmDialog.vue';
+import type { SlotDraft } from '@/components/planogram-templates/slot-editor';
 import SlotCopyPromptDialog from '@/components/planogram-templates/SlotCopyPromptDialog.vue';
 import type { CopyPromptAction } from '@/components/planogram-templates/SlotCopyPromptDialog.vue';
 import SlotEditorModal from '@/components/planogram-templates/SlotEditorModal.vue';
 import SlotReviewDrawer from '@/components/planogram-templates/SlotReviewDrawer.vue';
 import SubtemplateSettingsCard from '@/components/planogram-templates/SubtemplateSettingsCard.vue';
 import type { SubtemplateSettingsDraft } from '@/components/planogram-templates/SubtemplateSettingsCard.vue';
-import type { SlotDraft } from '@/components/planogram-templates/slot-editor';
 import type {
     PlanogramSubtemplate,
     PlanogramTemplateSlot,
     WizardStep,
 } from '@/components/planogram-templates/types';
 import WizardProgress from '@/components/planogram-templates/WizardProgress.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -98,6 +97,7 @@ const confirmDialogContent = computed(() => {
 
     if (pendingSlotAction.value?.type === 'remove-subtemplate') {
         const n = pendingSlotAction.value.numModules;
+
         return {
             title: n === 1
                 ? t('planogram-templates.slots_page.confirm_remove_subtemplate_title_singular')
@@ -143,6 +143,7 @@ function navigateWizard(step: 1 | 2 | 3): void {
 
         return;
     }
+
     if (step === 3) {
         router.visit(reviewPath.value);
     }
@@ -175,6 +176,7 @@ function largestSubtemplateBelow(targetModules: number): PlanogramSubtemplate | 
 
 function selectModules(n: number): void {
     currentModules.value = n;
+
     if (subtemplateExists(n)) {
         highlightNewModule.value = undefined;
     }
@@ -189,7 +191,10 @@ function createEmptySubtemplate(n: number): void {
             only: ['subtemplates'],
             onError: (errs) => {
                 const first = Object.values(errs)[0];
-                if (first) toast.error(first);
+
+                if (first) {
+toast.error(first);
+}
             },
         },
     );
@@ -205,7 +210,10 @@ function cloneSubtemplate(source: PlanogramSubtemplate, targetModules: number): 
             only: ['subtemplates'],
             onError: (errs) => {
                 const first = Object.values(errs)[0];
-                if (first) toast.error(first);
+
+                if (first) {
+toast.error(first);
+}
             },
             onSuccess: () => {
                 highlightNewModule.value = source.num_modules + 1;
@@ -406,7 +414,10 @@ function bulkCopy(slots: SlotDraft[], onDone?: () => void): void {
             only: ['subtemplates'],
             onError: (errs) => {
                 const first = Object.values(errs)[0];
-                if (first) toast.error(first);
+
+                if (first) {
+toast.error(first);
+}
             },
             onSuccess: () => {
                 onDone?.();
@@ -444,6 +455,7 @@ function onCopyPromptAction(key: string): void {
 
     if (key === 'shelves-next' && source) {
         const next = nextEmptyShelf(module);
+
         if (next === null) {
             copyPromptOpen.value = false;
             endCascade();
@@ -541,7 +553,10 @@ function saveSlot(
             },
             onError: (errs) => {
                 const first = Object.values(errs)[0];
-                if (first) toast.error(first);
+
+                if (first) {
+toast.error(first);
+}
             },
         });
 
@@ -560,7 +575,10 @@ function saveSlot(
                 only: ['subtemplates'],
                 onError: (errs) => {
                     const first = Object.values(errs)[0];
-                    if (first) toast.error(first);
+
+                    if (first) {
+toast.error(first);
+}
                 },
                 onSuccess: () => {
                     copySourceDraft.value = { ...draft } as SlotDraft;
@@ -578,7 +596,10 @@ function saveSlot(
                 only: ['subtemplates'],
                 onError: (errs) => {
                     const first = Object.values(errs)[0];
-                    if (first) toast.error(first);
+
+                    if (first) {
+toast.error(first);
+}
                 },
                 onSuccess: () => {
                     const newSub = props.subtemplates.find(
@@ -597,7 +618,10 @@ function saveSlot(
                             only: ['subtemplates'],
                             onError: (errs) => {
                                 const first = Object.values(errs)[0];
-                                if (first) toast.error(first);
+
+                                if (first) {
+toast.error(first);
+}
                             },
                             onSuccess: () => {
                                 copySourceDraft.value = { ...draft } as SlotDraft;
@@ -663,7 +687,10 @@ function saveSubtemplateSettings(settings: SubtemplateSettingsDraft): void {
             },
             onError: (errs) => {
                 const first = Object.values(errs)[0];
-                if (first) toast.error(first);
+
+                if (first) {
+toast.error(first);
+}
             },
             onFinish: () => {
                 subtemplateSettingsBusy.value = false;
@@ -754,6 +781,7 @@ function confirmSlotAction(): void {
 
     if (action.type === 'remove') {
         deleteSlot(action.slotId);
+
         return;
     }
 
@@ -769,6 +797,7 @@ function confirmSlotAction(): void {
                 pendingSlotAction.value = null;
             },
         });
+
         return;
     }
 
@@ -777,6 +806,7 @@ function confirmSlotAction(): void {
     if (!subtemplate) {
         confirmDialogOpen.value = false;
         pendingSlotAction.value = null;
+
         return;
     }
 
@@ -802,7 +832,11 @@ function confirmSlotAction(): void {
 
 function requestRemoveSubtemplate(): void {
     const subtemplate = currentSubtemplate.value;
-    if (!subtemplate) return;
+
+    if (!subtemplate) {
+return;
+}
+
     pendingSlotAction.value = {
         type: 'remove-subtemplate',
         subtemplateId: subtemplate.id,
@@ -1033,9 +1067,11 @@ const breadcrumbs = [
         @action="onCopyPromptAction"
     />
 
+    <!-- eslint-disable vue/no-deprecated-slot-attribute -- prop de domínio "slot" do SlotReviewDrawer, não o atributo Vue 2 -->
     <SlotReviewDrawer
         v-model:open="reviewDrawerOpen"
         :slot="reviewDrawerSlot"
         :template-id="template.id"
     />
+    <!-- eslint-enable vue/no-deprecated-slot-attribute -->
 </template>

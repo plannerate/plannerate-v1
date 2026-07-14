@@ -28,6 +28,7 @@ const groupedSlots = computed((): SlotGroup[] => {
 
     for (const slot of props.slots) {
         const key = slot.category_id ?? '__no_category__';
+
         if (!map.has(key)) {
             const noCategory = t('planogram-templates.review_list.no_category');
             map.set(key, {
@@ -37,6 +38,7 @@ const groupedSlots = computed((): SlotGroup[] => {
                 slots: [],
             });
         }
+
         map.get(key)!.slots.push(slot);
     }
 

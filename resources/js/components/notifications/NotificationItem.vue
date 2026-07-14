@@ -8,6 +8,8 @@ import {
     XCircle,
 } from 'lucide-vue-next';
 import { ref } from 'vue';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -15,8 +17,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import type { AppNotification, NotificationData } from '@/types/auth';
 
 defineProps<{

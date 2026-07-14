@@ -28,7 +28,10 @@ function openAdd(): void {
 }
 
 function confirmAdd(): void {
-    if (!newCount.value || newCount.value < 1) return;
+    if (!newCount.value || newCount.value < 1) {
+return;
+}
+
     emit('add', newCount.value);
     addingNew.value = false;
     newCount.value = null;

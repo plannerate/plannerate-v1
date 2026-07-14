@@ -35,9 +35,18 @@ export const ALTERATION_LEVEL_LABELS: Record<AlterationLevel, string> = {
  * Precedência: regenerate > redistribute > reorder > null.
  */
 export function classifyAlteration(changedFields: string[]): AlterationLevel | null {
-    if (changedFields.some((f) => REGENERATE_FIELDS.includes(f))) return 'regenerate';
-    if (changedFields.some((f) => REDISTRIBUTE_FIELDS.includes(f))) return 'redistribute';
-    if (changedFields.some((f) => REORDER_FIELDS.includes(f))) return 'reorder';
+    if (changedFields.some((f) => REGENERATE_FIELDS.includes(f))) {
+return 'regenerate';
+}
+
+    if (changedFields.some((f) => REDISTRIBUTE_FIELDS.includes(f))) {
+return 'redistribute';
+}
+
+    if (changedFields.some((f) => REORDER_FIELDS.includes(f))) {
+return 'reorder';
+}
+
     return null;
 }
 
@@ -50,6 +59,7 @@ export function diffSlotFields(
     after: Record<string, unknown>,
 ): string[] {
     const all = [...REORDER_FIELDS, ...REDISTRIBUTE_FIELDS, ...REGENERATE_FIELDS];
+
     return all.filter((field) => {
         return JSON.stringify(before[field] ?? null) !== JSON.stringify(after[field] ?? null);
     });

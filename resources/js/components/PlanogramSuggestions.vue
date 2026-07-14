@@ -38,10 +38,13 @@ function slotsUrl(query: Record<string, string | number> = {}): string {
     const subdomain = tenant?.slug || (typeof window !== 'undefined' ? window.location.hostname.split('.')[0] : '');
     const base = `//${subdomain}.plannerate.localhost/planogram-templates/${props.templateId}/slots`;
     const params = new URLSearchParams();
+
     for (const [key, val] of Object.entries(query)) {
         params.set(key, String(val));
     }
+
     const qs = params.toString();
+
     return qs ? `${base}?${qs}` : base;
 }
 

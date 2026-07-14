@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { defineAsyncComponent } from 'vue'
+import type { ExecutionPayload } from '@/components/plannerate/execution/types'
 import PdfPreview from '@/components/plannerate/print/PdfPreview.vue'
 import type { AbcAnalysis, Gondola, Section, StockAnalysis } from '@/types/planogram'
-import type { ExecutionPayload } from '@/components/plannerate/execution/types'
 
 // A camada de execução só é baixada (chunk) para quem tem a responsabilidade.
 const ExecutionLayer = defineAsyncComponent(
