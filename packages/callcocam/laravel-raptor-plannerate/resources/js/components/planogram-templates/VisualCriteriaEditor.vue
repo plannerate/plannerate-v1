@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import FieldHelpTooltip from '@/components/form/FieldHelpTooltip.vue';
 import { useT } from '@/composables/useT';
 import { visualCriterionMeta } from './slot-editor';
 import type { VisualCriterionDirection, VisualCriterionItem, VisualCriterionKey } from './types';
@@ -22,6 +23,7 @@ const active = computed<VisualCriterionItem[]>(() => modelValue.value ?? []);
 /** Critérios disponíveis para adicionar (não estão na lista) */
 const available = computed<VisualCriterionKey[]>(() => {
     const activeKeys = new Set(active.value.map((c) => c.key));
+
     return ALL_KEYS.filter((k) => !activeKeys.has(k));
 });
 
@@ -34,7 +36,11 @@ const packagingCriterionIndex = computed(() => active.value.findIndex((c) => c.k
 /** Lista de tipos de embalagem do critério ativo */
 const packagingOrder = computed<string[]>(() => {
     const idx = packagingCriterionIndex.value;
-    if (idx === -1) return [];
+
+    if (idx === -1) {
+return [];
+}
+
     return active.value[idx].packaging_order ?? [];
 });
 
@@ -66,7 +72,10 @@ function isLocked(index: number): boolean {
 }
 
 function removeCriterion(index: number): void {
-    if (isLocked(index)) return;
+    if (isLocked(index)) {
+return;
+}
+
     const next = [...(modelValue.value ?? [])];
     next.splice(index, 1);
     modelValue.value = next;
@@ -75,6 +84,7 @@ function removeCriterion(index: number): void {
 function toggleDirection(index: number): void {
     const items = [...(modelValue.value ?? [])];
     const item = items[index];
+
     if (!visualCriterionMeta[item.key].supportsDirection) {
         return;
     }
@@ -92,9 +102,12 @@ const dragOverIndex = ref<number | null>(null);
 function onDragStart(index: number, event: DragEvent): void {
     if (isLocked(index)) {
         event.preventDefault();
+
         return;
     }
+
     dragIndex.value = index;
+
     if (event.dataTransfer) {
         event.dataTransfer.effectAllowed = 'move';
     }
@@ -102,9 +115,13 @@ function onDragStart(index: number, event: DragEvent): void {
 
 function onDragOver(index: number, event: DragEvent): void {
     // Bloqueia drop na posição 0 quando ela é score_abc
-    if (isLocked(index)) return;
+    if (isLocked(index)) {
+return;
+}
+
     event.preventDefault();
     dragOverIndex.value = index;
+
     if (event.dataTransfer) {
         event.dataTransfer.dropEffect = 'move';
     }
@@ -112,9 +129,11 @@ function onDragOver(index: number, event: DragEvent): void {
 
 function onDrop(targetIndex: number): void {
     const from = dragIndex.value;
+
     if (from === null || from === targetIndex || isLocked(targetIndex)) {
         dragIndex.value = null;
         dragOverIndex.value = null;
+
         return;
     }
 
@@ -154,7 +173,11 @@ function directionTitle(item: VisualCriterionItem): string {
 /** Atualiza o packaging_order do critério embalagem preservando os demais campos */
 function updatePackagingOrder(order: string[]): void {
     const idx = packagingCriterionIndex.value;
-    if (idx === -1) return;
+
+    if (idx === -1) {
+return;
+}
+
     const items = [...(modelValue.value ?? [])];
     items[idx] = { ...items[idx], packaging_order: order };
     modelValue.value = items;
@@ -162,10 +185,13 @@ function updatePackagingOrder(order: string[]): void {
 
 function addPackagingType(): void {
     const val = newPackagingType.value.trim();
+
     if (!val || packagingOrder.value.includes(val)) {
         newPackagingType.value = '';
+
         return;
     }
+
     updatePackagingOrder([...packagingOrder.value, val]);
     newPackagingType.value = '';
 }
@@ -179,6 +205,7 @@ function removePackagingType(index: number): void {
 // Drag-and-drop dos tipos de embalagem
 function onPackagingDragStart(index: number, event: DragEvent): void {
     packagingDragIndex.value = index;
+
     if (event.dataTransfer) {
         event.dataTransfer.effectAllowed = 'move';
     }
@@ -187,6 +214,7 @@ function onPackagingDragStart(index: number, event: DragEvent): void {
 function onPackagingDragOver(index: number, event: DragEvent): void {
     event.preventDefault();
     packagingDragOverIndex.value = index;
+
     if (event.dataTransfer) {
         event.dataTransfer.dropEffect = 'move';
     }
@@ -194,11 +222,14 @@ function onPackagingDragOver(index: number, event: DragEvent): void {
 
 function onPackagingDrop(targetIndex: number): void {
     const from = packagingDragIndex.value;
+
     if (from === null || from === targetIndex) {
         packagingDragIndex.value = null;
         packagingDragOverIndex.value = null;
+
         return;
     }
+
     const items = [...packagingOrder.value];
     const [moved] = items.splice(from, 1);
     items.splice(targetIndex, 0, moved);
@@ -218,7 +249,10 @@ function onPackagingDragEnd(): void {
         <!-- Cabeçalho com toggle de modo -->
         <div class="flex items-center justify-between">
             <div class="flex flex-col gap-y-0.5">
-                <span class="text-sm font-medium">{{ t('planogram-templates.visual_criteria.title') }}</span>
+                <span class="flex items-center gap-1.5 text-sm font-medium">
+                    {{ t('planogram-templates.visual_criteria.title') }}
+                    <FieldHelpTooltip :text="t('planogram-templates.help.visual_criteria')" />
+                </span>
                 <span class="text-xs text-muted-foreground">
                     {{ isLegacyMode ? t('planogram-templates.visual_criteria.description_legacy') : t('planogram-templates.visual_criteria.description_custom') }}
                 </span>

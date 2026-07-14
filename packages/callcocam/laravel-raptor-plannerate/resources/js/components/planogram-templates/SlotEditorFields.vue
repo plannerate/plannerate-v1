@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import FieldHelpTooltip from '@/components/form/FieldHelpTooltip.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormSwitchField from '@/components/form/FormSwitchField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
-import SlotCategorySelect from './SlotCategorySelect.vue';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
 import { categoryRoleValues } from './slot-editor';
 import type { SlotDraft } from './slot-editor';
-import VisualCriteriaEditor from './VisualCriteriaEditor.vue';
+import SlotCategorySelect from './SlotCategorySelect.vue';
 import type { SlotValidationErrors } from './validation';
+import VisualCriteriaEditor from './VisualCriteriaEditor.vue';
 
 const draft = defineModel<SlotDraft>('draft', { required: true });
 
@@ -49,24 +50,34 @@ const priorityModel = computed({
 });
 
 function parseShareLimit(value: string | number): number | null {
-    if (value === '' || value === null || value === undefined) return null;
+    if (value === '' || value === null || value === undefined) {
+return null;
+}
+
     const parsed = Number(value);
+
     return Number.isFinite(parsed) && parsed >= 1 && parsed <= 100 ? Math.round(parsed) : null;
 }
 
 const maxSharePerSkuModel = computed({
     get: () => draft.value.max_share_per_sku ?? '',
-    set: (value: string | number) => { draft.value.max_share_per_sku = parseShareLimit(value); },
+    set: (value: string | number) => {
+ draft.value.max_share_per_sku = parseShareLimit(value); 
+},
 });
 
 const maxSharePerBrandModel = computed({
     get: () => draft.value.max_share_per_brand ?? '',
-    set: (value: string | number) => { draft.value.max_share_per_brand = parseShareLimit(value); },
+    set: (value: string | number) => {
+ draft.value.max_share_per_brand = parseShareLimit(value); 
+},
 });
 
 const maxSharePerSubcategoryModel = computed({
     get: () => draft.value.max_share_per_subcategory ?? '',
-    set: (value: string | number) => { draft.value.max_share_per_subcategory = parseShareLimit(value); },
+    set: (value: string | number) => {
+ draft.value.max_share_per_subcategory = parseShareLimit(value); 
+},
 });
 </script>
 
@@ -110,7 +121,10 @@ const maxSharePerSubcategoryModel = computed({
             </div>
 
             <div class="flex flex-col gap-y-1">
-                <Label for="slot-role-override" class="text-sm font-medium">{{ t('planogram-templates.slot_editor_fields.role.label') }}</Label>
+                <Label for="slot-role-override" class="flex items-center gap-1.5 text-sm font-medium">
+                    {{ t('planogram-templates.slot_editor_fields.role.label') }}
+                    <FieldHelpTooltip :text="t('planogram-templates.help.role_override')" />
+                </Label>
                 <p class="text-xs text-muted-foreground">
                     {{ t('planogram-templates.slot_editor_fields.role.description') }}
                 </p>
@@ -159,6 +173,9 @@ const maxSharePerSubcategoryModel = computed({
                     <FormSelectField id="slot-facing-expansion" v-model="draft.facing_expansion" name="facing_expansion"
                     :label="t('planogram-templates.facing_expansion.label')"
                     :hint="t('planogram-templates.facing_expansion.hint_slot')">
+                    <template #label-extra>
+                        <FieldHelpTooltip :text="t('planogram-templates.help.facing_expansion')" />
+                    </template>
                     <option value="none">{{ t('planogram-templates.facing_expansion.none') }}</option>
                     <option value="score">{{ t('planogram-templates.facing_expansion.score') }}</option>
                     <option value="current_stock">{{ t('planogram-templates.facing_expansion.current_stock') }}</option>
@@ -168,6 +185,9 @@ const maxSharePerSubcategoryModel = computed({
                 </div>
                 <FormSelectField id="slot-space-fallback" v-model="draft.space_fallback" name="space_fallback"
                     :label="t('planogram-templates.slot_editor.space_fallback_label')">
+                    <template #label-extra>
+                        <FieldHelpTooltip :text="t('planogram-templates.help.space_fallback')" />
+                    </template>
                     <option value="reduce_c">{{ t('planogram-templates.slot_editor.space_fallback_options.reduce_c') }}
                     </option>
                     <option value="reduce_facings">{{
@@ -176,7 +196,11 @@ const maxSharePerSubcategoryModel = computed({
                         <option value="remove_dog">{{ t('planogram-templates.slot_editor.space_fallback_options.remove_dog') }}</option>
                 </FormSelectField>
                 <FormSwitchField id="slot-target-stock" v-model="draft.use_target_stock" name="use_target_stock"
-                    :label="t('planogram-templates.slot_editor.target_stock_label')" />
+                    :label="t('planogram-templates.slot_editor.target_stock_label')">
+                    <template #label-extra>
+                        <FieldHelpTooltip :text="t('planogram-templates.help.use_target_stock')" />
+                    </template>
+                </FormSwitchField>
             </div>
         </div>
 
@@ -254,7 +278,11 @@ const maxSharePerSubcategoryModel = computed({
                         type="number"
                         :label="t('planogram-templates.slot_editor_fields.share_limits.max_sku_label')"
                         :hint="t('planogram-templates.slot_editor_fields.share_limits.max_sku_hint')"
-                        :min="1" :max="100" />
+                        :min="1" :max="100">
+                        <template #label-extra>
+                            <FieldHelpTooltip :text="t('planogram-templates.help.max_share_per_sku')" />
+                        </template>
+                    </FormTextField>
                     <p v-if="errors.max_share_per_sku" class="text-xs text-destructive">{{ errors.max_share_per_sku }}
                     </p>
                 </div>
@@ -263,7 +291,11 @@ const maxSharePerSubcategoryModel = computed({
                         name="max_share_per_brand" type="number"
                         :label="t('planogram-templates.slot_editor_fields.share_limits.max_brand_label')"
                         :hint="t('planogram-templates.slot_editor_fields.share_limits.max_brand_hint')"
-                        :min="1" :max="100" />
+                        :min="1" :max="100">
+                        <template #label-extra>
+                            <FieldHelpTooltip :text="t('planogram-templates.help.max_share_per_brand')" />
+                        </template>
+                    </FormTextField>
                     <p v-if="errors.max_share_per_brand" class="text-xs text-destructive">{{ errors.max_share_per_brand
                         }}</p>
                 </div>
@@ -272,7 +304,11 @@ const maxSharePerSubcategoryModel = computed({
                         name="max_share_per_subcategory" type="number"
                         :label="t('planogram-templates.slot_editor_fields.share_limits.max_subcat_label')"
                         :hint="t('planogram-templates.slot_editor_fields.share_limits.max_subcat_hint')"
-                        :min="1" :max="100" />
+                        :min="1" :max="100">
+                        <template #label-extra>
+                            <FieldHelpTooltip :text="t('planogram-templates.help.max_share_per_subcategory')" />
+                        </template>
+                    </FormTextField>
                     <p v-if="errors.max_share_per_subcategory" class="text-xs text-destructive">{{
                         errors.max_share_per_subcategory }}</p>
                 </div>

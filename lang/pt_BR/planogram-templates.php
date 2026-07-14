@@ -467,6 +467,20 @@ return [
         'category_required_tooltip' => 'Selecione uma categoria antes de configurar os slots',
     ],
 
+    // Tooltips de ajuda contextual (FieldHelpTooltip) — campos complexos do editor
+    // de slot e da configuração padrão de módulo. Texto mais longo e com exemplo,
+    // complementar ao hint curto que já fica visível abaixo do campo.
+    'help' => [
+        'role_override' => 'No modo template, este campo é apenas informativo (aparece na exportação e nas telas de revisão) e não muda a posição física dos produtos. Ele só influencia a geração quando o sistema cria um template novo automaticamente (modo automático): papéis "quentes" como Impulso e Destino tendem a ganhar prioridade nas prateleiras à altura dos olhos.',
+        'facing_expansion' => 'Depois de garantir a frente mínima para cada produto, este critério decide como distribuir o espaço que sobrar na prateleira. Ex.: "Por score ABC/vendas" dá mais frentes extras aos produtos que mais vendem; "Distribuição igual" reparte o espaço livre igualmente entre todos, sem favorecer ninguém.',
+        'space_fallback' => 'O que fazer quando os produtos não cabem todos na prateleira, mesmo com a frente mínima. "Remover curva C primeiro" tira os produtos de menor giro (classificação ABC) até sobrar espaço. "Remover retardatários" mantém os produtos líderes/em crescimento e remove primeiro os de pior desempenho (papel BCG "dog").',
+        'use_target_stock' => 'Quando ativado, o número de frentes também considera a meta de reposição do produto (estoque alvo), além do score de vendas — evita dar poucas frentes a um produto que precisa de mais estoque físico na prateleira. Funciona melhor combinado com "Expansão de frentes: Por déficit de estoque".',
+        'visual_criteria' => 'Cada critério adicionado entra numa cascata de desempate: o primeiro da lista decide a ordem primeiro; os seguintes só entram em ação quando o critério anterior encontra um empate. "Curva ABC" fica travada na 1ª posição porque o motor sempre prioriza os produtos de maior desempenho antes de aplicar os critérios visuais.',
+        'max_share_per_sku' => 'Trava, em %, o quanto um único produto pode crescer em frentes dentro deste slot. Ex.: com 20% definido, mesmo sobrando espaço na prateleira, esse produto não passa de 20% das frentes do slot — o espaço extra vai para os demais.',
+        'max_share_per_brand' => 'Trava, em %, o quanto uma mesma marca pode ocupar das frentes deste slot — evita que uma marca domine o espaço mesmo tendo os produtos mais vendidos.',
+        'max_share_per_subcategory' => 'Trava, em %, o quanto uma mesma subcategoria pode ocupar das frentes deste slot — útil quando o slot reúne mais de uma subcategoria (categoria pai com filhas).',
+    ],
+
     // Messages
     'messages' => [
         'slot_saved' => 'Slot salvo com sucesso',

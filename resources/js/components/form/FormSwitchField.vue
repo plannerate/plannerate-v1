@@ -44,7 +44,9 @@ const modelValue = useVModel(props, 'modelValue', emits, {
     <div :class="cn('flex flex-col gap-y-1', props.class)">
         <Label :for="id">
             {{ label }}
-            <span v-if="required" class="text-destructive">*</span>
+            <slot name="label-extra">
+                <span v-if="required" class="text-destructive">*</span>
+            </slot>
         </Label>
 
         <div

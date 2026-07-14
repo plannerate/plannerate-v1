@@ -270,4 +270,8 @@ APP_SLUG=staging automation/install-monitoring-on-host.sh vps-deployment-v2/mani
 
 # health check completo
 automation/vps-health-check.sh vps-deployment-v2/manifest.env staging
+
+# estado dos backups no DO Spaces (idade, tamanho, integridade)
+automation/check-backups.sh vps-deployment-v2/manifest.env
+VERIFY_INTEGRITY=true automation/check-backups.sh vps-deployment-v2/manifest.env
 ```

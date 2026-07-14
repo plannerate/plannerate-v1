@@ -639,14 +639,9 @@ class SlotPlanBuilder
     /**
      * Deriva min_facings para um slot baseado na classe ABC dominante.
      *
-     * Usa valores fixos por ABC (ABC_MIN_FACINGS) em vez de escalar até maxFacings.
-     * Isso evita que o piso mínimo atinja o teto de expansão (maxFacings), o que tornaria
-     * produtos de largura realista impossíveis de posicionar em prateleiras padrão.
-     *
-     * Exemplos (min=1, max=10):
-     *   A → 3  (3 × 23cm = 69cm ≤ 96cm ✓)
-     *   B → 2
-     *   C → 1
+     * Usa o piso fixo de ABC_MIN_FACINGS (hoje uniforme: 1 frente para A/B/C) em vez de
+     * escalar até maxFacings. A diferenciação por classe ABC acontece na expansão de
+     * frentes (Phase 2 de placement), não no piso — ver docblock de ABC_MIN_FACINGS.
      *
      * O resultado é sempre clamped em [min, max] para respeitar os limites configurados.
      */

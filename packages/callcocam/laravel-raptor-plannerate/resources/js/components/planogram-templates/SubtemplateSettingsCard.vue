@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue';
 import { Settings2 } from 'lucide-vue-next';
+import { computed, reactive, ref, watch } from 'vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
 import type { FlowDirection, LayoutOrientation, PlanogramSubtemplate, ZonePriority } from './types';
+import { validateSubtemplateSettings  } from './validation';
+import type {SubtemplateSettingsValidationErrors} from './validation';
 
 /**
  * Seção "Configurações do subtemplate" — campos globais que valem para TODOS os
@@ -38,6 +40,21 @@ const draft = reactive<SubtemplateSettingsDraft>({
     layout_orientation: null,
 });
 
+const errors = ref<SubtemplateSettingsValidationErrors>({});
+
+function saveSettings(): void {
+    const validationErrors = validateSubtemplateSettings(draft);
+
+    if (Object.keys(validationErrors).length > 0) {
+        errors.value = validationErrors;
+
+        return;
+    }
+
+    errors.value = {};
+    emit('save', { ...draft });
+}
+
 // Re-sincroniza o draft sempre que o subtemplate selecionado muda ou é recarregado
 watch(
     () => props.subtemplate,
@@ -46,6 +63,7 @@ watch(
         draft.cold_zone_priority = sub.cold_zone_priority ?? null;
         draft.flow_direction = sub.flow_direction ?? null;
         draft.layout_orientation = sub.layout_orientation ?? null;
+        errors.value = {};
     },
     { immediate: true },
 );
@@ -53,12 +71,16 @@ watch(
 // FormSelectField só aceita string — '' representa "sem critério" (null no draft)
 const hotZoneModel = computed<string>({
     get: () => draft.hot_zone_priority ?? '',
-    set: (value) => { draft.hot_zone_priority = (value || null) as ZonePriority | null; },
+    set: (value) => {
+ draft.hot_zone_priority = (value || null) as ZonePriority | null; 
+},
 });
 
 const coldZoneModel = computed<string>({
     get: () => draft.cold_zone_priority ?? '',
-    set: (value) => { draft.cold_zone_priority = (value || null) as ZonePriority | null; },
+    set: (value) => {
+ draft.cold_zone_priority = (value || null) as ZonePriority | null; 
+},
 });
 </script>
 
@@ -74,7 +96,7 @@ const coldZoneModel = computed<string>({
                     {{ t('planogram-templates.subtemplate_settings.hint', { count: String(subtemplate.num_modules) }) }}
                 </p>
             </div>
-            <Button size="sm" :disabled="busy" @click="emit('save', { ...draft })">
+            <Button size="sm" :disabled="busy" @click="saveSettings">
                 {{ t('planogram-templates.subtemplate_settings.save_button') }}
             </Button>
         </div>
@@ -164,6 +186,7 @@ const coldZoneModel = computed<string>({
                         name="hot_zone_priority"
                         :label="t('planogram-templates.zone_priority.hot_zone_label')"
                         :hint="t('planogram-templates.zone_priority.hot_zone_hint')"
+                        :error="errors.hot_zone_priority"
                     >
                         <option value="">{{ t('planogram-templates.zone_priority.no_criteria') }}</option>
                         <option value="maior_margem">{{ t('planogram-templates.zone_priority.hot.maior_margem') }}</option>
@@ -177,6 +200,7 @@ const coldZoneModel = computed<string>({
                         name="cold_zone_priority"
                         :label="t('planogram-templates.zone_priority.cold_zone_label')"
                         :hint="t('planogram-templates.zone_priority.cold_zone_hint')"
+                        :error="errors.cold_zone_priority"
                     >
                         <option value="">{{ t('planogram-templates.zone_priority.no_criteria') }}</option>
                         <option value="menor_margem">{{ t('planogram-templates.zone_priority.cold.menor_margem') }}</option>

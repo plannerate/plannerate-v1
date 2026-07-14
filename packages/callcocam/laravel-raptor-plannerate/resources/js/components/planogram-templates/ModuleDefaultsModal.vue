@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue';
-import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
+import { computed, reactive, ref, watch } from 'vue';
+import FieldHelpTooltip from '@/components/form/FieldHelpTooltip.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormSwitchField from '@/components/form/FormSwitchField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -14,6 +15,8 @@ import {
 } from '@/components/ui/dialog';
 import { useT } from '@/composables/useT';
 import type { PlanogramSlotDefaults, PlanogramTemplateSlot } from './types';
+import { validateModuleDefaults  } from './validation';
+import type {ModuleDefaultsValidationErrors} from './validation';
 
 type ModuleDefaultsDraft = {
     category_id: string | null;
@@ -54,6 +57,8 @@ const draft = reactive<ModuleDefaultsDraft>({
     facing_expansion: 'none',
 });
 
+const errors = ref<ModuleDefaultsValidationErrors>({});
+
 watch(
     () => [props.open, props.slotDefaults] as const,
     ([open, defaults]) => {
@@ -61,6 +66,7 @@ watch(
             return;
         }
 
+        errors.value = {};
         draft.min_facings = defaults?.min_facings ?? 1;
         draft.max_facings = defaults?.max_facings ?? 5;
         draft.category_id = defaults?.category_id ?? null;
@@ -103,6 +109,15 @@ const priorityModel = computed({
 });
 
 function saveDefaults(): void {
+    const validationErrors = validateModuleDefaults(draft);
+
+    if (Object.keys(validationErrors).length > 0) {
+        errors.value = validationErrors;
+
+        return;
+    }
+
+    errors.value = {};
     emit('save', { ...draft });
     emit('update:open', false);
 }
@@ -137,6 +152,7 @@ function saveDefaults(): void {
                         name="min_facings"
                         type="number"
                         :label="t('planogram-templates.slot_editor.min_facings_label')"
+                        :error="errors.min_facings"
                         :min="1"
                         :max="20"
                     />
@@ -147,6 +163,7 @@ function saveDefaults(): void {
                         type="number"
                         :label="t('planogram-templates.module_defaults.max_facings_label')"
                         :hint="t('planogram-templates.module_defaults.max_facings_hint')"
+                        :error="errors.max_facings"
                         :min="1"
                         :max="20"
                     />
@@ -157,6 +174,7 @@ function saveDefaults(): void {
                         type="number"
                         :label="t('planogram-templates.slot_editor.priority_label')"
                         :hint="t('planogram-templates.slot_editor.priority_hint')"
+                        :error="errors.priority"
                         :min="1"
                         :max="10"
                     />
@@ -215,6 +233,9 @@ function saveDefaults(): void {
                     :label="t('planogram-templates.facing_expansion.label')"
                     :hint="t('planogram-templates.facing_expansion.hint_module')"
                 >
+                    <template #label-extra>
+                        <FieldHelpTooltip :text="t('planogram-templates.help.facing_expansion')" />
+                    </template>
                     <option value="none">{{ t('planogram-templates.facing_expansion.none') }}</option>
                     <option value="score">{{ t('planogram-templates.facing_expansion.score') }}</option>
                     <option value="current_stock">{{ t('planogram-templates.facing_expansion.current_stock') }}</option>
@@ -229,6 +250,9 @@ function saveDefaults(): void {
                         name="space_fallback"
                         :label="t('planogram-templates.slot_editor.space_fallback_label')"
                     >
+                        <template #label-extra>
+                            <FieldHelpTooltip :text="t('planogram-templates.help.space_fallback')" />
+                        </template>
                         <option value="reduce_c">{{ t('planogram-templates.slot_editor.space_fallback_options.reduce_c') }}</option>
                         <option value="reduce_facings">{{ t('planogram-templates.slot_editor.space_fallback_options.reduce_facings') }}</option>
                         <option value="skip">{{ t('planogram-templates.slot_editor.space_fallback_options.skip') }}</option>
@@ -239,7 +263,11 @@ function saveDefaults(): void {
                         v-model="draft.use_target_stock"
                         name="use_target_stock"
                         :label="t('planogram-templates.slot_editor.target_stock_label')"
-                    />
+                    >
+                        <template #label-extra>
+                            <FieldHelpTooltip :text="t('planogram-templates.help.use_target_stock')" />
+                        </template>
+                    </FormSwitchField>
                 </div>
 
             </div>

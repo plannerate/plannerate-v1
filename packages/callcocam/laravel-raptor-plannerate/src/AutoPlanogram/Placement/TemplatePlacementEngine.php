@@ -712,8 +712,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 continue;
             }
 
-            // Min-facings ABC: mesmo critério do placement principal (A→3, B→2, C→1).
-            // O overflow não reduz abaixo do mínimo — produtos que não cabem com seus
+            // Min-facings ABC: mesmo piso do placement principal (SlotPlanBuilder::ABC_MIN_FACINGS,
+            // hoje uniforme: 1 frente para A/B/C — a diferenciação por classe acontece na expansão,
+            // não no piso). O overflow não reduz abaixo do mínimo — produtos que não cabem com seus
             // facings mínimos em nenhuma prateleira permanecem rejeitados.
             $abcClass = $this->abcClassMap[$product->id] ?? '';
             $minFacings = SlotPlanBuilder::ABC_MIN_FACINGS[$abcClass] ?? SlotPlanBuilder::ABC_MIN_FACINGS[''];
