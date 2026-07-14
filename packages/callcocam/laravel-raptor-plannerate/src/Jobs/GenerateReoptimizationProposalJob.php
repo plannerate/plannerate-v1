@@ -253,7 +253,12 @@ class GenerateReoptimizationProposalJob implements ShouldQueue, TenantAware
             return [];
         }
 
-        return Product::query()->whereIn('id', $ids)->get(['id', 'name', 'ean', 'image_url']);
+        // `image_url` é ACCESSOR, não coluna — o banco tem `url`. Pedi-lo no select derruba a
+        // query inteira com "column image_url does not exist".
+        //
+        // E o select existe (em vez de um get() pelado) porque `products` carrega
+        // `description_embedding`, um vetor grande que nada aqui usa.
+        return Product::query()->whereIn('id', $ids)->get(['id', 'name', 'ean', 'url']);
     }
 
     /**
