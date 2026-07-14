@@ -43,6 +43,13 @@ Schedule::command('planograms:trigger-reoptimization')
     ->withoutOverlapping()
     ->name('planograms-trigger-reoptimization');
 
+// ANTES do trigger das 04:30, de propósito: expirar as propostas abandonadas destrava as gôndolas
+// que estavam presas por elas, e essas gôndolas já entram na análise da mesma madrugada.
+Schedule::command('planograms:prune-reoptimization-proposals')
+    ->dailyAt('04:20')
+    ->withoutOverlapping()
+    ->name('planograms-prune-reoptimization-proposals');
+
 Schedule::command('horizon:snapshot')
     ->everyFiveMinutes()
     ->name('horizon-snapshot');

@@ -6,6 +6,12 @@ use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementSettings;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramInput;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\ScoredProduct;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\ProductScorerInterface;
+use Callcocam\LaravelRaptorPlannerate\Enums\GenerationRunKind;
+use Callcocam\LaravelRaptorPlannerate\Enums\GenerationRunStatus;
+use Callcocam\LaravelRaptorPlannerate\Enums\GenerationRunTrigger;
+use Callcocam\LaravelRaptorPlannerate\Enums\ReoptimizationFrequency;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramGenerationRun;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Shelf;
@@ -503,4 +509,42 @@ function buildProposalSchema(): void
         $table->timestamps();
         $table->softDeletes();
     });
+}
+
+/** Gôndola habilitada para reotimização, com cadência vencida. */
+function makeReoptGondola(array $attributes = []): Gondola
+{
+    $gondola = new Gondola;
+    $gondola->forceFill(array_merge([
+        'id' => (string) Str::ulid(),
+        'planogram_id' => (string) Str::ulid(),
+        'name' => 'Gôndola',
+        'template_id' => (string) Str::ulid(),
+        'generation_mode' => 'template',
+        'reoptimization_enabled' => true,
+        'reoptimization_frequency' => ReoptimizationFrequency::Monthly,
+        'reoptimization_next_run_at' => now()->subDay(),
+    ], $attributes))->save();
+
+    return $gondola->fresh();
+}
+
+/** A geração anterior é de onde a reotimização tira a configuração — sem ela não há o que reusar. */
+function makeCompletedRun(Gondola $gondola, array $attributes = []): PlanogramGenerationRun
+{
+    return PlanogramGenerationRun::create(array_merge([
+        'planogram_id' => $gondola->planogram_id,
+        'gondola_id' => $gondola->id,
+        'status' => GenerationRunStatus::Completed,
+        'mode' => 'template',
+        'kind' => GenerationRunKind::Apply,
+        'trigger' => GenerationRunTrigger::Manual,
+        'config_snapshot' => [
+            'strategy' => 'abc',
+            'table_type' => 'monthly_summaries',
+            'start_date' => '2025-01-01',
+            'end_date' => '2025-03-31',
+        ],
+        'template_id' => $gondola->template_id,
+    ], $attributes));
 }

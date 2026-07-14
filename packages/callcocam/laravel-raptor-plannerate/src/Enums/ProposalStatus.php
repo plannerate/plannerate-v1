@@ -11,6 +11,10 @@ namespace Callcocam\LaravelRaptorPlannerate\Enums;
  * `Superseded` é o desfecho de uma proposta que envelheceu: a gôndola mudou depois que o diff foi
  * calculado (edição manual ou nova geração), então aprovar aplicaria um layout baseado numa
  * realidade que não existe mais.
+ *
+ * `Expired` é o desfecho de uma proposta que ninguém decidiu. Não é só higiene: o agendador não
+ * analisa gôndola com proposta pendente (duas propostas partiriam do mesmo baseline), então uma
+ * proposta ignorada TRAVA a reotimização daquela gôndola indefinidamente. Expirar destrava.
  */
 enum ProposalStatus: string
 {
@@ -19,6 +23,7 @@ enum ProposalStatus: string
     case Rejected = 'rejected';
     case NoChanges = 'no_changes';
     case Superseded = 'superseded';
+    case Expired = 'expired';
     case Failed = 'failed';
 
     public function label(): string
@@ -29,6 +34,7 @@ enum ProposalStatus: string
             self::Rejected => 'Rejeitada',
             self::NoChanges => 'Sem mudanças',
             self::Superseded => 'Desatualizada',
+            self::Expired => 'Expirada',
             self::Failed => 'Falhou',
         };
     }
