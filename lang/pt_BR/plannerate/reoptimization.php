@@ -56,6 +56,21 @@ return [
         'help' => 'Uma prateleira travada é preservada pela geração automática: seus produtos ficam como estão e saem do pool de candidatos, para não serem posicionados também em outro lugar. Use quando o arranjo foi decidido à mão.',
     ],
 
+    'inbox' => [
+        'navigation' => 'Reotimização',
+        'title' => 'Propostas de reotimização',
+        'subtitle' => 'Análises que sugerem mudanças e aguardam sua decisão. Nada foi alterado nas gôndolas.',
+        'empty_title' => 'Nenhuma proposta aguardando decisão',
+        'empty_message' => 'As gôndolas com reotimização ativa aparecem aqui quando a análise encontra melhorias a sugerir.',
+
+        'table' => [
+            'gondola' => 'Gôndola',
+            'changes' => 'Mudanças',
+            'products' => 'produto(s)',
+            'analyzed_at' => 'Analisada em',
+        ],
+    ],
+
     'banner' => [
         'title' => 'Proposta de reotimização aguardando revisão',
         'message' => ':count mudança(s) sugerida(s) com base nas vendas mais recentes.',

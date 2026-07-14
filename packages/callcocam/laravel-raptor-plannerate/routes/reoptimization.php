@@ -9,8 +9,13 @@
 
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Reoptimization\GondolaReoptimizationController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Reoptimization\ReoptimizationApprovalController;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Reoptimization\ReoptimizationInboxController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Reoptimization\ReoptimizationProposalPageController;
 use Illuminate\Support\Facades\Route;
+
+// Fila de propostas aguardando decisão (todas as gôndolas).
+Route::get('reoptimization', [ReoptimizationInboxController::class, 'index'])
+    ->name('planograms.reoptimization.index');
 
 // Tela de revisão do diff. Nome `planograms.reoptimization.show` para casar com o padrão das
 // demais páginas do editor.

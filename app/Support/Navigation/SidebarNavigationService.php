@@ -22,6 +22,7 @@ use App\Models\User;
 use App\Support\Authorization\PermissionName;
 use App\Support\Navigation\Menu\Menu;
 use App\Support\Navigation\Menu\MenuPayloadAdapter;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Reoptimization\ReoptimizationInboxController;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
 use Illuminate\Http\Request;
 
@@ -263,6 +264,18 @@ class SidebarNavigationService
                             ->icon('file-spreadsheet')
                             ->authorize('viewAny', PlanogramTemplate::class)
                             ->setOrder(30);
+                    })
+                    // O badge é o que faz a reotimização existir para o usuário: sem ele, a
+                    // proposta só apareceria abrindo o editor daquela gôndola, e um layout melhor
+                    // apodreceria na fila sem ninguém saber que existe.
+                    ->item('tenant.reoptimization', function ($item): void {
+                        $item
+                            ->label(__('plannerate.reoptimization.inbox.navigation'))
+                            ->href(route('tenant.planograms.reoptimization.index', [], false))
+                            ->icon('sparkles')
+                            ->authorize('viewAny', Planogram::class)
+                            ->badge(fn (): int => ReoptimizationInboxController::pendingCount())
+                            ->setOrder(40);
                     });
             })
             ->group('tenant.analytics', function ($group): void {

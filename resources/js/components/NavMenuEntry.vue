@@ -96,6 +96,12 @@ function isItem(child: SharedNavigationNode): child is SharedNavigationItem {
             <Link :href="(node as SharedNavigationItem).href">
                 <component :is="resolveIcon((node as SharedNavigationItem).icon)" />
                 <span>{{ (node as SharedNavigationItem).title }}</span>
+                <span
+                    v-if="(node as SharedNavigationItem).badge"
+                    class="ml-auto flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground"
+                >
+                    {{ (node as SharedNavigationItem).badge }}
+                </span>
             </Link>
         </SidebarMenuButton>
     </SidebarMenuItem>

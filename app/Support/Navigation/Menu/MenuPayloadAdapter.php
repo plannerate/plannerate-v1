@@ -71,6 +71,8 @@ class MenuPayloadAdapter
                 'can' => true,
                 'ability' => $node->getAbility(),
                 'subject' => $node->getSubject(),
+                // Resolvido só aqui, depois da autorização: quem não vê o item não paga a query.
+                'badge' => $node->resolveBadge(),
             ];
         }
 

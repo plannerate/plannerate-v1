@@ -25,6 +25,8 @@ export type SharedNavigationItem = {
     ability?: string;
     subject?: string;
     order?: number;
+    /** Contador ao lado do item (ex.: propostas aguardando decisão). Ausente/null = sem badge. */
+    badge?: number | null;
 };
 
 export type SharedNavigationSeparator = {

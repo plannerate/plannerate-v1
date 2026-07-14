@@ -15,6 +15,16 @@ class MenuItem extends MenuNode
     /** @var class-string|null */
     private ?string $subject = null;
 
+    /**
+     * Contador exibido ao lado do item (null = sem badge).
+     *
+     * Closure e não int: o menu é montado a cada request, e resolver a contagem só quando o item
+     * sobrevive à autorização evita uma query para quem nem vai ver o item.
+     *
+     * @var (\Closure(): ?int)|null
+     */
+    private $badgeResolver = null;
+
     public static function make(string $key): self
     {
         return new self($key);
@@ -55,6 +65,33 @@ class MenuItem extends MenuNode
         $this->subject = $subject;
 
         return $this;
+    }
+
+    /**
+     * @param  \Closure(): ?int  $resolver
+     */
+    public function badge(\Closure $resolver): static
+    {
+        $this->badgeResolver = $resolver;
+
+        return $this;
+    }
+
+    /**
+     * Valor do badge, ou null quando não há badge ou a contagem é zero.
+     *
+     * Zero vira null de propósito: um badge "0" é ruído — o item já comunica que não há nada
+     * pendente pela ausência do contador.
+     */
+    public function resolveBadge(): ?int
+    {
+        if ($this->badgeResolver === null) {
+            return null;
+        }
+
+        $count = ($this->badgeResolver)();
+
+        return $count > 0 ? $count : null;
     }
 
     public function getLabel(): string
