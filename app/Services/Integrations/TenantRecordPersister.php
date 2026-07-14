@@ -98,12 +98,18 @@ class TenantRecordPersister
 
             $upserted = DB::connection(self::TENANT_CONNECTION)->transaction(
                 function () use ($targetTable, $records, $pivotConfigs): int {
+                    $reconciledRecords = TenantNaturalKeyReconciler::reconcile(
+                        self::tenantConnection(),
+                        $targetTable,
+                        $records,
+                    );
+
                     $tableColumns = self::tenantTableColumns($targetTable);
-                    $preparedRecords = TenantUpsertRecordPreparer::prepare($records, $tableColumns, $targetTable);
+                    $preparedRecords = TenantUpsertRecordPreparer::prepare($reconciledRecords, $tableColumns, $targetTable);
 
                     $upserted = self::upsertTargetRecords($targetTable, $preparedRecords);
 
-                    TenantPivotRecordPersister::persist(self::tenantConnection(), $records, $pivotConfigs);
+                    TenantPivotRecordPersister::persist(self::tenantConnection(), $reconciledRecords, $pivotConfigs);
 
                     return $upserted;
                 },
