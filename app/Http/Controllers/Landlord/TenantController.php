@@ -447,24 +447,24 @@ class TenantController extends Controller
                 $status = Str::of((string) ($item['status'] ?? 'provisioning'))->trim()->toString();
                 $planSlug = Str::of((string) ($item['plan_slug'] ?? ''))->trim()->toString();
 
-                $existing = Tenant::withTrashed()->where('slug', $slug)->first();
+                $existing = Tenant::query()->where('slug', $slug)->first();
                 $planId = $planSlug !== '' ? Plan::query()->where('slug', $planSlug)->value('id') : null;
 
                 $payload = [
                     'name' => $name !== '' ? $name : Str::of($slug)->replace(['-', '_'], ' ')->title()->toString(),
                     'slug' => $slug,
-                    'database' => $database !== ''
-                        ? $database
-                        : ($existing?->database ?? Str::of($slug)->replace('-', '_')->toString()),
+                    /**
+                     * An existing tenant keeps its own database: the exported name is
+                     * environment-specific and repointing a live tenant to another
+                     * environment's database would orphan all of its data.
+                     */
+                    'database' => $existing?->database
+                        ?? ($database !== '' ? $database : Str::of($slug)->replace('-', '_')->toString()),
                     'status' => in_array($status, self::AVAILABLE_STATUSES, true) ? $status : 'provisioning',
                     'plan_id' => is_string($planId) ? $planId : null,
                 ];
 
                 if ($existing instanceof Tenant) {
-                    if ($existing->trashed()) {
-                        $existing->restore();
-                    }
-
                     $existing->update($payload);
                     $tenant = $existing;
                     $tenantUpdated++;

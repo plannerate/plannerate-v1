@@ -92,6 +92,17 @@ jobs:
       - name: Install Composer Dependencies
         run: composer install --no-interaction --prefer-dist --no-scripts
 
+      # resources/js/{actions,routes,wayfinder} NÃO são versionados (são gerados).
+      # Gera aqui, antes de qualquer passo que consuma os imports de @/actions e
+      # @/routes — ou seja, antes do vitest e do build. Espelha o estágio
+      # `wayfinder` do Dockerfile.prod: o gerador só precisa de APP_KEY e
+      # LANDLORD_DOMAIN (lê as rotas do artisan), nunca de banco.
+      - name: Generate Wayfinder Actions
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan wayfinder:generate --with-form
+
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
@@ -104,8 +115,8 @@ jobs:
       - name: 'Tests — JS (vitest)'
         run: npm run test:js
 
-      # VITE_ENABLE_WAYFINDER=false: o plugin wayfinder precisa de artisan +
-      # banco, indisponíveis no CI.
+      # VITE_ENABLE_WAYFINDER=false: o plugin do Vite reexecutaria o gerador a
+      # cada build; já geramos no passo acima.
       - name: Build Assets
         run: VITE_ENABLE_WAYFINDER=false npm run build
 

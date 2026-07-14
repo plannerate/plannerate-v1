@@ -295,7 +295,7 @@ test('authenticated user can import tenant configurations in batch', function ()
     $this->assertDatabaseHas('tenants', [
         'slug' => 'tenant-alpha',
         'name' => 'Tenant Alpha Atualizado',
-        'database' => 'tenant_alpha_new',
+        'database' => 'tenant_alpha_old',
         'status' => 'active',
     ], 'landlord');
 
@@ -322,5 +322,41 @@ test('authenticated user can import tenant configurations in batch', function ()
         'slug' => 'acme',
         'name' => 'API ACME',
         'is_active' => 1,
+    ], 'landlord');
+});
+
+test('importing configurations never repoints an existing tenant database', function () {
+    Tenant::query()->create([
+        'name' => 'Tenant Alpha',
+        'slug' => 'tenant-alpha',
+        'database' => 'tenant_alpha',
+        'status' => 'active',
+    ]);
+
+    $file = UploadedFile::fake()->createWithContent(
+        'tenant-configs.json',
+        json_encode([
+            'version' => 1,
+            'tenants' => [
+                [
+                    'name' => 'Tenant Alpha',
+                    'slug' => 'tenant-alpha',
+                    'database' => 'tenant_production_alpha',
+                    'status' => 'active',
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR),
+    );
+
+    $this->post(route('landlord.tenants.import'), ['spreadsheet' => $file])
+        ->assertRedirect(route('landlord.tenants.index'));
+
+    $this->assertDatabaseHas('tenants', [
+        'slug' => 'tenant-alpha',
+        'database' => 'tenant_alpha',
+    ], 'landlord');
+
+    $this->assertDatabaseMissing('tenants', [
+        'database' => 'tenant_production_alpha',
     ], 'landlord');
 });

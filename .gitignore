@@ -6,9 +6,6 @@
 /public/storage
 /storage/*.key
 /storage/pail
-# actions/routes/wayfinder do Wayfinder são versionados de propósito:
-# o build do Vite no CI depende deles e o gerador não roda lá (precisa de artisan).
-# Regenerar localmente: docker compose exec -u root php php artisan wayfinder:generate --with-form
 /vendor
 database/*.sqlite
 .DS_Store
@@ -33,5 +30,10 @@ yarn-error.log
 /vps-deployment-v2/manifest.staging.env
 /vps-deployment-v2/manifest.production.env
 /errors
-
- 
+# Gerados pelo Wayfinder a partir das rotas do artisan — não versionar.
+# CI (tests.yml) e Dockerfile.prod geram no build; localmente:
+#   docker compose exec php php artisan wayfinder:generate --with-form
+# (sem -u root: deixaria a árvore root:root e quebraria git/merge)
+/resources/js/actions
+/resources/js/routes
+/resources/js/wayfinder
