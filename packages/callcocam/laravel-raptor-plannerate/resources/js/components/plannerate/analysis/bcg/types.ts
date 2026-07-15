@@ -42,6 +42,13 @@ export type BcgClassifyLevel =
     | 'categoria'
     | 'subcategoria'
 
+/**
+ * Granularidade da exibição dos resultados:
+ *   - `produto`   → uma linha por produto (padrão)
+ *   - `categoria` → produtos somados na sua categoria, cada categoria como um item único
+ */
+export type BcgDisplayBy = 'produto' | 'categoria'
+
 export interface BcgResult {
     product_id: string
     product_name: string
@@ -55,6 +62,8 @@ export interface BcgResult {
     group_id?: string | null
     group_name: string
     classify_by: BcgClassifyLevel
+    /** Presente e igual a 'categoria' quando a linha representa uma categoria agregada */
+    display_by?: BcgDisplayBy
 
     quadrant: BcgQuadrant
     /** Produto sem venda no período: entra zerado e fica fora do cálculo do limiar */

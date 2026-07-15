@@ -370,6 +370,8 @@ class AbcAnalysisService
             ->withoutGlobalScopes()
             ->join('products', 'products.codigo_erp', '=', 'sales.codigo_erp')
             ->whereIn('products.id', $productIds)
+            ->whereNull('sales.deleted_at')
+            ->whereNull('products.deleted_at')
             ->select([
                 'products.id as product_id',
                 DB::raw('MAX(sales.sale_date) as last_sale_date'),

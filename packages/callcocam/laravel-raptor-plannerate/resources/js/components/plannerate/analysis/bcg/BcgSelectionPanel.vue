@@ -159,8 +159,8 @@ const formatNumber = (value: number): string =>
                     </div>
                 </div>
 
-                <!-- Histórico de vendas do produto -->
-                <ProductSalesSummary :product-id="selected.product_id" />
+                <!-- Histórico de vendas do produto (só faz sentido por produto, não por categoria agregada) -->
+                <ProductSalesSummary v-if="selected.display_by !== 'categoria'" :product-id="selected.product_id" />
             </div>
 
             <div

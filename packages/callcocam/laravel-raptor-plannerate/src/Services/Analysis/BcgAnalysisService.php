@@ -90,6 +90,20 @@ class BcgAnalysisService
     public const THRESHOLD_MEAN = 'mean';
 
     /**
+     * Granularidade da EXIBIÇÃO dos resultados (distinta de classify_by, que é onde o
+     * corte é calculado):
+     *   - 'produto'   : uma linha por produto (padrão)
+     *   - 'categoria' : produtos são somados na sua categoria e cada categoria é
+     *                   classificada como um item único
+     */
+    public const DISPLAY_PRODUTO = 'produto';
+
+    public const DISPLAY_CATEGORIA = 'categoria';
+
+    /** Nível da hierarquia usado como categoria ao exibir por categoria. */
+    private const DISPLAY_CATEGORY_LEVEL = 'categoria';
+
+    /**
      * Fração da amplitude do grupo dentro da qual um item é considerado "em cima da
      * linha" de corte. Um item a menos de 10% da dispersão do grupo do limiar pode
      * trocar de quadrante no próximo período por ruído, não por mudança real.
@@ -103,6 +117,8 @@ class BcgAnalysisService
     private string $thresholdMethod = self::THRESHOLD_MEDIAN;
 
     private string $classifyBy = 'categoria';
+
+    private string $displayBy = self::DISPLAY_PRODUTO;
 
     /**
      * Define as métricas dos eixos X e Y.
@@ -167,6 +183,42 @@ class BcgAnalysisService
         $this->classifyBy = $level;
 
         return $this;
+    }
+
+    /**
+     * Define a granularidade de exibição: 'produto' (padrão) ou 'categoria'.
+     *
+     * Exibir por categoria só faz sentido quando o corte é calculado ACIMA da categoria
+     * (segmento, departamento ou subdepartamento): com classify_by em categoria ou abaixo,
+     * cada categoria ficaria sozinha no seu grupo e o limiar seria o próprio valor,
+     * jogando tudo para 'alto_alto'. Por isso a combinação é validada aqui.
+     *
+     * @throws \InvalidArgumentException Se o modo for desconhecido ou se exibir por
+     *                                   categoria com um nível de corte não superior à categoria
+     */
+    public function setDisplayBy(string $mode): self
+    {
+        if (! in_array($mode, [self::DISPLAY_PRODUTO, self::DISPLAY_CATEGORIA], true)) {
+            throw new \InvalidArgumentException(
+                "Modo de exibição inválido para a Análise BCG: '{$mode}'. Válidos: produto, categoria."
+            );
+        }
+
+        if ($mode === self::DISPLAY_CATEGORIA
+            && self::HIERARCHY_LEVELS[$this->classifyBy] >= self::HIERARCHY_LEVELS[self::DISPLAY_CATEGORY_LEVEL]) {
+            throw new \InvalidArgumentException(
+                'Para exibir por categoria, classifique por um nível acima da categoria (segmento, departamento ou subdepartamento).'
+            );
+        }
+
+        $this->displayBy = $mode;
+
+        return $this;
+    }
+
+    public function getDisplayBy(): string
+    {
+        return $this->displayBy;
     }
 
     public function getXAxis(): string
@@ -234,7 +286,7 @@ class BcgAnalysisService
         // Grupo de comparação de cada produto: a categoria ancestral no nível escolhido
         // em classify_by. É este grupo — e não a categoria folha — que define onde a
         // linha de corte é calculada.
-        [$groupIdByProduct, $groupNames] = $this->resolveGroups($productsData);
+        [$groupIdByProduct, $groupNames] = $this->resolveGroups($productsData, $this->classifyBy);
 
         $salesData = $this->getSalesData($codigosErp, $productIds, $tableType, $filters);
 
@@ -264,6 +316,14 @@ class BcgAnalysisService
             $combined = $combined->merge($zeroRecords);
         }
 
+        // Exibir por categoria: soma os produtos na sua categoria e classifica cada
+        // categoria como um item único, mantendo o mesmo formato de resultado.
+        if ($this->displayBy === self::DISPLAY_CATEGORIA) {
+            [$categoryIdByProduct, $categoryNames] = $this->resolveGroups($productsData, self::DISPLAY_CATEGORY_LEVEL);
+
+            return $this->aggregateByCategory($combined, $categoryIdByProduct, $categoryNames, $groupNames);
+        }
+
         // Etapa pura: limiares, percentis e quadrantes (testável sem banco)
         $classified = $this->classifyQuadrants($combined);
 
@@ -291,6 +351,66 @@ class BcgAnalysisService
                 'borderline' => $results->where('is_borderline', true)->count(),
             ]);
         });
+    }
+
+    /**
+     * Colapsa os produtos na sua categoria e classifica cada categoria como um item
+     * único, no mesmo formato de resultado do modo por produto.
+     *
+     * A soma acontece ANTES da classificação: os limiares do grupo passam a ser
+     * calculados sobre as categorias agregadas (não sobre produtos), que é o que a
+     * exibição por categoria significa. Como todos os produtos de uma categoria
+     * compartilham o mesmo ancestral de corte, o group_id é herdado do primeiro produto.
+     *
+     * @param  Collection  $combined  Itens por produto (product_id, group_id, x_value, y_value, sem_venda)
+     * @param  array<string, string|null>  $categoryIdByProduct  [product_id => categoria_id]
+     * @param  array<string, string>  $categoryNames  [categoria_id => nome]
+     * @param  array<string, string>  $groupNames  [group_id => nome] do nível de corte
+     */
+    private function aggregateByCategory(
+        Collection $combined,
+        array $categoryIdByProduct,
+        array $categoryNames,
+        array $groupNames
+    ): Collection {
+        $aggregated = $combined
+            ->groupBy(fn ($item) => $categoryIdByProduct[$item->product_id] ?? '__sem_categoria__')
+            ->map(function (Collection $items, $categoryId) {
+                $comVenda = $items->reject(fn ($i) => $i->sem_venda);
+
+                return (object) [
+                    'product_id' => (string) $categoryId,
+                    'group_id' => $items->first()->group_id,
+                    'x_value' => (float) $items->sum('x_value'),
+                    'y_value' => (float) $items->sum('y_value'),
+                    // Categoria só fica "sem venda" se NENHUM produto vendeu no período
+                    'sem_venda' => $comVenda->isEmpty(),
+                    'member_product_ids' => $items->pluck('product_id')->all(),
+                ];
+            })
+            ->values();
+
+        $membersByCategory = $aggregated->keyBy('product_id');
+
+        return $this->classifyQuadrants($aggregated)
+            ->map(function (array $item) use ($categoryNames, $groupNames, $membersByCategory) {
+                $categoryId = $item['product_id'];
+
+                return array_merge($item, [
+                    'product_name' => $categoryNames[$categoryId] ?? '',
+                    'ean' => '',
+                    'image_url' => null,
+                    'category_id' => $categoryId,
+                    // Sem folha individual: o grupo de corte (departamento, etc.) vira o contexto
+                    'category_name' => $groupNames[$item['group_id']] ?? '',
+                    'classify_by' => $this->classifyBy,
+                    'display_by' => self::DISPLAY_CATEGORIA,
+                    'group_name' => $groupNames[$item['group_id']] ?? '',
+                    // Consumido por withSpace para somar o espaço dos produtos da categoria
+                    'member_product_ids' => $membersByCategory[$categoryId]->member_product_ids ?? [],
+                ]);
+            })
+            ->values();
     }
 
     /**
@@ -389,32 +509,88 @@ class BcgAnalysisService
      */
     public function withSpace(Collection $results, array $space): Collection
     {
-        // Mediana do share entre os produtos com dimensão cadastrada: quem não tem
-        // largura entra com share 0 e puxaria o corte para baixo sem significar nada.
-        $shares = collect($space)
-            ->reject(fn (array $item) => $item['sem_dimensao'])
-            ->pluck('share_gondola');
+        $default = [
+            'facings' => 0,
+            'espaco_linear_cm' => 0.0,
+            'share_gondola' => 0.0,
+            'sem_dimensao' => true,
+        ];
+
+        // Espaço de cada linha: o do produto, ou a soma dos produtos da categoria
+        // (modo agregado, sinalizado por member_product_ids).
+        $resolved = $results->map(function (array $item) use ($space, $default) {
+            $rowSpace = isset($item['member_product_ids'])
+                ? $this->aggregateSpace($item['member_product_ids'], $space)
+                : ($space[$item['product_id']] ?? $default);
+
+            return ['item' => $item, 'space' => $rowSpace];
+        });
+
+        // Mediana do share entre as LINHAS com dimensão cadastrada: por categoria, é a
+        // mediana das categorias; por produto, dos produtos (equivalente ao anterior).
+        // Quem não tem largura entra com share 0 e puxaria o corte para baixo à toa.
+        $shares = $resolved
+            ->reject(fn (array $pair) => $pair['space']['sem_dimensao'])
+            ->map(fn (array $pair) => $pair['space']['share_gondola']);
 
         $shareThreshold = (float) (SalesStatistics::median($shares) ?? 0.0);
 
-        return $results->map(function (array $item) use ($space, $shareThreshold) {
-            $productSpace = $space[$item['product_id']] ?? [
-                'facings' => 0,
-                'espaco_linear_cm' => 0.0,
-                'share_gondola' => 0.0,
-                'sem_dimensao' => true,
-            ];
+        return $resolved->map(function (array $pair) use ($shareThreshold) {
+            $item = $pair['item'];
+            $rowSpace = $pair['space'];
 
-            return array_merge($item, $productSpace, [
+            // Detalhe interno do cálculo agregado: não vai para o resultado final
+            unset($item['member_product_ids']);
+
+            return array_merge($item, $rowSpace, [
                 'share_threshold_gondola' => round($shareThreshold, 4),
                 'acao_espaco' => $this->spaceAction(
                     $item['quadrant'],
-                    (float) $productSpace['share_gondola'],
-                    (bool) $productSpace['sem_dimensao'],
+                    (float) $rowSpace['share_gondola'],
+                    (bool) $rowSpace['sem_dimensao'],
                     $shareThreshold,
                 ),
             ]);
         });
+    }
+
+    /**
+     * Soma o espaço de gôndola de um conjunto de produtos (uma categoria agregada).
+     * A categoria só fica "sem dimensão" se NENHUM produto membro tiver largura.
+     *
+     * @param  array<int, string>  $productIds
+     * @param  array<string, array{facings: int, espaco_linear_cm: float, share_gondola: float, sem_dimensao: bool}>  $space
+     * @return array{facings: int, espaco_linear_cm: float, share_gondola: float, sem_dimensao: bool}
+     */
+    private function aggregateSpace(array $productIds, array $space): array
+    {
+        $facings = 0;
+        $linear = 0.0;
+        $share = 0.0;
+        $comDimensao = false;
+
+        foreach ($productIds as $productId) {
+            $productSpace = $space[$productId] ?? null;
+
+            if ($productSpace === null) {
+                continue;
+            }
+
+            $facings += (int) $productSpace['facings'];
+            $linear += (float) $productSpace['espaco_linear_cm'];
+
+            if (! $productSpace['sem_dimensao']) {
+                $share += (float) $productSpace['share_gondola'];
+                $comDimensao = true;
+            }
+        }
+
+        return [
+            'facings' => $facings,
+            'espaco_linear_cm' => $linear,
+            'share_gondola' => $share,
+            'sem_dimensao' => ! $comDimensao,
+        ];
     }
 
     /**
@@ -452,11 +628,12 @@ class BcgAnalysisService
      * comparado a um nível que não existe.
      *
      * @param  Collection<string, Product>  $products
+     * @param  string  $level  Nível da hierarquia a resolver (chave de HIERARCHY_LEVELS)
      * @return array{0: array<string, string|null>, 1: array<string, string>} [product_id => group_id], [group_id => nome]
      */
-    private function resolveGroups(Collection $products): array
+    private function resolveGroups(Collection $products, string $level): array
     {
-        $levelIndex = self::HIERARCHY_LEVELS[$this->classifyBy];
+        $levelIndex = self::HIERARCHY_LEVELS[$level];
 
         $categories = Category::query()->get(['id', 'name', 'category_id'])->keyBy('id');
 

@@ -222,15 +222,18 @@ class GondolaAnalysisController extends Controller
         $yAxis = $request->input('y_axis', 'margem');
         $thresholdMethod = $request->input('threshold_method', BcgAnalysisService::THRESHOLD_MEDIAN);
         $classifyBy = $request->input('classify_by', 'categoria');
+        $displayBy = $request->input('display_by', BcgAnalysisService::DISPLAY_PRODUTO);
 
         try {
             // Os setters lançam InvalidArgumentException em entrada inválida (eixos
-            // iguais, métrica ou nível desconhecido) — cai no catch abaixo e vira flash
-            // de erro, já que o projeto não usa FormRequest aqui.
+            // iguais, métrica ou nível desconhecido, combinação exibir/classificar
+            // inválida) — cai no catch abaixo e vira flash de erro, já que o projeto não
+            // usa FormRequest aqui. setDisplayBy depende de classifyBy: chamar depois.
             $service = app(BcgAnalysisService::class)
                 ->setAxes($xAxis, $yAxis)
                 ->setThresholdMethod($thresholdMethod)
-                ->setClassifyBy($classifyBy);
+                ->setClassifyBy($classifyBy)
+                ->setDisplayBy($displayBy);
 
             $productIds = $service->getProductIdsByGondola($gondola);
             $results = $service->analyzeByProductIds($productIds, $tableType, $filters);
@@ -254,6 +257,7 @@ class GondolaAnalysisController extends Controller
                             'y_axis' => $yAxis,
                             'threshold_method' => $thresholdMethod,
                             'classify_by' => $classifyBy,
+                            'display_by' => $displayBy,
                         ],
                     ],
                     'summary' => $summary,

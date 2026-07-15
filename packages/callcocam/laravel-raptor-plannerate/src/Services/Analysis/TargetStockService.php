@@ -267,6 +267,8 @@ class TargetStockService
                 DB::raw('COUNT(*) as total_registros'),
             ])
             ->whereIn('products.ean', $eans)
+            ->whereNull('sales.deleted_at')
+            ->whereNull('products.deleted_at')
             ->groupBy('products.ean');
 
         if (isset($filters['store_id'])) {
@@ -308,6 +310,8 @@ class TargetStockService
                 DB::raw('COUNT(*) as total_registros'),
             ])
             ->whereIn('products.ean', $eans)
+            ->whereNull('monthly_sales_summaries.deleted_at')
+            ->whereNull('products.deleted_at')
             ->groupBy('products.ean');
 
         if (isset($filters['store_id'])) {

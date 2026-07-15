@@ -75,7 +75,8 @@ class ProductSalesAggregateQuery
 
     /**
      * Query base agrupada por produto: join em products por codigo_erp (sem global
-     * scopes), seleção de identificação do produto, filtros de codigo_erp/product_id/
+     * scopes — por isso os deleted_at abaixo são explícitos, não implícitos do
+     * Eloquent), seleção de identificação do produto, filtros de codigo_erp/product_id/
      * loja e agrupamento por produto/categoria. O chamador adiciona seus próprios
      * agregados via addSelect() e o filtro de período via applyPeriod().
      *
@@ -96,6 +97,8 @@ class ProductSalesAggregateQuery
             ])
             ->whereIn("{$this->table}.codigo_erp", $codigosErp)
             ->whereIn('products.id', $productIds)
+            ->whereNull("{$this->table}.deleted_at")
+            ->whereNull('products.deleted_at')
             ->groupBy('products.id', 'products.category_id');
 
         if (isset($filters['store_id'])) {

@@ -3,7 +3,7 @@ import { router, usePage } from '@inertiajs/vue3';
 import { Calendar, Grid2x2, Settings } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { calculateBcgApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
-import type { BcgAxis, BcgClassifyLevel, BcgThresholdMethod } from '@/components/plannerate/analysis/bcg/types';
+import type { BcgAxis, BcgClassifyLevel, BcgDisplayBy, BcgThresholdMethod } from '@/components/plannerate/analysis/bcg/types';
 import BcgParamsModal from '@/components/plannerate/analysis/BcgParamsModal.vue';
 import BcgResultsList from '@/components/plannerate/analysis/BcgResultsList.vue';
 import { Button } from '@/components/ui/button';
@@ -44,6 +44,7 @@ interface BcgFormData {
     x_axis: BcgAxis;
     y_axis: BcgAxis;
     classify_by: BcgClassifyLevel;
+    display_by: BcgDisplayBy;
     threshold_method: BcgThresholdMethod;
 }
 
@@ -109,6 +110,7 @@ const buildDefaultForm = (): BcgFormData => ({
     x_axis:           'quantidade',
     y_axis:           'margem',
     classify_by:      'categoria',
+    display_by:       'produto',
     threshold_method: 'median',
 });
 
@@ -230,6 +232,8 @@ const thresholdSummary = computed(() =>
         : t('plannerate.analysis.bcg_params.threshold_median'),
 );
 
+const displaySummary = computed(() => t(`plannerate.analysis.bcg_params.display_${form.value.display_by}`));
+
 const handleParamsSubmit = (data: Partial<BcgFormData>): void => {
     const subdomain = resolvedSubdomain.value;
 
@@ -300,6 +304,11 @@ return;
                     <div class="inline-flex items-center gap-1.5 rounded-md bg-accent/40 px-2 py-1 text-[11px]">
                         <span class="text-muted-foreground">{{ t('plannerate.performance.bcg.threshold') }}</span>
                         <span class="font-medium">{{ thresholdSummary }}</span>
+                    </div>
+
+                    <div class="inline-flex items-center gap-1.5 rounded-md bg-accent/40 px-2 py-1 text-[11px]">
+                        <span class="text-muted-foreground">{{ t('plannerate.analysis.bcg_params.display_by') }}</span>
+                        <span class="font-medium">{{ displaySummary }}</span>
                     </div>
 
                     <div class="inline-flex min-w-32 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">

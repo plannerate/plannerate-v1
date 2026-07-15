@@ -251,6 +251,75 @@ it('rejeita eixos iguais, eixo desconhecido, corte e nível de classificação i
         ->toThrow(InvalidArgumentException::class);
 });
 
+it('display_by aceita produto e categoria, mas categoria exige corte acima da categoria', function (): void {
+    $service = new BcgAnalysisService;
+
+    // Padrão é por produto
+    expect($service->getDisplayBy())->toBe('produto');
+
+    // Modo desconhecido é rejeitado
+    expect(fn () => (new BcgAnalysisService)->setDisplayBy('gondola'))
+        ->toThrow(InvalidArgumentException::class);
+
+    // Exibir por categoria com corte na categoria (ou abaixo) deixaria cada categoria
+    // sozinha no grupo — rejeitado.
+    expect(fn () => (new BcgAnalysisService)->setClassifyBy('categoria')->setDisplayBy('categoria'))
+        ->toThrow(InvalidArgumentException::class);
+
+    expect(fn () => (new BcgAnalysisService)->setClassifyBy('subcategoria')->setDisplayBy('categoria'))
+        ->toThrow(InvalidArgumentException::class);
+
+    // Acima da categoria é válido
+    expect((new BcgAnalysisService)->setClassifyBy('departamento')->setDisplayBy('categoria')->getDisplayBy())
+        ->toBe('categoria');
+});
+
+it('withSpace soma o espaço dos produtos da categoria e corta pela mediana das categorias', function (): void {
+    // Resultado agregado: cada linha é uma categoria com member_product_ids.
+    // catA (alto_alto) soma pouco espaço; catB (baixo_baixo) ocupa muito.
+    $classified = collect([
+        ['product_id' => 'catA', 'quadrant' => 'alto_alto', 'member_product_ids' => ['p1', 'p2']],
+        ['product_id' => 'catB', 'quadrant' => 'baixo_baixo', 'member_product_ids' => ['p3']],
+    ]);
+
+    // Shares por categoria: catA = 5+5 = 10, catB = 40 → mediana 25.
+    $result = $this->service->withSpace($classified, [
+        'p1' => ['facings' => 1, 'espaco_linear_cm' => 10.0, 'share_gondola' => 5.0, 'sem_dimensao' => false],
+        'p2' => ['facings' => 2, 'espaco_linear_cm' => 20.0, 'share_gondola' => 5.0, 'sem_dimensao' => false],
+        'p3' => ['facings' => 10, 'espaco_linear_cm' => 100.0, 'share_gondola' => 40.0, 'sem_dimensao' => false],
+    ])->keyBy('product_id');
+
+    expect($result['catA']['facings'])->toBe(3)
+        ->and($result['catA']['espaco_linear_cm'])->toEqualWithDelta(30.0, 0.001)
+        ->and($result['catA']['share_gondola'])->toEqualWithDelta(10.0, 0.001)
+        // alto_alto espremido (10 < 25) → aumentar
+        ->and($result['catA']['acao_espaco'])->toBe('aumentar')
+        // baixo_baixo inchado (40 > 25) → reduzir
+        ->and($result['catB']['acao_espaco'])->toBe('reduzir')
+        ->and($result['catA']['share_threshold_gondola'])->toEqualWithDelta(25.0, 0.001)
+        // detalhe interno do agregado não vaza para o resultado
+        ->and($result['catA'])->not->toHaveKey('member_product_ids');
+});
+
+it('categoria sem nenhum produto com largura fica sem dimensão e sem ação de espaço', function (): void {
+    $classified = collect([
+        ['product_id' => 'catA', 'quadrant' => 'alto_alto', 'member_product_ids' => ['p1', 'p2']],
+        ['product_id' => 'catB', 'quadrant' => 'baixo_baixo', 'member_product_ids' => ['p3']],
+    ]);
+
+    $result = $this->service->withSpace($classified, [
+        // catA: nenhum membro tem largura cadastrada
+        'p1' => ['facings' => 1, 'espaco_linear_cm' => 0.0, 'share_gondola' => 0.0, 'sem_dimensao' => true],
+        'p2' => ['facings' => 1, 'espaco_linear_cm' => 0.0, 'share_gondola' => 0.0, 'sem_dimensao' => true],
+        'p3' => ['facings' => 5, 'espaco_linear_cm' => 50.0, 'share_gondola' => 30.0, 'sem_dimensao' => false],
+    ])->keyBy('product_id');
+
+    expect($result['catA']['sem_dimensao'])->toBeTrue()
+        ->and($result['catA']['acao_espaco'])->toBeNull()
+        // mediana do share ignora catA (sem dimensão): mediana de [30] = 30
+        ->and($result['catB']['share_threshold_gondola'])->toEqualWithDelta(30.0, 0.001);
+});
+
 it('classify_by aceita os cinco níveis da hierarquia mercadológica', function (): void {
     $service = new BcgAnalysisService;
 
