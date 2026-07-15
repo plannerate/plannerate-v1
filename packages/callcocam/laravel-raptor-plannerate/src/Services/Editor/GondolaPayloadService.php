@@ -170,7 +170,7 @@ class GondolaPayloadService
                                             'category_id' => $segment->layer->product->category_id,
                                             'category' => $segment->layer->product->category?->name,
                                             'category_full_path' => $segment->layer->product->relationLoaded('category') && $segment->layer->product->category
-                                                ? $segment->layer->product->category->name
+                                                ? $segment->layer->product->category_full_path
                                                 : null,
                                             'has_dimensions' => ($segment->layer->product->width > 0 && $segment->layer->product->height > 0 && $segment->layer->product->depth > 0),
                                         ] : null,

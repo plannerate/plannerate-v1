@@ -37,13 +37,19 @@ class Product extends Model
     }
 
     // category_full_path é um campo calculado que retorna o caminho completo da categoria (ex: "Bebidas > Refrigerantes > Coca-Cola")
+    // Calculado em tempo real via getFullHierarchy() em vez de confiar na coluna
+    // categories.full_path, que é denormalizada e pode ficar desatualizada quando
+    // a categoria é criada/editada fora da árvore de arrasto ou da importação
+    // (ex: form padrão de categoria, que aceita full_path como texto livre).
     public function getCategoryFullPathAttribute()
     {
-        if ($cat = $this->category) {
-            return $cat->full_path;
+        if (! ($cat = $this->category)) {
+            return null;
         }
 
-        return null;
+        return cache()->remember("category_full_path:{$cat->id}", 7200, function () use ($cat) {
+            return $cat->getFullHierarchy()->pluck('name')->implode(' > ');
+        });
     }
 
     /**

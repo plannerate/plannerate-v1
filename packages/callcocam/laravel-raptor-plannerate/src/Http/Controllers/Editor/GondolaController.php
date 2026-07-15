@@ -66,9 +66,14 @@ class GondolaController extends Controller
             'sections.gondola:id,scale_factor',
             'sections.shelves.segments.layer.product:id,name,ean,codigo_erp,url,width,height,depth,weight,current_stock,brand,status,category_id,type,reference,color,flavor,fragrance,subbrand,packaging_type,packaging_content,measurement_unit,price',
             'sections.shelves.segments.layer.product.category:id,name,category_id',
+            // Carrega a cadeia de pais (até 7 níveis) para que category_full_path
+            // (via getFullHierarchy()) não faça queries extras por nível.
+            'sections.shelves.segments.layer.product.category.parent.parent.parent.parent.parent.parent',
         ]);
 
-        // Desabilita appends automáticos nos produtos para evitar N+1 queries (ex: category_full_path)
+        // Desabilita appends automáticos nos produtos, exceto category_full_path,
+        // que é montado manualmente pelo GondolaPayloadService a partir da cadeia
+        // de categorias já eager-loaded acima (sem custo extra de query).
         $gondola->sections->each(function ($section) {
             $section->shelves->each(function ($shelf) {
                 $shelf->segments->each(function ($segment) {
@@ -319,10 +324,10 @@ class GondolaController extends Controller
             ->toArray();
 
         // Query de produtos
-        // Carrega a cadeia de pais (até 6 níveis) para que getFullHierarchy() não faça
+        // Carrega a cadeia de pais (até 7 níveis) para que getFullHierarchy() não faça
         // queries extras por nível — elimina N×depth queries por página
         $query = Product::query()
-            ->with(['category.parent.parent.parent.parent.parent']);
+            ->with(['category.parent.parent.parent.parent.parent.parent']);
 
         // Filtro por categoria
         if (! empty($categoryIds)) {
@@ -390,7 +395,7 @@ class GondolaController extends Controller
                 'ean' => $product->ean,
                 'codigo_erp' => $product->codigo_erp,
                 'image_url' => $product->getImageUrlAttribute(),
-                'category_full_path' => $product->category->full_path ?? null,
+                'category_full_path' => $product->category_full_path,
                 // Dimensões agora estão diretamente no produto (tabela dimensions foi removida)
                 'width' => $product->width ?? 0,
                 'height' => $product->height ?? 0,

@@ -67,6 +67,25 @@ return [
              * 'any'      — qualquer categoria do planograma. Fecha tudo, mas quebra a blocagem.
              */
             'overflow_scope' => env('PLANNERATE_OVERFLOW_SCOPE', 'siblings'),
+
+            /*
+             * Número de filhos diretos acima do qual uma categoria intermediária deixa de ser
+             * expandida — só entra em ação quando o setting "agrupar por subcategoria"
+             * (PlacementSettings::$groupBySubcategory) está ligado.
+             *
+             * Medido numa gôndola real: "LIMPADOR" tem 30 subcategorias-filha. Expandir até a
+             * folha dá 1 slot (≈1 prateleira) por filha — nenhuma delas nunca acumula as 2+
+             * prateleiras consecutivas que a blocagem vertical exige, e a categoria inteira
+             * (383cm de demanda real) fica fatiada em fragmentos que se espalham pela gôndola
+             * via overflow. Acima do limiar, o nó intermediário volta a ser tratado como UM
+             * slot só — a soma de toda a demanda dos descendentes concorre por espaço como uma
+             * unidade, podendo formar bloco vertical de verdade (as marcas ainda formam colunas
+             * dentro do bloco, via TemplatePlacementEngine).
+             *
+             * Nós com poucos filhos (ex.: "Flocão" → [De Milho, De Arroz]) continuam expandindo
+             * normalmente — cada um é uma distinção real que merece prateleira própria.
+             */
+            'subcategory_group_threshold' => env('PLANNERATE_SUBCATEGORY_GROUP_THRESHOLD', 8),
         ],
 
         /*

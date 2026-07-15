@@ -81,7 +81,7 @@ final class AutoTemplateSynthesisOrchestrator
         // onde os produtos realmente vivem para que nós intermediários (ex.: "Flocão")
         // não agrupem subcategorias distintas ("De milho" e "De arroz") em uma só prateleira.
         $directChildren = Category::where('category_id', $selectedCategoryId)->get();
-        $slotCategories = $this->expandToProductLevel($directChildren, $scored);
+        $slotCategories = $this->expandToProductLevel($directChildren, $scored, $input->settings->groupBySubcategory);
 
         $grouped = $this->groupBySubcategory($slotCategories, $scored);
 
@@ -276,11 +276,20 @@ final class AutoTemplateSynthesisOrchestrator
      * Se os produtos estão em "De milho" e "De arroz":
      *   resultado = [De milho, De arroz, Farofa] — cada filho de "Flocão" recebe prateleira própria.
      *
+     * Exceção — consolidação por excesso de filhos (`$groupBySubcategory`): quando um nó
+     * intermediário tem mais filhos que `plannerate.auto_planogram.placement.subcategory_group_threshold`
+     * (ex.: "LIMPADOR" com 30 subcategorias-filha), expandir todos até a folha fatia a demanda
+     * real da categoria em fragmentos de ~1 prateleira cada — nenhum acumula as 2+ prateleiras
+     * consecutivas que a blocagem vertical exige, e a categoria some via overflow. Acima do
+     * limiar, o nó fica como slot único: toda a demanda dos descendentes concorre por espaço
+     * como uma unidade só (as marcas ainda formam colunas dentro do bloco resultante).
+     *
      * @param  Collection<int, Category>  $children  Filhos diretos da categoria selecionada.
      * @param  Collection<int, ScoredProduct>  $scored  Produtos pontuados (fonte de category_id real).
+     * @param  bool  $groupBySubcategory  Liga a consolidação por excesso de filhos (`PlacementSettings::$groupBySubcategory`).
      * @return Collection<int, Category>
      */
-    private function expandToProductLevel(Collection $children, Collection $scored): Collection
+    private function expandToProductLevel(Collection $children, Collection $scored, bool $groupBySubcategory = true): Collection
     {
         if ($children->isEmpty()) {
             return $children;
@@ -323,23 +332,42 @@ final class AutoTemplateSynthesisOrchestrator
                 fn (string $id) => isset($productCatIds[$id])
             );
 
-            if ($hasProductsInDescendants) {
-                // Expande: substitui este nó pelos filhos diretos para nova avaliação recursiva.
-                // Ex.: "Flocão" → queue recebe ["De milho", "De arroz"].
-                foreach ($catChildren as $child) {
-                    $queue[] = $child;
-                }
-
-                Log::debug('AutoTemplateSynthesisOrchestrator: categoria intermediária expandida para filhos', [
-                    'category_id' => $cat->id,
-                    'category_name' => $cat->name,
-                    'filhos_adicionados' => $catChildren->count(),
-                ]);
-            } else {
+            if (! $hasProductsInDescendants) {
                 // Nenhum produto em descendentes → mantém como slot vazio; será descartado
                 // pelo SlotPlanBuilder por skuCount=0 e totalQuantity=0.
                 $result->push($cat);
+
+                continue;
             }
+
+            $groupThreshold = (int) config('plannerate.auto_planogram.placement.subcategory_group_threshold', 8);
+
+            if ($groupBySubcategory && $catChildren->count() > $groupThreshold) {
+                // Filhos demais para expandir individualmente: consolida como slot único
+                // em vez de fatiar a demanda da categoria em fragmentos de ~1 prateleira.
+                $result->push($cat);
+
+                Log::debug('AutoTemplateSynthesisOrchestrator: categoria intermediária consolidada (agrupar por subcategoria)', [
+                    'category_id' => $cat->id,
+                    'category_name' => $cat->name,
+                    'filhos_nao_expandidos' => $catChildren->count(),
+                    'threshold' => $groupThreshold,
+                ]);
+
+                continue;
+            }
+
+            // Expande: substitui este nó pelos filhos diretos para nova avaliação recursiva.
+            // Ex.: "Flocão" → queue recebe ["De milho", "De arroz"].
+            foreach ($catChildren as $child) {
+                $queue[] = $child;
+            }
+
+            Log::debug('AutoTemplateSynthesisOrchestrator: categoria intermediária expandida para filhos', [
+                'category_id' => $cat->id,
+                'category_name' => $cat->name,
+                'filhos_adicionados' => $catChildren->count(),
+            ]);
         }
 
         return $result;

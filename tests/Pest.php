@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use Tests\Concerns\FastRefreshDatabase;
 use Tests\TestCase;
 
 /*
@@ -17,7 +17,7 @@ use Tests\TestCase;
 */
 
 pest()->extend(TestCase::class)->in('Unit', 'Feature')
-    ->use(RefreshDatabase::class);
+    ->use(FastRefreshDatabase::class);
 
 /*
 |--------------------------------------------------------------------------

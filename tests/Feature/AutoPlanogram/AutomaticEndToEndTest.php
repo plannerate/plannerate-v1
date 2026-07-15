@@ -373,6 +373,7 @@ function autoE2eInput(
     array $abcMap = [],
     ?string $selectedCategoryId = null,
     ?string $layoutOrientation = null,
+    ?bool $groupBySubcategory = null,
 ): PlanogramInput {
     return new PlanogramInput(
         planogramId: $planogramId,
@@ -387,6 +388,7 @@ function autoE2eInput(
             endDate: null,
             minFacings: 1,
             maxFacings: 5,
+            groupBySubcategory: $groupBySubcategory ?? true,
             categoryId: $selectedCategoryId ?? $baseCategoryId,
             tenantId: null,
             abcClassMap: $abcMap,
@@ -803,6 +805,92 @@ test('11 — categoria folha selecionada diretamente não é expandida (comporta
     // Produtos devem estar alocados
     expect(Layer::where('product_id', $p1->id)->count())->toBeGreaterThan(0);
     expect(Layer::where('product_id', $p2->id)->count())->toBeGreaterThan(0);
+});
+
+test('11.1 — categoria com filhos em excesso é consolidada como slot único quando group_by_subcategory=true', function (): void {
+    /**
+     * Cenário real medido em produção: "LIMPADOR" com 30 subcategorias-filha (uma por
+     * marca) expandia até a folha e dava ~1 prateleira por marca — nenhuma acumulava as
+     * 2+ prateleiras consecutivas que a blocagem vertical exige, e a demanda real da
+     * categoria (soma de todas as marcas) se espalhava pela gôndola via overflow.
+     *
+     * "Multiuso" aqui simula isso em miniatura: 5 marcas-filha (acima do threshold de
+     * teste = 3). Com group_by_subcategory=true, "Multiuso" deve permanecer como slot
+     * único — as marcas NÃO viram slots separados — consolidando a demanda pra formar
+     * bloco de verdade.
+     */
+    config(['plannerate.auto_planogram.placement.subcategory_group_threshold' => 3]);
+
+    $gondolaId = (string) Str::ulid();
+    $planogramId = (string) Str::ulid();
+
+    $limpeza = autoE2eCategory('Limpeza');
+    $multiuso = autoE2eCategory('Multiuso', parentId: $limpeza->id);
+
+    $marcas = collect(range(1, 5))->map(fn (int $i) => autoE2eCategory("Marca {$i}", parentId: $multiuso->id));
+
+    $products = $marcas->map(fn (Category $marca, int $i) => autoE2eProduct($marca->id, width: 8, name: "Produto Marca {$i}"));
+
+    $abcMap = $products->mapWithKeys(fn (Product $p) => [$p->id => 'A'])->all();
+    autoE2eBindMockScorer($abcMap);
+
+    $sections = autoE2eSections(numModules: 3, numShelves: 4, width: 100.0);
+
+    $input = autoE2eInput($gondolaId, $planogramId, $limpeza->id, $products, $sections, $abcMap, groupBySubcategory: true);
+    autoE2eGenerate($input);
+
+    $slotCategoryIds = PlanogramTemplateSlot::pluck('category_id')->unique()->values()->all();
+
+    expect($slotCategoryIds)->toContain($multiuso->id);
+
+    foreach ($marcas as $marca) {
+        expect($slotCategoryIds)->not->toContain($marca->id);
+    }
+
+    // Todos os produtos continuam alocados, só que sob o slot consolidado.
+    foreach ($products as $product) {
+        expect(Layer::where('product_id', $product->id)->count())->toBeGreaterThan(0);
+    }
+});
+
+test('11.2 — categoria com filhos em excesso expande normalmente quando group_by_subcategory=false', function (): void {
+    /**
+     * Mesmo cenário do teste 11.1, mas com o toggle desligado: preserva o comportamento
+     * antigo (expande até a folha, cada marca com prateleira própria) — prova que o
+     * setting agora liga/desliga o comportamento de fato (antes desta correção, o valor
+     * era lido mas nunca consultado em lugar nenhum).
+     */
+    config(['plannerate.auto_planogram.placement.subcategory_group_threshold' => 3]);
+
+    $gondolaId = (string) Str::ulid();
+    $planogramId = (string) Str::ulid();
+
+    $limpeza = autoE2eCategory('Limpeza');
+    $multiuso = autoE2eCategory('Multiuso', parentId: $limpeza->id);
+
+    $marcas = collect(range(1, 5))->map(fn (int $i) => autoE2eCategory("Marca {$i}", parentId: $multiuso->id));
+
+    $products = $marcas->map(fn (Category $marca, int $i) => autoE2eProduct($marca->id, width: 8, name: "Produto Marca {$i}"));
+
+    $abcMap = $products->mapWithKeys(fn (Product $p) => [$p->id => 'A'])->all();
+    autoE2eBindMockScorer($abcMap);
+
+    $sections = autoE2eSections(numModules: 3, numShelves: 4, width: 100.0);
+
+    $input = autoE2eInput($gondolaId, $planogramId, $limpeza->id, $products, $sections, $abcMap, groupBySubcategory: false);
+    autoE2eGenerate($input);
+
+    $slotCategoryIds = PlanogramTemplateSlot::pluck('category_id')->unique()->values()->all();
+
+    expect($slotCategoryIds)->not->toContain($multiuso->id);
+
+    foreach ($marcas as $marca) {
+        expect($slotCategoryIds)->toContain($marca->id);
+    }
+
+    foreach ($products as $product) {
+        expect(Layer::where('product_id', $product->id)->count())->toBeGreaterThan(0);
+    }
 });
 
 test('12 — layout_orientation=vertical: subtemplate persiste o campo e marcas formam colunas alinhadas entre prateleiras', function (): void {
