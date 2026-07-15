@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { ChevronLeft } from 'lucide-vue-next';
 import { computed } from 'vue';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
+import ProductApiSyncButton from '@/components/tenant/ProductApiSyncButton.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -52,8 +53,9 @@ const pageMeta = useCrudPageMeta({
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <Head :title="pageMeta.headTitle" />
 
-        <!-- Botão voltar para lista de produtos -->
+        <!-- Ações do cabeçalho: sincronizar da API + voltar para a lista -->
         <template #header-actions>
+            <ProductApiSyncButton :product="product" />
             <Link
                 :href="productsIndexPath"
                 class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted"

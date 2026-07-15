@@ -3,9 +3,8 @@ import { Head } from '@inertiajs/vue3';
 import RoleController from '@/actions/App/Http/Controllers/Landlord/RoleController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import { ColumnActions } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
-import { Button } from '@/components/ui/button';
-import WayfinderLink from '@/components/WayfinderLink.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
@@ -18,6 +17,7 @@ type RoleRow = {
     type: string;
     permissions_count: number;
     is_protected: boolean;
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -25,6 +25,7 @@ const props = defineProps<{
     filters: {
         search: string;
         type: string;
+        trashed: 'without' | 'only' | 'with';
     };
     filter_options: {
         types: Array<{ value: string; label: string }>;
@@ -67,7 +68,7 @@ const pageMeta = useCrudPageMeta({
         :search-placeholder="t('app.landlord.common.search')"
         :filter-label="t('app.landlord.common.filter')"
         :clear-label="t('app.landlord.common.clear_filters')"
-        :show-trashed-filter="false"
+        :trashed-value="props.filters.trashed"
     >
         <template #filters>
             <select
@@ -111,22 +112,15 @@ const pageMeta = useCrudPageMeta({
                     <td class="px-4 py-3">{{ t(`app.landlord.roles.types.${role.type}`) }}</td>
                     <td class="px-4 py-3">{{ role.permissions_count }}</td>
                     <td class="px-4 py-3 ">
-                        <div class="inline-flex items-center gap-2">
-                            <Button variant="outline" size="sm" as-child>
-                                <WayfinderLink :href="RoleController.edit.url(role.id)">
-                                    {{ t('app.landlord.common.edit') }}
-                                </WayfinderLink>
-                            </Button>
-                            <Button v-if="!role.is_protected" variant="destructive" size="sm" as-child>
-                                <WayfinderLink
-                                    :href="RoleController.destroy.url(role.id)"
-                                    method="delete"
-                                    as="button"
-                                >
-                                    {{ t('app.landlord.common.delete') }}
-                                </WayfinderLink>
-                            </Button>
-                        </div>
+                        <ColumnActions
+                            :edit-href="RoleController.edit.url(role.id)"
+                            :delete-href="RoleController.destroy.url(role.id)"
+                            :delete-label="role.name ?? undefined"
+                            :require-confirm-word="true"
+                            :is-trashed="role.trashed"
+                            :restore-href="RoleController.restore.url(role.id)"
+                            :can-delete="!role.is_protected"
+                        />
                     </td>
                 </tr>
             </tbody>

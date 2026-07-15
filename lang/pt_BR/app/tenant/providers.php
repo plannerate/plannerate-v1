@@ -21,5 +21,7 @@ return [
         'created' => 'Fornecedor criado com sucesso.',
         'updated' => 'Fornecedor atualizado com sucesso.',
         'deleted' => 'Fornecedor removido com sucesso.',
+        'force_deleted' => 'Fornecedor excluído definitivamente.',
+        'restored' => 'Fornecedor restaurado com sucesso.',
     ],
 ];

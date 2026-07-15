@@ -13,47 +13,28 @@
             </DialogHeader>
 
             <Tabs v-model="activeTab" class="flex-1 flex flex-col overflow-hidden px-4 pb-4">
-                <TabsList class="grid w-full grid-cols-4 h-9">
-                    <TabsTrigger value="abc">
+                <TabsList :class="['grid w-full h-9', gridColsClass]">
+                    <TabsTrigger v-for="tab in visibleTabs" :key="tab.value" :value="tab.value">
                         <div class="flex items-center gap-1.5">
-                            <BarChart3 class="size-3.5 shrink-0  " />
-                            <span class="leading-tight">{{ t('plannerate.performance.abc_tab') }}</span>
-                        </div>
-                    </TabsTrigger>
-                    <TabsTrigger value="target-stock">
-                        <div class="flex items-center gap-1.5">
-                            <Package class="size-3.5 shrink-0" />
-                            <span class="leading-tight">{{ t('plannerate.performance.target_stock') }}</span>
-                        </div>
-                    </TabsTrigger>
-                    <!-- Esta aba se chamava "bcg" mas renderizava a Análise de Papel — renomeada -->
-                    <TabsTrigger value="paper">
-                        <div class="flex items-center gap-1.5">
-                            <TrendingUp class="size-3.5 shrink-0" />
-                            <span class="leading-tight">{{ t('plannerate.performance.paper_tab') }}</span>
-                        </div>
-                    </TabsTrigger>
-                    <TabsTrigger value="bcg">
-                        <div class="flex items-center gap-1.5">
-                            <Grid2x2 class="size-3.5 shrink-0" />
-                            <span class="leading-tight">{{ t('plannerate.performance.bcg_tab') }}</span>
+                            <component :is="tab.icon" class="size-3.5 shrink-0" />
+                            <span class="leading-tight">{{ t(tab.labelKey) }}</span>
                         </div>
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="abc" class="flex-1 overflow-auto mt-2">
+                <TabsContent v-if="isTabVisible('abc')" value="abc" class="flex-1 overflow-auto mt-2">
                     <PerformanceAbcTab :gondola-id="gondolaId" :planogram="planogram" :results="analysis?.abc?.results" />
                 </TabsContent>
 
-                <TabsContent value="target-stock" class="flex-1 overflow-auto mt-2">
+                <TabsContent v-if="isTabVisible('target-stock')" value="target-stock" class="flex-1 overflow-auto mt-2">
                     <PerformanceTargetStockTab :gondola-id="gondolaId" :planogram="planogram" :results="analysis?.stock?.results" />
                 </TabsContent>
 
-                <TabsContent value="paper" class="flex-1 overflow-auto mt-2">
+                <TabsContent v-if="isTabVisible('paper')" value="paper" class="flex-1 overflow-auto mt-2">
                     <PerformancePaperTab :gondola-id="gondolaId" :planogram="planogram" :results="analysis?.paper?.results" />
                 </TabsContent>
 
-                <TabsContent value="bcg" class="flex-1 overflow-auto mt-2">
+                <TabsContent v-if="isTabVisible('bcg')" value="bcg" class="flex-1 overflow-auto mt-2">
                     <PerformanceBcgTab :gondola-id="gondolaId" :planogram="planogram" :results="analysis?.bcg?.results" />
                 </TabsContent>
             </Tabs>
@@ -63,7 +44,10 @@
 
 <script setup lang="ts">
 import { BarChart3, Gauge, Grid2x2, Package, TrendingUp } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
+import type { Component } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { isAnalysisVisible  } from '@/components/plannerate/analysis/visibility';
+import type {AnalysisKey} from '@/components/plannerate/analysis/visibility';
 import {
     Dialog,
     DialogContent,
@@ -111,8 +95,43 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 const { t } = useT();
 
+/**
+ * Configuração de visibilidade das abas de análise.
+ *
+ * Ponto único de liga/desliga: mudar `visible` mostra/esconde a aba e ajusta a grade
+ * automaticamente. Hoje é local; no futuro dá para alimentar cada `visible` a partir de
+ * uma prop vinda do backend sem tocar no template.
+ */
+interface PerformanceTab {
+    value: AnalysisKey;
+    labelKey: string;
+    icon: Component;
+}
+
+const TABS: PerformanceTab[] = [
+    { value: 'abc', labelKey: 'plannerate.performance.abc_tab', icon: BarChart3 },
+    { value: 'target-stock', labelKey: 'plannerate.performance.target_stock', icon: Package },
+    { value: 'paper', labelKey: 'plannerate.performance.paper_tab', icon: TrendingUp },
+    { value: 'bcg', labelKey: 'plannerate.performance.bcg_tab', icon: Grid2x2 },
+];
+
+const visibleTabs = computed(() => TABS.filter((tab) => isAnalysisVisible(tab.value)));
+
+const isTabVisible = (value: string): boolean => visibleTabs.value.some((tab) => tab.value === value);
+
+/** Tailwind não aceita classe dinâmica: mapeia a contagem para uma classe estática. */
+const GRID_COLS: Record<number, string> = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-2',
+    3: 'grid-cols-3',
+    4: 'grid-cols-4',
+};
+
+const gridColsClass = computed(() => GRID_COLS[visibleTabs.value.length] ?? 'grid-cols-4');
+
 const isOpen = ref(props.open);
-const activeTab = ref('abc'); 
+// Primeira aba visível como padrão, para nunca abrir numa aba escondida
+const activeTab = ref(visibleTabs.value[0]?.value ?? 'abc');
 // Sincroniza isOpen com o prop open quando ele mudar
 watch(() => props.open, (newValue) => {
     isOpen.value = newValue;

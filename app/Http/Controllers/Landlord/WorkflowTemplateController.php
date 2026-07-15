@@ -64,6 +64,7 @@ class WorkflowTemplateController extends Controller
                     'status' => $t->status,
                     'user_ids' => $t->suggestedUsers->pluck('id')->all(),
                     'created_at' => $t->created_at?->toDateTimeString(),
+                    'trashed' => $t->trashed(),
                 ]);
 
             return [
@@ -229,13 +230,41 @@ class WorkflowTemplateController extends Controller
     {
         $this->authorize('update', $tenant);
 
-        $this->runInTenantContext($tenant, function () use ($template): void {
-            WorkflowTemplate::findOrFail($template)->delete();
+        $wasTrashed = $this->runInTenantContext($tenant, function () use ($template): bool {
+            $tpl = WorkflowTemplate::withTrashed()->findOrFail($template);
+
+            if ($tpl->trashed()) {
+                $tpl->forceDelete();
+
+                return true;
+            }
+
+            $tpl->delete();
+
+            return false;
         });
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __('app.landlord.kanban.templates.messages.deleted'),
+            'message' => __($wasTrashed
+                ? 'app.landlord.kanban.templates.messages.force_deleted'
+                : 'app.landlord.kanban.templates.messages.deleted'),
+        ]);
+
+        return $this->toLandlordRoute('landlord.tenants.kanban.templates.index', ['tenant' => $tenant]);
+    }
+
+    public function restore(Tenant $tenant, string $template): RedirectResponse
+    {
+        $this->authorize('update', $tenant);
+
+        $this->runInTenantContext($tenant, function () use ($template): void {
+            WorkflowTemplate::withTrashed()->findOrFail($template)->restore();
+        });
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.kanban.templates.messages.restored'),
         ]);
 
         return $this->toLandlordRoute('landlord.tenants.kanban.templates.index', ['tenant' => $tenant]);

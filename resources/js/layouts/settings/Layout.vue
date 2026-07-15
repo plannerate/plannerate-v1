@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import AdjacencyMatrixController from '@/actions/App/Http/Controllers/Settings/AdjacencyMatrixController';
-import ScoringWeightsController from '@/actions/App/Http/Controllers/Settings/ScoringWeightsController';
-import ShelfLevelPreferencesController from '@/actions/App/Http/Controllers/Settings/ShelfLevelPreferencesController';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -16,8 +13,6 @@ import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
 
 const { t } = useT();
-const page = usePage();
-const isTenantContext = computed(() => !!(page.props.tenant as any)?.slug);
 
 const sidebarNavItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [
@@ -35,26 +30,12 @@ const sidebarNavItems = computed<NavItem[]>(() => {
         },
     ];
 
-    if (isTenantContext.value) {
-        items.push(
-            {
-                title: t('app.settings_nav.planogram_settings'),
-                href: ScoringWeightsController.edit.url().replace('/settings/scoring-weights', '/settings/planogram'),
-            },
-            {
-                title: t('app.settings_nav.scoring_weights'),
-                href: ScoringWeightsController.edit.url(),
-            },
-            {
-                title: t('app.settings_nav.adjacency_matrix'),
-                href: AdjacencyMatrixController.edit.url(),
-            },
-            {
-                title: t('app.settings_nav.shelf_level_preferences'),
-                href: ShelfLevelPreferencesController.edit.url(),
-            },
-        );
-    }
+    // Links de configuração de planograma (Auto-Planograma, Pesos do Scoring,
+    // Matriz de Adjacência, Nível de Prateleira) ocultos por ora — o
+    // provável é que não estejam mais em uso. As páginas/rotas continuam
+    // existindo; para reexibir, restaurar o bloco `isTenantContext` que
+    // usava ScoringWeightsController/AdjacencyMatrixController/
+    // ShelfLevelPreferencesController.
 
     return items;
 });

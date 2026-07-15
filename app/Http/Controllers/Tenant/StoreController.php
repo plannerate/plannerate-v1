@@ -79,6 +79,7 @@ class StoreController extends Controller
                 'document' => $store->document,
                 'status' => $store->status,
                 'created_at' => $store->created_at?->toDateTimeString(),
+                'trashed' => $store->trashed(),
             ]);
     }
 
@@ -278,11 +279,36 @@ class StoreController extends Controller
     {
         $this->authorize('delete', $store);
 
+        if ($store->trashed()) {
+            $store->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.tenant.stores.messages.force_deleted'),
+            ]);
+
+            return $this->toTenantRoute('tenant.stores.index');
+        }
+
         $store->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.tenant.stores.messages.deleted'),
+        ]);
+
+        return $this->toTenantRoute('tenant.stores.index');
+    }
+
+    public function restore(Store $store): RedirectResponse
+    {
+        $this->authorize('delete', $store);
+
+        $store->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.stores.messages.restored'),
         ]);
 
         return $this->toTenantRoute('tenant.stores.index');

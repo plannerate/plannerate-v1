@@ -23,5 +23,7 @@ return [
         'created' => 'Cluster criado com sucesso.',
         'updated' => 'Cluster atualizado com sucesso.',
         'deleted' => 'Cluster removido com sucesso.',
+        'force_deleted' => 'Cluster excluído definitivamente.',
+        'restored' => 'Cluster restaurado com sucesso.',
     ],
 ];

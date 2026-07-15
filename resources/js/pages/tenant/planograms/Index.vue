@@ -37,6 +37,7 @@ type PlanogramRow = {
     start_date: string | null;
     end_date: string | null;
     status: 'draft' | 'published';
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -289,6 +290,8 @@ const pageMeta = useCrudPageMeta({
                                 :delete-href="PlanogramController.destroy.url({ planogram: planogram.id })"
                                 :delete-label="planogram.name ?? undefined"
                                 :require-confirm-word="true"
+                                :is-trashed="planogram.trashed"
+                                :restore-href="PlanogramController.restore.url({ planogram: planogram.id })"
                             >
                                 <Button variant="outline" size="sm" as-child>
                                     <WayfinderLink :href="planogramWorkflowHref(planogram.id)" class="inline-flex items-center gap-1.5">

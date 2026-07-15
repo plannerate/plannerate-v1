@@ -22,6 +22,8 @@ return [
         'created' => 'Usuário criado com sucesso.',
         'updated' => 'Usuário atualizado com sucesso.',
         'deleted' => 'Usuário removido com sucesso.',
+        'force_deleted' => 'Usuário excluído definitivamente.',
+        'restored' => 'Usuário restaurado com sucesso.',
         'password_setup_sent' => 'Link de definição de senha enviado com sucesso.',
     ],
     'limit' => [

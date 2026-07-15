@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { Pencil, Trash2 } from 'lucide-vue-next';
 import UserController from '@/actions/App/Http/Controllers/Landlord/UserController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import { ColumnActions } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
-import { Button } from '@/components/ui/button';
-import WayfinderLink from '@/components/WayfinderLink.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
@@ -19,6 +17,7 @@ type UserRow = {
     email: string;
     is_active: boolean;
     roles: string[];
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -27,6 +26,7 @@ const props = defineProps<{
         search: string;
         is_active: string;
         role_id: string;
+        trashed: 'without' | 'only' | 'with';
     };
     filter_options: {
         roles: Array<{ id: string; name: string }>;
@@ -69,7 +69,7 @@ const pageMeta = useCrudPageMeta({
         :search-placeholder="t('app.landlord.common.search')"
         :filter-label="t('app.landlord.common.filter')"
         :clear-label="t('app.landlord.common.clear_filters')"
-        :show-trashed-filter="false"
+        :trashed-value="props.filters.trashed"
     >
         <template #filters>
             <select
@@ -123,25 +123,14 @@ const pageMeta = useCrudPageMeta({
                     <td class="px-4 py-3">{{ user.roles.length > 0 ? user.roles.join(', ') : '-' }}</td>
                     <td class="px-4 py-3">{{ user.is_active ? t('app.landlord.common.active') : t('app.landlord.common.inactive') }}</td>
                     <td class="px-4 py-3 ">
-                        <div class="inline-flex items-center gap-2">
-                            <Button variant="outline" size="sm" as-child>
-                                <WayfinderLink :href="UserController.edit.url(user.id)" class="inline-flex items-center gap-1.5">
-                                    <Pencil class="size-3.5" />
-                                    <span class="hidden sm:inline">{{ t('app.landlord.common.edit') }}</span>
-                                </WayfinderLink>
-                            </Button>
-                            <Button variant="destructive" size="sm" as-child>
-                                <WayfinderLink
-                                    :href="UserController.destroy.url(user.id)"
-                                    method="delete"
-                                    as="button"
-                                    class="inline-flex items-center gap-1.5"
-                                >
-                                    <Trash2 class="size-3.5" />
-                                    <span class="hidden sm:inline">{{ t('app.landlord.common.delete') }}</span>
-                                </WayfinderLink>
-                            </Button>
-                        </div>
+                        <ColumnActions
+                            :edit-href="UserController.edit.url(user.id)"
+                            :delete-href="UserController.destroy.url(user.id)"
+                            :delete-label="user.name ?? undefined"
+                            :require-confirm-word="true"
+                            :is-trashed="user.trashed"
+                            :restore-href="UserController.restore.url(user.id)"
+                        />
                     </td>
                 </tr>
             </tbody>

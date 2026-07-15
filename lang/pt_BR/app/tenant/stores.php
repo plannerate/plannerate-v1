@@ -32,5 +32,7 @@ return [
         'created' => 'Loja criada com sucesso.',
         'updated' => 'Loja atualizada com sucesso.',
         'deleted' => 'Loja removida com sucesso.',
+        'force_deleted' => 'Loja excluída definitivamente.',
+        'restored' => 'Loja restaurada com sucesso.',
     ],
 ];

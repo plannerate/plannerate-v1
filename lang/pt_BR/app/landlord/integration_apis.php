@@ -122,6 +122,8 @@ return [
         'created' => 'API de integração criada com sucesso.',
         'updated' => 'API de integração atualizada com sucesso.',
         'deleted' => 'API de integração removida com sucesso.',
+        'force_deleted' => 'API de integração excluída permanentemente com sucesso.',
+        'restored' => 'API de integração restaurada com sucesso.',
         'imported' => 'Importação concluída. Criadas: :created, atualizadas: :updated, ignoradas: :skipped.',
         'import_invalid_json' => 'O arquivo enviado não contém um JSON válido.',
         'import_invalid_structure' => 'Estrutura inválida. Use um arquivo com "integration_apis".',

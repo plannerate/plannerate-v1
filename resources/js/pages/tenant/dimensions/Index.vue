@@ -254,7 +254,7 @@ const pageMeta = useCrudPageMeta({
         <ListPage ref="listPageRef" :meta="meta" :label="t('app.tenant.dimensions.product_label')" :action="indexPath"
             :clear-href="indexPath" :search-value="props.filters.search"
             :search-placeholder="t('app.tenant.common.search')" :filter-label="t('app.tenant.common.filter')"
-            :clear-label="t('app.tenant.common.clear_filters')">
+            :clear-label="t('app.tenant.common.clear_filters')" :show-trashed-filter="false">
             <template #filters>
                 <input type="hidden" name="category_id" :value="categoryId ?? ''" />
 

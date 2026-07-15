@@ -34,6 +34,8 @@ return [
             'created' => 'Etapa criada com sucesso.',
             'updated' => 'Etapa atualizada com sucesso.',
             'deleted' => 'Etapa removida com sucesso.',
+            'force_deleted' => 'Etapa excluída permanentemente com sucesso.',
+            'restored' => 'Etapa restaurada com sucesso.',
             'seeded' => 'Templates padrão criados com sucesso.',
         ],
     ],

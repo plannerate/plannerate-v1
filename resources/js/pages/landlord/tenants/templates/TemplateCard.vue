@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
-import { Edit, Trash2 } from 'lucide-vue-next';
+import { Edit } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
-import WayfinderLink from '@/components/WayfinderLink.vue';
+import DeleteButton from '@/components/DeleteButton.vue';
+import RestoreButton from '@/components/RestoreButton.vue';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import type { TemplateRow, UserOption } from './Index.vue';
 
@@ -123,7 +124,12 @@ function onUserChange(userId: string, checked: boolean): void {
             <!-- Actions -->
             <div class="mt-4 border-t border-border pt-4">
                 <div class="flex items-center justify-end gap-2">
+                    <RestoreButton
+                        v-if="template.trashed"
+                        :href="WorkflowTemplateController.restore.url({ tenant: tenantId, template: template.id })"
+                    />
                     <button
+                        v-if="!template.trashed"
                         type="button"
                         class="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
                         @click="emit('edit', template)"
@@ -131,15 +137,12 @@ function onUserChange(userId: string, checked: boolean): void {
                         <Edit class="size-3" />
                         Editar
                     </button>
-                    <WayfinderLink
+                    <DeleteButton
                         :href="WorkflowTemplateController.destroy.url({ tenant: tenantId, template: template.id })"
-                        method="delete"
-                        as="button"
-                        class="inline-flex items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/20"
-                    >
-                        <Trash2 class="size-3" />
-                        Excluir
-                    </WayfinderLink>
+                        :label="template.name"
+                        :permanent="template.trashed"
+                        :require-confirm-word="true"
+                    />
                 </div>
             </div>
         </div>

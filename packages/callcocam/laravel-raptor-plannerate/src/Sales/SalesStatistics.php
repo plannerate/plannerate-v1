@@ -226,10 +226,15 @@ class SalesStatistics
     }
 
     /**
-     * Estoque-alvo = estoque mínimo + estoque de segurança (arredondado para unidade).
+     * Estoque-alvo = estoque mínimo + estoque de segurança, arredondado UMA vez
+     * sobre a soma bruta — não a soma de minimumStock()/safetyStock() já
+     * arredondados individualmente. Arredondar cada parcela antes de somar diverge
+     * da planilha de referência sempre que as duas frações, somadas, cruzam uma
+     * casa inteira: ex. mínimo bruto 13,72 + segurança bruta 2,744 = 16,464 → 16;
+     * arredondando cada parcela antes (14 + 3) dá 17.
      */
-    public static function targetStock(float $minimumStock, float $safetyStock): float
+    public static function targetStock(float $media, int $coberturaDias, float $zScore, float $desvioPadrao): float
     {
-        return round($minimumStock + $safetyStock, 0);
+        return round(($media * $coberturaDias) + ($zScore * $desvioPadrao), 0);
     }
 }

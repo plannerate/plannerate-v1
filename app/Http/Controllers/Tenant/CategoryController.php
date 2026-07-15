@@ -175,6 +175,7 @@ class CategoryController extends Controller
                 'is_placeholder' => $category->is_placeholder,
                 'level_name' => $category->level_name,
                 'created_at' => $category->created_at?->toDateTimeString(),
+                'trashed' => $category->trashed(),
             ]);
     }
 
@@ -255,11 +256,36 @@ class CategoryController extends Controller
     {
         $this->authorize('delete', $category);
 
+        if ($category->trashed()) {
+            $category->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.tenant.categories.messages.force_deleted'),
+            ]);
+
+            return $this->toTenantRoute('tenant.categories.index');
+        }
+
         $category->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.tenant.categories.messages.deleted'),
+        ]);
+
+        return $this->toTenantRoute('tenant.categories.index');
+    }
+
+    public function restore(Category $category): RedirectResponse
+    {
+        $this->authorize('delete', $category);
+
+        $category->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.categories.messages.restored'),
         ]);
 
         return $this->toTenantRoute('tenant.categories.index');

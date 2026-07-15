@@ -19,6 +19,7 @@ type StoreRow = {
     code: string | null;
     document: string | null;
     status: 'draft' | 'published';
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -120,6 +121,8 @@ const pageMeta = useCrudPageMeta({
                                 :delete-href="StoreController.destroy.url({ store: store.id })"
                                 :delete-label="store.name ?? undefined"
                                 :require-confirm-word="true"
+                                :is-trashed="store.trashed"
+                                :restore-href="StoreController.restore.url({ store: store.id })"
                             />
                         </td>
                     </tr>

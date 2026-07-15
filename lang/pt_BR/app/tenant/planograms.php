@@ -63,5 +63,6 @@ return [
         'updated' => 'Planograma atualizado com sucesso.',
         'deleted' => 'Planograma removido com sucesso.',
         'force_deleted' => 'Planograma excluído definitivamente.',
+        'restored' => 'Planograma restaurado com sucesso.',
     ],
 ];

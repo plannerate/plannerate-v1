@@ -80,6 +80,7 @@ class SimilarGroupController extends Controller
                 'products_count' => $group->products_count,
                 'status' => $group->status,
                 'created_at' => $group->created_at?->toDateTimeString(),
+                'trashed' => $group->trashed(),
             ]);
     }
 
@@ -180,11 +181,37 @@ class SimilarGroupController extends Controller
         $this->authorize('delete', $similarGroup);
 
         $this->eanReferenceSimilarSyncService->remove($similarGroup);
+
+        if ($similarGroup->trashed()) {
+            $similarGroup->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.tenant.similar-groups.messages.force_deleted'),
+            ]);
+
+            return $this->toTenantRoute('tenant.similar-groups.index');
+        }
+
         $similarGroup->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Grupo de similares excluído com sucesso.',
+            'message' => __('app.tenant.similar-groups.messages.deleted'),
+        ]);
+
+        return $this->toTenantRoute('tenant.similar-groups.index');
+    }
+
+    public function restore(SimilarGroup $similarGroup): RedirectResponse
+    {
+        $this->authorize('delete', $similarGroup);
+
+        $similarGroup->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.similar-groups.messages.restored'),
         ]);
 
         return $this->toTenantRoute('tenant.similar-groups.index');

@@ -169,10 +169,12 @@ class TargetStockService
             // Calcula Z-score (inverso da distribuição normal padrão)
             $zScore = SalesStatistics::zScore($nivelServico);
 
-            // Calcula estoques (fórmulas centralizadas em SalesStatistics)
+            // Calcula estoques (fórmulas centralizadas em SalesStatistics). O alvo
+            // arredonda a soma bruta uma única vez — não a soma dos dois abaixo,
+            // que já vêm arredondados para exibição (ver targetStock()).
             $estoqueSeguranca = SalesStatistics::safetyStock($zScore, $desvioPadrao);
             $estoqueMinimo = SalesStatistics::minimumStock($media, $coberturaDias);
-            $estoqueAlvo = SalesStatistics::targetStock($estoqueMinimo, $estoqueSeguranca);
+            $estoqueAlvo = SalesStatistics::targetStock($media, $coberturaDias, $zScore, $desvioPadrao);
 
             // Estoque atual (padrão: 0 se não fornecido)
             $estoqueAtual = $currentStock[$ean] ?? 0;

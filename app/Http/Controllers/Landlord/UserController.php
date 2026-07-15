@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreUserRequest;
 use App\Http\Requests\Landlord\UpdateUserRequest;
@@ -19,6 +20,7 @@ use Inertia\Response;
 class UserController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithTrashedFilter;
 
     /**
      * Display a listing of the resource.
@@ -30,17 +32,20 @@ class UserController extends Controller
         $search = $this->requestString($request, 'search');
         $isActive = $this->requestEnum($request, 'is_active', ['0', '1']);
         $roleId = $this->requestString($request, 'role_id');
+        $trashed = $this->resolveTrashedFilter($request);
 
         return $this->renderDeferredIndex('landlord/users/Index', 'users', fn (): LengthAwarePaginator => $this->usersPaginator(
             $search,
             $isActive,
             $roleId,
+            $trashed,
             $this->resolvePerPage($request, 10),
         ), [
             'filters' => [
                 'search' => $search,
                 'is_active' => $isActive,
                 'role_id' => $roleId,
+                'trashed' => $trashed,
             ],
             'filter_options' => [
                 'roles' => $this->rolesForSelect(),
@@ -48,9 +53,12 @@ class UserController extends Controller
         ]);
     }
 
-    private function usersPaginator(string $search, string $isActive, string $roleId, int $perPage): LengthAwarePaginator
+    private function usersPaginator(string $search, string $isActive, string $roleId, string $trashed, int $perPage): LengthAwarePaginator
     {
-        return User::query()
+        $query = User::query();
+        $this->applyTrashedToQuery($query, $trashed);
+
+        return $query
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -83,6 +91,7 @@ class UserController extends Controller
                 'is_active' => (bool) $user->is_active,
                 'roles' => $user->roles->pluck('name')->values()->all(),
                 'created_at' => $user->created_at?->toDateTimeString(),
+                'trashed' => $user->trashed(),
             ]);
     }
 
@@ -183,11 +192,39 @@ class UserController extends Controller
     {
         $this->authorize('delete', $user);
 
+        if ($user->trashed()) {
+            $user->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.landlord.users.messages.force_deleted'),
+            ]);
+
+            return $this->toLandlordRoute('landlord.users.index');
+        }
+
         $user->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.landlord.users.messages.deleted'),
+        ]);
+
+        return $this->toLandlordRoute('landlord.users.index');
+    }
+
+    /**
+     * Restore the specified resource from storage.
+     */
+    public function restore(User $user): RedirectResponse
+    {
+        $this->authorize('delete', $user);
+
+        $user->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.users.messages.restored'),
         ]);
 
         return $this->toLandlordRoute('landlord.users.index');

@@ -174,11 +174,36 @@ class UserController extends Controller
     {
         $this->authorize('delete', $user);
 
+        if ($user->trashed()) {
+            $user->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.tenant.users.messages.force_deleted'),
+            ]);
+
+            return $this->toTenantRoute('tenant.users.index');
+        }
+
         $user->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.tenant.users.messages.deleted'),
+        ]);
+
+        return $this->toTenantRoute('tenant.users.index');
+    }
+
+    public function restore(User $user): RedirectResponse
+    {
+        $this->authorize('delete', $user);
+
+        $user->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.users.messages.restored'),
         ]);
 
         return $this->toTenantRoute('tenant.users.index');
@@ -243,6 +268,7 @@ class UserController extends Controller
                 'is_active' => (bool) $user->is_active,
                 'roles' => $user->roles->pluck('name')->values()->all(),
                 'created_at' => $user->created_at?->toDateTimeString(),
+                'trashed' => $user->trashed(),
             ]);
     }
 

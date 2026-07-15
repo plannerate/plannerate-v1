@@ -189,7 +189,7 @@
                 </Collapsible>
 
                 <!-- Card: Análise de Papel -->
-                <Collapsible v-model:open="paperOpen" class="overflow-hidden rounded-xl border bg-card">
+                <Collapsible v-if="isAnalysisVisible('paper')" v-model:open="paperOpen" class="overflow-hidden rounded-xl border bg-card">
                     <div class="relative flex items-start gap-2.5 p-3">
                         <span
                             v-if="performance.paper.isVisible.value"
@@ -419,6 +419,8 @@ import { useBcgLabels } from '@/components/plannerate/analysis/bcg/labels';
 import type { BcgQuadrant, BcgResult } from '@/components/plannerate/analysis/bcg/types';
 import type { PaperResult } from '@/components/plannerate/analysis/paper/types';
 import type { TargetStockResult } from '@/components/plannerate/analysis/target-stock/types';
+import { isAnalysisVisible  } from '@/components/plannerate/analysis/visibility';
+import type {AnalysisKey} from '@/components/plannerate/analysis/visibility';
 import Performance from '@/components/plannerate/header/Performance.vue';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -549,9 +551,18 @@ const abcRoles = computed(() => {
     ];
 });
 
+/** Relatório CSV → análise correspondente, para respeitar a visibilidade central. */
+const REPORT_TO_ANALYSIS: Record<string, AnalysisKey> = {
+    abc: 'abc',
+    stock: 'target-stock',
+    paper: 'paper',
+    bcg: 'bcg',
+};
+
 /**
  * Relatórios CSV exportáveis, com o handler de exportação, o estado de
  * habilitação (depende de haver dados) e a cor do ícone por análise.
+ * Análises ocultas (ver visibility.ts) não expõem exportação.
  */
 const exportReports = computed(() => [
     {
@@ -586,7 +597,7 @@ const exportReports = computed(() => [
         enabled: performance.bcg.hasData,
         handler: handleExportBcg,
     },
-]);
+].filter((report) => isAnalysisVisible(REPORT_TO_ANALYSIS[report.key])));
 
 const getStorageKey = (gondolaId: string) => `plannerate:performance:visibility:${gondolaId}`;
 

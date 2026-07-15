@@ -4,9 +4,9 @@ import IntegrationApiController from '@/actions/App/Http/Controllers/Landlord/In
 import ImportFileButton from '@/components/imports/ImportFileButton.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import { ColumnActions } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Button } from '@/components/ui/button';
-import WayfinderLink from '@/components/WayfinderLink.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
@@ -19,6 +19,7 @@ type IntegrationApiRow = {
     slug: string;
     description: string | null;
     is_active: boolean;
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -26,6 +27,7 @@ const props = defineProps<{
     filters: {
         search: string;
         is_active: string;
+        trashed: 'without' | 'only' | 'with';
     };
 }>();
 
@@ -87,7 +89,7 @@ const pageMeta = useCrudPageMeta({
             :search-placeholder="t('app.landlord.common.search')"
             :filter-label="t('app.landlord.common.filter')"
             :clear-label="t('app.landlord.common.clear_filters')"
-            :show-trashed-filter="false"
+            :trashed-value="props.filters.trashed"
         >
             <template #filters>
                 <select
@@ -131,22 +133,14 @@ const pageMeta = useCrudPageMeta({
                         <td class="px-4 py-3">{{ integrationApi.slug }}</td>
                         <td class="px-4 py-3">{{ integrationApi.is_active ? t('app.landlord.common.yes') : t('app.landlord.common.no') }}</td>
                         <td class="px-4 py-3 ">
-                            <div class="inline-flex items-center gap-2">
-                                <Button variant="outline" size="sm" as-child>
-                                    <WayfinderLink :href="IntegrationApiController.edit.url(integrationApi.id)">
-                                        {{ t('app.landlord.common.edit') }}
-                                    </WayfinderLink>
-                                </Button>
-                                <Button variant="destructive" size="sm" as-child>
-                                    <WayfinderLink
-                                        :href="IntegrationApiController.destroy.url(integrationApi.id)"
-                                        method="delete"
-                                        as="button"
-                                    >
-                                        {{ t('app.landlord.common.delete') }}
-                                    </WayfinderLink>
-                                </Button>
-                            </div>
+                            <ColumnActions
+                                :edit-href="IntegrationApiController.edit.url(integrationApi.id)"
+                                :delete-href="IntegrationApiController.destroy.url(integrationApi.id)"
+                                :delete-label="integrationApi.name ?? undefined"
+                                :require-confirm-word="true"
+                                :is-trashed="integrationApi.trashed"
+                                :restore-href="IntegrationApiController.restore.url(integrationApi.id)"
+                            />
                         </td>
                     </tr>
                 </tbody>

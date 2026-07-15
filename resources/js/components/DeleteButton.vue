@@ -13,6 +13,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useT } from '@/composables/useT';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 const CONFIRM_WORDS = ['EXCLUIR', 'DELETAR', 'CONFIRMAR', 'REMOVER'] as const;
@@ -20,24 +21,55 @@ const CONFIRM_WORDS = ['EXCLUIR', 'DELETAR', 'CONFIRMAR', 'REMOVER'] as const;
 const props = withDefaults(
     defineProps<{
         href: string;
+        /** Nome do registro, exibido no título do modal. */
         label?: string;
+        /** Rótulo do botão/verbo (padrão: "Excluir" ou "Excluir definitivamente"). */
+        text?: string;
+        /** Exclusão definitiva (força cópia irreversível mais forte). */
+        permanent?: boolean;
         requireConfirmWord?: boolean;
     }>(),
     {
         label: undefined,
+        text: undefined,
+        permanent: false,
         requireConfirmWord: false,
     },
 );
+
+const { t } = useT();
 
 const isOpen = ref(false);
 const typed = ref('');
 const confirmWord = ref<typeof CONFIRM_WORDS[number]>(CONFIRM_WORDS[0]);
 const isDeleting = ref(false);
 
+const buttonText = computed(() =>
+    props.text ?? (props.permanent ? t('app.common.actions.delete_permanent') : t('app.common.actions.delete')),
+);
+
+const dialogTitle = computed(() => {
+    if (props.permanent) {
+        return props.label
+            ? t('app.common.delete_dialog.title_permanent_named', { label: props.label })
+            : t('app.common.delete_dialog.title_permanent');
+    }
+
+    return props.label
+        ? t('app.common.delete_dialog.title_named', { label: props.label })
+        : t('app.common.delete_dialog.title');
+});
+
+const dialogDescription = computed(() =>
+    props.permanent
+        ? t('app.common.delete_dialog.description_permanent')
+        : t('app.common.delete_dialog.description'),
+);
+
 const canConfirm = computed(() => {
     if (!props.requireConfirmWord) {
-return true;
-}
+        return true;
+    }
 
     return typed.value === confirmWord.value;
 });
@@ -51,8 +83,8 @@ watch(isOpen, (open) => {
 
 function handleConfirm(): void {
     if (!canConfirm.value) {
-return;
-}
+        return;
+    }
 
     isDeleting.value = true;
     router.delete(tenantWayfinderPath(props.href), {
@@ -69,7 +101,7 @@ return;
         <DialogTrigger as-child>
             <Button variant="destructive" size="sm" class="inline-flex items-center gap-1.5">
                 <Trash2 class="size-3.5" />
-                <span class="hidden sm:inline"><slot>Excluir</slot></span>
+                <span class="hidden sm:inline"><slot>{{ buttonText }}</slot></span>
             </Button>
         </DialogTrigger>
 
@@ -80,21 +112,16 @@ return;
                         <TriangleAlert class="size-5 text-destructive" />
                     </div>
                     <div>
-                        <DialogTitle>
-                            {{ label ? `Excluir "${label}"?` : 'Confirmar exclusão?' }}
-                        </DialogTitle>
-                        <DialogDescription class="mt-0.5">
-                            Esta ação não pode ser desfeita.
-                        </DialogDescription>
+                        <DialogTitle>{{ dialogTitle }}</DialogTitle>
+                        <DialogDescription class="mt-0.5">{{ dialogDescription }}</DialogDescription>
                     </div>
                 </div>
             </DialogHeader>
 
             <div v-if="requireConfirmWord" class="space-y-3">
                 <p class="text-sm text-muted-foreground">
-                    Digite
+                    {{ t('app.common.delete_dialog.confirm_prompt') }}
                     <span class="mx-1 rounded bg-muted px-1.5 py-0.5 font-mono font-semibold text-foreground tracking-wider">{{ confirmWord }}</span>
-                    para confirmar:
                 </p>
                 <Input
                     v-model="typed"
@@ -107,10 +134,10 @@ return;
 
             <DialogFooter>
                 <Button variant="outline" :disabled="isDeleting" @click="isOpen = false">
-                    Cancelar
+                    {{ t('app.common.actions.cancel') }}
                 </Button>
                 <Button variant="destructive" :disabled="!canConfirm || isDeleting" @click="handleConfirm">
-                    {{ isDeleting ? 'Excluindo...' : 'Excluir' }}
+                    {{ isDeleting ? t('app.common.actions.deleting') : buttonText }}
                 </Button>
             </DialogFooter>
         </DialogContent>

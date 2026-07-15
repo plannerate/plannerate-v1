@@ -33,6 +33,8 @@ return [
         'created' => 'Categoria criada com sucesso.',
         'updated' => 'Categoria atualizada com sucesso.',
         'deleted' => 'Categoria removida com sucesso.',
+        'force_deleted' => 'Categoria excluída definitivamente.',
+        'restored' => 'Categoria restaurada com sucesso.',
         'import_queued' => 'Importação enviada para processamento.',
         'import_finished_detail' => 'Importação concluída: :rows linhas, :created novas categorias, :updated atualizadas, :linked produtos vinculados. Avisos: :warnings. Erros: :errors.',
     ],

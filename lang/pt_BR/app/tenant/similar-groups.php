@@ -13,4 +13,9 @@ return [
         'status' => 'Status',
         'suggestion_single' => 'Sugestão única:',
     ],
+    'messages' => [
+        'deleted' => 'Grupo de similares excluído com sucesso.',
+        'force_deleted' => 'Grupo de similares excluído definitivamente.',
+        'restored' => 'Grupo de similares restaurado com sucesso.',
+    ],
 ];

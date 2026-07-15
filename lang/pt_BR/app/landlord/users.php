@@ -22,5 +22,7 @@ return [
         'created' => 'Usuário criado com sucesso.',
         'updated' => 'Usuário atualizado com sucesso.',
         'deleted' => 'Usuário removido com sucesso.',
+        'force_deleted' => 'Usuário excluído permanentemente com sucesso.',
+        'restored' => 'Usuário restaurado com sucesso.',
     ],
 ];

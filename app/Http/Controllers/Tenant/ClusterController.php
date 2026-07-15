@@ -84,6 +84,7 @@ class ClusterController extends Controller
                 'specification_1' => $cluster->specification_1,
                 'status' => $cluster->status,
                 'created_at' => $cluster->created_at?->toDateTimeString(),
+                'trashed' => $cluster->trashed(),
             ]);
     }
 
@@ -153,11 +154,36 @@ class ClusterController extends Controller
     {
         $this->authorize('delete', $cluster);
 
+        if ($cluster->trashed()) {
+            $cluster->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.tenant.clusters.messages.force_deleted'),
+            ]);
+
+            return $this->toTenantRoute('tenant.clusters.index');
+        }
+
         $cluster->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.tenant.clusters.messages.deleted'),
+        ]);
+
+        return $this->toTenantRoute('tenant.clusters.index');
+    }
+
+    public function restore(Cluster $cluster): RedirectResponse
+    {
+        $this->authorize('delete', $cluster);
+
+        $cluster->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.clusters.messages.restored'),
         ]);
 
         return $this->toTenantRoute('tenant.clusters.index');

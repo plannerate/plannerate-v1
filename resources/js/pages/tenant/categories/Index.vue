@@ -28,6 +28,7 @@ type CategoryRow = {
     status: 'draft' | 'published' | 'importer';
     codigo: number | null;
     is_placeholder: boolean;
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -249,6 +250,8 @@ const pageMeta = useCrudPageMeta({
                                 :delete-href="CategoryController.destroy.url({ category: category.id })"
                                 :delete-label="category.name"
                                 :require-confirm-word="true"
+                                :is-trashed="category.trashed"
+                                :restore-href="CategoryController.restore.url({ category: category.id })"
                             />
                         </td>
                     </tr>

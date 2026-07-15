@@ -384,6 +384,63 @@ test('cluster store validates store ownership and unique fields are tenant scope
     $response->assertSessionHasErrors(['store_id']);
 });
 
+test('store excluded lifecycle: soft delete, list only trashed, restore, then force delete', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForRegistry('tenant-softdelete');
+    assignTenantAdminRoleForRegistry($user, $tenant->id);
+
+    $host = 'tenant-softdelete.'.config('app.landlord_domain');
+    $subdomain = 'tenant-softdelete';
+
+    $store = Store::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Loja Lixeira',
+        'slug' => 'loja-lixeira',
+        'code' => 'LX-1',
+        'status' => 'published',
+    ]);
+
+    // Soft delete (linha viva → destroy remove logicamente)
+    $this
+        ->withServerVariables(['HTTP_HOST' => $host])
+        ->delete(route('tenant.stores.destroy', ['subdomain' => $subdomain, 'store' => $store->id], false))
+        ->assertRedirect(route('tenant.stores.index', ['subdomain' => $subdomain], false));
+
+    expect(Store::query()->find($store->id))->toBeNull();
+    expect(Store::withTrashed()->find($store->id)?->trashed())->toBeTrue();
+
+    // Filtro "só os excluídos" lista o registro com trashed = true
+    $this
+        ->withServerVariables(['HTTP_HOST' => $host])
+        ->get(route('tenant.stores.index', ['subdomain' => $subdomain, 'trashed' => 'only'], false))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/stores/Index')
+            ->where('filters.trashed', 'only')
+            ->has('stores.data', 1)
+            ->where('stores.data.0.trashed', true));
+
+    // Restaurar traz de volta
+    $this
+        ->withServerVariables(['HTTP_HOST' => $host])
+        ->post(route('tenant.stores.restore', ['subdomain' => $subdomain, 'store' => $store->id], false))
+        ->assertRedirect(route('tenant.stores.index', ['subdomain' => $subdomain], false));
+
+    expect(Store::query()->find($store->id)?->trashed())->toBeFalse();
+
+    // Excluir de novo (soft) e então destroy no já-excluído → force delete definitivo
+    $store->delete();
+
+    $this
+        ->withServerVariables(['HTTP_HOST' => $host])
+        ->delete(route('tenant.stores.destroy', ['subdomain' => $subdomain, 'store' => $store->id], false))
+        ->assertRedirect(route('tenant.stores.index', ['subdomain' => $subdomain], false));
+
+    expect(Store::withTrashed()->find($store->id))->toBeNull();
+});
+
 test('tenant routes for new registries are forbidden without role permissions', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);

@@ -13,6 +13,8 @@ use App\Http\Requests\Tenant\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Store;
+use App\Models\TenantIntegration;
+use App\Services\Integrations\Lookup\SingleProductFetchService;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Callcocam\LaravelRaptorPlannerate\Models\Sale;
 use Callcocam\LaravelRaptorPlannerate\Sales\SalesFilters;
@@ -35,20 +37,58 @@ class ProductController extends Controller
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
 
-    public function syncSingle(Request $request): RedirectResponse
+    public function syncSingle(Request $request, SingleProductFetchService $fetcher): RedirectResponse
     {
         $this->authorize('viewAny', Product::class);
 
-        $request->validate([
-            'produto' => ['required', 'string', 'max:255'],
-            'empresa' => ['nullable', 'string', 'max:255'],
-            'store_ids' => ['nullable', 'array'],
-            'store_ids.*' => ['ulid'],
+        $validated = $request->validate([
+            'product' => ['required', 'ulid'],
         ]);
 
+        /** @var Product $product */
+        $product = Product::query()->with('stores')->findOrFail($validated['product']);
+
+        $integration = TenantIntegration::query()
+            ->with('api')
+            ->where('tenant_id', $this->tenantId())
+            ->where('is_active', true)
+            ->first();
+
+        if ($integration === null || $integration->api === null) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __('app.tenant.products.sync.no_integration'),
+            ]);
+
+            return back();
+        }
+
+        $result = $fetcher->fetch($integration, $product);
+
+        if (! $result->configured) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __('app.tenant.products.sync.no_integration'),
+            ]);
+
+            return back();
+        }
+
+        if ($result->hasErrors() && ! $result->persistedAnything()) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('app.tenant.products.sync.error', ['reason' => $result->errors[0]]),
+            ]);
+
+            return back();
+        }
+
         Inertia::flash('toast', [
-            'type' => 'info',
-            'message' => 'Busca de produto mockada enquanto o novo sistema de importação é construído.',
+            'type' => 'success',
+            'message' => __('app.tenant.products.sync.success', [
+                'products' => $result->productsPersisted,
+                'sales' => $result->salesPersisted,
+            ]),
         ]);
 
         return back();
@@ -187,6 +227,7 @@ class ProductController extends Controller
                     ->all(),
                 'created_at' => $product->created_at?->toDateTimeString(),
                 'sync_at' => $product->sync_at?->toDateTimeString(),
+                'trashed' => $product->trashed(),
                 'dimensions' => [
                     'width' => $product->width,
                     'height' => $product->height,
@@ -392,14 +433,40 @@ class ProductController extends Controller
 
     public function destroy(string $product): RedirectResponse
     {
-        $product = Product::query()->whereKey($product)->firstOrFail();
+        $product = Product::query()->withTrashed()->whereKey($product)->firstOrFail();
         $this->authorize('delete', $product);
+
+        if ($product->trashed()) {
+            $product->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.tenant.products.messages.force_deleted'),
+            ]);
+
+            return $this->toTenantRoute('tenant.products.index');
+        }
 
         $product->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.tenant.products.messages.deleted'),
+        ]);
+
+        return $this->toTenantRoute('tenant.products.index');
+    }
+
+    public function restore(string $product): RedirectResponse
+    {
+        $product = Product::query()->onlyTrashed()->whereKey($product)->firstOrFail();
+        $this->authorize('delete', $product);
+
+        $product->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.products.messages.restored'),
         ]);
 
         return $this->toTenantRoute('tenant.products.index');

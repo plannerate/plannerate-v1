@@ -113,6 +113,7 @@ class PlanogramController extends Controller
                 'end_date' => $planogram->end_date?->toDateString(),
                 'status' => $planogram->status,
                 'created_at' => $planogram->created_at?->toDateTimeString(),
+                'trashed' => $planogram->trashed(),
             ]);
     }
 
@@ -446,7 +447,7 @@ class PlanogramController extends Controller
                 'message' => __('app.tenant.planograms.messages.force_deleted'),
             ]);
 
-            return back();
+            return $this->toTenantRoute('tenant.planograms.index');
         }
 
         $planogram->delete();
@@ -454,6 +455,20 @@ class PlanogramController extends Controller
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.tenant.planograms.messages.deleted'),
+        ]);
+
+        return $this->toTenantRoute('tenant.planograms.index');
+    }
+
+    public function restore(Planogram $planogram): RedirectResponse
+    {
+        $this->authorize('delete', $planogram);
+
+        $planogram->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.planograms.messages.restored'),
         ]);
 
         return $this->toTenantRoute('tenant.planograms.index');

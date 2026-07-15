@@ -22,5 +22,7 @@ return [
         'created' => 'Referência EAN criada com sucesso.',
         'updated' => 'Referência EAN atualizada com sucesso.',
         'deleted' => 'Referência EAN removida com sucesso.',
+        'force_deleted' => 'Referência EAN excluída permanentemente com sucesso.',
+        'restored' => 'Referência EAN restaurada com sucesso.',
     ],
 ];

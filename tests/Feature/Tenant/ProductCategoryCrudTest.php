@@ -350,6 +350,84 @@ test('product index trashed filter scopes soft deleted records', function (): vo
             ->where('filters.trashed', 'with'));
 });
 
+test('tenant admin can delete a product', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenant('tenant-product-delete');
+    assignTenantAdminRole($user, $tenant->id);
+
+    $host = 'tenant-product-delete.'.config('app.landlord_domain');
+
+    $product = Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Produto para Excluir',
+        'slug' => 'produto-para-excluir',
+        'status' => 'published',
+        'dimensions_status' => 'published',
+    ]);
+
+    $this->withServerVariables(['HTTP_HOST' => $host])
+        ->delete(route('tenant.products.destroy', ['subdomain' => 'tenant-product-delete', 'product' => $product->id], false))
+        ->assertRedirect(route('tenant.products.index', ['subdomain' => 'tenant-product-delete'], false));
+
+    expect($product->fresh())->toBeNull();
+    expect(Product::withTrashed()->whereKey($product->id)->first()?->trashed())->toBeTrue();
+});
+
+test('deleting an already soft deleted product force deletes it and does not 404', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenant('tenant-product-force-delete');
+    assignTenantAdminRole($user, $tenant->id);
+
+    $host = 'tenant-product-force-delete.'.config('app.landlord_domain');
+
+    $product = Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Produto Já Excluído',
+        'slug' => 'produto-ja-excluido',
+        'status' => 'published',
+        'dimensions_status' => 'published',
+    ]);
+    $product->delete();
+
+    $this->withServerVariables(['HTTP_HOST' => $host])
+        ->delete(route('tenant.products.destroy', ['subdomain' => 'tenant-product-force-delete', 'product' => $product->id], false))
+        ->assertRedirect(route('tenant.products.index', ['subdomain' => 'tenant-product-force-delete'], false));
+
+    // Second delete on an already-trashed product removes it permanently (no 404).
+    expect(Product::withTrashed()->whereKey($product->id)->exists())->toBeFalse();
+});
+
+test('tenant admin can restore a soft deleted product', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenant('tenant-product-restore');
+    assignTenantAdminRole($user, $tenant->id);
+
+    $host = 'tenant-product-restore.'.config('app.landlord_domain');
+
+    $product = Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Produto para Restaurar',
+        'slug' => 'produto-para-restaurar',
+        'status' => 'published',
+        'dimensions_status' => 'published',
+    ]);
+    $product->delete();
+
+    $this->withServerVariables(['HTTP_HOST' => $host])
+        ->post(route('tenant.products.restore', ['subdomain' => 'tenant-product-restore', 'product' => $product->id], false))
+        ->assertRedirect(route('tenant.products.index', ['subdomain' => 'tenant-product-restore'], false));
+
+    $restored = Product::query()->whereKey($product->id)->first();
+    expect($restored)->not->toBeNull();
+    expect($restored?->trashed())->toBeFalse();
+});
+
 test('product index category filter includes descendant categories', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);

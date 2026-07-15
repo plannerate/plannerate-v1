@@ -6,11 +6,10 @@ import { toast } from 'vue-sonner';
 import EanReferenceController from '@/actions/App/Http/Controllers/Landlord/EanReferenceController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
-import { ColumnImage } from '@/components/table/columns';
+import { ColumnActions, ColumnImage } from '@/components/table/columns';
 import ColumnHeader from '@/components/table/columns/ColumnHeader.vue';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Button } from '@/components/ui/button';
-import WayfinderLink from '@/components/WayfinderLink.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
@@ -34,6 +33,7 @@ type EanReferenceRow = {
     depth: string | number | null;
     weight: string | number | null;
     unit: string | null;
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -41,6 +41,7 @@ const props = defineProps<{
     filters: {
         search: string;
         has_image: string;
+        trashed: 'without' | 'only' | 'with';
     };
     can: {
         create: boolean;
@@ -124,7 +125,7 @@ function formatDimensions(reference: EanReferenceRow): string {
         <ListPage :meta="eanReferencesMeta" label="referencia ean" :action="eanReferencesIndexPath"
             :clear-href="eanReferencesIndexPath" :search-value="props.filters.search"
             :search-placeholder="t('app.landlord.common.search')" :filter-label="t('app.landlord.common.filter')"
-            :clear-label="t('app.landlord.common.clear_filters')" :show-trashed-filter="false">
+            :clear-label="t('app.landlord.common.clear_filters')" :trashed-value="props.filters.trashed">
             <template #filters>
                 <select name="has_image"
                     class="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
@@ -172,7 +173,14 @@ function formatDimensions(reference: EanReferenceRow): string {
                         <td class="px-4 py-3">{{ eanReference.packaging_type || '-' }}</td>
                         <td class="px-4 py-3">{{ formatDimensions(eanReference) }}</td>
                         <td class="px-4 py-3 ">
-                            <div class="inline-flex items-center gap-2">
+                            <ColumnActions
+                                :edit-href="EanReferenceController.edit.url({ ean_reference: eanReference.id })"
+                                :delete-href="EanReferenceController.destroy.url({ ean_reference: eanReference.id })"
+                                :delete-label="eanReference.reference_description ?? eanReference.ean"
+                                :require-confirm-word="true"
+                                :is-trashed="eanReference.trashed"
+                                :restore-href="EanReferenceController.restore.url({ ean_reference: eanReference.id })"
+                            >
                                 <Button type="button" variant="outline" size="sm"
                                     :disabled="fetchingIds.has(eanReference.id)" :title="eanReference.ean"
                                     @click="fetchImageByEan(eanReference)">
@@ -180,20 +188,7 @@ function formatDimensions(reference: EanReferenceRow): string {
                                     <ImageDown v-else class="size-3.5" />
                                     Buscar imagem
                                 </Button>
-                                <Button variant="outline" size="sm" as-child>
-                                    <WayfinderLink
-                                        :href="EanReferenceController.edit.url({ ean_reference: eanReference.id })">
-                                        {{ t('app.landlord.common.edit') }}
-                                    </WayfinderLink>
-                                </Button>
-                                <Button variant="destructive" size="sm" as-child>
-                                    <WayfinderLink
-                                        :href="EanReferenceController.destroy.url({ ean_reference: eanReference.id })"
-                                        method="delete" as="button">
-                                        {{ t('app.landlord.common.delete') }}
-                                    </WayfinderLink>
-                                </Button>
-                            </div>
+                            </ColumnActions>
                         </td>
                     </tr>
                 </tbody>

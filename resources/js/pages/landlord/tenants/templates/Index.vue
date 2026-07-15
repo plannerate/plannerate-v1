@@ -31,6 +31,7 @@ export type TemplateRow = {
     status: string;
     user_ids: string[];
     created_at: string | null;
+    trashed: boolean;
 };
 
 export type UserOption = {

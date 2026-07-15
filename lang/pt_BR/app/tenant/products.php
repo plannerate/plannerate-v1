@@ -61,7 +61,17 @@ return [
         'created' => 'Produto criado com sucesso.',
         'updated' => 'Produto atualizado com sucesso.',
         'deleted' => 'Produto removido com sucesso.',
+        'force_deleted' => 'Produto excluído definitivamente.',
+        'restored' => 'Produto restaurado com sucesso.',
     ],
+    'sync' => [
+        'button' => 'Sincronizar da API',
+        'loading' => 'Sincronizando...',
+        'success' => 'Sincronização concluída: :products produto(s) e :sales venda(s) atualizados.',
+        'no_integration' => 'Nenhuma integração de API ativa configurada para este cliente.',
+        'error' => 'Falha ao sincronizar: :reason',
+    ],
+
     'sales' => [
         'title' => 'Vendas do produto',
         'navigation' => 'Vendas',

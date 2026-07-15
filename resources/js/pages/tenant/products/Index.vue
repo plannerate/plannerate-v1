@@ -43,6 +43,7 @@ type ProductRow = {
     last_purchase_date: string | null;
     created_at: string;
     sync_at: string | null;
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -302,6 +303,8 @@ const pageMeta = useCrudPageMeta({
                                 :delete-href="ProductController.destroy.url({ product: product.id })"
                                 :delete-label="product.name ?? undefined"
                                 :require-confirm-word="true"
+                                :is-trashed="product.trashed"
+                                :restore-href="ProductController.restore.url({ product: product.id })"
                             >
                                 <!-- Link para o mini-dashboard de vendas do produto -->
                                 <Link

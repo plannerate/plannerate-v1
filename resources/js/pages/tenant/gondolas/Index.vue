@@ -28,6 +28,7 @@ type GondolaRow = {
     alignment: 'left' | 'right' | 'center' | 'justify';
     scale_factor: number;
     status: 'draft' | 'published';
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -151,6 +152,8 @@ const pageMeta = useCrudPageMeta({
                                 :delete-href="GondolaController.destroy.url({ planogram: props.planogram.id, gondola: gondola.id })"
                                 :delete-label="gondola.name"
                                 :require-confirm-word="true"
+                                :is-trashed="gondola.trashed"
+                                :restore-href="GondolaController.restore.url({ planogram: props.planogram.id, gondola: gondola.id })"
                             >
                                 <Button variant="outline" size="sm" as-child>
                                     <a

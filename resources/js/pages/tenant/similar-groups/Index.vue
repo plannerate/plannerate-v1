@@ -19,6 +19,7 @@ type SimilarGroupRow = {
     products_count: number;
     status: 'draft' | 'published';
     created_at: string;
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -41,6 +42,7 @@ const indexPath = `/similar-groups`;
 const createPath = `/similar-groups/create`;
 const editPath = (id: string) => `/similar-groups/${id}/edit`;
 const deletePath = (id: string) => `/similar-groups/${id}`;
+const restorePath = (id: string) => `/similar-groups/${id}/restore`;
 
 const { meta, rows, loading } = useDeferredPaginator(() => props.similarGroups, 10);
 
@@ -133,6 +135,8 @@ const pageMeta = useCrudPageMeta({
                                 :delete-href="deletePath(group.id)"
                                 :delete-label="group.name"
                                 :require-confirm-word="true"
+                                :is-trashed="group.trashed"
+                                :restore-href="restorePath(group.id)"
                             />
                         </td>
                     </tr>

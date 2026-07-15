@@ -3,9 +3,8 @@ import { Head } from '@inertiajs/vue3';
 import UsefulLinkController from '@/actions/App/Http/Controllers/Landlord/UsefulLinkController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import { ColumnActions } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
-import { Button } from '@/components/ui/button';
-import WayfinderLink from '@/components/WayfinderLink.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
@@ -19,6 +18,7 @@ type UsefulLinkRow = {
     logo: string | null;
     description: string | null;
     show_on_tenant_dashboard: boolean;
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -26,6 +26,7 @@ const props = defineProps<{
     filters: {
         search: string;
         show_on_tenant_dashboard: string;
+        trashed: 'without' | 'only' | 'with';
     };
 }>();
 
@@ -65,7 +66,7 @@ const pageMeta = useCrudPageMeta({
             :search-placeholder="t('app.landlord.common.search')"
             :filter-label="t('app.landlord.common.filter')"
             :clear-label="t('app.landlord.common.clear_filters')"
-            :show-trashed-filter="false"
+            :trashed-value="props.filters.trashed"
         >
             <template #filters>
                 <select
@@ -116,22 +117,14 @@ const pageMeta = useCrudPageMeta({
                         </td>
                         <td class="px-4 py-3">{{ usefulLink.show_on_tenant_dashboard ? t('app.landlord.common.yes') : t('app.landlord.common.no') }}</td>
                         <td class="px-4 py-3 ">
-                            <div class="inline-flex items-center gap-2">
-                                <Button variant="outline" size="sm" as-child>
-                                    <WayfinderLink :href="UsefulLinkController.edit.url(usefulLink.id)">
-                                        {{ t('app.landlord.common.edit') }}
-                                    </WayfinderLink>
-                                </Button>
-                                <Button variant="destructive" size="sm" as-child>
-                                    <WayfinderLink
-                                        :href="UsefulLinkController.destroy.url(usefulLink.id)"
-                                        method="delete"
-                                        as="button"
-                                    >
-                                        {{ t('app.landlord.common.delete') }}
-                                    </WayfinderLink>
-                                </Button>
-                            </div>
+                            <ColumnActions
+                                :edit-href="UsefulLinkController.edit.url(usefulLink.id)"
+                                :delete-href="UsefulLinkController.destroy.url(usefulLink.id)"
+                                :delete-label="usefulLink.name ?? undefined"
+                                :require-confirm-word="true"
+                                :is-trashed="usefulLink.trashed"
+                                :restore-href="UsefulLinkController.restore.url(usefulLink.id)"
+                            />
                         </td>
                     </tr>
                 </tbody>

@@ -4,10 +4,9 @@ import TenantUserController from '@/actions/App/Http/Controllers/Tenant/UserCont
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import ResendPasswordSetupButton from '@/components/ResendPasswordSetupButton.vue';
+import { ColumnActions } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import WayfinderLink from '@/components/WayfinderLink.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
@@ -21,6 +20,7 @@ type UserRow = {
     email: string;
     is_active: boolean;
     roles: string[];
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -121,27 +121,21 @@ const pageMeta = useCrudPageMeta({
                             <td class="px-4 py-3">{{ user.is_active ? t('app.tenant.common.active') :
                                 t('app.tenant.common.inactive') }}</td>
                             <td class="px-4 py-3 ">
-                                <div class="inline-flex items-center gap-2">
-                                    <Button variant="outline" size="sm" as-child>
-                                        <WayfinderLink
-                                            :href="TenantUserController.edit.url({ user: user.id })">
-                                            {{ t('app.tenant.common.edit') }}
-                                        </WayfinderLink>
-                                    </Button>
+                                <ColumnActions
+                                    :edit-href="TenantUserController.edit.url({ user: user.id })"
+                                    :delete-href="TenantUserController.destroy.url({ user: user.id })"
+                                    :delete-label="user.name"
+                                    :require-confirm-word="true"
+                                    :is-trashed="user.trashed"
+                                    :restore-href="TenantUserController.restore.url({ user: user.id })"
+                                >
                                     <ResendPasswordSetupButton
                                         v-if="user.is_active"
                                         variant="button"
                                         :resend-url="TenantUserController.resendPasswordSetup.url({ user: user.id }).replace(/^\/\/[^/]+/, '')"
                                         :user-name="user.name"
                                     />
-                                    <Button variant="destructive" size="sm" as-child>
-                                        <WayfinderLink
-                                            :href="TenantUserController.destroy.url({ user: user.id })"
-                                            method="delete" as="button">
-                                            {{ t('app.tenant.common.delete') }}
-                                        </WayfinderLink>
-                                    </Button>
-                                </div>
+                                </ColumnActions>
                             </td>
                         </tr>
                     </tbody>

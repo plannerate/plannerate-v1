@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\ImportIntegrationApiConfigRequest;
 use App\Http\Requests\Landlord\StoreIntegrationApiRequest;
@@ -20,6 +21,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class IntegrationApiController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithTrashedFilter;
 
     public function index(Request $request): Response
     {
@@ -27,15 +29,18 @@ class IntegrationApiController extends Controller
 
         $search = $this->requestString($request, 'search');
         $isActive = $this->requestEnum($request, 'is_active', ['0', '1']);
+        $trashed = $this->resolveTrashedFilter($request);
 
         return $this->renderDeferredIndex('landlord/integration-apis/Index', 'integrationApis', fn (): LengthAwarePaginator => $this->integrationApisPaginator(
             $search,
             $isActive,
+            $trashed,
             $this->resolvePerPage($request, 10),
         ), [
             'filters' => [
                 'search' => $search,
                 'is_active' => $isActive,
+                'trashed' => $trashed,
             ],
         ]);
     }
@@ -94,11 +99,36 @@ class IntegrationApiController extends Controller
     {
         $this->authorize('delete', $integrationApi);
 
+        if ($integrationApi->trashed()) {
+            $integrationApi->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.landlord.integration_apis.messages.force_deleted'),
+            ]);
+
+            return $this->toLandlordRoute('landlord.integration-apis.index');
+        }
+
         $integrationApi->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.landlord.integration_apis.messages.deleted'),
+        ]);
+
+        return $this->toLandlordRoute('landlord.integration-apis.index');
+    }
+
+    public function restore(IntegrationApi $integrationApi): RedirectResponse
+    {
+        $this->authorize('delete', $integrationApi);
+
+        $integrationApi->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.integration_apis.messages.restored'),
         ]);
 
         return $this->toLandlordRoute('landlord.integration-apis.index');
@@ -216,9 +246,12 @@ class IntegrationApiController extends Controller
         return $this->toLandlordRoute('landlord.integration-apis.index');
     }
 
-    private function integrationApisPaginator(string $search, string $isActive, int $perPage): LengthAwarePaginator
+    private function integrationApisPaginator(string $search, string $isActive, string $trashed, int $perPage): LengthAwarePaginator
     {
-        return IntegrationApi::query()
+        $query = IntegrationApi::query();
+        $this->applyTrashedToQuery($query, $trashed);
+
+        return $query
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -237,6 +270,7 @@ class IntegrationApiController extends Controller
                 'description' => $integrationApi->description,
                 'is_active' => $integrationApi->is_active,
                 'created_at' => $integrationApi->created_at?->toDateTimeString(),
+                'trashed' => $integrationApi->trashed(),
             ]);
     }
 

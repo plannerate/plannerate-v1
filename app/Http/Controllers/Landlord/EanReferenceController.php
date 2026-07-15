@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreEanReferenceRequest;
 use App\Http\Requests\Landlord\UpdateEanReferenceRequest;
@@ -20,6 +21,7 @@ use Inertia\Response;
 class EanReferenceController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithTrashedFilter;
 
     public function index(Request $request): Response
     {
@@ -34,6 +36,7 @@ class EanReferenceController extends Controller
         $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'asc';
         $hasImageParam = $request->query('has_image', '');
         $hasImage = $hasImageParam === '1' ? true : ($hasImageParam === '0' ? false : null);
+        $trashed = $this->resolveTrashedFilter($request);
 
         return $this->renderDeferredIndex('landlord/ean-references/Index', 'ean_references', fn (): LengthAwarePaginator => $this->eanReferencesPaginator(
             $search,
@@ -41,10 +44,12 @@ class EanReferenceController extends Controller
             $direction,
             $this->resolvePerPage($request, 10),
             $hasImage,
+            $trashed,
         ), [
             'filters' => [
                 'search' => $search,
                 'has_image' => $hasImageParam,
+                'trashed' => $trashed,
             ],
             'can' => [
                 'create' => Gate::allows('create', EanReference::class),
@@ -52,9 +57,12 @@ class EanReferenceController extends Controller
         ]);
     }
 
-    private function eanReferencesPaginator(string $search, ?string $sort, string $direction, int $perPage, ?bool $hasImage = null): LengthAwarePaginator
+    private function eanReferencesPaginator(string $search, ?string $sort, string $direction, int $perPage, ?bool $hasImage = null, string $trashed = 'without'): LengthAwarePaginator
     {
-        return EanReference::query()
+        $query = EanReference::query();
+        $this->applyTrashedToQuery($query, $trashed);
+
+        return $query
             ->when($hasImage === true, fn ($q) => $q->whereNotNull('image_front_url'))
             ->when($hasImage === false, fn ($q) => $q->whereNull('image_front_url'))
             ->when($search !== '', function ($query) use ($search): void {
@@ -89,6 +97,7 @@ class EanReferenceController extends Controller
                 'weight' => $eanReference->weight,
                 'unit' => $eanReference->unit,
                 'created_at' => $eanReference->created_at?->toDateTimeString(),
+                'trashed' => $eanReference->trashed(),
             ]);
     }
 
@@ -198,11 +207,36 @@ class EanReferenceController extends Controller
     {
         $this->authorize('delete', $eanReference);
 
+        if ($eanReference->trashed()) {
+            $eanReference->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.landlord.ean_references.messages.force_deleted'),
+            ]);
+
+            return $this->toLandlordRoute('landlord.ean-references.index');
+        }
+
         $eanReference->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.landlord.ean_references.messages.deleted'),
+        ]);
+
+        return $this->toLandlordRoute('landlord.ean-references.index');
+    }
+
+    public function restore(EanReference $eanReference): RedirectResponse
+    {
+        $this->authorize('delete', $eanReference);
+
+        $eanReference->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.ean_references.messages.restored'),
         ]);
 
         return $this->toLandlordRoute('landlord.ean-references.index');

@@ -37,6 +37,8 @@ return [
         'created' => 'Perfil criado com sucesso.',
         'updated' => 'Perfil atualizado com sucesso.',
         'deleted' => 'Perfil removido com sucesso.',
+        'force_deleted' => 'Perfil excluído permanentemente com sucesso.',
+        'restored' => 'Perfil restaurado com sucesso.',
         'in_use' => 'Não é possível excluir um perfil com usuários vinculados.',
         'protected' => 'Este perfil é protegido e não pode ser alterado.',
     ],

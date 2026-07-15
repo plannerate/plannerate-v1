@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreUsefulLinkRequest;
 use App\Http\Requests\Landlord\UpdateUsefulLinkRequest;
@@ -16,6 +17,7 @@ use Inertia\Response;
 class UsefulLinkController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithTrashedFilter;
 
     public function index(Request $request): Response
     {
@@ -23,22 +25,28 @@ class UsefulLinkController extends Controller
 
         $search = $this->requestString($request, 'search');
         $showOnTenantDashboard = $this->requestEnum($request, 'show_on_tenant_dashboard', ['0', '1']);
+        $trashed = $this->resolveTrashedFilter($request);
 
         return $this->renderDeferredIndex('landlord/useful-links/Index', 'useful_links', fn (): LengthAwarePaginator => $this->usefulLinksPaginator(
             $search,
             $showOnTenantDashboard,
+            $trashed,
             $this->resolvePerPage($request, 10),
         ), [
             'filters' => [
                 'search' => $search,
                 'show_on_tenant_dashboard' => $showOnTenantDashboard,
+                'trashed' => $trashed,
             ],
         ]);
     }
 
-    private function usefulLinksPaginator(string $search, string $showOnTenantDashboard, int $perPage): LengthAwarePaginator
+    private function usefulLinksPaginator(string $search, string $showOnTenantDashboard, string $trashed, int $perPage): LengthAwarePaginator
     {
-        return UsefulLink::query()
+        $query = UsefulLink::query();
+        $this->applyTrashedToQuery($query, $trashed);
+
+        return $query
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -59,6 +67,7 @@ class UsefulLinkController extends Controller
                 'description' => $usefulLink->description,
                 'show_on_tenant_dashboard' => $usefulLink->show_on_tenant_dashboard,
                 'created_at' => $usefulLink->created_at?->toDateTimeString(),
+                'trashed' => $usefulLink->trashed(),
             ]);
     }
 
@@ -125,11 +134,36 @@ class UsefulLinkController extends Controller
     {
         $this->authorize('delete', $usefulLink);
 
+        if ($usefulLink->trashed()) {
+            $usefulLink->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.landlord.useful_links.messages.force_deleted'),
+            ]);
+
+            return $this->toLandlordRoute('landlord.useful-links.index');
+        }
+
         $usefulLink->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.landlord.useful_links.messages.deleted'),
+        ]);
+
+        return $this->toLandlordRoute('landlord.useful-links.index');
+    }
+
+    public function restore(UsefulLink $usefulLink): RedirectResponse
+    {
+        $this->authorize('delete', $usefulLink);
+
+        $usefulLink->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.useful_links.messages.restored'),
         ]);
 
         return $this->toLandlordRoute('landlord.useful-links.index');

@@ -57,7 +57,11 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
             ->name('categories.export.data');
         Route::resource('categories', Tenant\CategoryController::class)
             ->except(['show'])
+            ->withTrashed(['destroy'])
             ->names('categories');
+        Route::post('categories/{category}/restore', [Tenant\CategoryController::class, 'restore'])
+            ->withTrashed()
+            ->name('categories.restore');
 
         // ── Mercadológico (árvore de categorias do tenant ativo) ──
         Route::get('mercadologico', [Tenant\MercadologicoController::class, 'index'])
@@ -84,6 +88,8 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
         Route::resource('products', Tenant\ProductController::class)
             ->except(['show'])
             ->names('products');
+        Route::post('products/{product}/restore', [Tenant\ProductController::class, 'restore'])
+            ->name('products.restore');
         Route::get('products/{product}/sales', [Tenant\ProductController::class, 'sales'])
             ->name('products.sales');
         Route::get('products/sortiment-attributes', [Tenant\ProductController::class, 'sortimentAttributes'])
@@ -129,12 +135,20 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
             ->name('similar-groups.products.search');
         Route::resource('similar-groups', Tenant\SimilarGroupController::class)
             ->except(['show'])
+            ->withTrashed(['destroy'])
             ->names('similar-groups');
+        Route::post('similar-groups/{similarGroup}/restore', [Tenant\SimilarGroupController::class, 'restore'])
+            ->withTrashed()
+            ->name('similar-groups.restore');
 
         // ── Stores ────────────────────────────────────────────
         Route::resource('stores', Tenant\StoreController::class)
             ->except(['show'])
+            ->withTrashed(['destroy'])
             ->names('stores');
+        Route::post('stores/{store}/restore', [Tenant\StoreController::class, 'restore'])
+            ->withTrashed()
+            ->name('stores.restore');
 
         // ── Sales ─────────────────────────────────────────────
         Route::resource('sales', Tenant\SaleController::class)
@@ -144,18 +158,29 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
         // ── Clusters ──────────────────────────────────────────
         Route::resource('clusters', Tenant\ClusterController::class)
             ->except(['show'])
+            ->withTrashed(['destroy'])
             ->names('clusters');
+        Route::post('clusters/{cluster}/restore', [Tenant\ClusterController::class, 'restore'])
+            ->withTrashed()
+            ->name('clusters.restore');
 
         // ── Providers ─────────────────────────────────────────
         Route::resource('providers', Tenant\ProviderController::class)
             ->except(['show'])
+            ->withTrashed(['destroy'])
             ->names('providers');
+        Route::post('providers/{provider}/restore', [Tenant\ProviderController::class, 'restore'])
+            ->withTrashed()
+            ->name('providers.restore');
 
         // ── Planograms ────────────────────────────────────────
         Route::resource('planograms', Tenant\PlanogramController::class)
             ->except(['show'])
             ->withTrashed(['destroy'])
             ->names('planograms');
+        Route::post('planograms/{planogram}/restore', [Tenant\PlanogramController::class, 'restore'])
+            ->withTrashed()
+            ->name('planograms.restore');
         Route::get('planograms/maps', [Tenant\PlanogramController::class, 'maps'])
             ->name('planograms.maps');
         Route::get('planograms/orphan-layers', [Tenant\PlanogramController::class, 'orphanLayers'])
@@ -167,12 +192,20 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
         // ── Gondolas ──────────────────────────────────────────
         Route::resource('planograms/{planogram}/gondolas', Tenant\GondolaController::class)
             ->except(['show'])
+            ->withTrashed(['destroy'])
             ->names('gondolas');
+        Route::post('planograms/{planogram}/gondolas/{gondola}/restore', [Tenant\GondolaController::class, 'restore'])
+            ->withTrashed()
+            ->name('gondolas.restore');
 
         // ── Users ─────────────────────────────────────────────
         Route::resource('users', Tenant\UserController::class)
             ->except(['show'])
+            ->withTrashed(['destroy'])
             ->names('users');
+        Route::post('users/{user}/restore', [Tenant\UserController::class, 'restore'])
+            ->withTrashed()
+            ->name('users.restore');
         Route::post('users/{user}/password-setup/resend', [Tenant\UserController::class, 'resendPasswordSetup'])
             ->middleware('throttle:6,1')
             ->name('users.password-setup.resend');

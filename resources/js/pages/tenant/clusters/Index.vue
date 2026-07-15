@@ -20,6 +20,7 @@ type ClusterRow = {
     name: string;
     specification_1: string | null;
     status: 'draft' | 'published';
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -132,6 +133,8 @@ const pageMeta = useCrudPageMeta({
                                 :delete-href="ClusterController.destroy.url({ cluster: cluster.id })"
                                 :delete-label="cluster.name"
                                 :require-confirm-word="true"
+                                :is-trashed="cluster.trashed"
+                                :restore-href="ClusterController.restore.url({ cluster: cluster.id })"
                             />
                         </td>
                     </tr>

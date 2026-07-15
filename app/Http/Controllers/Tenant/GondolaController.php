@@ -84,6 +84,7 @@ class GondolaController extends Controller
                 'scale_factor' => $gondola->scale_factor,
                 'status' => $gondola->status,
                 'created_at' => $gondola->created_at?->toDateTimeString(),
+                'trashed' => $gondola->trashed(),
             ]);
     }
 
@@ -182,11 +183,42 @@ class GondolaController extends Controller
         $this->abortIfGondolaDoesNotBelongToPlanogram($gondola, $planogram);
         $this->authorize('view', $planogram);
 
+        if ($gondola->trashed()) {
+            $gondola->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.tenant.gondolas.messages.force_deleted'),
+            ]);
+
+            return $this->toTenantRoute('tenant.catalog.gondolas.index', [
+                'planogram' => $planogram->getKey(),
+            ]);
+        }
+
         $gondola->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.tenant.gondolas.messages.deleted'),
+        ]);
+
+        return $this->toTenantRoute('tenant.catalog.gondolas.index', [
+            'planogram' => $planogram->getKey(),
+        ]);
+    }
+
+    public function restore(Planogram $planogram, Gondola $gondola): RedirectResponse
+    {
+        $this->authorize('delete', $gondola);
+        $this->abortIfGondolaDoesNotBelongToPlanogram($gondola, $planogram);
+        $this->authorize('view', $planogram);
+
+        $gondola->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.gondolas.messages.restored'),
         ]);
 
         return $this->toTenantRoute('tenant.catalog.gondolas.index', [

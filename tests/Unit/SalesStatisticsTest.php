@@ -62,8 +62,25 @@ test('stock formulas round to whole units', function (): void {
     expect(SalesStatistics::safetyStock(1.2816, 10))->toBe(13.0)
         // mínimo = média * cobertura = 2 * 5 = 10
         ->and(SalesStatistics::minimumStock(2.0, 5))->toBe(10.0)
-        // alvo = mínimo + segurança = 10 + 13 = 23
-        ->and(SalesStatistics::targetStock(10, 13))->toBe(23.0);
+        // alvo = (média*cobertura + z*desvio) = (10 + 12.816) = 22.816 → 23
+        ->and(SalesStatistics::targetStock(2.0, 5, 1.2816, 10))->toBe(23.0);
+});
+
+test('targetStock rounds the raw sum once, not the sum of the already-rounded parts', function (): void {
+    // Caso real (planilha de referência, EAN 7896508200010): mínimo bruto
+    // 1,96*7=13,72 e segurança bruta 1,282*2,14=2,74348. Somando os valores
+    // BRUTOS antes de arredondar: 16,46348 → 16 (o que a planilha espera).
+    // Arredondar cada parcela antes de somar (14 + 3) daria 17 — divergente.
+    expect(SalesStatistics::targetStock(1.96, 7, 1.282, 2.14))->toBe(16.0)
+        ->and(SalesStatistics::minimumStock(1.96, 7))->toBe(14.0)
+        ->and(SalesStatistics::safetyStock(1.282, 2.14))->toBe(3.0);
+
+    // Segundo caso real (EAN 7891959014612): mínimo bruto 1,63*7=11,41 e
+    // segurança bruta 1,282*0,95=1,2179. Soma bruta 12,6279 → 13 (planilha).
+    // Somar as parcelas já arredondadas (11 + 1) daria 12 — divergente.
+    expect(SalesStatistics::targetStock(1.63, 7, 1.282, 0.95))->toBe(13.0)
+        ->and(SalesStatistics::minimumStock(1.63, 7))->toBe(11.0)
+        ->and(SalesStatistics::safetyStock(1.282, 0.95))->toBe(1.0);
 });
 
 test('mean is the arithmetic average, null when empty', function (): void {

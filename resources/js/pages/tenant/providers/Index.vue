@@ -21,6 +21,7 @@ type ProviderRow = {
     phone: string | null;
     cnpj: string | null;
     is_default: boolean;
+    trashed: boolean;
 };
 
 const props = defineProps<{
@@ -120,6 +121,8 @@ const pageMeta = useCrudPageMeta({
                                 :delete-href="ProviderController.destroy.url({ provider: provider.id })"
                                 :delete-label="provider.name ?? undefined"
                                 :require-confirm-word="true"
+                                :is-trashed="provider.trashed"
+                                :restore-href="ProviderController.restore.url({ provider: provider.id })"
                             />
                         </td>
                     </tr>

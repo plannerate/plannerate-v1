@@ -26,7 +26,11 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
 
     Route::resource('roles', Landlord\RoleController::class)
         ->except(['show'])
+        ->withTrashed(['destroy'])
         ->names('landlord.roles');
+    Route::post('roles/{role}/restore', [Landlord\RoleController::class, 'restore'])
+        ->withTrashed()
+        ->name('landlord.roles.restore');
 
     Route::resource('modules', Landlord\ModuleController::class)
         ->except(['show'])
@@ -34,7 +38,11 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
 
     Route::resource('integration-apis', Landlord\IntegrationApiController::class)
         ->except(['show'])
+        ->withTrashed(['destroy'])
         ->names('landlord.integration-apis');
+    Route::post('integration-apis/{integration_api}/restore', [Landlord\IntegrationApiController::class, 'restore'])
+        ->withTrashed()
+        ->name('landlord.integration-apis.restore');
     Route::get('integration-apis/export', [Landlord\IntegrationApiController::class, 'exportConfigurations'])
         ->name('landlord.integration-apis.export');
     Route::post('integration-apis/import', [Landlord\IntegrationApiController::class, 'importConfigurations'])
@@ -42,7 +50,11 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
 
     Route::resource('users', Landlord\UserController::class)
         ->except(['show'])
+        ->withTrashed(['destroy'])
         ->names('landlord.users');
+    Route::post('users/{user}/restore', [Landlord\UserController::class, 'restore'])
+        ->withTrashed()
+        ->name('landlord.users.restore');
 
     Route::post('permissions/sync', [Landlord\PermissionController::class, 'sync'])
         ->name('landlord.permissions.sync');
@@ -53,11 +65,19 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
 
     Route::resource('ean-references', Landlord\EanReferenceController::class)
         ->except(['show'])
+        ->withTrashed(['destroy'])
         ->names('landlord.ean-references');
+    Route::post('ean-references/{ean_reference}/restore', [Landlord\EanReferenceController::class, 'restore'])
+        ->withTrashed()
+        ->name('landlord.ean-references.restore');
 
     Route::resource('useful-links', Landlord\UsefulLinkController::class)
         ->except(['show'])
+        ->withTrashed(['destroy'])
         ->names('landlord.useful-links');
+    Route::post('useful-links/{useful_link}/restore', [Landlord\UsefulLinkController::class, 'restore'])
+        ->withTrashed()
+        ->name('landlord.useful-links.restore');
 
     Route::post('notifications/read-all', [Landlord\NotificationController::class, 'markAllRead'])
         ->name('landlord.notifications.read-all');
@@ -165,6 +185,10 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         Route::patch('tenants/{tenant}/kanban/templates/{template}/sync-users', [Landlord\WorkflowTemplateController::class, 'syncUsers'])
             ->name('landlord.tenants.kanban.templates.sync-users');
         Route::delete('tenants/{tenant}/kanban/templates/{template}', [Landlord\WorkflowTemplateController::class, 'destroy'])
+            ->withTrashed()
             ->name('landlord.tenants.kanban.templates.destroy');
+        Route::post('tenants/{tenant}/kanban/templates/{template}/restore', [Landlord\WorkflowTemplateController::class, 'restore'])
+            ->withTrashed()
+            ->name('landlord.tenants.kanban.templates.restore');
     });
 });

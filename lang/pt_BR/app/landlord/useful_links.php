@@ -19,5 +19,7 @@ return [
         'created' => 'Link útil criado com sucesso.',
         'updated' => 'Link útil atualizado com sucesso.',
         'deleted' => 'Link útil removido com sucesso.',
+        'force_deleted' => 'Link útil excluído permanentemente com sucesso.',
+        'restored' => 'Link útil restaurado com sucesso.',
     ],
 ];

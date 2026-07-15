@@ -25,5 +25,7 @@ return [
         'created' => 'Gôndola criada com sucesso.',
         'updated' => 'Gôndola atualizada com sucesso.',
         'deleted' => 'Gôndola removida com sucesso.',
+        'force_deleted' => 'Gôndola excluída definitivamente.',
+        'restored' => 'Gôndola restaurada com sucesso.',
     ],
 ];

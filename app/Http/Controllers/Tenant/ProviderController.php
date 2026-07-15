@@ -77,6 +77,7 @@ class ProviderController extends Controller
                 'cnpj' => $provider->cnpj,
                 'is_default' => (bool) $provider->is_default,
                 'created_at' => $provider->created_at?->toDateTimeString(),
+                'trashed' => $provider->trashed(),
             ]);
     }
 
@@ -158,11 +159,36 @@ class ProviderController extends Controller
     {
         $this->authorize('delete', $provider);
 
+        if ($provider->trashed()) {
+            $provider->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.tenant.providers.messages.force_deleted'),
+            ]);
+
+            return $this->toTenantRoute('tenant.providers.index');
+        }
+
         $provider->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.tenant.providers.messages.deleted'),
+        ]);
+
+        return $this->toTenantRoute('tenant.providers.index');
+    }
+
+    public function restore(Provider $provider): RedirectResponse
+    {
+        $this->authorize('delete', $provider);
+
+        $provider->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.providers.messages.restored'),
         ]);
 
         return $this->toTenantRoute('tenant.providers.index');

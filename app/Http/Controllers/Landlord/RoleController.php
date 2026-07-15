@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreRoleRequest;
 use App\Http\Requests\Landlord\UpdateRoleRequest;
@@ -20,6 +21,7 @@ use Inertia\Response;
 class RoleController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithTrashedFilter;
 
     /**
      * @var list<string>
@@ -35,15 +37,18 @@ class RoleController extends Controller
 
         $search = $this->requestString($request, 'search');
         $type = $this->requestEnum($request, 'type', RbacType::all());
+        $trashed = $this->resolveTrashedFilter($request);
 
         return $this->renderDeferredIndex('landlord/roles/Index', 'roles', fn (): LengthAwarePaginator => $this->rolesPaginator(
             $search,
             $type,
+            $trashed,
             $this->resolvePerPage($request, 10),
         ), [
             'filters' => [
                 'search' => $search,
                 'type' => $type,
+                'trashed' => $trashed,
             ],
             'filter_options' => [
                 'types' => $this->typesForSelect(),
@@ -51,9 +56,12 @@ class RoleController extends Controller
         ]);
     }
 
-    private function rolesPaginator(string $search, string $type, int $perPage): LengthAwarePaginator
+    private function rolesPaginator(string $search, string $type, string $trashed, int $perPage): LengthAwarePaginator
     {
-        return Role::query()
+        $query = Role::query();
+        $this->applyTrashedToQuery($query, $trashed);
+
+        return $query
             ->whereNull('tenant_id')
             ->where('guard_name', 'web')
             ->when($search !== '', fn ($query) => $query->where('name', 'like', '%'.$search.'%'))
@@ -70,6 +78,7 @@ class RoleController extends Controller
                 'is_administrative' => (bool) $role->is_administrative,
                 'is_protected' => in_array((string) $role->system_name, self::PROTECTED_ROLES, true),
                 'created_at' => $role->created_at?->toDateTimeString(),
+                'trashed' => $role->trashed(),
             ]);
     }
 
@@ -217,11 +226,41 @@ class RoleController extends Controller
             return back();
         }
 
+        if ($role->trashed()) {
+            $role->forceDelete();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('app.landlord.roles.messages.force_deleted'),
+            ]);
+
+            return $this->toLandlordRoute('landlord.roles.index');
+        }
+
         $role->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.landlord.roles.messages.deleted'),
+        ]);
+
+        return $this->toLandlordRoute('landlord.roles.index');
+    }
+
+    /**
+     * Restore the specified role.
+     */
+    public function restore(Role $role): RedirectResponse
+    {
+        $role = $this->guardGlobalRole($role);
+
+        $this->authorize('delete', $role);
+
+        $role->restore();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.roles.messages.restored'),
         ]);
 
         return $this->toLandlordRoute('landlord.roles.index');
