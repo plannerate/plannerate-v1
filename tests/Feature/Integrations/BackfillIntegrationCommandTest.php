@@ -1,11 +1,14 @@
 <?php
 
+use App\Console\Commands\Integrations\RunIntegrationImportCommand;
 use App\Jobs\Integrations\DiscoverIntegrationPagesJob;
 use App\Models\IntegrationApi;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
 
 beforeEach(function (): void {
     Artisan::call('migrate:fresh', [
@@ -139,4 +142,30 @@ test('--integration filters which integration gets backfilled', function (): voi
     Bus::assertDispatched(DiscoverIntegrationPagesJob::class, fn (DiscoverIntegrationPagesJob $job): bool => $job->integrationId === $integrationA->id);
 
     Bus::assertNotDispatched(DiscoverIntegrationPagesJob::class, fn (DiscoverIntegrationPagesJob $job): bool => $job->integrationId === $integrationB->id);
+});
+
+test('aborts when another discovery dispatch holds the lock', function (): void {
+    Bus::fake();
+
+    $api = makeBackfillApi('backfill-api-lock');
+    $tenant = makeBackfillTenant('backfill-tenant-lock');
+
+    TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => $api->id,
+        'config' => [],
+        'is_active' => true,
+    ]);
+
+    $lock = Cache::lock(RunIntegrationImportCommand::DISPATCH_LOCK_KEY, 60);
+    expect($lock->get())->toBeTrue();
+
+    try {
+        $exitCode = Artisan::call('integration:backfill');
+    } finally {
+        $lock->release();
+    }
+
+    expect($exitCode)->toBe(Command::FAILURE);
+    Bus::assertNotDispatched(DiscoverIntegrationPagesJob::class);
 });

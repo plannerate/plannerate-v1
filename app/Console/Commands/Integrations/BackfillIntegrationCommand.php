@@ -24,6 +24,23 @@ class BackfillIntegrationCommand extends Command
 
     public function handle(): int
     {
+        $lock = RunIntegrationImportCommand::acquireDispatchLock();
+
+        if ($lock === null) {
+            $this->error('Outro despacho de descoberta (integration:run ou integration:backfill) está em andamento; tente novamente em alguns minutos.');
+
+            return self::FAILURE;
+        }
+
+        try {
+            return $this->dispatchBackfill();
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function dispatchBackfill(): int
+    {
         $integrations = $this->resolveIntegrations();
 
         if ($integrations->isEmpty()) {

@@ -10,8 +10,10 @@ use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\User;
 use App\Notifications\AppNotification;
+use App\Services\Integrations\Support\ImportQueueMonitor;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -20,12 +22,25 @@ class CleanupCommand extends Command
 {
     private const INACTIVE_DAYS = 120;
 
-    protected $signature = 'sync:cleanup {--tenant= : ID do tenant específico}';
+    /**
+     * Janela de frescor: sem NENHUMA venda nos últimos N dias, o import diário
+     * provavelmente está quebrado — desativar/limpar com base nesse snapshot
+     * desatualizado apagaria dados indevidamente.
+     */
+    private const SALES_FRESHNESS_DAYS = 3;
+
+    protected $signature = 'sync:cleanup
+        {--tenant= : ID do tenant específico}
+        {--force : Ignora as travas de segurança (backlog das filas de import e frescor das vendas)}';
 
     protected $description = 'Executa limpeza automática por TenantIntegration ativa';
 
     public function handle(): int
     {
+        if (! $this->option('force') && ! $this->importQueuesAreIdle()) {
+            return self::FAILURE;
+        }
+
         $integrations = $this->getActiveIntegrations();
 
         if ($integrations->isEmpty()) {
@@ -52,6 +67,32 @@ class CleanupCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Trava de segurança: com jobs de importação ainda pendentes, o cleanup
+     * agiria sobre um snapshot parcial (ex.: desativar produtos cujas vendas
+     * ainda estão na fila imports-process).
+     */
+    protected function importQueuesAreIdle(): bool
+    {
+        $pendingByQueue = ImportQueueMonitor::pendingJobsByQueue();
+        $totalPending = array_sum($pendingByQueue);
+
+        if ($totalPending === 0) {
+            return true;
+        }
+
+        $this->error(sprintf(
+            'Filas de importação com %d job(s) pendente(s); cleanup abortado para não apagar dados com base em import parcial (use --force para ignorar).',
+            $totalPending,
+        ));
+
+        Log::warning('sync:cleanup abortado: backlog nas filas de importação', [
+            'pending' => $pendingByQueue,
+        ]);
+
+        return false;
     }
 
     /**
@@ -171,29 +212,45 @@ class CleanupCommand extends Command
             $jobs->push(new CleanupOrphanSalesJob($tenantId, $orphanSales['ids'], $connection, $shouldSwitchTenantContext));
         }
 
-        $retentionsByPath = $this->getOldSalesRetentionsByPath($integration);
-        $oldSalesIds = [];
+        $salesAreFresh = (bool) $this->option('force') || $this->salesDataIsFresh($tenantId, $connection);
 
-        if ($retentionsByPath === []) {
-            $this->line('      Nenhum path com initial_days > 0 encontrado para limpeza de vendas antigas');
+        if (! $salesAreFresh) {
+            $this->warn(sprintf(
+                '      Nenhuma venda nos últimos %d dias; limpeza de vendas antigas e desativação de produtos puladas por segurança (use --force para ignorar).',
+                self::SALES_FRESHNESS_DAYS,
+            ));
+
+            Log::warning('Cleanup destrutivo pulado: vendas sem registro recente', [
+                'tenant_id' => $tenantId,
+                'freshness_days' => self::SALES_FRESHNESS_DAYS,
+            ]);
         }
 
-        foreach ($retentionsByPath as $pathKey => $initialDays) {
-            $result = $this->checkOldSales($tenantId, $connection, $initialDays, $pathKey);
-            $oldSalesIds = array_values(array_unique([...$oldSalesIds, ...$result['ids']]));
-        }
+        if ($salesAreFresh) {
+            $retentionsByPath = $this->getOldSalesRetentionsByPath($integration);
+            $oldSalesIds = [];
 
-        $summary['old_sales'] = count($oldSalesIds);
+            if ($retentionsByPath === []) {
+                $this->line('      Nenhum path com initial_days > 0 encontrado para limpeza de vendas antigas');
+            }
 
-        if ($oldSalesIds !== []) {
-            $jobs->push(new CleanupOldSalesJob($tenantId, $oldSalesIds, $connection, $shouldSwitchTenantContext));
-        }
+            foreach ($retentionsByPath as $pathKey => $initialDays) {
+                $result = $this->checkOldSales($tenantId, $connection, $initialDays, $pathKey);
+                $oldSalesIds = array_values(array_unique([...$oldSalesIds, ...$result['ids']]));
+            }
 
-        $inactiveProducts = $this->checkInactiveProducts($tenantId, $connection, self::INACTIVE_DAYS);
-        $summary['inactive_products'] = $inactiveProducts['count'];
+            $summary['old_sales'] = count($oldSalesIds);
 
-        if ($inactiveProducts['ids'] !== []) {
-            $jobs->push(new DeactivateInactiveProductsJob($tenantId, $inactiveProducts['ids'], $connection, $shouldSwitchTenantContext));
+            if ($oldSalesIds !== []) {
+                $jobs->push(new CleanupOldSalesJob($tenantId, $oldSalesIds, $connection, $shouldSwitchTenantContext));
+            }
+
+            $inactiveProducts = $this->checkInactiveProducts($tenantId, $connection, self::INACTIVE_DAYS);
+            $summary['inactive_products'] = $inactiveProducts['count'];
+
+            if ($inactiveProducts['ids'] !== []) {
+                $jobs->push(new DeactivateInactiveProductsJob($tenantId, $inactiveProducts['ids'], $connection, $shouldSwitchTenantContext));
+            }
         }
 
         $restoreSold = $this->checkDeletedProductsWithSales($tenantId, $connection, self::INACTIVE_DAYS);
@@ -210,6 +267,25 @@ class CleanupCommand extends Command
         }
 
         return $summary;
+    }
+
+    /**
+     * Dataset de vendas é considerado "fresco" quando existe venda registrada
+     * nos últimos SALES_FRESHNESS_DAYS — evidência de que o import diário roda.
+     */
+    protected function salesDataIsFresh(string $tenantId, string $connection): bool
+    {
+        $maxSaleDate = DB::connection($connection)
+            ->table('sales')
+            ->where('tenant_id', $tenantId)
+            ->max('sale_date');
+
+        if ($maxSaleDate === null) {
+            return false;
+        }
+
+        return Carbon::parse((string) $maxSaleDate)
+            ->greaterThanOrEqualTo(now()->subDays(self::SALES_FRESHNESS_DAYS)->startOfDay());
     }
 
     /**

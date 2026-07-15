@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
 
 /**
@@ -29,6 +30,9 @@ use Spatie\Multitenancy\Jobs\NotTenantAware;
 class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    /** Status HTTP que indicam erro permanente (config/permissão) — retry não resolve. */
+    private const NON_RETRYABLE_STATUSES = [401, 403, 404];
 
     public int $tries = 5;
 
@@ -102,9 +106,15 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
                 'url' => $url,
             ]);
 
-            $this->fail(sprintf('HTTP %d ao acessar %s (página %d)', $response->status(), $url, $this->page));
+            $message = sprintf('HTTP %d ao acessar %s (página %d)', $response->status(), $url, $this->page);
 
-            return;
+            if (in_array($response->status(), self::NON_RETRYABLE_STATUSES, true)) {
+                $this->fail($message);
+
+                return;
+            }
+
+            throw new RuntimeException($message);
         }
 
         $responseData = $response->json();
