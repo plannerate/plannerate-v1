@@ -313,9 +313,13 @@ class SingleProductFetchService
     }
 
     /**
-     * Valor da loja a enviar no request. Suporta store_transform: 'digits' para
-     * normalizar CNPJ/documento (a API da Sysmo rejeita empresa formatada — o
-     * import em massa também envia só dígitos).
+     * Valor da loja a enviar no request.
+     *
+     * Normaliza para só dígitos quando `store_transform: 'digits'` OU quando o
+     * campo é `document` (CNPJ/CPF é sempre numérico nestes ERPs — a API da Sysmo
+     * rejeita empresa formatada, e o import em massa também envia só dígitos).
+     * Assim funciona mesmo sem o flag configurado no blueprint. Para forçar o
+     * envio literal de um `document`, defina `store_transform: 'raw'`.
      *
      * @param  array<string, mixed>  $lookup
      */
@@ -324,7 +328,10 @@ class SingleProductFetchService
         $key = (string) data_get($lookup, 'store_key', 'document');
         $value = trim((string) ($store->{$key} ?? ''));
 
-        if ($value !== '' && (string) data_get($lookup, 'store_transform', '') === 'digits') {
+        $transform = (string) data_get($lookup, 'store_transform', '');
+        $shouldStripToDigits = $transform === 'digits' || ($transform === '' && $key === 'document');
+
+        if ($value !== '' && $shouldStripToDigits) {
             $value = preg_replace('/\D/', '', $value) ?? '';
         }
 
