@@ -11,9 +11,11 @@ use App\Jobs\ProvisionTenantDatabaseJob;
 use App\Models\IntegrationApi;
 use App\Models\Module;
 use App\Models\Plan;
+use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Cloudflare\CloudflareService;
+use App\Support\Authorization\RbacType;
 use App\Support\Modules\ModuleSlug;
 use App\Support\Modules\TenantModuleService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -150,6 +152,7 @@ class TenantController extends Controller
             'tenant' => null,
             'plans' => $this->plansForSelect(),
             'modules' => $this->modulesForSelect(),
+            'roles' => $this->rolesForSelect(),
             'statuses' => $this->statusesForSelect(),
         ]);
     }
@@ -163,9 +166,10 @@ class TenantController extends Controller
 
         $validated = $request->validated();
         $moduleIds = $validated['module_ids'] ?? [];
+        $roleIds = $validated['role_ids'] ?? [];
 
-        DB::connection('landlord')->transaction(function () use ($validated, $moduleIds): void {
-            $tenant = Tenant::query()->create(Arr::except($validated, ['host', 'domain_is_active', 'module_ids']));
+        DB::connection('landlord')->transaction(function () use ($validated, $moduleIds, $roleIds): void {
+            $tenant = Tenant::query()->create(Arr::except($validated, ['host', 'domain_is_active', 'module_ids', 'role_ids']));
 
             $tenant->domains()->create([
                 'tenant_id' => $tenant->id,
@@ -176,6 +180,7 @@ class TenantController extends Controller
             ]);
 
             $tenant->modules()->sync($moduleIds);
+            $tenant->roles()->sync($roleIds);
         });
 
         Inertia::flash('toast', [
@@ -195,7 +200,7 @@ class TenantController extends Controller
     {
         $this->authorize('update', $tenant);
 
-        $tenant->load(['primaryDomain:id,tenant_id,host,is_active', 'modules:id,name']);
+        $tenant->load(['primaryDomain:id,tenant_id,host,is_active', 'modules:id,name', 'roles:id,name']);
 
         return Inertia::render('landlord/tenants/Form', [
             'tenant' => [
@@ -207,11 +212,13 @@ class TenantController extends Controller
                 'provisioning_error' => $tenant->provisioning_error,
                 'plan_id' => $tenant->plan_id,
                 'module_ids' => $tenant->modules->pluck('id')->values()->all(),
+                'role_ids' => $tenant->roles->pluck('id')->values()->all(),
                 'host' => $tenant->primaryDomain?->host,
                 'domain_is_active' => $tenant->primaryDomain?->is_active ?? true,
             ],
             'plans' => $this->plansForSelect(),
             'modules' => $this->modulesForSelect(),
+            'roles' => $this->rolesForSelect(),
             'statuses' => $this->statusesForSelect(),
             'cloudflare_record' => Inertia::defer(fn (): ?array => $this->resolveCloudflareRecord($tenant)),
         ]);
@@ -265,9 +272,10 @@ class TenantController extends Controller
 
         $validated = $request->validated();
         $moduleIds = $validated['module_ids'] ?? [];
+        $roleIds = $validated['role_ids'] ?? [];
 
-        DB::connection('landlord')->transaction(function () use ($tenant, $validated, $moduleIds): void {
-            $tenant->update(Arr::except($validated, ['host', 'domain_is_active', 'module_ids']));
+        DB::connection('landlord')->transaction(function () use ($tenant, $validated, $moduleIds, $roleIds): void {
+            $tenant->update(Arr::except($validated, ['host', 'domain_is_active', 'module_ids', 'role_ids']));
 
             $tenant->domains()->updateOrCreate(
                 ['tenant_id' => $tenant->id],
@@ -280,6 +288,7 @@ class TenantController extends Controller
             );
 
             $tenant->modules()->sync($moduleIds);
+            $tenant->roles()->sync($roleIds);
         });
 
         Inertia::flash('toast', [
@@ -624,6 +633,26 @@ class TenantController extends Controller
                 'id' => $module->id,
                 'name' => $module->name,
                 'is_active' => $module->is_active,
+            ])
+            ->all();
+    }
+
+    /**
+     * Perfis (roles) de tenant que podem ser vinculados a um tenant.
+     *
+     * @return array<int, array{id: string, name: string}>
+     */
+    private function rolesForSelect(): array
+    {
+        return Role::query()
+            ->whereNull('tenant_id')
+            ->where('guard_name', 'web')
+            ->where('type', RbacType::TENANT)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (Role $role): array => [
+                'id' => $role->id,
+                'name' => $role->name,
             ])
             ->all();
     }

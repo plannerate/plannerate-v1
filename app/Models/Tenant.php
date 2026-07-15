@@ -153,6 +153,15 @@ class Tenant extends ModelsTenant
     }
 
     /**
+     * Get the roles available to this tenant.
+     */
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'role_tenant')
+            ->withTimestamps();
+    }
+
+    /**
      * Get all domains of the tenant.
      */
     public function domains(): HasMany

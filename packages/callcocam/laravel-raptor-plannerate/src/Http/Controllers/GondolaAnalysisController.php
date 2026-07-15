@@ -8,6 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
 
+use Callcocam\LaravelRaptorPlannerate\Concerns\ResolvesGondolaStoreId;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\GondolaAnalysis;
 use Callcocam\LaravelRaptorPlannerate\Services\Analysis\AbcAnalysisService;
@@ -21,6 +22,8 @@ use Illuminate\Support\Facades\Log;
 
 class GondolaAnalysisController extends Controller
 {
+    use ResolvesGondolaStoreId;
+
     public function calculateAbcApi(Request $request, string $gondola)
     {
         $gondolaModel = Gondola::find($gondola);
@@ -279,6 +282,12 @@ class GondolaAnalysisController extends Controller
             'tenant_id' => $gondola->tenant_id,
             'gondola_id' => $gondola->id,
         ];
+
+        $storeId = $this->resolveGondolaStoreId($gondola);
+
+        if ($storeId !== null) {
+            $filters['store_id'] = $storeId;
+        }
 
         if ($request->filled('date_from')) {
             $filters['date_from'] = $request->input('date_from');

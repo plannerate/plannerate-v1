@@ -49,6 +49,8 @@ class StoreRoleRequest extends FormRequest
                         ->where('guard_name', 'web')
                         ->where('type', $type)),
             ],
+            'tenant_ids' => ['nullable', 'array'],
+            'tenant_ids.*' => ['string', 'distinct', Rule::exists('landlord.tenants', 'id')],
         ];
     }
 }

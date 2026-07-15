@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Landlord;
 
 use App\Models\Tenant;
+use App\Support\Authorization\RbacType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -59,6 +60,16 @@ class StoreTenantRequest extends FormRequest
             'plan_id' => ['nullable', 'string', Rule::exists('landlord.plans', 'id')],
             'module_ids' => ['nullable', 'array'],
             'module_ids.*' => ['string', 'distinct', Rule::exists('landlord.modules', 'id')],
+            'role_ids' => ['nullable', 'array'],
+            'role_ids.*' => [
+                'string',
+                'distinct',
+                Rule::exists('landlord.roles', 'id')
+                    ->where(static fn ($query) => $query
+                        ->where('guard_name', 'web')
+                        ->where('type', RbacType::TENANT)
+                        ->whereNull('tenant_id')),
+            ],
             'host' => ['required', 'string', 'max:255', Rule::unique('landlord.tenant_domains', 'host')],
             'domain_is_active' => ['sometimes', 'boolean'],
         ];

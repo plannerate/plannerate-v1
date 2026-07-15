@@ -13,6 +13,7 @@ import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogra
 import { setRejectedProductDragData } from '@/composables/plannerate/dnd/transfer';
 import { useRejectedProductsStore } from '@/composables/plannerate/interactions/useRejectedProductsStore';
 import { useT } from '@/composables/useT';
+import ProductPlaceholder from './ProductPlaceholder.vue';
 
 const props = defineProps<{ gondolaId: string }>();
 
@@ -29,6 +30,22 @@ const hasLoaded = ref(false);
 const draggingId = ref<string | null>(null);
 const swapSource = ref<RejectedProduct | null>(null);
 const cardsContainer = ref<HTMLElement | null>(null);
+
+/**
+ * `product.image_url` costuma vir preenchido antes do arquivo existir de fato
+ * no storage — sem tratamento de erro, o `<img>` mostrava o ícone quebrado do
+ * navegador em vez do placeholder "sem imagem" que já existia para URL ausente.
+ * Um Set (não um único ref) porque a lista renderiza vários cards ao mesmo tempo.
+ */
+const failedImageIds = ref<Set<string>>(new Set());
+
+function hasImage(product: RejectedProduct): boolean {
+    return Boolean(product.image_url) && !failedImageIds.value.has(product.id);
+}
+
+function onImageError(productId: string): void {
+    failedImageIds.value = new Set(failedImageIds.value).add(productId);
+}
 
 function handleWheel(event: WheelEvent) {
     if (!cardsContainer.value) {
@@ -561,12 +578,13 @@ defineExpose({
                         <div class="relative flex h-16 items-center justify-center overflow-hidden rounded bg-muted">
                             <GripVertical class="absolute left-0.5 top-0.5 size-3 text-muted-foreground/40" />
                             <img
-                                v-if="product.image_url"
-                                :src="product.image_url"
+                                v-if="hasImage(product)"
+                                :src="product.image_url ?? undefined"
                                 :alt="product.product_name"
                                 class="max-h-full max-w-full object-contain"
+                                @error="onImageError(product.id)"
                             />
-                            <span v-else class="text-xs text-muted-foreground">{{ t('plannerate.editor.rejected_products.no_image') }}</span>
+                            <ProductPlaceholder v-else :width="144" :height="64" :name="product.product_name" :ean="product.ean" />
                         </div>
 
                         <!-- Product name -->

@@ -21,6 +21,9 @@ return [
         'is_administrative_hint' => 'Usuários com este perfil contam no limite do plano (definido por plano na tela de Planos).',
         'permissions' => 'Permissões',
         'permissions_count' => 'Permissões',
+        'tenants' => 'Clientes',
+        'tenants_hint' => 'Selecione a quais clientes este perfil fica disponível.',
+        'tenants_empty' => 'Nenhum cliente cadastrado.',
     ],
     'protected' => 'Este perfil é protegido: apenas o nome de exibição pode ser alterado.',
     'permissions_ui' => [

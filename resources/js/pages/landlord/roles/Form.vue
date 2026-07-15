@@ -21,7 +21,13 @@ type RolePayload = {
     system_name: string | null;
     is_administrative: boolean;
     permissions: string[];
+    tenant_ids: string[];
     is_protected: boolean;
+};
+
+type TenantOption = {
+    id: string;
+    name: string;
 };
 
 type PermissionOption = {
@@ -40,6 +46,7 @@ const props = defineProps<{
     role: RolePayload | null;
     types: TypeOption[];
     permissions: PermissionOption[];
+    tenants: TenantOption[];
 }>();
 
 const { t } = useT();
@@ -294,6 +301,42 @@ const pageMeta = useCrudPageMeta({
                         </div>
                         <InputError :message="errors.is_administrative" />
                     </label>
+
+                    <!-- Tenants: define quais tenants podem usar este perfil.
+                         Só faz sentido para perfis de tenant. -->
+                    <div v-if="selectedType === 'tenant'" class="grid gap-2">
+                        <Label>{{ t('app.landlord.roles.fields.tenants') }}</Label>
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('app.landlord.roles.fields.tenants_hint') }}
+                        </p>
+                        <div
+                            v-if="props.tenants.length === 0"
+                            class="rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground"
+                        >
+                            {{ t('app.landlord.roles.fields.tenants_empty') }}
+                        </div>
+                        <div v-else class="grid gap-2 md:grid-cols-2">
+                            <label
+                                v-for="tenant in props.tenants"
+                                :key="tenant.id"
+                                class="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/40 has-checked:border-primary/50 has-checked:bg-primary/5"
+                            >
+                                <input
+                                    type="checkbox"
+                                    name="tenant_ids[]"
+                                    :value="tenant.id"
+                                    :checked="
+                                        props.role?.tenant_ids.includes(
+                                            tenant.id,
+                                        ) ?? false
+                                    "
+                                    class="accent-primary"
+                                />
+                                <span>{{ tenant.name }}</span>
+                            </label>
+                        </div>
+                        <InputError :message="errors.tenant_ids" />
+                    </div>
 
                     <!-- Permissions -->
                     <div class="space-y-3">

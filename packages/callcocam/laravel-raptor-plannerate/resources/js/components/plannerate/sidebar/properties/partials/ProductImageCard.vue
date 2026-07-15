@@ -1,13 +1,9 @@
 <template>
     <div class="flex items-start gap-3">
         <div class="group relative">
-            <img v-if="product.image_url" :src="product.image_url" :alt="product.name"
-                class="h-20 w-20 rounded border object-contain" />
-            <div v-else class="flex h-20 w-20 items-center justify-center rounded border bg-muted">
-                <span class="text-xs text-muted-foreground">{{
-                    t('plannerate.sidebar.product_image_card.no_image')
-                }}</span>
-            </div>
+            <img v-if="hasImage" :src="product.image_url" :alt="product.name"
+                class="h-20 w-20 rounded border object-contain" @error="onImageError" />
+            <ProductPlaceholder v-else :width="80" :height="80" :name="product.name" :ean="product.ean" />
         </div>
         <div class="min-w-0 flex-1 space-y-2">
 
@@ -68,10 +64,12 @@
 
 <script setup lang="ts">
 import { Download, Loader2, Trash2, Upload } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { useProductImage } from '@/composables/plannerate/products/useProductImage';
 import { useT } from '@/composables/useT';
 import type { Product } from '@/types/planogram';
+import ProductPlaceholder from '../../../editor/ProductPlaceholder.vue';
 
 interface Props {
     product: Product;
@@ -89,6 +87,28 @@ defineEmits<{
 }>();
 
 const { isDownloading, downloadAndUpdateImage } = useProductImage();
+
+/**
+ * `product.image_url` costuma vir preenchido antes do arquivo existir de fato
+ * no storage — sem tratamento de erro, o `<img>` mostrava o ícone quebrado do
+ * navegador em vez do placeholder "sem imagem" que já existia para o caso de
+ * URL ausente.
+ */
+const imageFailed = ref(false);
+
+watch(
+    () => props.product.image_url,
+    () => {
+        imageFailed.value = false;
+    },
+);
+
+const onImageError = (): void => {
+    imageFailed.value = true;
+};
+
+const hasImage = computed(() => Boolean(props.product.image_url) && !imageFailed.value);
+
 async function handleDownload() {
     if (props.product?.id && props.product?.ean) {
         await downloadAndUpdateImage(props.product.id, props.product.ean);

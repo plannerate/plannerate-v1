@@ -190,6 +190,41 @@ test('ensureCanAssign never blocks non-administrative roles', function (): void 
     expect(true)->toBeTrue();
 });
 
+test('rolesForSelect only returns roles linked to the tenant plus always-available system roles', function (): void {
+    $plan = Plan::factory()->create(['user_limit' => 5]);
+    $tenant = makeTenantForLimit('roles-linked', $plan->id);
+
+    $linked = Role::query()->where('system_name', 'kanban-revisao-de-imagens')->firstOrFail();
+    $unlinked = Role::query()->where('system_name', 'kanban-revisao-de-dimensoes')->firstOrFail();
+
+    $tenant->roles()->attach($linked->id);
+
+    $names = collect(limitService()->rolesForSelect($tenant))->pluck('name');
+
+    // O perfil vinculado aparece; o não vinculado, não.
+    expect($names)->toContain($linked->name)
+        ->not->toContain($unlinked->name);
+
+    // tenant-admin está sempre disponível, mesmo sem vínculo no pivot.
+    $tenantAdmin = Role::query()->where('system_name', 'tenant-admin')->firstOrFail();
+    expect($names)->toContain($tenantAdmin->name);
+});
+
+test('availableRoleIds and availableRoleNames match the tenant catalog', function (): void {
+    $plan = Plan::factory()->create(['user_limit' => 5]);
+    $tenant = makeTenantForLimit('roles-available', $plan->id);
+
+    $linked = Role::query()->where('system_name', 'kanban-revisao-de-imagens')->firstOrFail();
+    $unlinked = Role::query()->where('system_name', 'kanban-revisao-de-dimensoes')->firstOrFail();
+    $tenant->roles()->attach($linked->id);
+
+    $ids = limitService()->availableRoleIds($tenant);
+    $names = limitService()->availableRoleNames($tenant);
+
+    expect($ids)->toContain($linked->id)->not->toContain($unlinked->id);
+    expect($names)->toContain($linked->name)->not->toContain($unlinked->name);
+});
+
 test('rolesForSelect reports per-role limit state', function (): void {
     $plan = Plan::factory()->create(['user_limit' => 5]);
     $plan->items()->create([
@@ -202,6 +237,8 @@ test('rolesForSelect reports per-role limit state', function (): void {
 
     $tenant = makeTenantForLimit('limit-select', $plan->id);
     $role = Role::query()->where('system_name', 'kanban-revisao-de-imagens')->firstOrFail();
+    // O perfil precisa estar vinculado ao tenant para constar no catálogo.
+    $tenant->roles()->attach($role->id);
     assignRoleInTenant(User::factory()->create(), $role, $tenant->id);
 
     $rows = collect(limitService()->rolesForSelect($tenant));

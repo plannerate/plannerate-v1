@@ -2,6 +2,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
+use Callcocam\LaravelRaptorPlannerate\Concerns\ResolvesGondolaStoreId;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Sales\SalesFilters;
@@ -16,13 +17,15 @@ use Illuminate\Http\Request;
  */
 class GondolaSalesIndicatorController extends Controller
 {
+    use ResolvesGondolaStoreId;
+
     public function __construct(private readonly SalesSummaryService $salesSummary) {}
 
     /**
      * Retorna, para cada produto da gôndola, os indicadores derivados de vendas
      * keyed por EAN. Quando o planograma informa um período (start_date/end_date
-     * via query), as vendas são restritas a esse intervalo — mesma semântica do
-     * resumo por produto.
+     * via query), as vendas são restritas a esse intervalo; a loja é sempre a do
+     * planograma da gôndola — mesma semântica do resumo por produto.
      */
     public function index(Request $request, string $gondola): JsonResponse
     {
@@ -32,7 +35,7 @@ class GondolaSalesIndicatorController extends Controller
             return response()->json(['message' => 'Gôndola não encontrada.'], 404);
         }
 
-        $filters = SalesFilters::fromPlanogramRequest($request);
+        $filters = SalesFilters::fromPlanogramRequest($request, $this->resolveGondolaStoreId($gondolaModel));
 
         $results = $this->salesSummary->indicatorsForGondola($gondolaModel->id, $filters);
 

@@ -18,8 +18,9 @@
         <div class="flex items-start gap-3">
             <!-- Product Image -->
             <div class="size-12 shrink-0 overflow-hidden rounded bg-muted">
-                <img v-if="product.image_url" :src="product.image_url" :alt="product.name"
-                    class="size-full object-contain" />
+                <img v-if="hasImage" :src="product.image_url" :alt="product.name" class="size-full object-contain"
+                    @error="onImageError" />
+                <ProductPlaceholder v-else :width="48" :height="48" :name="product.name" :ean="product.ean" />
             </div>
 
             <!-- Product Info -->
@@ -60,7 +61,7 @@
 </template>
 <script setup lang="ts">
 import { AlertCircle, CheckCircle2 } from 'lucide-vue-next';
-import { computed, inject, onMounted, ref } from 'vue';
+import { computed, inject, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
@@ -68,10 +69,33 @@ import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogra
 import { setMultipleProductsDragData, setProductDragData } from '@/composables/plannerate/dnd/transfer';
 import { useT } from '@/composables/useT';
 import type { Product } from '@/types/planogram';
+import ProductPlaceholder from '../../editor/ProductPlaceholder.vue';
 
 const props = defineProps<{
     product: Product;
 }>();
+
+/**
+ * `product.image_url` costuma vir preenchido bem antes do arquivo existir de
+ * fato no storage (pipeline de pesquisa de dimensão grava a URL e só depois
+ * baixa a imagem) — um `<img>` sem tratamento de erro mostrava o ícone quebrado
+ * do navegador com o alt text vazando da miniatura de 48px. `@error` cobre esse
+ * caso e qualquer 404/URL inválida, caindo no mesmo placeholder SVG do canvas.
+ */
+const imageFailed = ref(false);
+
+watch(
+    () => props.product.image_url,
+    () => {
+        imageFailed.value = false;
+    },
+);
+
+const onImageError = (): void => {
+    imageFailed.value = true;
+};
+
+const hasImage = computed(() => Boolean(props.product.image_url) && !imageFailed.value);
 
 const { selectItem, toggleSelection, setMultiSelectEnabled } =
     usePlanogramSelection();

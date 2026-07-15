@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Permission\Models\Role as SpatieRole;
 
@@ -41,5 +42,14 @@ class Role extends SpatieRole
         return [
             'is_administrative' => 'boolean',
         ];
+    }
+
+    /**
+     * Get the tenants this role is available to.
+     */
+    public function tenants(): BelongsToMany
+    {
+        return $this->belongsToMany(Tenant::class, 'role_tenant')
+            ->withTimestamps();
     }
 }

@@ -28,6 +28,15 @@ use Illuminate\Validation\ValidationException;
 class AdministrativeUserLimitService
 {
     /**
+     * Perfis de sistema que estão SEMPRE disponíveis para qualquer tenant,
+     * independentemente do vínculo no pivot role_tenant. Rede de segurança
+     * para nunca deixar um tenant sem como criar administradores.
+     *
+     * @var list<string>
+     */
+    private const ALWAYS_AVAILABLE_SYSTEM_NAMES = ['tenant-admin'];
+
+    /**
      * Cache por request dos perfis administrativos.
      *
      * @var Collection<int, Role>|null
@@ -146,7 +155,7 @@ class AdministrativeUserLimitService
      */
     public function rolesForSelect(Tenant $tenant): array
     {
-        return $this->tenantRolesQuery()
+        return $this->availableRolesQuery($tenant)
             ->get()
             ->map(function (Role $role) use ($tenant): array {
                 $isAdmin = $this->isAdministrative($role);
@@ -163,6 +172,51 @@ class AdministrativeUserLimitService
                 ];
             })
             ->all();
+    }
+
+    /**
+     * IDs dos perfis (tenant) disponíveis para o tenant informado.
+     *
+     * @return list<string>
+     */
+    public function availableRoleIds(Tenant $tenant): array
+    {
+        return $this->availableRolesQuery($tenant)
+            ->pluck('id')
+            ->map(static fn ($id): string => (string) $id)
+            ->all();
+    }
+
+    /**
+     * Nomes dos perfis (tenant) disponíveis para o tenant informado.
+     *
+     * @return list<string>
+     */
+    public function availableRoleNames(Tenant $tenant): array
+    {
+        return $this->availableRolesQuery($tenant)
+            ->pluck('name')
+            ->all();
+    }
+
+    /**
+     * Query dos perfis globais de tenant DISPONÍVEIS para o tenant: os
+     * vinculados pelo pivot role_tenant, mais os perfis de sistema sempre
+     * disponíveis ({@see self::ALWAYS_AVAILABLE_SYSTEM_NAMES}).
+     */
+    private function availableRolesQuery(Tenant $tenant): Builder
+    {
+        return $this->tenantRolesQuery()
+            ->where(function (Builder $query) use ($tenant): void {
+                $query
+                    ->whereIn('id', function ($subQuery) use ($tenant): void {
+                        $subQuery
+                            ->select('role_id')
+                            ->from('role_tenant')
+                            ->where('tenant_id', $tenant->getKey());
+                    })
+                    ->orWhereIn('system_name', self::ALWAYS_AVAILABLE_SYSTEM_NAMES);
+            });
     }
 
     /**

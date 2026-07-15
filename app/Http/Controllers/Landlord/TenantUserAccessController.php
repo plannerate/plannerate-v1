@@ -247,6 +247,7 @@ class TenantUserAccessController extends Controller
             'role_names.*' => [
                 'string',
                 'distinct',
+                Rule::in($this->administrativeUserLimit->availableRoleNames($tenant)),
                 Rule::exists('landlord.roles', 'name')
                     ->where(static fn ($query) => $query
                         ->where('guard_name', 'web')
@@ -492,8 +493,9 @@ class TenantUserAccessController extends Controller
     private function validateStorePayload(Request $request, Tenant $tenant): array
     {
         $tenantConnection = $this->resolveTenantConnectionName();
+        $availableRoleNames = $this->administrativeUserLimit->availableRoleNames($tenant);
 
-        return $this->runInTenantContext($tenant, function () use ($request, $tenantConnection): array {
+        return $this->runInTenantContext($tenant, function () use ($request, $tenantConnection, $availableRoleNames): array {
             return Validator::make($request->all(), [
                 'name' => ['required', 'string', 'max:255'],
                 'email' => [
@@ -508,6 +510,7 @@ class TenantUserAccessController extends Controller
                 'role_names.*' => [
                     'string',
                     'distinct',
+                    Rule::in($availableRoleNames),
                     Rule::exists('landlord.roles', 'name')
                         ->where(static fn ($query) => $query
                             ->where('guard_name', 'web')
@@ -524,8 +527,9 @@ class TenantUserAccessController extends Controller
     private function validateUpdatePayload(Request $request, Tenant $tenant, string $userId): array
     {
         $tenantConnection = $this->resolveTenantConnectionName();
+        $availableRoleNames = $this->administrativeUserLimit->availableRoleNames($tenant);
 
-        return $this->runInTenantContext($tenant, function () use ($request, $userId, $tenantConnection): array {
+        return $this->runInTenantContext($tenant, function () use ($request, $userId, $tenantConnection, $availableRoleNames): array {
             return Validator::make($request->all(), [
                 'name' => ['required', 'string', 'max:255'],
                 'email' => [
@@ -543,6 +547,7 @@ class TenantUserAccessController extends Controller
                 'role_names.*' => [
                     'string',
                     'distinct',
+                    Rule::in($availableRoleNames),
                     Rule::exists('landlord.roles', 'name')
                         ->where(static fn ($query) => $query
                             ->where('guard_name', 'web')

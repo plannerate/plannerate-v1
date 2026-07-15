@@ -8,6 +8,7 @@ use App\Http\Requests\Landlord\StoreRoleRequest;
 use App\Http\Requests\Landlord\UpdateRoleRequest;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\Tenant;
 use App\Support\Authorization\PermissionName;
 use App\Support\Authorization\RbacType;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -83,6 +84,7 @@ class RoleController extends Controller
             'role' => null,
             'types' => $this->typesForSelect(),
             'permissions' => $this->availablePermissions(),
+            'tenants' => $this->tenantsForSelect(),
         ]);
     }
 
@@ -105,6 +107,8 @@ class RoleController extends Controller
 
         $role->syncPermissions($validated['permissions'] ?? []);
 
+        $this->syncRoleTenants($role, $validated['type'], $validated['tenant_ids'] ?? []);
+
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.landlord.roles.messages.created'),
@@ -122,7 +126,7 @@ class RoleController extends Controller
 
         $this->authorize('update', $role);
 
-        $role->load('permissions:id,name');
+        $role->load(['permissions:id,name', 'tenants:id,name']);
 
         return Inertia::render('landlord/roles/Form', [
             'role' => [
@@ -132,10 +136,12 @@ class RoleController extends Controller
                 'system_name' => $role->system_name,
                 'is_administrative' => (bool) $role->is_administrative,
                 'permissions' => $role->permissions->pluck('name')->values()->all(),
+                'tenant_ids' => $role->tenants->pluck('id')->values()->all(),
                 'is_protected' => in_array((string) $role->system_name, self::PROTECTED_ROLES, true),
             ],
             'types' => $this->typesForSelect(),
             'permissions' => $this->availablePermissions(),
+            'tenants' => $this->tenantsForSelect(),
         ]);
     }
 
@@ -168,6 +174,8 @@ class RoleController extends Controller
 
             $role->syncPermissions($validated['permissions'] ?? []);
         }
+
+        $this->syncRoleTenants($role, (string) $role->type, $validated['tenant_ids'] ?? []);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -236,6 +244,32 @@ class RoleController extends Controller
                 'description' => $permission->description ?: PermissionName::descriptionFor($permission->name),
             ])
             ->all();
+    }
+
+    /**
+     * @return array<int, array{id: string, name: string}>
+     */
+    private function tenantsForSelect(): array
+    {
+        return Tenant::query()
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (Tenant $tenant): array => [
+                'id' => $tenant->id,
+                'name' => $tenant->name,
+            ])
+            ->all();
+    }
+
+    /**
+     * Sincroniza os tenants vinculados ao perfil. Só perfis de tenant participam
+     * do vínculo; perfis landlord têm o pivot sempre esvaziado.
+     *
+     * @param  list<string>  $tenantIds
+     */
+    private function syncRoleTenants(Role $role, string $type, array $tenantIds): void
+    {
+        $role->tenants()->sync($type === RbacType::TENANT ? $tenantIds : []);
     }
 
     /**

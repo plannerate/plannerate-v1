@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/vue3';
 import type { Ref } from 'vue';
 import { ref } from 'vue';
 import { useT } from '@/composables/useT';
@@ -81,7 +82,10 @@ export function useProductSales() {
         salesData.value = null;
 
         try {
-            // Filtra as vendas pelo período do planograma quando informado.
+            // Filtra as vendas pelo período do planograma quando informado, e
+            // pela loja da gôndola em edição (mesma fonte usada pelas análises
+            // ABC/BCG/Estoque Alvo — resolvida no backend a partir do
+            // planograma, não confiada do cliente).
             const params = new URLSearchParams();
 
             if (startDate) {
@@ -90,6 +94,13 @@ export function useProductSales() {
 
             if (endDate) {
                 params.set('end_date', endDate);
+            }
+
+            const gondolaId = (usePage().props as { record?: { id?: string } })
+                ?.record?.id;
+
+            if (gondolaId) {
+                params.set('gondola_id', gondolaId);
             }
 
             const query = params.toString() ? `?${params.toString()}` : '';

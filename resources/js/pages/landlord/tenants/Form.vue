@@ -30,6 +30,7 @@ type TenantPayload = {
     provisioning_error: string | null;
     plan_id: string | null;
     module_ids: string[];
+    role_ids: string[];
     host: string | null;
     domain_is_active: boolean;
 };
@@ -50,6 +51,11 @@ type ModuleOption = {
     is_active: boolean;
 };
 
+type RoleOption = {
+    id: string;
+    name: string;
+};
+
 type CloudflareRecordNotFound = { exists: false; cname_target: string };
 type CloudflareRecordFound = {
     exists: true;
@@ -64,6 +70,7 @@ const props = defineProps<{
     tenant: TenantPayload | null;
     plans: PlanOption[];
     modules: ModuleOption[];
+    roles: RoleOption[];
     statuses: StatusOption[];
     cloudflare_record?: CloudflareRecord | null;
 }>();
@@ -388,6 +395,43 @@ const formProps = computed(() => {
                             </label>
                         </div>
                         <InputError :message="errors.module_ids" />
+                    </div>
+
+                    <!-- Roles -->
+                    <div class="grid gap-2">
+                        <Label>{{
+                            t('app.landlord.tenants.fields.roles')
+                        }}</Label>
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('app.landlord.tenants.fields.roles_hint') }}
+                        </p>
+                        <div
+                            v-if="props.roles.length === 0"
+                            class="rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground"
+                        >
+                            {{ t('app.landlord.tenants.fields.roles_empty') }}
+                        </div>
+                        <div v-else class="grid gap-2 md:grid-cols-2">
+                            <label
+                                v-for="role in props.roles"
+                                :key="role.id"
+                                class="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/40 has-checked:border-primary/50 has-checked:bg-primary/5"
+                            >
+                                <input
+                                    type="checkbox"
+                                    name="role_ids[]"
+                                    :value="role.id"
+                                    :checked="
+                                        props.tenant?.role_ids.includes(
+                                            role.id,
+                                        ) ?? false
+                                    "
+                                    class="accent-primary"
+                                />
+                                <span>{{ role.name }}</span>
+                            </label>
+                        </div>
+                        <InputError :message="errors.role_ids" />
                     </div>
 
                     <!-- Cloudflare DNS -->

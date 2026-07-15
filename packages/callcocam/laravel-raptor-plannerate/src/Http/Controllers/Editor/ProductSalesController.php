@@ -2,7 +2,9 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
+use Callcocam\LaravelRaptorPlannerate\Concerns\ResolvesGondolaStoreId;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Callcocam\LaravelRaptorPlannerate\Sales\SalesFilters;
 use Callcocam\LaravelRaptorPlannerate\Sales\SalesSummaryService;
@@ -11,6 +13,8 @@ use Illuminate\Http\Request;
 
 class ProductSalesController extends Controller
 {
+    use ResolvesGondolaStoreId;
+
     public function __construct(private readonly SalesSummaryService $salesSummary) {}
 
     /**
@@ -18,6 +22,9 @@ class ProductSalesController extends Controller
      *
      * Quando o planograma informa um período (start_date/end_date via query),
      * as vendas são filtradas para considerar apenas o intervalo do planograma.
+     * Quando a query informa gondola_id, o resumo e a evolução mensal são
+     * restritos à loja do planograma dessa gôndola — top_stores continua sem
+     * filtro de loja de propósito, para servir de comparação com as demais lojas.
      *
      * Toda a agregação e as métricas derivadas vêm do SalesSummaryService — fonte
      * única de verdade. Este controller apenas monta o contrato JSON do editor.
@@ -26,8 +33,17 @@ class ProductSalesController extends Controller
     {
         $product = Product::findOrFail($productId);
 
-        $filters = SalesFilters::fromPlanogramRequest($request);
+        $storeId = null;
 
+        if ($request->filled('gondola_id')) {
+            $gondolaModel = Gondola::find($request->query('gondola_id'));
+
+            if ($gondolaModel) {
+                $storeId = $this->resolveGondolaStoreId($gondolaModel);
+            }
+        }
+
+        $filters = SalesFilters::fromPlanogramRequest($request, $storeId);
         $summary = $this->salesSummary->summaryForProduct($product, $filters);
 
         return response()->json([
@@ -51,7 +67,7 @@ class ProductSalesController extends Controller
                 'last_sale_date' => $summary->lastSaleDate,
             ],
             'by_month' => $this->salesSummary->salesByMonth($product, $filters),
-            'top_stores' => $this->salesSummary->topStores($product, $filters),
+            'top_stores' => $this->salesSummary->topStores($product, SalesFilters::fromPlanogramRequest($request)),
         ]);
     }
 }

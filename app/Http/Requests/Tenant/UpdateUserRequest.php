@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Tenant;
 
+use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Tenancy\AdministrativeUserLimitService;
 use App\Support\Authorization\RbacType;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -39,6 +41,7 @@ class UpdateUserRequest extends FormRequest
             'role_ids.*' => [
                 'string',
                 'distinct',
+                Rule::in($this->availableRoleIds()),
                 Rule::exists('landlord.roles', 'id')
                     ->where(static fn ($query) => $query
                         ->where('guard_name', 'web')
@@ -46,5 +49,22 @@ class UpdateUserRequest extends FormRequest
                         ->whereNull('tenant_id')),
             ],
         ];
+    }
+
+    /**
+     * IDs dos perfis vinculados ao tenant atual (mais os perfis de sistema
+     * sempre disponíveis). Restringe a atribuição ao catálogo do tenant.
+     *
+     * @return list<string>
+     */
+    private function availableRoleIds(): array
+    {
+        $tenant = Tenant::current();
+
+        if (! $tenant instanceof Tenant) {
+            return [];
+        }
+
+        return app(AdministrativeUserLimitService::class)->availableRoleIds($tenant);
     }
 }

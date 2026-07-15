@@ -42,13 +42,18 @@ class SalesFilters
 
     /**
      * Constrói os filtros a partir do período do planograma no editor
-     * (query string: start_date, end_date). Promoção e loja não se aplicam aqui.
+     * (query string: start_date, end_date). Promoção não se aplica aqui.
+     *
+     * A loja não vem da query string: é resolvida no controller a partir da
+     * gôndola em edição (via ResolvesGondolaStoreId) e passada explicitamente
+     * aqui, para não depender de um valor informado pelo cliente.
      */
-    public static function fromPlanogramRequest(Request $request): self
+    public static function fromPlanogramRequest(Request $request, ?string $storeId = null): self
     {
         return new self(
             saleDateFrom: self::nullableString($request->query('start_date')),
             saleDateTo: self::nullableString($request->query('end_date')),
+            storeId: $storeId,
         );
     }
 
