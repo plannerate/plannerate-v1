@@ -69,6 +69,7 @@ class DailyModeDiscoverer
     /**
      * Gera [hoje, ontem, ..., hoje − initial_days] e remove os dias já no banco.
      * Com $forceFull, retorna o range completo sem descontar os dias já no banco.
+     * Dias dentro da janela de recheck são sempre re-buscados (ver applyRecheckWindow).
      *
      * @param  array<string, mixed>  $pathConfig
      * @param  array{id: string, document: string}|null  $store
@@ -100,7 +101,27 @@ class DailyModeDiscoverer
             $integration, $targetTable, $storeId, $lastDateColumn, $rangeStart, $today,
         );
 
-        return array_values(array_diff($allDates, $existingDates));
+        return array_values(array_diff($allDates, $this->applyRecheckWindow($existingDates)));
+    }
+
+    /**
+     * Remove da lista de "dias completos" os dias dentro da janela de recheck:
+     * um dia com ≥1 registro pode estar incompleto (fetch caiu no meio das
+     * páginas), então os últimos recheck_days são sempre re-buscados. O upsert
+     * por id determinístico torna a re-busca idempotente.
+     *
+     * @param  array<int, string>  $existingDates
+     * @return array<int, string>
+     */
+    private function applyRecheckWindow(array $existingDates): array
+    {
+        $recheckDays = max(0, (int) config('integrations.recheck_days', 3));
+        $recheckCutoff = now()->subDays($recheckDays)->toDateString();
+
+        return array_values(array_filter(
+            $existingDates,
+            fn (string $date): bool => $date < $recheckCutoff,
+        ));
     }
 
     /** @return array<int, string> */

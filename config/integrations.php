@@ -5,6 +5,14 @@ return [
 
     'fetch_delay' => env('INTEGRATION_FETCH_DELAY', 3),
 
+    /*
+     * Janela (em dias) sempre re-buscada no sync incremental, mesmo quando os
+     * dias já têm registros: um dia com fetch interrompido no meio (só parte
+     * das páginas persistida) contaria como "completo" e nunca seria
+     * completado. A re-busca é idempotente (upsert por id determinístico).
+     */
+    'recheck_days' => env('INTEGRATION_RECHECK_DAYS', 3),
+
     'import_clear_tables' => [
         'products' => ['product_store', 'products'],
         'sales' => ['sales'],

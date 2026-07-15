@@ -2,9 +2,16 @@
 
 namespace App\Services\Integrations\Support;
 
-use Illuminate\Support\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Re-vincula vendas a produtos pelo codigo_erp, cobrindo tanto vendas sem
+ * product_id quanto vendas apontando para produto errado/removido.
+ *
+ * Quando há mais de um produto ativo com o mesmo codigo_erp, a escolha é
+ * determinística: o mais antigo (created_at, id) vence.
+ */
 class SyncSalesProductReferencesService
 {
     private const ERP_CHUNK_SIZE = 200;
@@ -13,20 +20,23 @@ class SyncSalesProductReferencesService
      * Atualiza product_id e ean das vendas pelo codigo_erp em lote.
      *
      * @param  array<int, string>  $erpCodes
+     * @return int Vendas atualizadas
      */
     public function syncByCodigoErp(
         string $tenantConnectionName,
         string $tenantId,
         array $erpCodes,
-        Carbon $now,
-    ): void {
+        CarbonInterface $now,
+    ): int {
         if ($erpCodes === []) {
-            return;
+            return 0;
         }
 
         $connection = DB::connection($tenantConnectionName);
 
         if ($connection->getDriverName() !== 'sqlite') {
+            $updated = 0;
+
             foreach (array_chunk($erpCodes, self::ERP_CHUNK_SIZE) as $erpChunk) {
                 $inPlaceholders = implode(', ', array_fill(0, count($erpChunk), '?'));
 
@@ -35,11 +45,10 @@ class SyncSalesProductReferencesService
                     SET product_id = p.id,
                         ean = p.ean,
                         updated_at = ?
-                    FROM products p
+                    FROM ({$this->deterministicProductsSubquery()}) p
                     WHERE s.tenant_id = ?
                       AND p.tenant_id = s.tenant_id
                       AND p.codigo_erp = s.codigo_erp
-                      AND p.deleted_at IS NULL
                       AND s.codigo_erp IN ({$inPlaceholders})
                       AND (
                           s.product_id IS NULL
@@ -49,18 +58,18 @@ class SyncSalesProductReferencesService
                       )
                 ";
 
-                $connection->update($sql, [
+                $updated += $connection->update($sql, [
                     $now,
                     $tenantId,
                     ...$erpChunk,
                 ]);
             }
 
-            return;
+            return $updated;
         }
 
         // Fallback compatível com SQLite para ambiente de testes.
-        $connection->table('sales')
+        return $connection->table('sales')
             ->where('tenant_id', $tenantId)
             ->whereIn('codigo_erp', $erpCodes)
             ->whereExists(function ($query): void {
@@ -71,17 +80,24 @@ class SyncSalesProductReferencesService
                     ->whereNull('products.deleted_at');
             })
             ->update([
-                'product_id' => DB::raw('(SELECT products.id FROM products WHERE products.tenant_id = sales.tenant_id AND products.codigo_erp = sales.codigo_erp AND products.deleted_at IS NULL LIMIT 1)'),
-                'ean' => DB::raw('(SELECT products.ean FROM products WHERE products.tenant_id = sales.tenant_id AND products.codigo_erp = sales.codigo_erp AND products.deleted_at IS NULL LIMIT 1)'),
+                'product_id' => DB::raw($this->sqliteProductColumnSubquery('id')),
+                'ean' => DB::raw($this->sqliteProductColumnSubquery('ean')),
                 'updated_at' => $now,
             ]);
     }
 
+    /**
+     * Re-vincula TODAS as vendas do tenant pelo codigo_erp — inclusive as que
+     * apontam para produto errado (`product_id <> p.id`), que o vínculo
+     * incremental por `product_id IS NULL` não corrige.
+     *
+     * @return int Vendas atualizadas
+     */
     public function syncAllByCodigoErp(
         string $tenantConnectionName,
         string $tenantId,
-        Carbon $now,
-    ): void {
+        CarbonInterface $now,
+    ): int {
         $connection = DB::connection($tenantConnectionName);
 
         if ($connection->getDriverName() !== 'sqlite') {
@@ -90,11 +106,10 @@ class SyncSalesProductReferencesService
                 SET product_id = p.id,
                     ean = p.ean,
                     updated_at = ?
-                FROM products p
+                FROM ({$this->deterministicProductsSubquery()}) p
                 WHERE s.tenant_id = ?
                   AND p.tenant_id = s.tenant_id
                   AND p.codigo_erp = s.codigo_erp
-                  AND p.deleted_at IS NULL
                   AND (
                       s.product_id IS NULL
                       OR s.ean IS NULL
@@ -103,13 +118,11 @@ class SyncSalesProductReferencesService
                   )
             ";
 
-            $connection->update($sql, [$now, $tenantId]);
-
-            return;
+            return $connection->update($sql, [$now, $tenantId]);
         }
 
         // Fallback compatível com SQLite para ambiente de testes.
-        $connection->table('sales')
+        return $connection->table('sales')
             ->where('tenant_id', $tenantId)
             ->whereExists(function ($query): void {
                 $query->selectRaw('1')
@@ -119,9 +132,36 @@ class SyncSalesProductReferencesService
                     ->whereNull('products.deleted_at');
             })
             ->update([
-                'product_id' => DB::raw('(SELECT products.id FROM products WHERE products.tenant_id = sales.tenant_id AND products.codigo_erp = sales.codigo_erp AND products.deleted_at IS NULL LIMIT 1)'),
-                'ean' => DB::raw('(SELECT products.ean FROM products WHERE products.tenant_id = sales.tenant_id AND products.codigo_erp = sales.codigo_erp AND products.deleted_at IS NULL LIMIT 1)'),
+                'product_id' => DB::raw($this->sqliteProductColumnSubquery('id')),
+                'ean' => DB::raw($this->sqliteProductColumnSubquery('ean')),
                 'updated_at' => $now,
             ]);
+    }
+
+    /**
+     * Um produto ativo por (tenant_id, codigo_erp): com codigo_erp duplicado,
+     * o UPDATE ... FROM do Postgres escolheria uma linha arbitrária.
+     */
+    private function deterministicProductsSubquery(): string
+    {
+        return '
+            SELECT DISTINCT ON (tenant_id, codigo_erp) id, ean, codigo_erp, tenant_id
+            FROM products
+            WHERE deleted_at IS NULL
+            ORDER BY tenant_id, codigo_erp, created_at ASC, id ASC
+        ';
+    }
+
+    /** Mesma escolha determinística do Postgres, em subselect por linha. */
+    private function sqliteProductColumnSubquery(string $column): string
+    {
+        return "(
+            SELECT products.{$column} FROM products
+            WHERE products.tenant_id = sales.tenant_id
+              AND products.codigo_erp = sales.codigo_erp
+              AND products.deleted_at IS NULL
+            ORDER BY products.created_at ASC, products.id ASC
+            LIMIT 1
+        )";
     }
 }

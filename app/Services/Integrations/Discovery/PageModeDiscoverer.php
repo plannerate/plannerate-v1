@@ -111,7 +111,8 @@ class PageModeDiscoverer
      *
      * Modo padrão:
      *   banco vazio  → start = initial_days atrás, end = hoje
-     *   tem dados    → start = ontem, end = hoje
+     *   tem dados    → start = recheck_days atrás, end = hoje (janela re-buscada
+     *                  para cobrir dias com fetch parcial; upsert é idempotente)
      *
      * @param  array<string, mixed>  $pathConfig
      * @param  array{id: string, document: string}|null  $store
@@ -140,7 +141,7 @@ class PageModeDiscoverer
         } else {
             $hasRecords = $this->storeHasRecords($integration, $targetTable, $pivotTables, $storeId);
             $startIfEmpty = $initialDays > 0 ? now()->subDays($initialDays)->toDateString() : null;
-            $effectiveDateStart = $hasRecords ? now()->subDay()->toDateString() : $startIfEmpty;
+            $effectiveDateStart = $hasRecords ? $this->incrementalStartDate() : $startIfEmpty;
             $effectiveDateEnd = now()->toDateString();
         }
 
@@ -173,7 +174,7 @@ class PageModeDiscoverer
             $lastCarbon = Carbon::parse($lastDate);
 
             if ($lastCarbon->gte(now()->subDays(2))) {
-                return [now()->subDay()->toDateString(), $today];
+                return [$this->incrementalStartDate(), $today];
             }
 
             $start = $lastCarbon->toDateString();
@@ -186,6 +187,18 @@ class PageModeDiscoverer
         $end = Carbon::parse($start)->addDays($chunkDays)->toDateString();
 
         return [$start, min($end, $today)];
+    }
+
+    /**
+     * Início do sync incremental quando o tenant já tem dados: volta
+     * recheck_days em vez de só "ontem", para re-cobrir dias cujo fetch pode
+     * ter sido parcial. A re-busca é idempotente (upsert por id determinístico).
+     */
+    private function incrementalStartDate(): string
+    {
+        $recheckDays = max(1, (int) config('integrations.recheck_days', 3));
+
+        return now()->subDays($recheckDays)->toDateString();
     }
 
     private function getLastRecordDate(
@@ -317,6 +330,8 @@ class PageModeDiscoverer
             FetchIntegrationPageJob::dispatch(
                 $this->integrationId, $this->pathKey, $page,
                 $dateStart, $dateEnd, $storeId, $storeDocument,
+                autoPage: false,
+                knownLastPage: $lastPage,
             )->delay(now()->addSeconds(($page - 1) * $delaySeconds));
         }
     }

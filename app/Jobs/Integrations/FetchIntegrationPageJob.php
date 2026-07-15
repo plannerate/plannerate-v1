@@ -55,6 +55,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         public readonly ?string $storeId = null,
         public readonly ?string $storeDocument = null,
         public readonly bool $autoPage = false,
+        public readonly ?int $knownLastPage = null,
     ) {
         $this->onQueue('imports-fetch');
     }
@@ -128,6 +129,12 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             (string) $integration->id,
         );
 
+        // Antes do early-return de página vazia: a checagem de extensão precisa
+        // rodar mesmo quando a última página planejada não mapeou registros.
+        if (! $this->autoPage && $this->knownLastPage !== null && $this->page >= $this->knownLastPage) {
+            $this->dispatchPagesBeyondKnownLast((array) $responseData, $responseMeta, $pathConfig);
+        }
+
         if ($records === []) {
             Log::info('FetchIntegrationPageJob: nenhum registro mapeado', [
                 'integration_id' => $this->integrationId,
@@ -162,6 +169,55 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
     }
 
     // ─── Auto-paginação ──────────────────────────────────────────────────────
+
+    /**
+     * No modo página, o total de páginas é congelado na sondagem da descoberta:
+     * páginas que surgirem na API depois disso nunca seriam buscadas. O job da
+     * última página planejada relê o last_page real da resposta e despacha as
+     * excedentes (que por sua vez podem estender de novo).
+     *
+     * @param  array<string, mixed>  $responseData
+     * @param  array<string, mixed>  $responseMeta
+     * @param  array<string, mixed>  $pathConfig
+     */
+    private function dispatchPagesBeyondKnownLast(array $responseData, array $responseMeta, array $pathConfig): void
+    {
+        $lastPagePath = (string) data_get($responseMeta, 'pagination.last_page_path', '');
+
+        if ($lastPagePath === '') {
+            return;
+        }
+
+        $actualLastPage = (int) data_get($responseData, $lastPagePath, $this->page);
+        $maxPage = (int) data_get($pathConfig, 'max_page', 0);
+
+        if ($maxPage > 0) {
+            $actualLastPage = min($actualLastPage, $maxPage);
+        }
+
+        if ($actualLastPage <= $this->knownLastPage) {
+            return;
+        }
+
+        Log::info('FetchIntegrationPageJob: páginas novas após a sondagem, despachando excedentes', [
+            'integration_id' => $this->integrationId,
+            'path_key' => $this->pathKey,
+            'known_last_page' => $this->knownLastPage,
+            'actual_last_page' => $actualLastPage,
+            'store_id' => $this->storeId,
+        ]);
+
+        $delaySeconds = (int) config('integrations.fetch_delay', 3);
+
+        foreach (range($this->knownLastPage + 1, $actualLastPage) as $index => $page) {
+            self::dispatch(
+                $this->integrationId, $this->pathKey, $page,
+                $this->dateStart, $this->dateEnd, $this->storeId, $this->storeDocument,
+                autoPage: false,
+                knownLastPage: $actualLastPage,
+            )->delay(now()->addSeconds($index * $delaySeconds));
+        }
+    }
 
     /**
      * Lê o last_page da resposta e despacha o próximo FetchIntegrationPageJob
