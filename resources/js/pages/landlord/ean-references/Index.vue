@@ -186,7 +186,7 @@ function formatDimensions(reference: EanReferenceRow): string {
                                 :can-delete="can.delete"
                                 :can-restore="can.delete"
                             >
-                                <Button type="button" variant="outline" size="sm"
+                                <Button v-if="can.update" type="button" variant="outline" size="sm"
                                     :disabled="fetchingIds.has(eanReference.id)" :title="eanReference.ean"
                                     @click="fetchImageByEan(eanReference)">
                                     <Loader2 v-if="fetchingIds.has(eanReference.id)" class="size-3.5 animate-spin" />

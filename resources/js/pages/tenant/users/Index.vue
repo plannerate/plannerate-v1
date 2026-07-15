@@ -135,7 +135,7 @@ const pageMeta = useCrudPageMeta({
                                     :can-restore="can.delete"
                                 >
                                     <ResendPasswordSetupButton
-                                        v-if="user.is_active"
+                                        v-if="user.is_active && can.update"
                                         variant="button"
                                         :resend-url="TenantUserController.resendPasswordSetup.url({ user: user.id }).replace(/^\/\/[^/]+/, '')"
                                         :user-name="user.name"

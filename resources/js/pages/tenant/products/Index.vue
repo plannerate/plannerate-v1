@@ -169,7 +169,7 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex flex-wrap items-center justify-end gap-2">
-                <button type="button" :disabled="isUpdatingImages || pageEans.length === 0 || productsLoading"
+                <button v-if="can.update" type="button" :disabled="isUpdatingImages || pageEans.length === 0 || productsLoading"
                     class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                     @click="updateImages">
                     <ImageDown class="size-3.5 shrink-0" :class="{ 'animate-pulse': isUpdatingImages }" />

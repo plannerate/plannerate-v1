@@ -542,7 +542,7 @@ function gondolaHref(gondola: Gondola): string {
                 </DropdownMenu>
 
                 <!-- Editar nome da gôndola -->
-                <ButtonWithTooltip variant="outline" size="icon-sm" class="size-8"
+                <ButtonWithTooltip v-if="permissions.can_update_gondola" variant="outline" size="icon-sm" class="size-8"
                     :disabled="!editor.currentGondola.value"
                     :tooltip="t('plannerate.toolbar.edit_gondola_name')" @click="showRenameModal = true">
                     <Pencil class="size-4" />
@@ -565,7 +565,7 @@ function gondolaHref(gondola: Gondola): string {
                 </div>
 
                 <!-- Salvar + auto-save -->
-                <ButtonGroup aria-label="Salvar e salvamento automático"
+                <ButtonGroup v-if="permissions.can_update_gondola" aria-label="Salvar e salvamento automático"
                     class="h-8 border-primary/40 bg-primary/5 *:h-full *:rounded-none">
                     <Button variant="ghost" size="sm" class="h-full rounded-none border-0 hover:bg-primary/10" :title="hasChanges
                         ? t(
@@ -622,7 +622,7 @@ function gondolaHref(gondola: Gondola): string {
                 </div>
 
                 <!-- Alinhamento e histórico (undo / redo) -->
-                <div class="flex h-8 items-center gap-1 rounded-md bg-muted/60 px-1">
+                <div v-if="permissions.can_update_gondola" class="flex h-8 items-center gap-1 rounded-md bg-muted/60 px-1">
                     <ButtonWithTooltip :variant="alignment === 'left' ? 'default' : 'ghost'" size="sm"
                         :tooltip="t('plannerate.toolbar.align_left_tooltip')" @click="editor.alignLeft()">
                         <AlignLeft class="size-4" />
@@ -684,7 +684,7 @@ function gondolaHref(gondola: Gondola): string {
                 </ButtonWithTooltip>
 
                 <!-- Ações de edição: inverter fluxo e transferir módulo -->
-                <div class="flex h-8 items-center gap-1 rounded-md bg-muted/60 px-1">
+                <div v-if="permissions.can_update_gondola" class="flex h-8 items-center gap-1 rounded-md bg-muted/60 px-1">
                     <!-- Inverter fluxo -->
                     <ButtonWithTooltip variant="ghost" size="sm" :tooltip="t('plannerate.toolbar.invert_tooltip')"
                         @click="editor.toggleFlow()">

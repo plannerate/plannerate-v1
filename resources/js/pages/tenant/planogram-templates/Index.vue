@@ -33,6 +33,11 @@ const props = defineProps<{
         search: string;
         trashed: 'without' | 'only' | 'with';
     };
+    can: {
+        create: boolean;
+        update: boolean;
+        delete: boolean;
+    };
 }>();
 
 const { t } = useT();
@@ -62,11 +67,11 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex flex-wrap items-center justify-end gap-2">
-                <NewActionButton :href="PlanogramTemplateController.create.url()">
+                <NewActionButton v-if="can.create" :href="PlanogramTemplateController.create.url()">
                     <Plus class="size-4" />
                     {{ t('app.tenant.planogram_templates.actions.create') }}
                 </NewActionButton>
-                <Button variant="outline" :as="'a'" :href="PlanogramTemplateController.importPage.url()">
+                <Button v-if="can.create" variant="outline" :as="'a'" :href="PlanogramTemplateController.importPage.url()">
                     <Upload class="size-4" />
                     {{ t('app.tenant.planogram_templates.actions.import') }}
                 </Button>
@@ -141,6 +146,9 @@ const pageMeta = useCrudPageMeta({
                                 :require-confirm-word="true"
                                 :is-trashed="template.trashed"
                                 :restore-href="PlanogramTemplateController.restore.url({ planogramTemplate: template.id })"
+                                :can-edit="can.update"
+                                :can-delete="can.delete"
+                                :can-restore="can.delete"
                             />
                         </td>
                     </tr>

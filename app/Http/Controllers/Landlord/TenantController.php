@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
+use App\Http\Controllers\Concerns\InteractsWithResourceAbilities;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\ImportTenantConfigurationsRequest;
 use App\Http\Requests\Landlord\StoreTenantRequest;
@@ -33,6 +34,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class TenantController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithResourceAbilities;
 
     /**
      * @var list<string>
@@ -62,6 +64,7 @@ class TenantController extends Controller
             $module,
             $this->resolvePerPage($request, 10),
         ), [
+            'can' => $this->resolveResourceAbilities(Tenant::class),
             'filters' => [
                 'search' => $search,
                 'status' => $status,

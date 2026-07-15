@@ -110,6 +110,7 @@ const pageMeta = useCrudPageMeta({
                     </a>
                 </Button>
                 <ImportFileButton
+                    v-if="can.create"
                     :action="CategoryController.importMethod.url()"
                     :button-label="t('app.tenant.categories.actions.import')"
                     :title="t('app.tenant.categories.import.title')"

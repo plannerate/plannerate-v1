@@ -57,6 +57,7 @@ const props = defineProps<{
         plans: Array<{ id: string; name: string }>;
         modules: Array<{ slug: string; name: string }>;
     };
+    can: { create: boolean; update: boolean; delete: boolean };
 }>();
 
 const { t } = useT();
@@ -119,6 +120,7 @@ function openSsoSheet(tenant: TenantRow): void {
                     </a>
                 </Button>
                 <ImportFileButton
+                    v-if="can.create"
                     :action="TenantController.importConfigurations.url()"
                     :button-label="t('app.landlord.tenants.actions.import')"
                     :title="t('app.landlord.tenants.import.title')"
@@ -131,7 +133,7 @@ function openSsoSheet(tenant: TenantRow): void {
                     drop-label="Arraste e solte o arquivo JSON aqui"
                     drop-hint="ou clique para escolher um arquivo .json"
                 />
-                <NewActionButton :href="tenantWayfinderPath(TenantController.create.url())">
+                <NewActionButton v-if="can.create" :href="tenantWayfinderPath(TenantController.create.url())">
                     {{ t('app.landlord.tenants.actions.new') }}
                 </NewActionButton>
             </div>
@@ -273,10 +275,12 @@ function openSsoSheet(tenant: TenantRow): void {
                                 "
                                 :delete-label="tenant.name ?? undefined"
                                 :require-confirm-word="true"
+                                :can-edit="can.update"
+                                :can-delete="can.delete"
                             >
                                 <div class="flex items-center gap-2">
                                     <Button
-                                        v-if="tenant.status !== 'active'"
+                                        v-if="tenant.status !== 'active' && can.update"
                                         variant="outline"
                                         size="sm"
                                         as-child
@@ -298,6 +302,7 @@ function openSsoSheet(tenant: TenantRow): void {
 
                                     <!-- Acessos — gestão de usuários do tenant (primeiro passo pós-provisionamento) -->
                                     <Button
+                                        v-if="can.update"
                                         variant="secondary"
                                         size="sm"
                                         as-child
@@ -318,6 +323,7 @@ function openSsoSheet(tenant: TenantRow): void {
 
                                     <!-- Integração API — importação dos dados (produtos/vendas) do cliente -->
                                     <Button
+                                        v-if="can.update"
                                         variant="secondary"
                                         size="sm"
                                         as-child
@@ -340,6 +346,7 @@ function openSsoSheet(tenant: TenantRow): void {
 
                                     <!-- Padrão de gôndola — defaults usados na montagem dos planogramas -->
                                     <Button
+                                        v-if="can.update"
                                         variant="secondary"
                                         size="sm"
                                         as-child
@@ -391,6 +398,7 @@ function openSsoSheet(tenant: TenantRow): void {
 
                                     <!-- SSO — login único, configuração opcional (abre sheet lateral) -->
                                     <Button
+                                        v-if="can.update"
                                         variant="secondary"
                                         size="sm"
                                         :class="tenant.sso_provider ? 'text-primary' : ''"

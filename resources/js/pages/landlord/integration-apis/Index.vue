@@ -63,6 +63,7 @@ const pageMeta = useCrudPageMeta({
                     </a>
                 </Button>
                 <ImportFileButton
+                    v-if="can.create"
                     :action="IntegrationApiController.importConfigurations.url()"
                     :button-label="t('app.landlord.integration_apis.actions.import')"
                     :title="t('app.landlord.integration_apis.import.title')"

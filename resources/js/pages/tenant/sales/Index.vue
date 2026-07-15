@@ -40,6 +40,8 @@ const props = defineProps<{
     };
     can: {
         create: boolean;
+        update: boolean;
+        delete: boolean;
         limit_reached: boolean;
         limit_message: string | null;
         upgrade_url: string | null;
@@ -268,6 +270,9 @@ const pageMeta = useCrudPageMeta({
                                 "
                                 :delete-label="sale.codigo_erp ?? undefined"
                                 :require-confirm-word="true"
+                                :can-edit="can.update"
+                                :can-delete="can.delete"
+                                :can-restore="can.delete"
                             />
                         </td>
                     </tr>
