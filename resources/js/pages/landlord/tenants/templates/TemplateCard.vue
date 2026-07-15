@@ -9,11 +9,19 @@ import RestoreButton from '@/components/RestoreButton.vue';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import type { TemplateRow, UserOption } from './Index.vue';
 
-const props = defineProps<{
-    template: TemplateRow;
-    tenantId: string;
-    users: UserOption[];
-}>();
+const props = withDefaults(
+    defineProps<{
+        template: TemplateRow;
+        tenantId: string;
+        users: UserOption[];
+        canEdit?: boolean;
+        canDelete?: boolean;
+    }>(),
+    {
+        canEdit: true,
+        canDelete: true,
+    },
+);
 
 const emit = defineEmits<{
     edit: [template: TemplateRow];
@@ -125,11 +133,11 @@ function onUserChange(userId: string, checked: boolean): void {
             <div class="mt-4 border-t border-border pt-4">
                 <div class="flex items-center justify-end gap-2">
                     <RestoreButton
-                        v-if="template.trashed"
+                        v-if="canDelete && template.trashed"
                         :href="WorkflowTemplateController.restore.url({ tenant: tenantId, template: template.id })"
                     />
                     <button
-                        v-if="!template.trashed"
+                        v-if="canEdit && !template.trashed"
                         type="button"
                         class="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
                         @click="emit('edit', template)"
@@ -138,6 +146,7 @@ function onUserChange(userId: string, checked: boolean): void {
                         Editar
                     </button>
                     <DeleteButton
+                        v-if="canDelete"
                         :href="WorkflowTemplateController.destroy.url({ tenant: tenantId, template: template.id })"
                         :label="template.name"
                         :permanent="template.trashed"

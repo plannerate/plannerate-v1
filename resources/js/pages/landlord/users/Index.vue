@@ -31,6 +31,7 @@ const props = defineProps<{
     filter_options: {
         roles: Array<{ id: string; name: string }>;
     };
+    can: { create: boolean; update: boolean; delete: boolean };
 }>();
 
 const { t } = useT();
@@ -54,7 +55,7 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton :href="UserController.create.url()">
+                <NewActionButton v-if="can.create" :href="UserController.create.url()">
                     {{ t('app.landlord.users.actions.new') }}
                 </NewActionButton>
             </div>
@@ -130,6 +131,9 @@ const pageMeta = useCrudPageMeta({
                             :require-confirm-word="true"
                             :is-trashed="user.trashed"
                             :restore-href="UserController.restore.url(user.id)"
+                            :can-edit="can.update"
+                            :can-delete="can.delete"
+                            :can-restore="can.delete"
                         />
                     </td>
                 </tr>

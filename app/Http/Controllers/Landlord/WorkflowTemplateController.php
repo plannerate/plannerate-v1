@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Landlord;
 
+use App\Http\Controllers\Concerns\InteractsWithResourceAbilities;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Concerns\RunsInTenantContext;
 use App\Http\Controllers\Controller;
@@ -20,6 +21,7 @@ use Inertia\Response;
 
 class WorkflowTemplateController extends Controller
 {
+    use InteractsWithResourceAbilities;
     use InteractsWithTrashedFilter;
     use RunsInTenantContext;
 
@@ -35,6 +37,7 @@ class WorkflowTemplateController extends Controller
 
         /** @var array{
          *     templates: LengthAwarePaginator<array<string, mixed>>,
+         *     can: array{create: bool, update: bool, delete: bool},
          * } $data
          */
         $data = $this->runInTenantContext($tenant, function () use ($search, $hasStatusFilter, $status, $perPage, $trashed): array {
@@ -71,6 +74,7 @@ class WorkflowTemplateController extends Controller
                 'templates' => $templates,
                 'users' => $this->usersForSelect(),
                 'existing_templates' => $this->templatesForSelect(),
+                'can' => $this->resolveResourceAbilities(WorkflowTemplate::class),
             ];
         });
 
@@ -83,6 +87,7 @@ class WorkflowTemplateController extends Controller
             'templates' => $data['templates'],
             'users' => $data['users'],
             'existing_templates' => $data['existing_templates'],
+            'can' => $data['can'],
             'filters' => [
                 'search' => $search,
                 'status' => $hasStatusFilter ? $status : '',

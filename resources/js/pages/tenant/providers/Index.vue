@@ -33,6 +33,8 @@ const props = defineProps<{
     };
     can: {
         create: boolean;
+        update: boolean;
+        delete: boolean;
         limit_reached: boolean;
         limit_message: string | null;
         upgrade_url: string | null;
@@ -123,6 +125,9 @@ const pageMeta = useCrudPageMeta({
                                 :require-confirm-word="true"
                                 :is-trashed="provider.trashed"
                                 :restore-href="ProviderController.restore.url({ provider: provider.id })"
+                                :can-edit="can.update"
+                                :can-delete="can.delete"
+                                :can-restore="can.delete"
                             />
                         </td>
                     </tr>

@@ -29,6 +29,7 @@ const props = defineProps<{
         is_active: string;
         trashed: 'without' | 'only' | 'with';
     };
+    can: { create: boolean; update: boolean; delete: boolean };
 }>();
 
 const { t } = useT();
@@ -74,7 +75,7 @@ const pageMeta = useCrudPageMeta({
                     drop-label="Arraste e solte o arquivo JSON aqui"
                     drop-hint="ou clique para escolher um arquivo .json"
                 />
-                <NewActionButton :href="IntegrationApiController.create.url()">
+                <NewActionButton v-if="can.create" :href="IntegrationApiController.create.url()">
                     {{ t('app.landlord.integration_apis.actions.new') }}
                 </NewActionButton>
             </div>
@@ -140,6 +141,9 @@ const pageMeta = useCrudPageMeta({
                                 :require-confirm-word="true"
                                 :is-trashed="integrationApi.trashed"
                                 :restore-href="IntegrationApiController.restore.url(integrationApi.id)"
+                                :can-edit="can.update"
+                                :can-delete="can.delete"
+                                :can-restore="can.delete"
                             />
                         </td>
                     </tr>

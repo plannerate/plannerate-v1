@@ -10,11 +10,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\StoreProductRequest;
 use App\Http\Requests\Tenant\UpdateProductRequest;
+use App\Jobs\Integrations\SyncSingleProductJob;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\TenantIntegration;
-use App\Services\Integrations\Lookup\SingleProductFetchService;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Callcocam\LaravelRaptorPlannerate\Models\Sale;
 use Callcocam\LaravelRaptorPlannerate\Sales\SalesFilters;
@@ -37,24 +37,28 @@ class ProductController extends Controller
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
 
-    public function syncSingle(Request $request, SingleProductFetchService $fetcher): RedirectResponse
+    public function syncSingle(Request $request): RedirectResponse
     {
         $this->authorize('viewAny', Product::class);
 
         $validated = $request->validate([
             'product' => ['required', 'ulid'],
+            'store_id' => ['required', 'ulid'],
+            'update_product' => ['sometimes', 'boolean'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
         ]);
 
-        /** @var Product $product */
-        $product = Product::query()->with('stores')->findOrFail($validated['product']);
+        // Garante que produto e loja pertencem ao tenant atual (conexão tenant).
+        $product = Product::query()->findOrFail($validated['product']);
+        $store = Store::query()->findOrFail($validated['store_id']);
 
         $integration = TenantIntegration::query()
-            ->with('api')
             ->where('tenant_id', $this->tenantId())
             ->where('is_active', true)
             ->first();
 
-        if ($integration === null || $integration->api === null) {
+        if ($integration === null) {
             Inertia::flash('toast', [
                 'type' => 'warning',
                 'message' => __('app.tenant.products.sync.no_integration'),
@@ -63,32 +67,19 @@ class ProductController extends Controller
             return back();
         }
 
-        $result = $fetcher->fetch($integration, $product);
-
-        if (! $result->configured) {
-            Inertia::flash('toast', [
-                'type' => 'warning',
-                'message' => __('app.tenant.products.sync.no_integration'),
-            ]);
-
-            return back();
-        }
-
-        if ($result->hasErrors() && ! $result->persistedAnything()) {
-            Inertia::flash('toast', [
-                'type' => 'error',
-                'message' => __('app.tenant.products.sync.error', ['reason' => $result->errors[0]]),
-            ]);
-
-            return back();
-        }
+        SyncSingleProductJob::dispatch(
+            (string) $this->tenantId(),
+            (string) $product->getKey(),
+            (string) $store->getKey(),
+            $request->boolean('update_product'),
+            (string) $request->user()?->getKey(),
+            $validated['date_from'] ?? null,
+            $validated['date_to'] ?? null,
+        );
 
         Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('app.tenant.products.sync.success', [
-                'products' => $result->productsPersisted,
-                'sales' => $result->salesPersisted,
-            ]),
+            'type' => 'info',
+            'message' => __('app.tenant.products.sync.started'),
         ]);
 
         return back();

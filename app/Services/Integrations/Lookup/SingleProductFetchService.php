@@ -12,19 +12,22 @@ use App\Services\Integrations\Support\DeterministicIdGenerator;
 use App\Services\Integrations\TenantRecordPersister;
 use App\Services\Integrations\TenantUpsertRecordPreparer;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * Busca sob demanda (síncrona) dos dados de UM produto e suas vendas na API do tenant.
+ * Busca sob demanda (síncrona) das vendas de UM produto em UMA loja — e,
+ * opcionalmente, dos dados cadastrais do produto — na API do tenant.
  *
- * Ao contrário do import em massa (integration:run / jobs em fila), roda no
- * ciclo da requisição para um único produto — poucas chamadas HTTP. Reaproveita
- * as mesmas peças do motor genérico (IntegrationHttpClient, RecordMapper,
+ * Roda dentro de um Job em fila (SyncSingleProductJob). Reaproveita as mesmas
+ * peças do motor genérico (IntegrationHttpClient, RecordMapper,
  * TenantRecordPersister), mas lê a config de um bloco isolado
  * `requests.lookups.{product,sales}` que o motor em massa ignora (ele só lê
  * `requests.paths`). Assim nada do fluxo existente é afetado.
+ *
+ * Por decisão de produto: a loja é obrigatória (uma por chamada) e a
+ * atualização dos dados do produto é opt-in — por padrão só busca vendas.
  */
 class SingleProductFetchService
 {
@@ -34,8 +37,14 @@ class SingleProductFetchService
         private readonly LookupPayloadBuilder $payloadBuilder = new LookupPayloadBuilder,
     ) {}
 
-    public function fetch(TenantIntegration $integration, Product $product): SingleProductFetchResult
-    {
+    public function fetch(
+        TenantIntegration $integration,
+        Product $product,
+        Store $store,
+        bool $updateProduct = false,
+        ?string $dateFrom = null,
+        ?string $dateTo = null,
+    ): SingleProductFetchResult {
         $api = $integration->api;
 
         if ($api === null) {
@@ -52,31 +61,29 @@ class SingleProductFetchService
         $config = $integration->config ?? [];
         $result = new SingleProductFetchResult;
 
-        /** @var Collection<int, Store> $stores */
-        $stores = $product->stores;
+        if ($updateProduct) {
+            $productLookup = data_get($lookups, 'product');
 
-        $productLookup = data_get($lookups, 'product');
-
-        if (is_array($productLookup) && $productLookup !== []) {
-            $this->fetchProduct($integration, $config, $requests, $productLookup, $product, $stores, $result);
+            if (is_array($productLookup) && $productLookup !== []) {
+                $this->fetchProduct($integration, $config, $requests, $productLookup, $product, $store, $result);
+            }
         }
 
         $salesLookup = data_get($lookups, 'sales');
 
         if (is_array($salesLookup) && $salesLookup !== []) {
-            $this->fetchSales($integration, $config, $requests, $salesLookup, $product, $stores, $result);
+            $this->fetchSales($integration, $config, $requests, $salesLookup, $product, $store, $result, $dateFrom, $dateTo);
         }
 
         return $result;
     }
 
-    // ─── Produto ─────────────────────────────────────────────────────────────
+    // ─── Produto (opt-in) ────────────────────────────────────────────────────
 
     /**
      * @param  array<string, mixed>  $config
      * @param  array<string, mixed>  $requests
      * @param  array<string, mixed>  $lookup
-     * @param  Collection<int, Store>  $stores
      */
     private function fetchProduct(
         TenantIntegration $integration,
@@ -84,7 +91,7 @@ class SingleProductFetchService
         array $requests,
         array $lookup,
         Product $product,
-        Collection $stores,
+        Store $store,
         SingleProductFetchResult $result,
     ): void {
         try {
@@ -96,10 +103,7 @@ class SingleProductFetchService
                 return;
             }
 
-            $store = $stores->first();
-            $storeValue = $this->storeValue($lookup, $store);
-
-            $records = $this->request($config, $requests, $lookup, $code, $storeValue, null, null, $integration, $store?->getKey());
+            $records = $this->request($config, $requests, $lookup, $code, $this->storeValue($lookup, $store), null, null, $integration, $store->getKey());
 
             if ($records === []) {
                 return;
@@ -129,7 +133,6 @@ class SingleProductFetchService
      * @param  array<string, mixed>  $config
      * @param  array<string, mixed>  $requests
      * @param  array<string, mixed>  $lookup
-     * @param  Collection<int, Store>  $stores
      */
     private function fetchSales(
         TenantIntegration $integration,
@@ -137,60 +140,54 @@ class SingleProductFetchService
         array $requests,
         array $lookup,
         Product $product,
-        Collection $stores,
+        Store $store,
         SingleProductFetchResult $result,
+        ?string $dateFrom = null,
+        ?string $dateTo = null,
     ): void {
-        $code = $this->productCode($lookup, $product);
+        try {
+            $code = $this->productCode($lookup, $product);
 
-        if ($code === '') {
-            $result->addError('Vendas: sem '.(string) data_get($lookup, 'lookup_key', 'ean'));
+            if ($code === '') {
+                $result->addError('Vendas: sem '.(string) data_get($lookup, 'lookup_key', 'ean'));
 
-            return;
-        }
-
-        [$dateStart, $dateEnd] = $this->salesDateWindow($lookup);
-
-        $storeField = (string) data_get($lookup, 'store_field', '');
-        $needsStore = $storeField !== '';
-
-        /** @var array<int, Store|null> $targets */
-        $targets = $needsStore && $stores->isNotEmpty() ? $stores->all() : [null];
-
-        foreach ($targets as $store) {
-            try {
-                $storeValue = $this->storeValue($lookup, $store);
-
-                if ($needsStore && ($storeValue === null || $storeValue === '')) {
-                    $result->addError('Vendas: loja sem '.(string) data_get($lookup, 'store_key', 'document'));
-
-                    continue;
-                }
-
-                $result->storesQueried++;
-
-                $records = $this->request($config, $requests, $lookup, $code, $storeValue, $dateStart, $dateEnd, $integration, $store?->getKey());
-
-                if ($records === []) {
-                    continue;
-                }
-
-                TenantRecordPersister::persist(
-                    $integration,
-                    (string) data_get($lookup, 'target_table', 'sales'),
-                    $records,
-                    (array) data_get($lookup, 'pivot_tables', []),
-                );
-
-                $result->salesPersisted += count($records);
-            } catch (Throwable $e) {
-                Log::warning('SingleProductFetchService: falha ao buscar vendas', [
-                    'integration_id' => (string) $integration->id,
-                    'product_id' => (string) $product->getKey(),
-                    'store_id' => $store?->getKey(),
-                    'error' => $e->getMessage(),
-                ]);
-                $result->addError('Vendas: '.$e->getMessage());
+                return;
             }
+
+            $storeValue = $this->storeValue($lookup, $store);
+
+            if ((string) data_get($lookup, 'store_field', '') !== '' && ($storeValue === null || $storeValue === '')) {
+                $result->addError('Vendas: loja sem '.(string) data_get($lookup, 'store_key', 'document'));
+
+                return;
+            }
+
+            $result->storesQueried++;
+
+            [$dateStart, $dateEnd] = $this->salesDateRange($lookup, $dateFrom, $dateTo);
+
+            $records = $this->request($config, $requests, $lookup, $code, $storeValue, $dateStart, $dateEnd, $integration, $store->getKey());
+
+            if ($records === []) {
+                return;
+            }
+
+            TenantRecordPersister::persist(
+                $integration,
+                (string) data_get($lookup, 'target_table', 'sales'),
+                $records,
+                (array) data_get($lookup, 'pivot_tables', []),
+            );
+
+            $result->salesPersisted += count($records);
+        } catch (Throwable $e) {
+            Log::warning('SingleProductFetchService: falha ao buscar vendas', [
+                'integration_id' => (string) $integration->id,
+                'product_id' => (string) $product->getKey(),
+                'store_id' => (string) $store->getKey(),
+                'error' => $e->getMessage(),
+            ]);
+            $result->addError('Vendas: '.$e->getMessage());
         }
     }
 
@@ -222,7 +219,12 @@ class SingleProductFetchService
         $response = (new IntegrationHttpClient($config))->call($method, $url, $payload);
 
         if (! $response->successful()) {
-            throw new \RuntimeException(sprintf('HTTP %d em %s', $response->status(), $url));
+            throw new \RuntimeException(sprintf(
+                'HTTP %d em %s: %s',
+                $response->status(),
+                $url,
+                Str::limit((string) $response->body(), 300),
+            ));
         }
 
         $items = $this->extractItems($response->json(), $lookup);
@@ -310,15 +312,21 @@ class SingleProductFetchService
         return trim((string) ($product->{$key} ?? ''));
     }
 
-    /** @param array<string, mixed> $lookup */
-    private function storeValue(array $lookup, ?Store $store): ?string
+    /**
+     * Valor da loja a enviar no request. Suporta store_transform: 'digits' para
+     * normalizar CNPJ/documento (a API da Sysmo rejeita empresa formatada — o
+     * import em massa também envia só dígitos).
+     *
+     * @param  array<string, mixed>  $lookup
+     */
+    private function storeValue(array $lookup, Store $store): ?string
     {
-        if ($store === null) {
-            return null;
-        }
-
         $key = (string) data_get($lookup, 'store_key', 'document');
         $value = trim((string) ($store->{$key} ?? ''));
+
+        if ($value !== '' && (string) data_get($lookup, 'store_transform', '') === 'digits') {
+            $value = preg_replace('/\D/', '', $value) ?? '';
+        }
 
         return $value === '' ? null : $value;
     }
@@ -336,15 +344,28 @@ class SingleProductFetchService
     }
 
     /**
-     * Janela de datas para vendas: [hoje - initial_days, hoje].
+     * Janela de datas para vendas.
+     *
+     * Usa as datas selecionadas no formulário quando informadas (mesmo que só uma
+     * delas); caso contrário, cai no padrão [hoje - initial_days, hoje].
      *
      * @param  array<string, mixed>  $lookup
      * @return array{0: string, 1: string}
      */
-    private function salesDateWindow(array $lookup): array
+    private function salesDateRange(array $lookup, ?string $from, ?string $to): array
     {
-        $initialDays = (int) (data_get($lookup, 'initial_days') ?? 200);
         $format = (string) data_get($lookup, 'date_format', 'Y-m-d');
+        $initialDays = (int) (data_get($lookup, 'initial_days') ?? 200);
+
+        $hasFrom = $from !== null && trim($from) !== '';
+        $hasTo = $to !== null && trim($to) !== '';
+
+        if ($hasFrom || $hasTo) {
+            $end = $hasTo ? Carbon::parse($to) : Carbon::now();
+            $start = $hasFrom ? Carbon::parse($from) : $end->copy()->subDays($initialDays);
+
+            return [$start->format($format), $end->format($format)];
+        }
 
         $end = Carbon::now();
         $start = $initialDays > 0 ? $end->copy()->subDays($initialDays) : $end->copy();

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
+use App\Http\Controllers\Concerns\InteractsWithResourceAbilities;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreUsefulLinkRequest;
@@ -17,6 +18,7 @@ use Inertia\Response;
 class UsefulLinkController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithResourceAbilities;
     use InteractsWithTrashedFilter;
 
     public function index(Request $request): Response
@@ -38,6 +40,7 @@ class UsefulLinkController extends Controller
                 'show_on_tenant_dashboard' => $showOnTenantDashboard,
                 'trashed' => $trashed,
             ],
+            'can' => $this->resolveResourceAbilities(UsefulLink::class),
         ]);
     }
 

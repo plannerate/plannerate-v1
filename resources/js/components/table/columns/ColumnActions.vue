@@ -13,7 +13,11 @@ withDefaults(
         requireConfirmWord?: boolean;
         isTrashed?: boolean;
         restoreHref?: string;
-        /** Quando false, oculta o botão de exclusão (ex.: registros protegidos). */
+        /** Quando false, oculta o botão de editar (ex.: sem permissão). */
+        canEdit?: boolean;
+        /** Quando false, oculta o botão de restaurar (ex.: sem permissão). */
+        canRestore?: boolean;
+        /** Quando false, oculta o botão de exclusão (ex.: registros protegidos ou sem permissão). */
         canDelete?: boolean;
     }>(),
     {
@@ -22,6 +26,8 @@ withDefaults(
         requireConfirmWord: true,
         isTrashed: false,
         restoreHref: undefined,
+        canEdit: true,
+        canRestore: true,
         canDelete: true,
     },
 );
@@ -30,8 +36,8 @@ withDefaults(
 <template>
     <div class="inline-flex items-center gap-2">
         <slot v-if="!isTrashed" />
-        <RestoreButton v-if="isTrashed && restoreHref" :href="restoreHref" />
-        <EditButton v-if="!isTrashed" :href="editHref" />
+        <RestoreButton v-if="isTrashed && restoreHref && canRestore" :href="restoreHref" />
+        <EditButton v-if="!isTrashed && canEdit" :href="editHref" />
         <DeleteButton
             v-if="canDelete"
             :href="deleteHref"

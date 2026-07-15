@@ -56,6 +56,7 @@ return new class extends Migration
                 'lookup_key' => 'ean',
                 'store_field' => 'empresa',
                 'store_key' => 'document',
+                'store_transform' => 'digits',
                 'extra_params' => ['tipo_consulta' => 'produto'],
                 'date_fields' => ['start' => 'data_inicial', 'end' => 'data_final'],
                 'initial_days' => 200,

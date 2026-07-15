@@ -60,6 +60,7 @@ const props = defineProps<{
         status: string;
         trashed: 'without' | 'only' | 'with';
     };
+    can: { create: boolean; update: boolean; delete: boolean };
 }>();
 
 const { t } = useT();
@@ -113,7 +114,7 @@ function seedDefaultTemplates(): void {
     <Head :title="`${t('app.landlord.kanban.templates.title')} - ${props.tenant.name}`" />
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <template #header-actions>
-            <Button variant="gradient" size="pill-sm" class="shrink-0" @click="openCreateDrawer">
+            <Button v-if="can.create" variant="gradient" size="pill-sm" class="shrink-0" @click="openCreateDrawer">
                 <Plus class="size-4" />
                 {{ t('app.landlord.kanban.templates.create_template') }}
             </Button>
@@ -139,7 +140,7 @@ function seedDefaultTemplates(): void {
                 <p class="font-semibold text-muted-foreground">{{ t('app.landlord.kanban.templates.no_template') }}</p>
                 <p class="mt-1 text-sm text-muted-foreground/70">{{ t('app.landlord.kanban.templates.empty_state_description') }}</p>
 
-                <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+                <div v-if="can.create" class="mt-6 flex flex-col gap-3 sm:flex-row">
                     <Button
                         variant="outline"
                         size="sm"
@@ -169,10 +170,13 @@ function seedDefaultTemplates(): void {
                     :template="template"
                     :tenant-id="props.tenant.id"
                     :users="props.users"
+                    :can-edit="can.update"
+                    :can-delete="can.delete"
                     @edit="openEditDrawer"
                 />
 
                 <button
+                    v-if="can.create"
                     class="group flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-10 text-muted-foreground/50 transition-all hover:border-muted-foreground/40 hover:text-muted-foreground"
                     @click="openCreateDrawer"
                 >

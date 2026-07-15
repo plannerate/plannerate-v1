@@ -67,9 +67,20 @@ return [
     'sync' => [
         'button' => 'Sincronizar da API',
         'loading' => 'Sincronizando...',
+        'title' => 'Sincronizar da API',
+        'description' => 'Busca as vendas deste produto na loja selecionada.',
+        'store_label' => 'Loja',
+        'store_placeholder' => 'Selecione uma loja',
+        'period_default' => 'Período: padrão (últimos meses).',
+        'period_custom' => 'Período: :from a :to (do filtro).',
+        'update_product' => 'Atualizar também os dados do produto',
+        'confirm' => 'Sincronizar',
+        'started' => 'Sincronização iniciada. Você será avisado ao concluir.',
         'success' => 'Sincronização concluída: :products produto(s) e :sales venda(s) atualizados.',
         'no_integration' => 'Nenhuma integração de API ativa configurada para este cliente.',
+        'not_found' => 'Produto ou loja não encontrado.',
         'error' => 'Falha ao sincronizar: :reason',
+        'error_generic' => 'Falha ao sincronizar as vendas do produto.',
     ],
 
     'sales' => [

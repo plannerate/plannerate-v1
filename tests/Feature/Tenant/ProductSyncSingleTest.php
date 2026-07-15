@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\Integrations\SyncSingleProductJob;
 use App\Models\IntegrationApi;
 use App\Models\Product;
 use App\Models\Role;
@@ -7,10 +8,9 @@ use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\User;
-use Callcocam\LaravelRaptorPlannerate\Models\Sale;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -32,8 +32,8 @@ beforeEach(function (): void {
     ]);
 });
 
-if (! function_exists('setupSyncSingleTenant')) {
-    function setupSyncSingleTenant(string $subdomain, User $user): Tenant
+if (! function_exists('setupSyncCtrlTenant')) {
+    function setupSyncCtrlTenant(string $subdomain, User $user): Tenant
     {
         $tenant = Tenant::query()->create([
             'name' => strtoupper($subdomain),
@@ -68,195 +68,121 @@ if (! function_exists('setupSyncSingleTenant')) {
     }
 }
 
-/**
- * Blueprint estilo Sysmo com o bloco `lookups` (busca pontual) — o que o
- * SingleProductFetchService consome.
- */
-if (! function_exists('sysmoLikeBlueprintRequests')) {
-    function sysmoLikeBlueprintRequests(): array
-    {
-        return [
-            'method' => 'POST',
-            'page_field' => 'pagina',
-            'page_size_field' => 'tamanho_pagina',
-            'max_page_size' => 1000,
-            'lookups' => [
-                'product' => [
-                    'target_table' => 'products',
-                    'fallback_path' => '/hubprodutos.consultar_produto',
-                    'method' => 'post',
-                    'lookup_field' => 'produto',
-                    'lookup_key' => 'codigo_erp',
-                    'store_field' => 'empresa',
-                    'store_key' => 'code',
-                    'single_item' => true,
-                    'extra_params' => ['somente_precos' => 'N'],
-                    'response' => ['items_path' => ''],
-                    'unique_by' => ['ean'],
-                    'field_map' => [
-                        ['target' => 'name', 'source' => 'descricao', 'transforms' => ['string']],
-                        ['target' => 'codigo_erp', 'source' => 'produto', 'transforms' => ['string', 'alnum', 'not_null']],
-                        ['target' => 'ean', 'source' => 'gtins.completo[principal=S].gtin', 'transforms' => ['first', 'ean', 'not_null']],
-                        ['target' => 'current_stock', 'source' => 'estoque.disponivel', 'transforms' => ['decimal']],
-                        ['target' => 'brand', 'source' => 'marca.descricao', 'transforms' => ['string']],
-                    ],
-                ],
-                'sales' => [
-                    'target_table' => 'sales',
-                    'fallback_path' => '/hubvendas.vendas_produtos',
-                    'method' => 'post',
-                    'lookup_field' => 'produto',
-                    'lookup_key' => 'ean',
-                    'store_field' => 'empresa',
-                    'store_key' => 'document',
-                    'extra_params' => ['tipo_consulta' => 'produto'],
-                    'date_fields' => ['start' => 'data_inicial', 'end' => 'data_final'],
-                    'initial_days' => 200,
-                    'response' => ['items_path' => 'dados'],
-                    'unique_by' => ['codigo_erp', 'sale_date', 'promotion'],
-                    'include_store_in_id' => true,
-                    'field_map' => [
-                        ['target' => 'codigo_erp', 'source' => 'produto', 'transforms' => ['string', 'not_null']],
-                        ['target' => 'sale_date', 'source' => 'data_venda', 'transforms' => ['date', 'not_null']],
-                        ['target' => 'promotion', 'source' => 'promocao', 'transforms' => ['string']],
-                        ['target' => 'total_sale_quantity', 'source' => 'quantidade', 'transforms' => ['decimal']],
-                        ['target' => 'total_sale_value', 'source' => 'valor_liquido', 'transforms' => ['decimal']],
-                        ['target' => 'acquisition_cost', 'source' => 'custo_aquisicao', 'transforms' => ['decimal']],
-                    ],
-                ],
-            ],
-        ];
-    }
-}
-
-if (! function_exists('activeSyncIntegration')) {
-    function activeSyncIntegration(Tenant $tenant): TenantIntegration
+if (! function_exists('makeCtrlIntegration')) {
+    function makeCtrlIntegration(Tenant $tenant, bool $active = true): void
     {
         $api = IntegrationApi::query()->create([
             'name' => 'Sysmo',
-            'slug' => 'sysmo',
-            'requests' => sysmoLikeBlueprintRequests(),
-            'response' => ['items_path' => 'dados'],
+            'slug' => 'sysmo-'.Str::lower(Str::random(6)),
+            'requests' => ['lookups' => ['sales' => ['fallback_path' => '/x']]],
+            'response' => [],
             'is_active' => true,
         ]);
 
-        return TenantIntegration::query()->create([
+        TenantIntegration::query()->create([
             'tenant_id' => $tenant->id,
             'integration_type' => $api->id,
-            'is_active' => true,
-            'config' => [
-                'auth' => [
-                    'type' => 'basic',
-                    'credentials' => ['username' => 'u', 'password' => 'p'],
-                ],
-                'connection' => [
-                    'base_url' => 'https://api.sysmo.test',
-                    'body' => [
-                        ['key' => 'partner_key', 'value' => 'TESTE', 'enabled' => true],
-                    ],
-                ],
-            ],
+            'is_active' => $active,
+            'config' => ['connection' => ['base_url' => 'https://api.sysmo.test']],
         ]);
     }
 }
 
-test('sincroniza produto e vendas da API do tenant e grava (upsert)', function (): void {
+if (! function_exists('makeCtrlProductAndStore')) {
+    /** @return array{0: Product, 1: Store} */
+    function makeCtrlProductAndStore(Tenant $tenant): array
+    {
+        $store = Store::query()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Loja Centro',
+            'status' => 'published',
+            'code' => '73',
+            'document' => '12345678000199',
+        ]);
+
+        $product = Product::query()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Produto Original',
+            'slug' => 'produto-original',
+            'status' => 'published',
+            'ean' => '7891234567895',
+            'codigo_erp' => '66526',
+        ]);
+
+        return [$product, $store];
+    }
+}
+
+test('despacha o job com loja e flag de atualização de produto', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);
 
-    $tenant = setupSyncSingleTenant('tenant-sync-single', $user);
-    activeSyncIntegration($tenant);
+    $tenant = setupSyncCtrlTenant('tenant-sync-ctrl', $user);
+    makeCtrlIntegration($tenant);
+    [$product, $store] = makeCtrlProductAndStore($tenant);
 
-    $store = Store::query()->create([
-        'tenant_id' => $tenant->id,
-        'name' => 'Loja Centro',
-        'status' => 'published',
-        'code' => '73',
-        'document' => '12345678000199',
-    ]);
+    Queue::fake();
 
-    $product = Product::query()->create([
-        'tenant_id' => $tenant->id,
-        'name' => 'Produto Original',
-        'slug' => 'produto-original',
-        'status' => 'published',
-        'ean' => '7891234567895',
-        'codigo_erp' => '66526',
-    ]);
-
-    $product->stores()->attach($store->id, [
-        'id' => (string) Str::ulid(),
-        'tenant_id' => $tenant->id,
-    ]);
-
-    Http::fake([
-        'https://api.sysmo.test/hubprodutos.consultar_produto' => Http::response([
-            'descricao' => 'PRODUTO API ATUALIZADO',
-            'produto' => '66526',
-            'gtins' => ['completo' => [['principal' => 'S', 'gtin' => '7891234567895']]],
-            'estoque' => ['disponivel' => '42'],
-            'marca' => ['descricao' => 'MARCA X'],
-        ], 200),
-        'https://api.sysmo.test/hubvendas.vendas_produtos' => Http::response([
-            'dados' => [
-                ['produto' => '66526', 'data_venda' => '2026-06-01', 'promocao' => 'N', 'quantidade' => '5', 'valor_liquido' => '59.90', 'custo_aquisicao' => '23.30'],
-                ['produto' => '66526', 'data_venda' => '2026-06-02', 'promocao' => 'S', 'quantidade' => '3', 'valor_liquido' => '29.90', 'custo_aquisicao' => '12.10'],
-            ],
-            'total_paginas' => '1',
-        ], 200),
-    ]);
-
-    $host = 'tenant-sync-single.'.config('app.landlord_domain');
+    $host = 'tenant-sync-ctrl.'.config('app.landlord_domain');
 
     $response = $this
         ->withServerVariables(['HTTP_HOST' => $host])
-        ->post(route('tenant.products.sync-single', ['subdomain' => 'tenant-sync-single'], false), [
+        ->post(route('tenant.products.sync-single', ['subdomain' => 'tenant-sync-ctrl'], false), [
             'product' => $product->id,
+            'store_id' => $store->id,
+            'update_product' => true,
         ]);
 
     $response->assertRedirect();
 
-    // Produto reconciliado por EAN → mesma linha atualizada com dados da API.
-    $product->refresh();
-    expect($product->name)->toBe('PRODUTO API ATUALIZADO')
-        ->and((float) $product->current_stock)->toBe(42.0);
-
-    // Vendas gravadas na conexão do tenant, casadas por codigo_erp.
-    $sales = Sale::query()->where('codigo_erp', '66526')->get();
-    expect($sales)->toHaveCount(2)
-        ->and($sales->pluck('store_id')->unique()->all())->toBe([$store->id]);
+    Queue::assertPushed(SyncSingleProductJob::class, function (SyncSingleProductJob $job) use ($tenant, $product, $store): bool {
+        return $job->tenantId === $tenant->id
+            && $job->productId === $product->id
+            && $job->storeId === $store->id
+            && $job->updateProduct === true;
+    });
 });
 
-test('sem integração ativa: avisa e não grava nada', function (): void {
+test('store_id é obrigatório', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);
 
-    $tenant = setupSyncSingleTenant('tenant-sync-none', $user);
+    $tenant = setupSyncCtrlTenant('tenant-sync-ctrl-req', $user);
+    makeCtrlIntegration($tenant);
+    [$product] = makeCtrlProductAndStore($tenant);
 
-    $product = Product::query()->create([
-        'tenant_id' => $tenant->id,
-        'name' => 'Produto Original',
-        'slug' => 'produto-original',
-        'status' => 'published',
-        'ean' => '7891234567895',
-        'codigo_erp' => '66526',
-    ]);
+    Queue::fake();
 
-    Http::fake();
-
-    $host = 'tenant-sync-none.'.config('app.landlord_domain');
+    $host = 'tenant-sync-ctrl-req.'.config('app.landlord_domain');
 
     $response = $this
         ->withServerVariables(['HTTP_HOST' => $host])
-        ->post(route('tenant.products.sync-single', ['subdomain' => 'tenant-sync-none'], false), [
+        ->post(route('tenant.products.sync-single', ['subdomain' => 'tenant-sync-ctrl-req'], false), [
             'product' => $product->id,
         ]);
 
+    $response->assertSessionHasErrors('store_id');
+    Queue::assertNothingPushed();
+});
+
+test('sem integração ativa: avisa e não despacha', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = setupSyncCtrlTenant('tenant-sync-ctrl-noint', $user);
+    [$product, $store] = makeCtrlProductAndStore($tenant);
+
+    Queue::fake();
+
+    $host = 'tenant-sync-ctrl-noint.'.config('app.landlord_domain');
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => $host])
+        ->post(route('tenant.products.sync-single', ['subdomain' => 'tenant-sync-ctrl-noint'], false), [
+            'product' => $product->id,
+            'store_id' => $store->id,
+        ]);
+
     $response->assertRedirect();
-
-    Http::assertNothingSent();
-
-    $product->refresh();
-    expect($product->name)->toBe('Produto Original')
-        ->and(Sale::query()->count())->toBe(0);
+    Queue::assertNothingPushed();
 });

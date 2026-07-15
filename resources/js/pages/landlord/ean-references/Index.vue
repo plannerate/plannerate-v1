@@ -45,6 +45,8 @@ const props = defineProps<{
     };
     can: {
         create: boolean;
+        update: boolean;
+        delete: boolean;
     };
 }>();
 
@@ -180,6 +182,9 @@ function formatDimensions(reference: EanReferenceRow): string {
                                 :require-confirm-word="true"
                                 :is-trashed="eanReference.trashed"
                                 :restore-href="EanReferenceController.restore.url({ ean_reference: eanReference.id })"
+                                :can-edit="can.update"
+                                :can-delete="can.delete"
+                                :can-restore="can.delete"
                             >
                                 <Button type="button" variant="outline" size="sm"
                                     :disabled="fetchingIds.has(eanReference.id)" :title="eanReference.ean"

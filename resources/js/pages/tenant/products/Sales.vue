@@ -55,7 +55,12 @@ const pageMeta = useCrudPageMeta({
 
         <!-- Ações do cabeçalho: sincronizar da API + voltar para a lista -->
         <template #header-actions>
-            <ProductApiSyncButton :product="product" />
+            <ProductApiSyncButton
+                :product="product"
+                :stores="filter_options.stores"
+                :date-from="filters.sale_date_from"
+                :date-to="filters.sale_date_to"
+            />
             <Link
                 :href="productsIndexPath"
                 class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted"

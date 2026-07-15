@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
+use App\Http\Controllers\Concerns\InteractsWithResourceAbilities;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreEanReferenceRequest;
@@ -13,7 +14,6 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -21,6 +21,7 @@ use Inertia\Response;
 class EanReferenceController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithResourceAbilities;
     use InteractsWithTrashedFilter;
 
     public function index(Request $request): Response
@@ -51,9 +52,7 @@ class EanReferenceController extends Controller
                 'has_image' => $hasImageParam,
                 'trashed' => $trashed,
             ],
-            'can' => [
-                'create' => Gate::allows('create', EanReference::class),
-            ],
+            'can' => $this->resolveResourceAbilities(EanReference::class),
         ]);
     }
 

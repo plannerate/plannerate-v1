@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
+use App\Http\Controllers\Concerns\InteractsWithResourceAbilities;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreUserRequest;
@@ -20,6 +21,7 @@ use Inertia\Response;
 class UserController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithResourceAbilities;
     use InteractsWithTrashedFilter;
 
     /**
@@ -50,6 +52,7 @@ class UserController extends Controller
             'filter_options' => [
                 'roles' => $this->rolesForSelect(),
             ],
+            'can' => $this->resolveResourceAbilities(User::class),
         ]);
     }
 

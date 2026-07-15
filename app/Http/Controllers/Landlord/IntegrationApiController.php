@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
+use App\Http\Controllers\Concerns\InteractsWithResourceAbilities;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\ImportIntegrationApiConfigRequest;
@@ -21,6 +22,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class IntegrationApiController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithResourceAbilities;
     use InteractsWithTrashedFilter;
 
     public function index(Request $request): Response
@@ -42,6 +44,7 @@ class IntegrationApiController extends Controller
                 'is_active' => $isActive,
                 'trashed' => $trashed,
             ],
+            'can' => $this->resolveResourceAbilities(IntegrationApi::class),
         ]);
     }
 

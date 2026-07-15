@@ -34,6 +34,18 @@ test('authenticated user can list roles', function () {
             ->has('roles.data'));
 });
 
+test('roles index exposes create update and delete abilities for button gating', function () {
+    $response = $this->get(route('landlord.roles.index'));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('landlord/roles/Index')
+            ->where('can.create', fn ($value) => is_bool($value))
+            ->where('can.update', fn ($value) => is_bool($value))
+            ->where('can.delete', fn ($value) => is_bool($value)));
+});
+
 test('authenticated user can create update and delete a role', function () {
     $createResponse = $this->post(route('landlord.roles.store'), [
         'type' => 'landlord',

@@ -38,6 +38,8 @@ const props = defineProps<{
 
     can: {
         create: boolean;
+        update: boolean;
+        delete: boolean;
     };
 }>();
 
@@ -128,6 +130,9 @@ const pageMeta = useCrudPageMeta({
                                     :require-confirm-word="true"
                                     :is-trashed="user.trashed"
                                     :restore-href="TenantUserController.restore.url({ user: user.id })"
+                                    :can-edit="can.update"
+                                    :can-delete="can.delete"
+                                    :can-restore="can.delete"
                                 >
                                     <ResendPasswordSetupButton
                                         v-if="user.is_active"

@@ -28,6 +28,7 @@ const props = defineProps<{
         show_on_tenant_dashboard: string;
         trashed: 'without' | 'only' | 'with';
     };
+    can: { create: boolean; update: boolean; delete: boolean };
 }>();
 
 const { t } = useT();
@@ -51,7 +52,7 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton :href="UsefulLinkController.create.url()">
+                <NewActionButton v-if="can.create" :href="UsefulLinkController.create.url()">
                     {{ t('app.landlord.useful_links.actions.new') }}
                 </NewActionButton>
             </div>
@@ -124,6 +125,9 @@ const pageMeta = useCrudPageMeta({
                                 :require-confirm-word="true"
                                 :is-trashed="usefulLink.trashed"
                                 :restore-href="UsefulLinkController.restore.url(usefulLink.id)"
+                                :can-edit="can.update"
+                                :can-delete="can.delete"
+                                :can-restore="can.delete"
                             />
                         </td>
                     </tr>

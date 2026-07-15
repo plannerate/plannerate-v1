@@ -57,6 +57,8 @@ const props = defineProps<{
     can_view_orphans: boolean;
     can: {
         create: boolean;
+        update: boolean;
+        delete: boolean;
         limit_reached: boolean;
         limit_message: string | null;
         upgrade_url: string | null;
@@ -292,6 +294,9 @@ const pageMeta = useCrudPageMeta({
                                 :require-confirm-word="true"
                                 :is-trashed="planogram.trashed"
                                 :restore-href="PlanogramController.restore.url({ planogram: planogram.id })"
+                                :can-edit="can.update"
+                                :can-delete="can.delete"
+                                :can-restore="can.delete"
                             >
                                 <Button variant="outline" size="sm" as-child>
                                     <WayfinderLink :href="planogramWorkflowHref(planogram.id)" class="inline-flex items-center gap-1.5">
