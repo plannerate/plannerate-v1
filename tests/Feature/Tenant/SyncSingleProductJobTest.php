@@ -130,6 +130,34 @@ if (! function_exists('sysmoLookupsRequests')) {
     }
 }
 
+if (! function_exists('sysmoPathsOnlyRequests')) {
+    /** Blueprint SEM lookups (como fica após salvar pela UI) — só paths.sales. */
+    function sysmoPathsOnlyRequests(): array
+    {
+        return [
+            'method' => 'POST',
+            'page_field' => 'pagina',
+            'page_size_field' => 'tamanho_pagina',
+            'max_page_size' => 1000,
+            'store_document_field' => 'empresa',
+            'paths' => [
+                'sales' => [
+                    'target_table' => 'sales',
+                    'fallback_path' => '/hubvendas.vendas_produtos',
+                    'date_fields' => ['start' => 'data_inicial', 'end' => 'data_final'],
+                    'field_map' => [
+                        ['target' => 'codigo_erp', 'source' => 'produto', 'transforms' => ['string', 'not_null']],
+                        ['target' => 'sale_date', 'source' => 'data_venda', 'transforms' => ['date', 'not_null']],
+                        ['target' => 'promotion', 'source' => 'promocao', 'transforms' => ['string']],
+                        ['target' => 'total_sale_quantity', 'source' => 'quantidade', 'transforms' => ['decimal']],
+                        ['target' => 'total_sale_value', 'source' => 'valor_liquido', 'transforms' => ['decimal']],
+                    ],
+                ],
+            ],
+        ];
+    }
+}
+
 if (! function_exists('makeSyncIntegration')) {
     function makeSyncIntegration(Tenant $tenant, bool $active = true, ?array $requests = null): TenantIntegration
     {
@@ -274,6 +302,29 @@ test('job usa as datas do formulário quando informadas', function (): void {
     Http::assertSent(fn ($request): bool => $request->url() === 'https://api.sysmo.test/hubvendas.vendas_produtos'
         && ($request->data()['data_inicial'] ?? null) === '2026-03-01'
         && ($request->data()['data_final'] ?? null) === '2026-03-31');
+});
+
+test('sincroniza vendas via paths.sales quando não há bloco lookups (à prova da UI)', function (): void {
+    $user = User::factory()->create();
+    $tenant = setupSyncJobTenant('tenant-sync-job-pathsonly', $user);
+    makeSyncIntegration($tenant, requests: sysmoPathsOnlyRequests());
+    [$product, $store] = makeSyncProductAndStore($tenant);
+
+    fakeSyncApi();
+    Event::fake([ProductSalesSynced::class]);
+
+    (new SyncSingleProductJob($tenant->id, $product->id, $store->id, false, $user->id))
+        ->handle(app(SingleProductFetchService::class));
+
+    // Vendas gravadas mesmo sem lookups — derivou de paths.sales + filtro produto=EAN.
+    expect(Sale::query()->where('codigo_erp', '66526')->count())->toBe(2);
+
+    // CNPJ normalizado por padrão (store_key document → dígitos).
+    Http::assertSent(fn ($request): bool => $request->url() === 'https://api.sysmo.test/hubvendas.vendas_produtos'
+        && ($request->data()['produto'] ?? null) === '7891234567895'
+        && ($request->data()['empresa'] ?? null) === '12345678000199');
+
+    Event::assertDispatched(ProductSalesSynced::class, fn (ProductSalesSynced $e): bool => $e->status === 'success' && $e->sales === 2);
 });
 
 test('job transmite failed quando não há integração ativa', function (): void {

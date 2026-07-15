@@ -13,6 +13,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Spatie\Multitenancy\Jobs\TenantAware;
 use Throwable;
 
@@ -54,6 +55,13 @@ class SyncSingleProductJob implements ShouldQueue, TenantAware
             ->first();
 
         if ($integration === null || $integration->api === null) {
+            Log::warning('SyncSingleProductJob: sem integração', [
+                'tenant_id' => $this->tenantId,
+                'integration_found' => $integration !== null,
+                'api_found' => $integration !== null && $integration->api !== null,
+                'total_active' => TenantIntegration::query()->where('tenant_id', $this->tenantId)->where('is_active', true)->count(),
+            ]);
+
             $this->broadcast('failed', message: __('app.tenant.products.sync.no_integration'));
 
             return;

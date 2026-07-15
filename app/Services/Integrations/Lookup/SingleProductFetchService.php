@@ -52,30 +52,78 @@ class SingleProductFetchService
         }
 
         $requests = $api->requests ?? [];
-        $lookups = data_get($requests, 'lookups', []);
+        $config = $integration->config ?? [];
+        $lookups = (array) data_get($requests, 'lookups', []);
 
-        if (! is_array($lookups) || $lookups === []) {
+        $productLookup = data_get($lookups, 'product');
+
+        // Vendas: usa requests.lookups.sales se existir; senão deriva de paths.sales.
+        // paths.sales é gerenciado pela UI do landlord (sempre presente), então a
+        // busca de vendas continua funcionando mesmo que o bloco lookups seja
+        // apagado ao salvar o blueprint pela interface.
+        $salesLookup = data_get($lookups, 'sales');
+
+        if (! is_array($salesLookup) || (string) data_get($salesLookup, 'fallback_path', '') === '') {
+            $salesLookup = $this->deriveSalesLookupFromPaths($requests, (array) ($api->response ?? []));
+        }
+
+        $hasProduct = is_array($productLookup) && $productLookup !== [];
+        $hasSales = is_array($salesLookup) && $salesLookup !== [];
+
+        if (! $hasProduct && ! $hasSales) {
             return SingleProductFetchResult::notConfigured();
         }
 
-        $config = $integration->config ?? [];
         $result = new SingleProductFetchResult;
 
-        if ($updateProduct) {
-            $productLookup = data_get($lookups, 'product');
-
-            if (is_array($productLookup) && $productLookup !== []) {
-                $this->fetchProduct($integration, $config, $requests, $productLookup, $product, $store, $result);
-            }
+        if ($updateProduct && $hasProduct) {
+            $this->fetchProduct($integration, $config, $requests, $productLookup, $product, $store, $result);
         }
 
-        $salesLookup = data_get($lookups, 'sales');
-
-        if (is_array($salesLookup) && $salesLookup !== []) {
+        if ($hasSales) {
             $this->fetchSales($integration, $config, $requests, $salesLookup, $product, $store, $result, $dateFrom, $dateTo);
         }
 
         return $result;
+    }
+
+    /**
+     * Constrói uma config de lookup de vendas a partir do paths.sales do blueprint.
+     *
+     * Reaproveita tudo que a UI já gerencia (endpoint, field_map, date_fields,
+     * store_document_field, base params com tipo_consulta) e só adiciona o filtro
+     * por produto (campo `produto`, valor = EAN) — que é o específico da busca
+     * pontual. Defaults casam com a Sysmo; para sobrescrever, defina
+     * requests.lookups.sales no blueprint.
+     *
+     * @param  array<string, mixed>  $requests
+     * @param  array<string, mixed>  $apiResponse
+     * @return array<string, mixed>|null
+     */
+    private function deriveSalesLookupFromPaths(array $requests, array $apiResponse): ?array
+    {
+        $path = data_get($requests, 'paths.sales');
+
+        if (! is_array($path) || (string) data_get($path, 'fallback_path', '') === '') {
+            return null;
+        }
+
+        return [
+            'target_table' => (string) data_get($path, 'target_table', 'sales'),
+            'fallback_path' => (string) data_get($path, 'fallback_path'),
+            'lookup_field' => 'produto',
+            'lookup_key' => 'ean',
+            'store_field' => (string) (data_get($requests, 'store_document_field') ?: 'empresa'),
+            'store_key' => 'document',
+            'store_transform' => 'digits',
+            'date_fields' => (array) data_get($path, 'date_fields', ['start' => 'data_inicial', 'end' => 'data_final']),
+            'initial_days' => (int) (data_get($path, 'initial_days') ?: 200),
+            'response' => ['items_path' => (string) (data_get($apiResponse, 'items_path') ?: 'dados')],
+            'field_map' => (array) data_get($path, 'field_map', []),
+            'validations' => (array) data_get($path, 'validations', []),
+            'unique_by' => (array) data_get($path, 'unique_by', ['codigo_erp', 'sale_date', 'promotion']),
+            'include_store_in_id' => (bool) data_get($path, 'include_store_in_id', true),
+        ];
     }
 
     // ─── Produto (opt-in) ────────────────────────────────────────────────────

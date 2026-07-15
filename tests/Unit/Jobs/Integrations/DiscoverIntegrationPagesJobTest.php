@@ -69,3 +69,26 @@ it('generates distinct dates when building the all-dates range', function (): vo
     // Dates must all be unique (no duplicate from immutable cursor bug)
     expect(array_unique($result))->toHaveCount(6);
 });
+
+it('forceFull returns the full day range without touching the tenant existing dates', function (): void {
+    $discoverer = new DailyModeDiscoverer('01testintegrationid000000000', 'sales');
+
+    $method = new ReflectionMethod($discoverer, 'resolveMissingDays');
+    $method->setAccessible(true);
+
+    // A mock with no expectations set: forceFull must return before
+    // getExistingDates ever inspects the integration/tenant.
+    $integration = Mockery::mock(TenantIntegration::class);
+
+    $pathConfig = [
+        'initial_days' => 5,
+        'last_date_column' => 'sale_date',
+        'target_table' => 'sales',
+    ];
+
+    $result = $method->invoke($discoverer, $integration, $pathConfig, null, true);
+
+    // All 6 days (today + 5) returned regardless of what's already in the DB
+    expect($result)->toHaveCount(6);
+    expect(array_unique($result))->toHaveCount(6);
+});

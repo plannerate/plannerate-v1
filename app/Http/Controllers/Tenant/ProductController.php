@@ -14,6 +14,7 @@ use App\Jobs\Integrations\SyncSingleProductJob;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Store;
+use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Callcocam\LaravelRaptorPlannerate\Models\Sale;
@@ -24,6 +25,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -59,6 +61,13 @@ class ProductController extends Controller
             ->first();
 
         if ($integration === null) {
+            Log::warning('syncSingle: nenhuma integração ativa', [
+                'tenant_id' => $this->tenantId(),
+                'tenant_current' => optional(Tenant::current())->getKey(),
+                'integrations_for_tenant' => TenantIntegration::query()->where('tenant_id', $this->tenantId())->count(),
+                'active_for_tenant' => TenantIntegration::query()->where('tenant_id', $this->tenantId())->where('is_active', true)->count(),
+            ]);
+
             Inertia::flash('toast', [
                 'type' => 'warning',
                 'message' => __('app.tenant.products.sync.no_integration'),

@@ -61,7 +61,7 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
 
         foreach ($this->loadStores($integration, $requests) as $store) {
             if ($dailyDiscoverer->isApplicable($pathConfig)) {
-                $dailyDiscoverer->discover($integration, $pathConfig, $store);
+                $dailyDiscoverer->discover($integration, $pathConfig, $store, $this->forceFull);
             } else {
                 try {
                     $pageDiscoverer->discover($integration, $api, $config, $requests, $pathConfig, $store, $this->forceFull);

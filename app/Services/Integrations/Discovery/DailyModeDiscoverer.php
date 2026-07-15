@@ -31,15 +31,18 @@ class DailyModeDiscoverer
     /**
      * Encontra os dias sem registro e despacha um FetchIntegrationPageJob por dia.
      *
+     * Com $forceFull, ignora o filtro incremental (dias já no banco) e refaz
+     * a busca de todos os dias do range — usado pelo backfill único.
+     *
      * @param  array<string, mixed>  $pathConfig
      * @param  array{id: string, document: string}|null  $store
      */
-    public function discover(TenantIntegration $integration, array $pathConfig, ?array $store): void
+    public function discover(TenantIntegration $integration, array $pathConfig, ?array $store, bool $forceFull = false): void
     {
         $storeId = data_get($store, 'id');
         $storeDocument = data_get($store, 'document');
 
-        $missingDays = $this->resolveMissingDays($integration, $pathConfig, $store);
+        $missingDays = $this->resolveMissingDays($integration, $pathConfig, $store, $forceFull);
 
         if ($missingDays === []) {
             Log::info('DailyModeDiscoverer: nenhum dia faltando', [
@@ -65,12 +68,13 @@ class DailyModeDiscoverer
 
     /**
      * Gera [hoje, ontem, ..., hoje − initial_days] e remove os dias já no banco.
+     * Com $forceFull, retorna o range completo sem descontar os dias já no banco.
      *
      * @param  array<string, mixed>  $pathConfig
      * @param  array{id: string, document: string}|null  $store
      * @return array<int, string>
      */
-    private function resolveMissingDays(TenantIntegration $integration, array $pathConfig, ?array $store): array
+    private function resolveMissingDays(TenantIntegration $integration, array $pathConfig, ?array $store, bool $forceFull = false): array
     {
         $initialDays = (int) data_get($pathConfig, 'initial_days', 0);
         $lastDateColumn = (string) data_get($pathConfig, 'last_date_column', '');
@@ -86,6 +90,10 @@ class DailyModeDiscoverer
         for ($i = 0; $i <= $initialDays; $i++) {
             $allDates[] = $cursor->toDateString();
             $cursor = $cursor->subDay();
+        }
+
+        if ($forceFull) {
+            return $allDates;
         }
 
         $existingDates = $this->getExistingDates(
