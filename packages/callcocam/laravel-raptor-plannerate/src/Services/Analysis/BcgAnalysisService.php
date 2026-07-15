@@ -92,16 +92,14 @@ class BcgAnalysisService
     /**
      * Granularidade da EXIBIÇÃO dos resultados (distinta de classify_by, que é onde o
      * corte é calculado):
-     *   - 'produto'   : uma linha por produto (padrão)
-     *   - 'categoria' : produtos são somados na sua categoria e cada categoria é
-     *                   classificada como um item único
+     *   - 'produto'          : uma linha por produto (padrão, nível mais profundo)
+     *   - um nível da hierarquia (categoria, departamento, ...): os produtos são somados
+     *     no seu ancestral naquele nível e cada grupo é classificado como um item único
+     *
+     * Exibir num nível exige classificar ACIMA dele (ver setDisplayBy): senão cada grupo
+     * ficaria sozinho no seu próprio grupo de corte.
      */
     public const DISPLAY_PRODUTO = 'produto';
-
-    public const DISPLAY_CATEGORIA = 'categoria';
-
-    /** Nível da hierarquia usado como categoria ao exibir por categoria. */
-    private const DISPLAY_CATEGORY_LEVEL = 'categoria';
 
     /**
      * Fração da amplitude do grupo dentro da qual um item é considerado "em cima da
@@ -186,28 +184,33 @@ class BcgAnalysisService
     }
 
     /**
-     * Define a granularidade de exibição: 'produto' (padrão) ou 'categoria'.
+     * Define a granularidade de exibição: 'produto' (padrão) ou um nível da hierarquia
+     * mercadológica (categoria, subcategoria, departamento, ...).
      *
-     * Exibir por categoria só faz sentido quando o corte é calculado ACIMA da categoria
-     * (segmento, departamento ou subdepartamento): com classify_by em categoria ou abaixo,
-     * cada categoria ficaria sozinha no seu grupo e o limiar seria o próprio valor,
-     * jogando tudo para 'alto_alto'. Por isso a combinação é validada aqui.
+     * REGRA QUE PRESERVA O CÁLCULO: exibir num nível exige classificar ESTRITAMENTE
+     * ACIMA dele. 'produto' é o nível mais profundo e é sempre válido; qualquer outro
+     * nível precisa ficar abaixo de classify_by. Sem isso, cada grupo exibido ficaria
+     * sozinho no seu próprio grupo de corte e o limiar seria o próprio valor — jogando
+     * tudo para 'alto_alto'. A UI espelha esta mesma restrição.
      *
-     * @throws \InvalidArgumentException Se o modo for desconhecido ou se exibir por
-     *                                   categoria com um nível de corte não superior à categoria
+     * @throws \InvalidArgumentException Se o modo for desconhecido ou não estiver abaixo do nível de corte
      */
     public function setDisplayBy(string $mode): self
     {
-        if (! in_array($mode, [self::DISPLAY_PRODUTO, self::DISPLAY_CATEGORIA], true)) {
+        $validModes = array_merge([self::DISPLAY_PRODUTO], array_keys(self::HIERARCHY_LEVELS));
+
+        if (! in_array($mode, $validModes, true)) {
             throw new \InvalidArgumentException(
-                "Modo de exibição inválido para a Análise BCG: '{$mode}'. Válidos: produto, categoria."
+                "Modo de exibição inválido para a Análise BCG: '{$mode}'. Válidos: ".implode(', ', $validModes).'.'
             );
         }
 
-        if ($mode === self::DISPLAY_CATEGORIA
-            && self::HIERARCHY_LEVELS[$this->classifyBy] >= self::HIERARCHY_LEVELS[self::DISPLAY_CATEGORY_LEVEL]) {
+        // 'produto' é o nível mais profundo (sempre abaixo de qualquer corte). Os demais
+        // precisam de índice maior que o de classify_by (mais fundo na hierarquia).
+        if ($mode !== self::DISPLAY_PRODUTO
+            && self::HIERARCHY_LEVELS[$mode] <= self::HIERARCHY_LEVELS[$this->classifyBy]) {
             throw new \InvalidArgumentException(
-                'Para exibir por categoria, classifique por um nível acima da categoria (segmento, departamento ou subdepartamento).'
+                "Para exibir por '{$mode}', classifique por um nível acima de '{$mode}'."
             );
         }
 
@@ -316,12 +319,12 @@ class BcgAnalysisService
             $combined = $combined->merge($zeroRecords);
         }
 
-        // Exibir por categoria: soma os produtos na sua categoria e classifica cada
-        // categoria como um item único, mantendo o mesmo formato de resultado.
-        if ($this->displayBy === self::DISPLAY_CATEGORIA) {
-            [$categoryIdByProduct, $categoryNames] = $this->resolveGroups($productsData, self::DISPLAY_CATEGORY_LEVEL);
+        // Exibir por um nível da hierarquia: soma os produtos no seu ancestral daquele
+        // nível e classifica cada grupo como um item único, no mesmo formato de resultado.
+        if ($this->displayBy !== self::DISPLAY_PRODUTO) {
+            [$displayIdByProduct, $displayNames] = $this->resolveGroups($productsData, $this->displayBy);
 
-            return $this->aggregateByCategory($combined, $categoryIdByProduct, $categoryNames, $groupNames);
+            return $this->aggregateByLevel($combined, $displayIdByProduct, $displayNames, $groupNames);
         }
 
         // Etapa pura: limiares, percentis e quadrantes (testável sem banco)
@@ -354,60 +357,61 @@ class BcgAnalysisService
     }
 
     /**
-     * Colapsa os produtos na sua categoria e classifica cada categoria como um item
-     * único, no mesmo formato de resultado do modo por produto.
+     * Colapsa os produtos no seu ancestral do nível de exibição e classifica cada grupo
+     * como um item único, no mesmo formato de resultado do modo por produto.
      *
-     * A soma acontece ANTES da classificação: os limiares do grupo passam a ser
-     * calculados sobre as categorias agregadas (não sobre produtos), que é o que a
-     * exibição por categoria significa. Como todos os produtos de uma categoria
-     * compartilham o mesmo ancestral de corte, o group_id é herdado do primeiro produto.
+     * A soma acontece ANTES da classificação: os limiares passam a ser calculados sobre
+     * os grupos agregados (não sobre produtos), que é o que a exibição por nível significa.
+     * Como o nível de exibição é sempre mais fundo que o de corte, todos os produtos de um
+     * grupo exibido compartilham o mesmo ancestral de corte — o group_id é herdado do
+     * primeiro produto sem ambiguidade.
      *
      * @param  Collection  $combined  Itens por produto (product_id, group_id, x_value, y_value, sem_venda)
-     * @param  array<string, string|null>  $categoryIdByProduct  [product_id => categoria_id]
-     * @param  array<string, string>  $categoryNames  [categoria_id => nome]
+     * @param  array<string, string|null>  $displayIdByProduct  [product_id => grupo_exibicao_id]
+     * @param  array<string, string>  $displayNames  [grupo_exibicao_id => nome]
      * @param  array<string, string>  $groupNames  [group_id => nome] do nível de corte
      */
-    private function aggregateByCategory(
+    private function aggregateByLevel(
         Collection $combined,
-        array $categoryIdByProduct,
-        array $categoryNames,
+        array $displayIdByProduct,
+        array $displayNames,
         array $groupNames
     ): Collection {
         $aggregated = $combined
-            ->groupBy(fn ($item) => $categoryIdByProduct[$item->product_id] ?? '__sem_categoria__')
-            ->map(function (Collection $items, $categoryId) {
+            ->groupBy(fn ($item) => $displayIdByProduct[$item->product_id] ?? '__sem_grupo__')
+            ->map(function (Collection $items, $displayId) {
                 $comVenda = $items->reject(fn ($i) => $i->sem_venda);
 
                 return (object) [
-                    'product_id' => (string) $categoryId,
+                    'product_id' => (string) $displayId,
                     'group_id' => $items->first()->group_id,
                     'x_value' => (float) $items->sum('x_value'),
                     'y_value' => (float) $items->sum('y_value'),
-                    // Categoria só fica "sem venda" se NENHUM produto vendeu no período
+                    // Grupo só fica "sem venda" se NENHUM produto vendeu no período
                     'sem_venda' => $comVenda->isEmpty(),
                     'member_product_ids' => $items->pluck('product_id')->all(),
                 ];
             })
             ->values();
 
-        $membersByCategory = $aggregated->keyBy('product_id');
+        $membersByGroup = $aggregated->keyBy('product_id');
 
         return $this->classifyQuadrants($aggregated)
-            ->map(function (array $item) use ($categoryNames, $groupNames, $membersByCategory) {
-                $categoryId = $item['product_id'];
+            ->map(function (array $item) use ($displayNames, $groupNames, $membersByGroup) {
+                $displayId = $item['product_id'];
 
                 return array_merge($item, [
-                    'product_name' => $categoryNames[$categoryId] ?? '',
+                    'product_name' => $displayNames[$displayId] ?? '',
                     'ean' => '',
                     'image_url' => null,
-                    'category_id' => $categoryId,
+                    'category_id' => $displayId,
                     // Sem folha individual: o grupo de corte (departamento, etc.) vira o contexto
                     'category_name' => $groupNames[$item['group_id']] ?? '',
                     'classify_by' => $this->classifyBy,
-                    'display_by' => self::DISPLAY_CATEGORIA,
+                    'display_by' => $this->displayBy,
                     'group_name' => $groupNames[$item['group_id']] ?? '',
-                    // Consumido por withSpace para somar o espaço dos produtos da categoria
-                    'member_product_ids' => $membersByCategory[$categoryId]->member_product_ids ?? [],
+                    // Consumido por withSpace para somar o espaço dos produtos do grupo
+                    'member_product_ids' => $membersByGroup[$displayId]->member_product_ids ?? [],
                 ]);
             })
             ->values();

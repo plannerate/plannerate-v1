@@ -251,27 +251,35 @@ it('rejeita eixos iguais, eixo desconhecido, corte e nível de classificação i
         ->toThrow(InvalidArgumentException::class);
 });
 
-it('display_by aceita produto e categoria, mas categoria exige corte acima da categoria', function (): void {
+it('display_by aceita produto e qualquer nível abaixo do corte, rejeitando os demais', function (): void {
     $service = new BcgAnalysisService;
 
-    // Padrão é por produto
+    // Padrão é por produto (nível mais profundo, sempre válido)
     expect($service->getDisplayBy())->toBe('produto');
+    expect((new BcgAnalysisService)->setClassifyBy('subcategoria')->setDisplayBy('produto')->getDisplayBy())
+        ->toBe('produto');
 
     // Modo desconhecido é rejeitado
     expect(fn () => (new BcgAnalysisService)->setDisplayBy('gondola'))
         ->toThrow(InvalidArgumentException::class);
 
-    // Exibir por categoria com corte na categoria (ou abaixo) deixaria cada categoria
-    // sozinha no grupo — rejeitado.
+    // Exibir num nível igual ou acima do corte deixaria cada grupo sozinho — rejeitado.
     expect(fn () => (new BcgAnalysisService)->setClassifyBy('categoria')->setDisplayBy('categoria'))
+        ->toThrow(InvalidArgumentException::class);
+
+    expect(fn () => (new BcgAnalysisService)->setClassifyBy('categoria')->setDisplayBy('departamento'))
         ->toThrow(InvalidArgumentException::class);
 
     expect(fn () => (new BcgAnalysisService)->setClassifyBy('subcategoria')->setDisplayBy('categoria'))
         ->toThrow(InvalidArgumentException::class);
 
-    // Acima da categoria é válido
+    // Qualquer nível estritamente abaixo do corte é válido
     expect((new BcgAnalysisService)->setClassifyBy('departamento')->setDisplayBy('categoria')->getDisplayBy())
-        ->toBe('categoria');
+        ->toBe('categoria')
+        ->and((new BcgAnalysisService)->setClassifyBy('segmento_varejista')->setDisplayBy('departamento')->getDisplayBy())
+        ->toBe('departamento')
+        ->and((new BcgAnalysisService)->setClassifyBy('departamento')->setDisplayBy('subcategoria')->getDisplayBy())
+        ->toBe('subcategoria');
 });
 
 it('withSpace soma o espaço dos produtos da categoria e corta pela mediana das categorias', function (): void {

@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
@@ -44,10 +45,11 @@ class RestoreSoldProductsJob implements NotTenantAware, ShouldQueue
         }
 
         $run = function (): void {
-            $chunks = array_chunk($this->productIds, 500);
+            $restorableIds = $this->resolveRestorableIds();
+
             $totalRestored = 0;
 
-            foreach ($chunks as $chunk) {
+            foreach (array_chunk($restorableIds, 500) as $chunk) {
                 $totalRestored += DB::connection($this->tenantConnectionName)
                     ->table('products')
                     ->where('tenant_id', $this->tenantId)
@@ -72,6 +74,88 @@ class RestoreSoldProductsJob implements NotTenantAware, ShouldQueue
         }
 
         $run();
+    }
+
+    /**
+     * Filtra os produtos a restaurar removendo os que colidiriam com o índice
+     * único parcial `products_tenant_id_ean_unique` (WHERE deleted_at IS NULL):
+     *
+     *  - EAN que já possui um produto ativo → pular (restaurar criaria duplicado);
+     *  - EAN repetido dentro do próprio conjunto → restaurar apenas um.
+     *
+     * Assim uma colisão de EAN não aborta o lote inteiro; os conflitos são
+     * apenas logados para revisão manual, sem tocar em produtos ativos.
+     *
+     * @return array<int, string>
+     */
+    private function resolveRestorableIds(): array
+    {
+        $connection = DB::connection($this->tenantConnectionName);
+
+        /** @var Collection<int, object{id: string, ean: ?string}> $candidates */
+        $candidates = collect();
+
+        foreach (array_chunk($this->productIds, 500) as $chunk) {
+            $candidates = $candidates->merge(
+                $connection->table('products')
+                    ->where('tenant_id', $this->tenantId)
+                    ->whereIn('id', $chunk)
+                    ->whereNotNull('deleted_at')
+                    ->get(['id', 'ean'])
+            );
+        }
+
+        if ($candidates->isEmpty()) {
+            return [];
+        }
+
+        $eans = $candidates->pluck('ean')->filter(fn (?string $ean): bool => $ean !== null && $ean !== '')->unique();
+
+        $activeEans = [];
+        foreach ($eans->chunk(1000) as $eanChunk) {
+            $connection->table('products')
+                ->where('tenant_id', $this->tenantId)
+                ->whereNull('deleted_at')
+                ->whereIn('ean', $eanChunk->values()->all())
+                ->pluck('ean')
+                ->each(function (string $ean) use (&$activeEans): void {
+                    $activeEans[$ean] = true;
+                });
+        }
+
+        $restorableIds = [];
+        $seenEan = [];
+        $skippedActiveConflict = 0;
+
+        foreach ($candidates as $candidate) {
+            $ean = $candidate->ean;
+
+            if ($ean !== null && $ean !== '') {
+                if (isset($activeEans[$ean])) {
+                    $skippedActiveConflict++;
+
+                    continue;
+                }
+
+                if (isset($seenEan[$ean])) {
+                    continue;
+                }
+
+                $seenEan[$ean] = true;
+            }
+
+            $restorableIds[] = (string) $candidate->id;
+        }
+
+        if ($skippedActiveConflict > 0) {
+            Log::warning('Produtos não restaurados: EAN já ativo em outro produto', [
+                'tenant_id' => $this->tenantId,
+                'skipped' => $skippedActiveConflict,
+                'candidates' => $candidates->count(),
+            ]);
+        }
+
+        return $restorableIds;
     }
 
     /**

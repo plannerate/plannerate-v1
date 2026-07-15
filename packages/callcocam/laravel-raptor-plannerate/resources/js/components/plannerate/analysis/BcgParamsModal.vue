@@ -46,18 +46,14 @@ const LEVEL_LABELS: Record<ClassifyLevel, string> = {
 
 const AXIS_OPTIONS: BcgAxis[] = ['valor', 'quantidade', 'margem'];
 
-/**
- * Exibir por categoria só é válido quando o corte é calculado ACIMA da categoria —
- * senão cada categoria fica sozinha no seu grupo e cai toda em "alto/alto". Estes são
- * os níveis de classificação permitidos nesse modo (espelha a validação do backend).
- */
-const CLASSIFY_LEVELS_ABOVE_CATEGORY: ClassifyLevel[] = [
-    'segmento_varejista',
-    'departamento',
-    'subdepartamento',
-];
-
-const DISPLAY_OPTIONS: BcgDisplayBy[] = ['produto', 'categoria'];
+/** Profundidade de cada nível (espelha BcgAnalysisService::HIERARCHY_LEVELS). */
+const LEVEL_INDEX: Record<ClassifyLevel, number> = {
+    segmento_varejista: 0,
+    departamento: 1,
+    subdepartamento: 2,
+    categoria: 3,
+    subcategoria: 4,
+};
 
 interface FormData {
     table_type: 'sales' | 'monthly_summaries';
@@ -118,19 +114,23 @@ const axisLabel = (axis: BcgAxis): string => t(`plannerate.analysis.bcg_params.a
 const displayLabel = (mode: BcgDisplayBy): string => t(`plannerate.analysis.bcg_params.display_${mode}`);
 
 /**
- * Exibir por categoria exige um nível de corte acima da categoria; nesse modo, as
- * opções de "Classificar por" ficam restritas (e o backend valida o mesmo).
+ * Opções de "Exibir por": produto (sempre) + os níveis da hierarquia ESTRITAMENTE
+ * abaixo do "Classificar por". Exibir num nível igual ou acima do corte deixaria cada
+ * grupo sozinho no seu grupo de comparação — o backend valida a mesma regra.
  */
-const availableClassifyLevels = computed<readonly ClassifyLevel[]>(() =>
-    form.value.display_by === 'categoria' ? CLASSIFY_LEVELS_ABOVE_CATEGORY : CLASSIFY_LEVELS,
-);
+const availableDisplayOptions = computed<BcgDisplayBy[]>(() => {
+    const classifyIndex = LEVEL_INDEX[form.value.classify_by];
+    const deeperLevels = CLASSIFY_LEVELS.filter((level) => LEVEL_INDEX[level] > classifyIndex);
 
-// Trocar para "categoria" com um nível de corte agora inválido → sobe para departamento.
+    return ['produto', ...deeperLevels];
+});
+
+// Mudar o "Classificar por" pode invalidar o "Exibir por" atual → cai para 'produto'.
 watch(
-    () => form.value.display_by,
-    (mode) => {
-        if (mode === 'categoria' && !CLASSIFY_LEVELS_ABOVE_CATEGORY.includes(form.value.classify_by)) {
-            form.value.classify_by = 'departamento';
+    () => form.value.classify_by,
+    () => {
+        if (!availableDisplayOptions.value.includes(form.value.display_by)) {
+            form.value.display_by = 'produto';
         }
     },
 );
@@ -195,33 +195,33 @@ const handleOpenChange = (value: boolean) => {
                     </p>
                 </div>
 
-                <!-- Exibir por: produto (padrão) ou categoria agregada -->
-                <div class="space-y-1.5 border-t pt-3">
-                    <Label class="text-xs">{{ t('plannerate.analysis.bcg_params.display_by') }}</Label>
-                    <div class="flex flex-wrap gap-4">
-                        <label v-for="mode in DISPLAY_OPTIONS" :key="`display-${mode}`" class="flex cursor-pointer items-center gap-2">
-                            <input v-model="form.display_by" type="radio" :value="mode" class="rounded" />
-                            <span class="text-xs">{{ displayLabel(mode) }}</span>
-                        </label>
-                    </div>
-                    <p class="text-[10px] text-muted-foreground">
-                        {{ t('plannerate.analysis.bcg_params.display_by_hint') }}
-                    </p>
-                </div>
-
-                <!-- Nível de comparação -->
+                <!-- Nível de comparação: onde a linha de corte é calculada -->
                 <div class="space-y-1.5 border-t pt-3">
                     <Label class="text-xs">{{ t('plannerate.analysis.bcg_params.classify_by') }}</Label>
                     <select
                         v-model="form.classify_by"
                         class="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                     >
-                        <option v-for="level in availableClassifyLevels" :key="level" :value="level">
+                        <option v-for="level in CLASSIFY_LEVELS" :key="level" :value="level">
                             {{ LEVEL_LABELS[level] }}
                         </option>
                     </select>
                     <p class="text-[10px] text-muted-foreground">
                         {{ t('plannerate.analysis.bcg_params.classify_by_hint') }}
+                    </p>
+                </div>
+
+                <!-- Exibir por: produto ou um nível abaixo do corte (restringido conforme o "Classificar por") -->
+                <div class="space-y-1.5 border-t pt-3">
+                    <Label class="text-xs">{{ t('plannerate.analysis.bcg_params.display_by') }}</Label>
+                    <div class="flex flex-wrap gap-4">
+                        <label v-for="mode in availableDisplayOptions" :key="`display-${mode}`" class="flex cursor-pointer items-center gap-2">
+                            <input v-model="form.display_by" type="radio" :value="mode" class="rounded" />
+                            <span class="text-xs">{{ displayLabel(mode) }}</span>
+                        </label>
+                    </div>
+                    <p class="text-[10px] text-muted-foreground">
+                        {{ t('plannerate.analysis.bcg_params.display_by_hint') }}
                     </p>
                 </div>
 

@@ -44,10 +44,11 @@ export type BcgClassifyLevel =
 
 /**
  * Granularidade da exibição dos resultados:
- *   - `produto`   → uma linha por produto (padrão)
- *   - `categoria` → produtos somados na sua categoria, cada categoria como um item único
+ *   - `produto`         → uma linha por produto (padrão, nível mais profundo)
+ *   - um nível da hierarquia → produtos somados no seu ancestral daquele nível, cada
+ *     grupo como um item único. Exige classificar acima do nível exibido.
  */
-export type BcgDisplayBy = 'produto' | 'categoria'
+export type BcgDisplayBy = 'produto' | BcgClassifyLevel
 
 export interface BcgResult {
     product_id: string
