@@ -42,6 +42,15 @@ Schedule::command('sync:post-import')
     ->onOneServer()
     ->name('sync-post-import');
 
+// Health check do import: roda após o pós-import (que já esperou as filas
+// esvaziarem). Read-only; loga Log::warning se houver sinal de alerta
+// (import atrasado, backlog, quarentena) para monitoramento passivo.
+Schedule::command('integration:health')
+    ->dailyAt('08:15')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->name('integration-health');
+
 Schedule::command('planograms:trigger-periodic-review')
     ->dailyAt('04:00')
     ->withoutOverlapping()
