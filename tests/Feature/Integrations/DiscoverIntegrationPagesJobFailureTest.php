@@ -3,6 +3,7 @@
 use App\Jobs\Integrations\DiscoverIntegrationPagesJob;
 use App\Jobs\Integrations\FetchIntegrationPageJob;
 use App\Models\IntegrationApi;
+use App\Models\IntegrationImportRun;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use Illuminate\Support\Facades\Artisan;
@@ -79,5 +80,13 @@ test('sondagem bem-sucedida despacha os fetch jobs com o last_page conhecido', f
     $job->handle();
 
     // Sem pagination na resposta → 1 página, com knownLastPage preenchido
-    Bus::assertDispatched(FetchIntegrationPageJob::class, fn (FetchIntegrationPageJob $j): bool => $j->page === 1 && $j->knownLastPage === 1);
+    Bus::assertDispatched(FetchIntegrationPageJob::class, fn (FetchIntegrationPageJob $j): bool => $j->page === 1 && $j->knownLastPage === 1 && $j->runId !== null);
+
+    // O discover registra o run com o plano (page mode: expected = páginas).
+    $run = IntegrationImportRun::query()->where('integration_id', (string) $integration->id)->first();
+    expect($run)->not->toBeNull()
+        ->and($run->path_key)->toBe('products')
+        ->and($run->mode)->toBe('page')
+        ->and($run->expected_units)->toBe(1)
+        ->and($run->status)->toBe('running');
 });

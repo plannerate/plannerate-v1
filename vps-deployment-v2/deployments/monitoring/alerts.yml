@@ -45,3 +45,41 @@ groups:
         annotations:
           summary: Health endpoint is failing
           description: One of the monitored health endpoints is failing for more than 2 minutes.
+
+  - name: application
+    rules:
+      - alert: LaravelMetricsDown
+        expr: up{job='laravel-app'} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Laravel /metrics endpoint is unreachable
+          description: Prometheus cannot scrape the app /metrics endpoint for 5 minutes (app down, token wrong, or route missing).
+
+      - alert: HorizonDown
+        expr: plannerate_horizon_up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Horizon has no active master supervisor
+          description: Horizon reports no running master supervisor for 5 minutes — queued jobs are not being processed.
+
+      - alert: HorizonQueueBacklog
+        expr: plannerate_horizon_queue_pending > 500
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Horizon queue backlog
+          description: Queue {{ $labels.queue }} has more than 500 pending jobs for 10 minutes. Adjust the threshold after observing the real baseline.
+
+      - alert: HorizonFailedJobsGrowing
+        expr: increase(plannerate_horizon_failed_jobs_total[15m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: Horizon failed jobs increasing
+          description: The failed_jobs table grew in the last 15 minutes — investigate recent job failures.

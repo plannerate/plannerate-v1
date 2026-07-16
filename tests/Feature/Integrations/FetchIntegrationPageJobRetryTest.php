@@ -8,6 +8,7 @@ use App\Models\TenantIntegration;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
     Artisan::call('migrate:fresh', [
@@ -102,4 +103,37 @@ test('HTTP 404 falha em definitivo, sem lançar exceção de retry', function ()
     $job->handle();
 
     Bus::assertNotDispatched(ProcessPageResponseJob::class);
+});
+
+test('job enfileirado antes do deploy (runId não-inicializado) não estoura ao despachar o process', function (): void {
+    Http::fake(['erp.example.test/*' => Http::response(['data' => [['produto' => 'ERP-1', 'ean' => '7890000000001']]])]);
+    Storage::fake('local');
+    Bus::fake([ProcessPageResponseJob::class]);
+
+    $integration = makeFetchRetryIntegration('fetch-old-serialized');
+
+    // Simula desserialização de um job antigo (enfileirado antes do deploy que
+    // adicionou $runId): newInstanceWithoutConstructor deixa a typed property
+    // $runId NÃO-inicializada — acessá-la direto estouraria.
+    $ref = new ReflectionClass(FetchIntegrationPageJob::class);
+    $job = $ref->newInstanceWithoutConstructor();
+
+    foreach ([
+        'integrationId' => (string) $integration->id,
+        'pathKey' => 'products',
+        'page' => 1,
+        'dateStart' => null,
+        'dateEnd' => null,
+        'storeId' => null,
+        'storeDocument' => null,
+        'autoPage' => false,
+        'knownLastPage' => null,
+    ] as $prop => $value) {
+        $ref->getProperty($prop)->setValue($job, $value);
+    }
+    // $runId deixado NÃO-inicializado de propósito.
+
+    $job->handle(); // não deve estourar "must not be accessed before initialization"
+
+    Bus::assertDispatched(ProcessPageResponseJob::class, fn (ProcessPageResponseJob $j): bool => $j->runId === null);
 });

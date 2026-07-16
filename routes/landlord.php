@@ -1,10 +1,18 @@
 <?php
 
 use App\Http\Controllers\Landlord;
+use App\Http\Controllers\MetricsController;
 use App\Http\Middleware\SetPermissionTeamContext;
+use App\Http\Middleware\VerifyMetricsToken;
 use App\Support\Modules\ModuleSlug;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
+
+// ── Métricas Prometheus (bearer token, sem sessão/CSRF) ───────
+Route::domain(config('app.landlord_domain'))
+    ->middleware(VerifyMetricsToken::class)
+    ->get('metrics', MetricsController::class)
+    ->name('landlord.metrics');
 
 // ── LANDLORD (rota raiz, sem tenant) ──────────────────────────
 Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPermissionTeamContext::class])->group(function (): void {

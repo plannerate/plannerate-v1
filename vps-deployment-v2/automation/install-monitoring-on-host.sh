@@ -39,21 +39,48 @@ cp "${ROOT_DIR}/deployments/monitoring/blackbox.yml" "${monitoring_dir}/blackbox
 cp "${ROOT_DIR}/deployments/monitoring/alertmanager.yml" "${monitoring_dir}/alertmanager.yml"
 cp "${ROOT_DIR}/deployments/monitoring/docker-compose.pgadmin.yml" "${monitoring_dir}/docker-compose.pgadmin.yml"
 
+# Provisionamento do Grafana (datasource + dashboards). Sem isto, o Grafana sobe
+# sem datasource nem dashboards por arquivo (bug histórico: a pasta não era copiada).
+rm -rf "${monitoring_dir}/grafana"
+cp -r "${ROOT_DIR}/deployments/monitoring/grafana" "${monitoring_dir}/grafana"
+
 app_url="https://${DOMAIN_LANDLORD}/up"
 sed -i "s|https://app.example.com/up|${app_url}|g" "${monitoring_dir}/prometheus.yml"
 sed -i '/https:\/\/stg.example.com\/up/d' "${monitoring_dir}/prometheus.yml"
 
-alert_webhook_default_url="${ALERT_WEBHOOK_DEFAULT_URL:-http://127.0.0.1:65535}"
-alert_webhook_warning_url="${ALERT_WEBHOOK_WARNING_URL:-${alert_webhook_default_url}}"
-alert_webhook_critical_url="${ALERT_WEBHOOK_CRITICAL_URL:-${alert_webhook_default_url}}"
+# Alertas por e-mail (Alertmanager email_configs).
+smtp_host="${SMTP_HOST:-}"
+smtp_port="${SMTP_PORT:-587}"
+smtp_from="${SMTP_FROM:-alerts@${DOMAIN_LANDLORD}}"
+smtp_user="${SMTP_USER:-${smtp_from}}"
+smtp_pass="${SMTP_PASS:-}"
+smtp_require_tls="${SMTP_REQUIRE_TLS:-true}"
+alert_email_to="${ALERT_EMAIL_TO:-}"
+alert_email_critical_to="${ALERT_EMAIL_CRITICAL_TO:-${alert_email_to}}"
 
-safe_alert_webhook_default_url="$(printf '%s' "${alert_webhook_default_url}" | sed 's/[&/]/\\&/g')"
-safe_alert_webhook_warning_url="$(printf '%s' "${alert_webhook_warning_url}" | sed 's/[&/]/\\&/g')"
-safe_alert_webhook_critical_url="$(printf '%s' "${alert_webhook_critical_url}" | sed 's/[&/]/\\&/g')"
+if [[ -z "${smtp_host}" || -z "${alert_email_to}" ]]; then
+    log_warn "SMTP_HOST/ALERT_EMAIL_TO ausentes no manifest — Alertmanager subirá, mas os alertas NÃO serão entregues por e-mail até você preencher essas variáveis e reinstalar."
+fi
 
-sed -i "s|\${ALERT_WEBHOOK_DEFAULT_URL}|${safe_alert_webhook_default_url}|g" "${monitoring_dir}/alertmanager.yml"
-sed -i "s|\${ALERT_WEBHOOK_WARNING_URL}|${safe_alert_webhook_warning_url}|g" "${monitoring_dir}/alertmanager.yml"
-sed -i "s|\${ALERT_WEBHOOK_CRITICAL_URL}|${safe_alert_webhook_critical_url}|g" "${monitoring_dir}/alertmanager.yml"
+# Escapa string para uso seguro como replacement do sed (delimitador '|').
+escape_sed_repl() { printf '%s' "$1" | sed -e 's/[\\&|]/\\&/g'; }
+
+# Métricas da aplicação Laravel: injeta domínio + token no scrape do Prometheus.
+metrics_token="${METRICS_TOKEN:-}"
+sed -i "s|__APP_DOMAIN__|$(escape_sed_repl "${DOMAIN_LANDLORD}")|g" "${monitoring_dir}/prometheus.yml"
+sed -i "s|__METRICS_TOKEN__|$(escape_sed_repl "${metrics_token}")|g" "${monitoring_dir}/prometheus.yml"
+if [[ -z "${metrics_token}" ]]; then
+    log_warn "METRICS_TOKEN ausente no manifest — o target 'laravel-app' ficará 401/down até você definir METRICS_TOKEN (igual ao METRICS_TOKEN do .env da app) e reinstalar."
+fi
+
+sed -i "s|\${SMTP_HOST}|$(escape_sed_repl "${smtp_host}")|g" "${monitoring_dir}/alertmanager.yml"
+sed -i "s|\${SMTP_PORT}|$(escape_sed_repl "${smtp_port}")|g" "${monitoring_dir}/alertmanager.yml"
+sed -i "s|\${SMTP_FROM}|$(escape_sed_repl "${smtp_from}")|g" "${monitoring_dir}/alertmanager.yml"
+sed -i "s|\${SMTP_USER}|$(escape_sed_repl "${smtp_user}")|g" "${monitoring_dir}/alertmanager.yml"
+sed -i "s|\${SMTP_PASS}|$(escape_sed_repl "${smtp_pass}")|g" "${monitoring_dir}/alertmanager.yml"
+sed -i "s|\${SMTP_REQUIRE_TLS}|$(escape_sed_repl "${smtp_require_tls}")|g" "${monitoring_dir}/alertmanager.yml"
+sed -i "s|\${ALERT_EMAIL_TO}|$(escape_sed_repl "${alert_email_to}")|g" "${monitoring_dir}/alertmanager.yml"
+sed -i "s|\${ALERT_EMAIL_CRITICAL_TO}|$(escape_sed_repl "${alert_email_critical_to}")|g" "${monitoring_dir}/alertmanager.yml"
 
 grafana_user="${GRAFANA_ADMIN_USER:-admin}"
 grafana_pass="${GRAFANA_ADMIN_PASSWORD:-$(random_secret)}"
@@ -98,9 +125,15 @@ APP_SLUG=${APP_SLUG}
 GRAFANA_ADMIN_USER=${grafana_user}
 GRAFANA_ADMIN_PASSWORD=${grafana_pass}
 PROMETHEUS_RETENTION=${prometheus_retention}
-ALERT_WEBHOOK_DEFAULT_URL=${alert_webhook_default_url}
-ALERT_WEBHOOK_WARNING_URL=${alert_webhook_warning_url}
-ALERT_WEBHOOK_CRITICAL_URL=${alert_webhook_critical_url}
+SMTP_HOST=${smtp_host}
+SMTP_PORT=${smtp_port}
+SMTP_FROM=${smtp_from}
+SMTP_USER=${smtp_user}
+SMTP_PASS=${smtp_pass}
+SMTP_REQUIRE_TLS=${smtp_require_tls}
+ALERT_EMAIL_TO=${alert_email_to}
+ALERT_EMAIL_CRITICAL_TO=${alert_email_critical_to}
+METRICS_TOKEN=${metrics_token}
 ENABLE_PGADMIN=${pgadmin_enabled}
 PGADMIN_DOMAIN=${pgadmin_domain}
 PGADMIN_DEFAULT_EMAIL=${pgadmin_default_email}

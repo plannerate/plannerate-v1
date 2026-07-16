@@ -105,6 +105,8 @@ jobs:
           php artisan test --compact \
             tests/Feature/Integrations/ImportPipelineEndToEndTest.php \
             tests/Feature/Integrations/IntegrationHealthCommandTest.php \
+            tests/Feature/Integrations/IntegrationImportRunTest.php \
+            tests/Feature/Integrations/ImportRunReconcilerTest.php \
             tests/Feature/Integrations/BackfillIntegrationCommandTest.php \
             tests/Feature/Integrations/FetchIntegrationPageJobRetryTest.php \
             tests/Feature/Integrations/FetchIntegrationPageJobExtensionTest.php \

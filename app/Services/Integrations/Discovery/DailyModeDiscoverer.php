@@ -3,11 +3,13 @@
 namespace App\Services\Integrations\Discovery;
 
 use App\Jobs\Integrations\FetchIntegrationPageJob;
+use App\Models\IntegrationImportRun;
 use App\Models\TenantIntegration;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class DailyModeDiscoverer
 {
@@ -63,7 +65,41 @@ class DailyModeDiscoverer
             'oldest' => $missingDays[array_key_last($missingDays)] ?? null,
         ]);
 
-        $this->dispatchJobs($missingDays, $storeId, $storeDocument);
+        $runId = $this->recordRun($integration, $store, $missingDays, $forceFull);
+
+        $this->dispatchJobs($missingDays, $storeId, $storeDocument, $runId);
+    }
+
+    /**
+     * Abre o run do ciclo (esperado = dias faltantes). Defensivo: falha no
+     * tracking nunca impede a descoberta/importação.
+     *
+     * @param  array{id: string, document: string}|null  $store
+     * @param  array<int, string>  $missingDays
+     */
+    private function recordRun(TenantIntegration $integration, ?array $store, array $missingDays, bool $forceFull): ?string
+    {
+        try {
+            return IntegrationImportRun::startRun([
+                'tenant_id' => (string) $integration->tenant_id,
+                'integration_id' => (string) $integration->id,
+                'path_key' => $this->pathKey,
+                'store_id' => data_get($store, 'id'),
+                'mode' => 'daily',
+                'reference_date' => now()->toDateString(),
+                'expected_units' => count($missingDays),
+                'expected_dates' => array_values($missingDays),
+                'force_full' => $forceFull,
+            ])->id;
+        } catch (Throwable $e) {
+            Log::warning('DailyModeDiscoverer: falha ao registrar import run', [
+                'integration_id' => $this->integrationId,
+                'path_key' => $this->pathKey,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 
     /**
@@ -159,7 +195,7 @@ class DailyModeDiscoverer
     }
 
     /** @param array<int, string> $missingDays */
-    private function dispatchJobs(array $missingDays, ?string $storeId, ?string $storeDocument): void
+    private function dispatchJobs(array $missingDays, ?string $storeId, ?string $storeDocument, ?string $runId): void
     {
         $delaySeconds = (int) config('integrations.fetch_delay', 3);
 
@@ -168,6 +204,7 @@ class DailyModeDiscoverer
                 $this->integrationId, $this->pathKey, 1,
                 $day, $day, $storeId, $storeDocument,
                 autoPage: true,
+                runId: $runId,
             )->delay(now()->addSeconds($index * $delaySeconds));
         }
     }
