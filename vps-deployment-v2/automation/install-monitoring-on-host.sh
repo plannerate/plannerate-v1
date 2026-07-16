@@ -65,6 +65,14 @@ fi
 # Escapa string para uso seguro como replacement do sed (delimitador '|').
 escape_sed_repl() { printf '%s' "$1" | sed -e 's/[\\&|]/\\&/g'; }
 
+# Métricas da aplicação Laravel: injeta domínio + token no scrape do Prometheus.
+metrics_token="${METRICS_TOKEN:-}"
+sed -i "s|__APP_DOMAIN__|$(escape_sed_repl "${DOMAIN_LANDLORD}")|g" "${monitoring_dir}/prometheus.yml"
+sed -i "s|__METRICS_TOKEN__|$(escape_sed_repl "${metrics_token}")|g" "${monitoring_dir}/prometheus.yml"
+if [[ -z "${metrics_token}" ]]; then
+    log_warn "METRICS_TOKEN ausente no manifest — o target 'laravel-app' ficará 401/down até você definir METRICS_TOKEN (igual ao METRICS_TOKEN do .env da app) e reinstalar."
+fi
+
 sed -i "s|\${SMTP_HOST}|$(escape_sed_repl "${smtp_host}")|g" "${monitoring_dir}/alertmanager.yml"
 sed -i "s|\${SMTP_PORT}|$(escape_sed_repl "${smtp_port}")|g" "${monitoring_dir}/alertmanager.yml"
 sed -i "s|\${SMTP_FROM}|$(escape_sed_repl "${smtp_from}")|g" "${monitoring_dir}/alertmanager.yml"
@@ -125,6 +133,7 @@ SMTP_PASS=${smtp_pass}
 SMTP_REQUIRE_TLS=${smtp_require_tls}
 ALERT_EMAIL_TO=${alert_email_to}
 ALERT_EMAIL_CRITICAL_TO=${alert_email_critical_to}
+METRICS_TOKEN=${metrics_token}
 ENABLE_PGADMIN=${pgadmin_enabled}
 PGADMIN_DOMAIN=${pgadmin_domain}
 PGADMIN_DEFAULT_EMAIL=${pgadmin_default_email}

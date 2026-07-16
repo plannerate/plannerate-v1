@@ -44,4 +44,8 @@ return [
         'url' => env('COSMOS_URL', 'https://api.cosmos.bluesoft.com.br'),
     ],
 
+    'metrics' => [
+        'token' => env('METRICS_TOKEN'),
+    ],
+
 ];
