@@ -1,8 +1,13 @@
 global:
   resolve_timeout: 5m
+  smtp_smarthost: '${SMTP_HOST}:${SMTP_PORT}'
+  smtp_from: '${SMTP_FROM}'
+  smtp_auth_username: '${SMTP_USER}'
+  smtp_auth_password: '${SMTP_PASS}'
+  smtp_require_tls: ${SMTP_REQUIRE_TLS}
 
 route:
-  receiver: webhook-default
+  receiver: email-default
   group_by: ['alertname', 'instance', 'severity']
   group_wait: 30s
   group_interval: 5m
@@ -10,23 +15,23 @@ route:
   routes:
     - matchers:
         - severity="critical"
-      receiver: webhook-critical
+      receiver: email-critical
     - matchers:
         - severity="warning"
-      receiver: webhook-warning
+      receiver: email-warning
 
 receivers:
-  - name: webhook-default
-    webhook_configs:
-      - url: ${ALERT_WEBHOOK_DEFAULT_URL}
+  - name: email-default
+    email_configs:
+      - to: '${ALERT_EMAIL_TO}'
         send_resolved: true
 
-  - name: webhook-warning
-    webhook_configs:
-      - url: ${ALERT_WEBHOOK_WARNING_URL}
+  - name: email-warning
+    email_configs:
+      - to: '${ALERT_EMAIL_TO}'
         send_resolved: true
 
-  - name: webhook-critical
-    webhook_configs:
-      - url: ${ALERT_WEBHOOK_CRITICAL_URL}
+  - name: email-critical
+    email_configs:
+      - to: '${ALERT_EMAIL_CRITICAL_TO}'
         send_resolved: true
