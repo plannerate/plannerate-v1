@@ -5,6 +5,21 @@ return [
 
     'fetch_delay' => env('INTEGRATION_FETCH_DELAY', 3),
 
+    /*
+     * Janela (em dias) sempre re-buscada no sync incremental, mesmo quando os
+     * dias já têm registros: um dia com fetch interrompido no meio (só parte
+     * das páginas persistida) contaria como "completo" e nunca seria
+     * completado. A re-busca é idempotente (upsert por id determinístico).
+     */
+    'recheck_days' => env('INTEGRATION_RECHECK_DAYS', 3),
+
+    /*
+     * TTL (segundos) do cache do bearer token obtido via token_mode "fetch".
+     * Sem cache, cada página buscada disparava um request de token. Em 401 o
+     * cache é invalidado e a tentativa seguinte busca um token novo.
+     */
+    'token_cache_seconds' => env('INTEGRATION_TOKEN_CACHE_SECONDS', 300),
+
     'import_clear_tables' => [
         'products' => ['product_store', 'products'],
         'sales' => ['sales'],

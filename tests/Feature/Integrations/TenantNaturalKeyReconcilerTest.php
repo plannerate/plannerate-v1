@@ -9,17 +9,25 @@ use Illuminate\Support\Facades\DB;
  * rodadas pelo RefreshDatabase não sobrevivem. Recriamos a tabela products por teste.
  */
 beforeEach(function (): void {
-    if (DB::connection('tenant')->getSchemaBuilder()->hasTable('products')) {
-        return;
+    if (! DB::connection('tenant')->getSchemaBuilder()->hasTable('products')) {
+        Artisan::call('migrate', [
+            '--database' => 'tenant',
+            '--path' => 'database/migrations/2026_04_22_200100_create_products_table.php',
+            '--realpath' => false,
+            '--force' => true,
+            '--no-interaction' => true,
+        ]);
     }
 
-    Artisan::call('migrate', [
-        '--database' => 'tenant',
-        '--path' => 'database/migrations/2026_04_22_200100_create_products_table.php',
-        '--realpath' => false,
-        '--force' => true,
-        '--no-interaction' => true,
-    ]);
+    if (! DB::connection('tenant')->getSchemaBuilder()->hasTable('sales')) {
+        Artisan::call('migrate', [
+            '--database' => 'tenant',
+            '--path' => 'database/migrations/2026_04_23_250000_create_sales_table.php',
+            '--realpath' => false,
+            '--force' => true,
+            '--no-interaction' => true,
+        ]);
+    }
 });
 
 /**
@@ -222,10 +230,128 @@ test('tabelas sem chave natural configurada passam intactas', function (): void 
 
     DB::connection('tenant')->enableQueryLog();
 
-    $reconciled = TenantNaturalKeyReconciler::reconcile(DB::connection('tenant'), 'sales', $records);
+    $reconciled = TenantNaturalKeyReconciler::reconcile(DB::connection('tenant'), 'monthly_sales_summaries', $records);
 
     expect(DB::connection('tenant')->getQueryLog())->toBeEmpty()
         ->and($reconciled)->toBe($records);
 
     DB::connection('tenant')->disableQueryLog();
+});
+
+// ─── Sales (chave natural composta) ─────────────────────────────────────────
+
+/**
+ * @param  array<string, mixed>  $overrides
+ */
+function insertReconcilerSale(string $tenantId, string $id, array $overrides = []): void
+{
+    DB::connection('tenant')->table('sales')->insert([
+        'id' => $id,
+        'tenant_id' => $tenantId,
+        'store_id' => null,
+        'codigo_erp' => 'ERP-1',
+        'sale_date' => '2026-07-10',
+        'promotion' => null,
+        'total_sale_value' => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
+        ...$overrides,
+    ]);
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function reconcilerSaleRecord(string $tenantId, string $id, array $overrides = []): array
+{
+    return [
+        'id' => $id,
+        'tenant_id' => $tenantId,
+        'store_id' => null,
+        'codigo_erp' => 'ERP-1',
+        'sale_date' => '2026-07-10',
+        'promotion' => null,
+        'total_sale_value' => 25,
+        ...$overrides,
+    ];
+}
+
+test('reusa o id da venda existente quando a chave composta já pertence a outro id', function (): void {
+    $tenantId = (string) str()->ulid();
+    $existingId = (string) str()->ulid();
+    $storeId = (string) str()->ulid();
+
+    insertReconcilerSale($tenantId, $existingId, ['store_id' => $storeId, 'promotion' => 'N']);
+
+    // Mesmo (store, codigo_erp, sale_date, promotion) com id determinístico diferente
+    // (ex.: unique_by do path desalinhado do índice do banco)
+    $records = [reconcilerSaleRecord($tenantId, (string) str()->ulid(), [
+        'store_id' => $storeId,
+        'promotion' => 'N',
+    ])];
+
+    $reconciled = TenantNaturalKeyReconciler::reconcile(DB::connection('tenant'), 'sales', $records);
+
+    expect($reconciled)->toHaveCount(1)
+        ->and($reconciled[0]['id'])->toBe($existingId)
+        ->and($reconciled[0]['total_sale_value'])->toBe(25);
+});
+
+test('venda soft-deleted com a mesma chave composta é reusada e restaurada', function (): void {
+    $tenantId = (string) str()->ulid();
+    $deletedId = (string) str()->ulid();
+
+    insertReconcilerSale($tenantId, $deletedId, ['deleted_at' => now()]);
+
+    $records = [reconcilerSaleRecord($tenantId, (string) str()->ulid())];
+
+    $reconciled = TenantNaturalKeyReconciler::reconcile(DB::connection('tenant'), 'sales', $records);
+
+    $row = DB::connection('tenant')->table('sales')->where('id', $deletedId)->first();
+
+    expect($reconciled[0]['id'])->toBe($deletedId)
+        ->and($row->deleted_at)->toBeNull();
+});
+
+test('promotion NULL casa com promotion NULL na chave composta', function (): void {
+    $tenantId = (string) str()->ulid();
+    $existingId = (string) str()->ulid();
+
+    insertReconcilerSale($tenantId, $existingId, ['promotion' => null]);
+
+    $records = [reconcilerSaleRecord($tenantId, (string) str()->ulid(), ['promotion' => null])];
+
+    $reconciled = TenantNaturalKeyReconciler::reconcile(DB::connection('tenant'), 'sales', $records);
+
+    expect($reconciled[0]['id'])->toBe($existingId);
+});
+
+test('sale_date com hora casa com a coluna date do banco', function (): void {
+    $tenantId = (string) str()->ulid();
+    $existingId = (string) str()->ulid();
+
+    insertReconcilerSale($tenantId, $existingId, ['sale_date' => '2026-07-10']);
+
+    $records = [reconcilerSaleRecord($tenantId, (string) str()->ulid(), [
+        'sale_date' => '2026-07-10 00:00:00',
+    ])];
+
+    $reconciled = TenantNaturalKeyReconciler::reconcile(DB::connection('tenant'), 'sales', $records);
+
+    expect($reconciled[0]['id'])->toBe($existingId);
+});
+
+test('vendas com chave composta diferente não são remapeadas', function (): void {
+    $tenantId = (string) str()->ulid();
+    $existingId = (string) str()->ulid();
+    $newId = (string) str()->ulid();
+
+    insertReconcilerSale($tenantId, $existingId, ['promotion' => 'S']);
+
+    // promotion diferente → chave diferente → id determinístico preservado
+    $records = [reconcilerSaleRecord($tenantId, $newId, ['promotion' => 'N'])];
+
+    $reconciled = TenantNaturalKeyReconciler::reconcile(DB::connection('tenant'), 'sales', $records);
+
+    expect($reconciled[0]['id'])->toBe($newId);
 });

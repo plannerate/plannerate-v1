@@ -18,17 +18,28 @@ Schedule::command('logs:archive-and-clear --max-size-mb=10')
     ->withoutOverlapping()
     ->name('logs-size-check');
 
+// Limpa órfãos de storage/app/private/imports e a quarentena imports/failed
+// antes do integration:run das 06:00.
+Schedule::command('imports:prune')
+    ->dailyAt('05:00')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->name('imports-prune');
+
 Schedule::command('integration:run')
     ->dailyAt('06:00')
     ->withoutOverlapping()
+    ->onOneServer()
     ->name('integration:run');
 
-// Pipeline pós-importação: roda ~1h30 após integration:run para garantir que
-// os jobs da fila `imports` já foram processados.
+// Pipeline pós-importação. O gap de 1h30 após integration:run é só o chute
+// inicial: o comando espera as filas imports-fetch/imports-process esvaziarem
+// (até --wait-minutes) antes de rodar, para não agir sobre import parcial.
 // Ordem: sync:link-sales → sync:cleanup → sync:products-from-ean-references
 Schedule::command('sync:post-import')
     ->dailyAt('07:30')
     ->withoutOverlapping()
+    ->onOneServer()
     ->name('sync-post-import');
 
 Schedule::command('planograms:trigger-periodic-review')

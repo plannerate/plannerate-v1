@@ -23,17 +23,29 @@
 namespace App\Console\Commands\Integrations;
 
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Support\ImportQueueMonitor;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 
-#[Signature('sync:post-import {--tenant= : ID do tenant específico}')]
+#[Signature('sync:post-import
+    {--tenant= : ID do tenant específico}
+    {--wait-minutes=60 : Tempo máximo (minutos) de espera pelas filas de importação esvaziarem}
+    {--skip-queue-check : Não espera as filas de importação (risco de agir sobre dados parciais)}')]
 #[Description('Pipeline pós-importação: vincula vendas, limpa dados e sincroniza por EAN')]
 class RunDailyPostImportCommand extends Command
 {
+    /** Intervalo entre verificações do backlog das filas de importação. */
+    private const QUEUE_POLL_SECONDS = 30;
+
     public function handle(): int
     {
+        if (! $this->option('skip-queue-check') && ! $this->waitForImportQueuesToDrain()) {
+            return self::FAILURE;
+        }
+
         $integrations = $this->getActiveIntegrations();
 
         if ($integrations->isEmpty()) {
@@ -83,6 +95,44 @@ class RunDailyPostImportCommand extends Command
         $this->info('✅ Pipeline pós-importação concluído com sucesso.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Barreira import → pós-import: aguarda as filas de importação esvaziarem
+     * antes de vincular/limpar, para não agir sobre um snapshot parcial.
+     * O agendamento (07:30, após o integration:run das 06:00) é só um chute de
+     * relógio — esta verificação é a garantia real.
+     */
+    protected function waitForImportQueuesToDrain(): bool
+    {
+        $waitMinutes = max(0, (int) $this->option('wait-minutes'));
+        $deadline = now()->addMinutes($waitMinutes);
+
+        while (true) {
+            $pendingByQueue = ImportQueueMonitor::pendingJobsByQueue();
+
+            if (array_sum($pendingByQueue) === 0) {
+                return true;
+            }
+
+            $pendingLabel = collect($pendingByQueue)
+                ->map(fn (int $size, string $queue): string => "{$queue}={$size}")
+                ->implode(', ');
+
+            if (now()->greaterThanOrEqualTo($deadline)) {
+                $this->error("Filas de importação ainda com backlog ({$pendingLabel}); pipeline abortado para não processar dados parciais.");
+
+                Log::error('sync:post-import abortado: backlog nas filas de importação após o tempo de espera', [
+                    'pending' => $pendingByQueue,
+                    'wait_minutes' => $waitMinutes,
+                ]);
+
+                return false;
+            }
+
+            $this->warn("Aguardando filas de importação esvaziarem ({$pendingLabel})...");
+            sleep(self::QUEUE_POLL_SECONDS);
+        }
     }
 
     /**
@@ -145,10 +195,12 @@ class RunDailyPostImportCommand extends Command
         }
 
         // 4. Reagrega monthly_sales_summaries e re-vincula product_id pelo codigo_erp.
-        // Roda por último (após produtos padronizados) e síncrono, garantindo que o
-        // scoring/ABC encontrem as vendas mesmo após reimportações com novos ULIDs.
-        $this->line('  [ 4/4 ] monthly-sales:recalculate');
-        $exitCode = $this->call('monthly-sales:recalculate', $args + ['--sync' => true]);
+        // Roda por último (após produtos padronizados) e ASSÍNCRONO: o job vai para a
+        // fila maintenance (1 worker, FIFO), então executa depois da corrente de
+        // cleanup — a ordem é preservada sem prender o processo do scheduler num
+        // recálculo pesado.
+        $this->line('  [ 4/4 ] monthly-sales:recalculate (assíncrono, fila maintenance)');
+        $exitCode = $this->call('monthly-sales:recalculate', $args);
 
         if ($exitCode !== self::SUCCESS) {
             $this->error("         ❌ monthly-sales:recalculate falhou (código {$exitCode}).");

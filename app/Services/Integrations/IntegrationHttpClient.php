@@ -4,6 +4,7 @@ namespace App\Services\Integrations;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -30,12 +31,20 @@ class IntegrationHttpClient
     {
         $http = $this->prepare();
 
-        return match ($method) {
+        $response = match ($method) {
             'post' => $http->post($url, $payload),
             'put' => $http->put($url, $payload),
             'patch' => $http->patch($url, $payload),
             default => $http->get($url, $payload),
         };
+
+        // Token em cache pode ter expirado no servidor antes do TTL local:
+        // invalida para que a próxima tentativa busque um token novo.
+        if ($response->status() === 401 && $this->usesFetchedBearerToken()) {
+            Cache::forget($this->bearerTokenCacheKey());
+        }
+
+        return $response;
     }
 
     /** Prepara o PendingRequest com auth e headers. */
@@ -72,16 +81,46 @@ class IntegrationHttpClient
 
     /**
      * Resolve o bearer token:
-     * - token_mode "fetch" → busca via request separado
+     * - token_mode "fetch" → busca via request separado, com cache curto (antes
+     *   era 1 request de token POR PÁGINA buscada — multiplicador de latência
+     *   e de carga na API de auth)
      * - outros             → lê diretamente de credentials.token
      */
     private function resolveBearerToken(): string
     {
-        $tokenMode = (string) data_get($this->config, 'auth.token_mode', '');
+        if (! $this->usesFetchedBearerToken()) {
+            return (string) data_get($this->config, 'auth.credentials.token', '');
+        }
 
-        return $tokenMode === 'fetch'
-            ? $this->fetchBearerToken()
-            : (string) data_get($this->config, 'auth.credentials.token', '');
+        $cacheKey = $this->bearerTokenCacheKey();
+        $cached = Cache::get($cacheKey);
+
+        if (is_string($cached) && $cached !== '') {
+            return $cached;
+        }
+
+        $token = $this->fetchBearerToken();
+
+        if ($token !== '') {
+            Cache::put($cacheKey, $token, (int) config('integrations.token_cache_seconds', 300));
+        }
+
+        return $token;
+    }
+
+    private function usesFetchedBearerToken(): bool
+    {
+        return (string) data_get($this->config, 'auth.type', '') === 'bearer'
+            && (string) data_get($this->config, 'auth.token_mode', '') === 'fetch';
+    }
+
+    /** Chave por destino+credencial: integrações diferentes não compartilham token. */
+    private function bearerTokenCacheKey(): string
+    {
+        return 'integrations:bearer-token:'.sha1(implode('|', [
+            (string) data_get($this->config, 'connection.base_url', ''),
+            (string) data_get($this->config, 'auth.credentials.username', ''),
+        ]));
     }
 
     /**

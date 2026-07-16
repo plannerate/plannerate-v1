@@ -13,6 +13,7 @@ namespace App\Console\Commands\Integrations;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\AppNotification;
+use App\Services\Integrations\Support\SyncSalesProductReferencesService;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -20,11 +21,11 @@ use Illuminate\Support\Facades\Log;
 
 class LinkSalesProductsCommand extends Command
 {
-    protected $signature = 'sync:link-sales 
+    protected $signature = 'sync:link-sales
                             {--tenant= : ID do tenant específico}
                             {--preview : Apenas mostra o que seria feito}';
 
-    protected $description = 'Vincula vendas aos produtos usando codigo_erp';
+    protected $description = 'Vincula vendas aos produtos usando codigo_erp (inclui re-vínculo de vendas apontando para produto errado)';
 
     public function handle(): int
     {
@@ -166,21 +167,14 @@ class LinkSalesProductsCommand extends Command
     {
         $tenantId = (string) $tenant->id;
 
-        // 1. Contar vendas sem product_id
+        // 1. Contar vendas sem product_id (o re-vínculo também cobre vendas
+        // apontando para produto errado, então isso não é gate de execução)
         $salesWithoutProduct = DB::connection($connection)
             ->table('sales')
             ->where('tenant_id', $tenantId)
             ->whereNull('product_id')
             ->whereNotNull('codigo_erp')
             ->count();
-
-        if ($salesWithoutProduct === 0) {
-            return [
-                'tenant_name' => $tenant->name,
-                'linked' => 0,
-                'remaining' => 0,
-            ];
-        }
 
         if ($preview) {
             $this->showPreview($connection, $tenantId, $salesWithoutProduct);
@@ -192,10 +186,10 @@ class LinkSalesProductsCommand extends Command
             ];
         }
 
-        // 3. Executar vinculação em batch usando UPDATE com JOIN
+        // 2. Executar vinculação em batch usando UPDATE com JOIN
         $updated = $this->linkSalesToProducts($connection, $tenantId);
 
-        // 4. Verificar vendas que não puderam ser vinculadas
+        // 3. Verificar vendas que não puderam ser vinculadas
         $remaining = DB::connection($connection)
             ->table('sales')
             ->where('tenant_id', $tenantId)
@@ -254,27 +248,14 @@ class LinkSalesProductsCommand extends Command
     }
 
     /**
-     * Vincula vendas aos produtos usando UPDATE com JOIN
+     * Re-vincula as vendas do tenant pelo codigo_erp via
+     * SyncSalesProductReferencesService: cobre vendas sem product_id E vendas
+     * apontando para produto errado/removido, com escolha determinística
+     * quando o codigo_erp é duplicado.
      */
     protected function linkSalesToProducts(string $connection, string $tenantId): int
     {
-        $database = DB::connection($connection);
-
-        $sql = '
-            UPDATE sales 
-            SET 
-                product_id = p.id,
-                ean = p.ean,
-                updated_at = CURRENT_TIMESTAMP
-            FROM products p
-            WHERE sales.tenant_id = ?
-              AND p.tenant_id = sales.tenant_id
-              AND sales.codigo_erp = p.codigo_erp
-              AND sales.product_id IS NULL
-              AND sales.codigo_erp IS NOT NULL
-        ';
-
-        return $database->affectingStatement($sql, [$tenantId]);
+        return (new SyncSalesProductReferencesService)->syncAllByCodigoErp($connection, $tenantId, now());
     }
 
     private function tenantHasSales(string $connection, string $tenantId): bool

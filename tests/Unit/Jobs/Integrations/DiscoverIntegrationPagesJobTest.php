@@ -92,3 +92,32 @@ it('forceFull returns the full day range without touching the tenant existing da
     expect($result)->toHaveCount(6);
     expect(array_unique($result))->toHaveCount(6);
 });
+
+it('always re-fetches days inside the recheck window even when they have records', function (): void {
+    config(['integrations.recheck_days' => 3]);
+
+    $discoverer = new DailyModeDiscoverer('01testintegrationid000000000', 'sales');
+
+    $method = new ReflectionMethod($discoverer, 'applyRecheckWindow');
+    $method->setAccessible(true);
+
+    $today = now()->toDateString();
+    $yesterday = now()->subDay()->toDateString();
+    $oldDay = now()->subDays(10)->toDateString();
+
+    // Dias dentro da janela saem da lista de "completos" → serão re-buscados
+    $result = $method->invoke($discoverer, [$today, $yesterday, $oldDay]);
+
+    expect($result)->toBe([$oldDay]);
+});
+
+it('incremental start date in page mode goes back recheck_days instead of one day', function (): void {
+    config(['integrations.recheck_days' => 3]);
+
+    $discoverer = new PageModeDiscoverer('01testintegrationid000000000', 'products');
+
+    $method = new ReflectionMethod($discoverer, 'incrementalStartDate');
+    $method->setAccessible(true);
+
+    expect($method->invoke($discoverer))->toBe(now()->subDays(3)->toDateString());
+});
