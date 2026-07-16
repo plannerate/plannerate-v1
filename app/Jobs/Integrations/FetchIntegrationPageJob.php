@@ -9,6 +9,7 @@ use App\Services\Integrations\IntegrationHttpClient;
 use App\Services\Integrations\IntegrationPayloadBuilder;
 use App\Services\Integrations\RecordMapper;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
+use App\Services\Integrations\Support\ImportDiscardMetrics;
 use App\Services\Integrations\TenantUpsertRecordPreparer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -31,8 +32,13 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /** Status HTTP que indicam erro permanente (config/permissão) — retry não resolve. */
-    private const NON_RETRYABLE_STATUSES = [401, 403, 404];
+    /**
+     * Status HTTP que indicam erro permanente (config/permissão) — retry não
+     * resolve. 401 NÃO entra: com token_mode fetch pode ser só token expirado
+     * em cache (o IntegrationHttpClient invalida o cache ao ver 401, então o
+     * retry busca um token novo).
+     */
+    private const NON_RETRYABLE_STATUSES = [403, 404];
 
     public int $tries = 5;
 
@@ -320,9 +326,10 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             if ($record === null) {
                 $skippedRequired++;
 
-                if ($rejectedField !== null) {
-                    $skippedByField[$rejectedField] = ($skippedByField[$rejectedField] ?? 0) + 1;
-                }
+                // Rejeição por validação de grupo não tem campo culpado — sem o
+                // campo sintético ela ficava invisível no detalhamento.
+                $field = $rejectedField ?? ImportDiscardMetrics::GROUP_VALIDATION_FIELD;
+                $skippedByField[$field] = ($skippedByField[$field] ?? 0) + 1;
 
                 continue;
             }
@@ -336,7 +343,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         }
 
         if ($skippedRequired > 0) {
-            Log::warning('FetchIntegrationPageJob: registros descartados por not_null', [
+            Log::warning('FetchIntegrationPageJob: registros descartados no mapping', [
                 'integration_id' => $integrationId,
                 'path_key' => $this->pathKey,
                 'page' => $this->page,
@@ -344,6 +351,15 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
                 'skipped' => $skippedRequired,
                 'skipped_by_field' => $skippedByField,
             ]);
+
+            ImportDiscardMetrics::record(
+                $integrationId,
+                $this->pathKey,
+                $this->storeId,
+                count($mappedRecords),
+                $skippedRequired,
+                $skippedByField,
+            );
         }
 
         $deduplicatedRecords = TenantUpsertRecordPreparer::deduplicateById($mappedRecords);
@@ -410,9 +426,11 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
     public function middleware(): array
     {
         return [
+            // expireAfter pouco acima do timeout (120s): um job morto por timeout
+            // não segura o lock por mais tempo que o necessário.
             (new WithoutOverlapping($this->overlapKey()))
                 ->releaseAfter(20)
-                ->expireAfter(180),
+                ->expireAfter(130),
         ];
     }
 

@@ -79,6 +79,17 @@ test('HTTP 429 também é re-tentável', function (): void {
     expect(fn () => $job->handle())->toThrow(RuntimeException::class);
 });
 
+test('HTTP 401 é re-tentável — token em cache pode ter expirado', function (): void {
+    Http::fake(['erp.example.test/*' => Http::response(null, 401)]);
+    Bus::fake([ProcessPageResponseJob::class]);
+
+    $integration = makeFetchRetryIntegration('fetch-retry-401');
+
+    $job = new FetchIntegrationPageJob((string) $integration->id, 'products', 1);
+
+    expect(fn () => $job->handle())->toThrow(RuntimeException::class);
+});
+
 test('HTTP 404 falha em definitivo, sem lançar exceção de retry', function (): void {
     Http::fake(['erp.example.test/*' => Http::response(null, 404)]);
     Bus::fake([ProcessPageResponseJob::class]);

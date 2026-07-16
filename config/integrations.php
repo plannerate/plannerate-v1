@@ -13,6 +13,13 @@ return [
      */
     'recheck_days' => env('INTEGRATION_RECHECK_DAYS', 3),
 
+    /*
+     * TTL (segundos) do cache do bearer token obtido via token_mode "fetch".
+     * Sem cache, cada página buscada disparava um request de token. Em 401 o
+     * cache é invalidado e a tentativa seguinte busca um token novo.
+     */
+    'token_cache_seconds' => env('INTEGRATION_TOKEN_CACHE_SECONDS', 300),
+
     'import_clear_tables' => [
         'products' => ['product_store', 'products'],
         'sales' => ['sales'],

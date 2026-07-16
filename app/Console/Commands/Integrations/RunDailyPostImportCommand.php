@@ -195,10 +195,12 @@ class RunDailyPostImportCommand extends Command
         }
 
         // 4. Reagrega monthly_sales_summaries e re-vincula product_id pelo codigo_erp.
-        // Roda por último (após produtos padronizados) e síncrono, garantindo que o
-        // scoring/ABC encontrem as vendas mesmo após reimportações com novos ULIDs.
-        $this->line('  [ 4/4 ] monthly-sales:recalculate');
-        $exitCode = $this->call('monthly-sales:recalculate', $args + ['--sync' => true]);
+        // Roda por último (após produtos padronizados) e ASSÍNCRONO: o job vai para a
+        // fila maintenance (1 worker, FIFO), então executa depois da corrente de
+        // cleanup — a ordem é preservada sem prender o processo do scheduler num
+        // recálculo pesado.
+        $this->line('  [ 4/4 ] monthly-sales:recalculate (assíncrono, fila maintenance)');
+        $exitCode = $this->call('monthly-sales:recalculate', $args);
 
         if ($exitCode !== self::SUCCESS) {
             $this->error("         ❌ monthly-sales:recalculate falhou (código {$exitCode}).");

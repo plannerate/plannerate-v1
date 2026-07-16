@@ -12,20 +12,24 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
 
+/**
+ * Apaga vendas anteriores à data de corte. Recebe o CRITÉRIO (cutoff), não a
+ * lista de ids: o job re-deriva as linhas em chunks — o payload da fila fica
+ * pequeno e a seleção reflete o estado do banco no momento da execução.
+ */
 class CleanupOldSalesJob implements NotTenantAware, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    private const CHUNK_SIZE = 1000;
 
     public int $tries = 3;
 
     public int $timeout = 900;
 
-    /**
-     * @param  array<int, string>  $saleIds
-     */
     public function __construct(
         public string $tenantId,
-        public array $saleIds,
+        public string $cutoffDate,
         public string $tenantConnectionName,
         public bool $executeInTenantContext = true,
     ) {
@@ -34,7 +38,7 @@ class CleanupOldSalesJob implements NotTenantAware, ShouldQueue
 
     public function handle(): void
     {
-        if ($this->tenantId === '' || $this->saleIds === []) {
+        if ($this->tenantId === '' || $this->cutoffDate === '') {
             return;
         }
 
@@ -44,19 +48,30 @@ class CleanupOldSalesJob implements NotTenantAware, ShouldQueue
         }
 
         $run = function (): void {
-            $chunks = array_chunk($this->saleIds, 1000);
             $totalDeleted = 0;
 
-            foreach ($chunks as $chunk) {
+            do {
+                $ids = DB::connection($this->tenantConnectionName)
+                    ->table('sales')
+                    ->where('tenant_id', $this->tenantId)
+                    ->where('sale_date', '<', $this->cutoffDate)
+                    ->limit(self::CHUNK_SIZE)
+                    ->pluck('id');
+
+                if ($ids->isEmpty()) {
+                    break;
+                }
+
                 $totalDeleted += DB::connection($this->tenantConnectionName)
                     ->table('sales')
                     ->where('tenant_id', $this->tenantId)
-                    ->whereIn('id', $chunk)
+                    ->whereIn('id', $ids->all())
                     ->delete();
-            }
+            } while (true);
 
             Log::info('Limpeza de vendas antigas concluída', [
                 'tenant_id' => $this->tenantId,
+                'cutoff_date' => $this->cutoffDate,
                 'total_deleted' => $totalDeleted,
             ]);
         };
