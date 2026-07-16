@@ -197,8 +197,9 @@ const bcgBadgeWrapperStyle = computed(() => ({
 // Busca papel estratégico do produto pelo EAN
 const paperRole = computed(() => getPaperRole(layer.value?.product?.ean));
 
-// Busca quadrante BCG + ação de espaço do produto pelo EAN
-const bcgBadgeData = computed(() => getBcgData(layer.value?.product?.ean));
+// Busca quadrante BCG + ação de espaço: pelo EAN (por produto) ou, no modo por
+// categoria, pelo id do produto (cai no selo do grupo ao qual ele pertence).
+const bcgBadgeData = computed(() => getBcgData(layer.value?.product?.ean, layer.value?.product?.id));
 
 const isEanMatch = computed(() => {
     const query = eanSearchApplied.value.trim();

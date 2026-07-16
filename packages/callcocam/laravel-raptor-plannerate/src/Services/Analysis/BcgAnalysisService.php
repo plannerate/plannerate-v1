@@ -543,8 +543,9 @@ class BcgAnalysisService
             $item = $pair['item'];
             $rowSpace = $pair['space'];
 
-            // Detalhe interno do cálculo agregado: não vai para o resultado final
-            unset($item['member_product_ids']);
+            // No modo agregado (exibir por categoria/nível) a linha não tem EAN: sem os
+            // produtos membros o front não teria como marcar cada produto na gôndola com
+            // o selo da SUA categoria. Por isso member_product_ids segue no resultado.
 
             return array_merge($item, $rowSpace, [
                 'share_threshold_gondola' => round($shareThreshold, 4),

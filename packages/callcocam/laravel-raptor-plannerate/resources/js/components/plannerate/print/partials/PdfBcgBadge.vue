@@ -56,9 +56,20 @@ const labelTextClass = computed(() => {
     return props.data ? classes[props.data.quadrant] : '';
 });
 
-const label = computed(() =>
-    props.data ? quadrantLabel(props.data.quadrant, props.data.x_axis, props.data.y_axis) : '',
-);
+/** Modo por categoria: o selo representa o grupo do produto (ver BcgBadge do editor). */
+const isCategory = computed(() => Boolean(props.data?.display_by && props.data.display_by !== 'produto'));
+
+const label = computed(() => {
+    if (!props.data) {
+        return '';
+    }
+
+    if (isCategory.value) {
+        return props.data.group_label ?? '';
+    }
+
+    return quadrantLabel(props.data.quadrant, props.data.x_axis, props.data.y_axis);
+});
 
 const showAction = computed(
     () => props.data?.acao_espaco === 'aumentar' || props.data?.acao_espaco === 'reduzir',
@@ -71,8 +82,17 @@ const title = computed(() => {
 
     const quadrant = quadrantLabel(props.data.quadrant, props.data.x_axis, props.data.y_axis);
     const action = spaceActionLabel(props.data.acao_espaco);
+    const base = `${quadrant} — ${t('plannerate.analysis.bcg_selection.action')}: ${action}`;
 
-    return `${quadrant} — ${t('plannerate.analysis.bcg_selection.action')}: ${action}`;
+    if (isCategory.value) {
+        const category = props.data.group_label
+            ? `${t('plannerate.analysis.bcg_selection.category_badge')}: ${props.data.group_label} · `
+            : `${t('plannerate.analysis.bcg_selection.category_hint')} · `;
+
+        return `${category}${base}`;
+    }
+
+    return base;
 });
 
 /** Pill ancorado à base do produto (mesma posição do selo ABC), pivotando no círculo quando vertical. */
@@ -122,9 +142,9 @@ const labelStyle = computed(() => ({
             {{ quadrantIcon(data.quadrant) }}
         </span>
 
-        <!-- Descrição gerada pela análise + seta da ação -->
+        <!-- Rótulo + seta da ação. No modo por categoria, marcador (▦) antecede o grupo. -->
         <span class="font-bold whitespace-nowrap leading-none" :class="labelTextClass" :style="labelStyle">
-            {{ label }}<span v-if="showAction" aria-hidden="true"> {{ spaceActionIcon(data.acao_espaco) }}</span>
+            <span v-if="isCategory" aria-hidden="true" class="opacity-70">▦ </span>{{ label }}<span v-if="showAction" aria-hidden="true"> {{ spaceActionIcon(data.acao_espaco) }}</span>
         </span>
     </div>
 </template>

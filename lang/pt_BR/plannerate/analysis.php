@@ -238,6 +238,8 @@ return [
         'forte_x_desc' => 'Forte apenas no eixo X. Puxa desempenho por uma via só.',
         'forte_y_desc' => 'Forte apenas no eixo Y. Puxa desempenho por uma via só.',
         'baixo_baixo_desc' => 'Fraco nos dois eixos. Revisar — descontinuar exige mais que este diagnóstico (ver curva ABC).',
+        'category_badge' => 'Categoria',
+        'category_hint' => 'Análise exibida por categoria: o selo representa o grupo, não o produto.',
     ],
     'paper_results' => [
         'ean' => 'EAN',

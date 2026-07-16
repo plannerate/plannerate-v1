@@ -72,10 +72,27 @@ const labelTextClass = computed(() => {
     return props.data ? classes[props.data.quadrant] : '';
 });
 
-/** Descrição do quadrante gerada pela análise (depende dos eixos — ver bcg/labels.ts). */
-const label = computed(() =>
-    props.data ? quadrantLabel(props.data.quadrant, props.data.x_axis, props.data.y_axis) : '',
-);
+/**
+ * Modo "exibir por categoria": o selo representa o GRUPO ao qual o produto pertence
+ * (mesmo selo em todos os produtos da categoria), não o produto em si.
+ */
+const isCategory = computed(() => Boolean(props.data?.display_by && props.data.display_by !== 'produto'));
+
+/**
+ * Rótulo do selo. No modo por categoria mostramos o NOME da categoria (marca o grupo);
+ * no modo por produto, a descrição do quadrante gerada pela análise (ver bcg/labels.ts).
+ */
+const label = computed(() => {
+    if (!props.data) {
+        return '';
+    }
+
+    if (isCategory.value) {
+        return props.data.group_label ?? '';
+    }
+
+    return quadrantLabel(props.data.quadrant, props.data.x_axis, props.data.y_axis);
+});
 
 /** Máximo de caracteres antes de truncar o rótulo (mantém o selo compacto na gôndola). */
 const MAX_LABEL_CHARS = 12;
@@ -107,8 +124,18 @@ const title = computed(() => {
 
     const quadrant = quadrantLabel(props.data.quadrant, props.data.x_axis, props.data.y_axis);
     const action = spaceActionLabel(props.data.acao_espaco);
+    const base = `${quadrant} — ${t('plannerate.analysis.bcg_selection.action')}: ${action}`;
 
-    return `${quadrant} — ${t('plannerate.analysis.bcg_selection.action')}: ${action}`;
+    // No modo por categoria, deixa explícito de qual grupo é o selo.
+    if (isCategory.value) {
+        const category = props.data.group_label
+            ? `${t('plannerate.analysis.bcg_selection.category_badge')}: ${props.data.group_label} · `
+            : `${t('plannerate.analysis.bcg_selection.category_hint')} · `;
+
+        return `${category}${base}`;
+    }
+
+    return base;
 });
 
 /**
@@ -164,9 +191,13 @@ const labelStyle = computed(() => ({
             {{ quadrantIcon(data.quadrant) }}
         </span>
 
-        <!-- Descrição gerada pela análise (truncada; completa no hover) + seta da ação -->
+        <!--
+            Rótulo (truncado; completo no hover) + seta da ação.
+            No modo por categoria, um marcador (▦) antecede o nome do grupo, deixando
+            claro que o selo é da CATEGORIA e não do produto individual.
+        -->
         <span class="font-bold whitespace-nowrap leading-none" :class="labelTextClass" :style="labelStyle">
-            {{ displayLabel }}<span v-if="showAction" aria-hidden="true"> {{ spaceActionIcon(data.acao_espaco) }}</span>
+            <span v-if="isCategory" aria-hidden="true" class="opacity-70">▦ </span>{{ displayLabel }}<span v-if="showAction" aria-hidden="true"> {{ spaceActionIcon(data.acao_espaco) }}</span>
         </span>
     </div>
 </template>

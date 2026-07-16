@@ -65,6 +65,12 @@ export interface BcgResult {
     classify_by: BcgClassifyLevel
     /** Presente e igual a 'categoria' quando a linha representa uma categoria agregada */
     display_by?: BcgDisplayBy
+    /**
+     * IDs dos produtos somados nesta linha — só no modo agregado (display_by !== 'produto').
+     * O selo da gôndola usa isso para marcar cada produto físico com o quadrante da SUA
+     * categoria, já que a linha agregada não tem EAN próprio.
+     */
+    member_product_ids?: string[]
 
     quadrant: BcgQuadrant
     /** Produto sem venda no período: entra zerado e fica fora do cálculo do limiar */

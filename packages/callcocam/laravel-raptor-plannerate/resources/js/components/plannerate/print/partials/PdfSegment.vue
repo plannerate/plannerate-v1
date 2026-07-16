@@ -32,8 +32,9 @@ const showModal = ref(false)
 const { getClassification, getRecommendation } = useAbcClassification()
 const { getBcgData } = useBcgAnalysis()
 
-// Busca quadrante BCG + ação de espaço do produto pelo EAN (mesmo selo do editor)
-const bcgBadgeData = computed(() => getBcgData(props.segment.layer?.product?.ean))
+// Busca quadrante BCG + ação de espaço: pelo EAN (por produto) ou pelo id do produto
+// no modo por categoria (mesmo selo do editor)
+const bcgBadgeData = computed(() => getBcgData(props.segment.layer?.product?.ean, props.segment.layer?.product?.id))
 
 // Busca classificação ABC do produto pelo EAN
 const abcClassification = computed(() => {
