@@ -9,6 +9,7 @@ use App\Services\Integrations\IntegrationHttpClient;
 use App\Services\Integrations\IntegrationPayloadBuilder;
 use App\Services\Integrations\RecordMapper;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
+use App\Services\Integrations\Support\ImportDiscardMetrics;
 use App\Services\Integrations\TenantUpsertRecordPreparer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -20,6 +21,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
 
 /**
@@ -29,6 +31,14 @@ use Spatie\Multitenancy\Jobs\NotTenantAware;
 class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    /**
+     * Status HTTP que indicam erro permanente (config/permissão) — retry não
+     * resolve. 401 NÃO entra: com token_mode fetch pode ser só token expirado
+     * em cache (o IntegrationHttpClient invalida o cache ao ver 401, então o
+     * retry busca um token novo).
+     */
+    private const NON_RETRYABLE_STATUSES = [403, 404];
 
     public int $tries = 5;
 
@@ -51,6 +61,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         public readonly ?string $storeId = null,
         public readonly ?string $storeDocument = null,
         public readonly bool $autoPage = false,
+        public readonly ?int $knownLastPage = null,
     ) {
         $this->onQueue('imports-fetch');
     }
@@ -102,9 +113,15 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
                 'url' => $url,
             ]);
 
-            $this->fail(sprintf('HTTP %d ao acessar %s (página %d)', $response->status(), $url, $this->page));
+            $message = sprintf('HTTP %d ao acessar %s (página %d)', $response->status(), $url, $this->page);
 
-            return;
+            if (in_array($response->status(), self::NON_RETRYABLE_STATUSES, true)) {
+                $this->fail($message);
+
+                return;
+            }
+
+            throw new RuntimeException($message);
         }
 
         $responseData = $response->json();
@@ -117,6 +134,12 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             (string) $integration->tenant_id,
             (string) $integration->id,
         );
+
+        // Antes do early-return de página vazia: a checagem de extensão precisa
+        // rodar mesmo quando a última página planejada não mapeou registros.
+        if (! $this->autoPage && $this->knownLastPage !== null && $this->page >= $this->knownLastPage) {
+            $this->dispatchPagesBeyondKnownLast((array) $responseData, $responseMeta, $pathConfig);
+        }
 
         if ($records === []) {
             Log::info('FetchIntegrationPageJob: nenhum registro mapeado', [
@@ -152,6 +175,55 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
     }
 
     // ─── Auto-paginação ──────────────────────────────────────────────────────
+
+    /**
+     * No modo página, o total de páginas é congelado na sondagem da descoberta:
+     * páginas que surgirem na API depois disso nunca seriam buscadas. O job da
+     * última página planejada relê o last_page real da resposta e despacha as
+     * excedentes (que por sua vez podem estender de novo).
+     *
+     * @param  array<string, mixed>  $responseData
+     * @param  array<string, mixed>  $responseMeta
+     * @param  array<string, mixed>  $pathConfig
+     */
+    private function dispatchPagesBeyondKnownLast(array $responseData, array $responseMeta, array $pathConfig): void
+    {
+        $lastPagePath = (string) data_get($responseMeta, 'pagination.last_page_path', '');
+
+        if ($lastPagePath === '') {
+            return;
+        }
+
+        $actualLastPage = (int) data_get($responseData, $lastPagePath, $this->page);
+        $maxPage = (int) data_get($pathConfig, 'max_page', 0);
+
+        if ($maxPage > 0) {
+            $actualLastPage = min($actualLastPage, $maxPage);
+        }
+
+        if ($actualLastPage <= $this->knownLastPage) {
+            return;
+        }
+
+        Log::info('FetchIntegrationPageJob: páginas novas após a sondagem, despachando excedentes', [
+            'integration_id' => $this->integrationId,
+            'path_key' => $this->pathKey,
+            'known_last_page' => $this->knownLastPage,
+            'actual_last_page' => $actualLastPage,
+            'store_id' => $this->storeId,
+        ]);
+
+        $delaySeconds = (int) config('integrations.fetch_delay', 3);
+
+        foreach (range($this->knownLastPage + 1, $actualLastPage) as $index => $page) {
+            self::dispatch(
+                $this->integrationId, $this->pathKey, $page,
+                $this->dateStart, $this->dateEnd, $this->storeId, $this->storeDocument,
+                autoPage: false,
+                knownLastPage: $actualLastPage,
+            )->delay(now()->addSeconds($index * $delaySeconds));
+        }
+    }
 
     /**
      * Lê o last_page da resposta e despacha o próximo FetchIntegrationPageJob
@@ -254,9 +326,10 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             if ($record === null) {
                 $skippedRequired++;
 
-                if ($rejectedField !== null) {
-                    $skippedByField[$rejectedField] = ($skippedByField[$rejectedField] ?? 0) + 1;
-                }
+                // Rejeição por validação de grupo não tem campo culpado — sem o
+                // campo sintético ela ficava invisível no detalhamento.
+                $field = $rejectedField ?? ImportDiscardMetrics::GROUP_VALIDATION_FIELD;
+                $skippedByField[$field] = ($skippedByField[$field] ?? 0) + 1;
 
                 continue;
             }
@@ -270,7 +343,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         }
 
         if ($skippedRequired > 0) {
-            Log::warning('FetchIntegrationPageJob: registros descartados por not_null', [
+            Log::warning('FetchIntegrationPageJob: registros descartados no mapping', [
                 'integration_id' => $integrationId,
                 'path_key' => $this->pathKey,
                 'page' => $this->page,
@@ -278,6 +351,15 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
                 'skipped' => $skippedRequired,
                 'skipped_by_field' => $skippedByField,
             ]);
+
+            ImportDiscardMetrics::record(
+                $integrationId,
+                $this->pathKey,
+                $this->storeId,
+                count($mappedRecords),
+                $skippedRequired,
+                $skippedByField,
+            );
         }
 
         $deduplicatedRecords = TenantUpsertRecordPreparer::deduplicateById($mappedRecords);
@@ -344,9 +426,11 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
     public function middleware(): array
     {
         return [
+            // expireAfter pouco acima do timeout (120s): um job morto por timeout
+            // não segura o lock por mais tempo que o necessário.
             (new WithoutOverlapping($this->overlapKey()))
                 ->releaseAfter(20)
-                ->expireAfter(180),
+                ->expireAfter(130),
         ];
     }
 

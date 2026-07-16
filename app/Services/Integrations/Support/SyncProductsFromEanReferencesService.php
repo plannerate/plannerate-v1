@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\DB;
 class SyncProductsFromEanReferencesService
 {
     /**
+     * Lote de leitura/escrita: evita carregar todos os produtos do tenant em
+     * memória e agrupa os UPDATEs de cada lote numa única transação (antes era
+     * 1 commit por produto — o gargalo do pós-import em tenants grandes).
+     */
+    private const PRODUCT_CHUNK_SIZE = 500;
+
+    /**
      * @var array<string, bool>
      */
     private array $tenantCategoryIds = [];
@@ -39,23 +46,6 @@ class SyncProductsFromEanReferencesService
         }
 
         $connection = DB::connection($tenantConnectionName);
-        $products = $connection
-            ->table('products')
-            ->where('tenant_id', $tenantId)
-            ->whereNotNull('ean')
-            ->where('ean', '!=', '')
-            ->orderBy('id')
-            ->get();
-
-        if ($products->isEmpty()) {
-            return [
-                'matched' => 0,
-                'updated' => 0,
-                'remaining' => 0,
-            ];
-        }
-
-        $referencesByEan = $this->loadReferencesByEan($products);
 
         $matched = 0;
         $updated = 0;
@@ -63,41 +53,66 @@ class SyncProductsFromEanReferencesService
 
         $this->loadTenantCategoryMaps($tenantConnectionName, $tenantId);
 
-        foreach ($products as $product) {
-            $ean = EanReference::normalizeEan((string) ($product->ean ?? ''));
-            if ($ean === '') {
-                continue;
-            }
+        $connection
+            ->table('products')
+            ->where('tenant_id', $tenantId)
+            ->whereNotNull('ean')
+            ->where('ean', '!=', '')
+            ->chunkById(self::PRODUCT_CHUNK_SIZE, function (Collection $products) use ($connection, $preview, &$matched, &$updated, &$remaining): void {
+                $referencesByEan = $this->loadReferencesByEan($products);
 
-            $reference = $referencesByEan->get($ean);
-            if (! $reference instanceof EanReference) {
-                continue;
-            }
+                if ($referencesByEan->isEmpty()) {
+                    return;
+                }
 
-            $matched++;
+                /** @var array<string, array<string, mixed>> $updatesById */
+                $updatesById = [];
 
-            $updates = $this->updatesForProduct($product, $reference);
+                foreach ($products as $product) {
+                    $ean = EanReference::normalizeEan((string) ($product->ean ?? ''));
+                    if ($ean === '') {
+                        continue;
+                    }
 
-            if ($updates === []) {
-                continue;
-            }
+                    $reference = $referencesByEan->get($ean);
+                    if (! $reference instanceof EanReference) {
+                        continue;
+                    }
 
-            $remaining++;
+                    $matched++;
 
-            if ($preview) {
-                continue;
-            }
+                    $updates = $this->updatesForProduct($product, $reference);
 
-            $updates['updated_at'] = Carbon::now();
+                    if ($updates === []) {
+                        continue;
+                    }
 
-            $connection
-                ->table('products')
-                ->where('id', (string) $product->id)
-                ->update($updates);
+                    $remaining++;
 
-            $updated++;
-            $remaining--;
-        }
+                    if ($preview) {
+                        continue;
+                    }
+
+                    $updates['updated_at'] = Carbon::now();
+                    $updatesById[(string) $product->id] = $updates;
+                }
+
+                if ($updatesById === []) {
+                    return;
+                }
+
+                $connection->transaction(function () use ($connection, $updatesById, &$updated, &$remaining): void {
+                    foreach ($updatesById as $productId => $updates) {
+                        $connection
+                            ->table('products')
+                            ->where('id', $productId)
+                            ->update($updates);
+
+                        $updated++;
+                        $remaining--;
+                    }
+                });
+            });
 
         return [
             'matched' => $matched,

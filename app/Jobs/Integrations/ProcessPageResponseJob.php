@@ -22,6 +22,9 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /** Quarentena de páginas não persistidas — dados preservados p/ diagnóstico/reprocesso (limpo pelo imports:prune). */
+    private const QUARANTINE_DIR = 'imports/failed';
+
     public int $tries = 3;
 
     public int $timeout = 120;
@@ -40,7 +43,7 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
         $integration = $this->loadIntegration();
 
         if ($integration === null) {
-            $this->deleteFile();
+            $this->quarantineFile();
 
             return;
         }
@@ -48,7 +51,7 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
         $pathConfig = $this->resolvePathConfig($integration);
 
         if ($pathConfig === null) {
-            $this->deleteFile();
+            $this->quarantineFile();
 
             return;
         }
@@ -56,7 +59,7 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
         $targetTable = (string) data_get($pathConfig, 'target_table', '');
 
         if ($targetTable === '') {
-            $this->deleteFile();
+            $this->quarantineFile();
 
             return;
         }
@@ -82,14 +85,14 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
 
     public function failed(Throwable $exception): void
     {
-        Log::warning('ProcessPageResponseJob: job falhou, removendo arquivo temporário', [
+        Log::warning('ProcessPageResponseJob: job falhou, movendo arquivo para quarentena', [
             'integration_id' => $this->integrationId,
             'path_key' => $this->pathKey,
             'file' => $this->filePath,
             'error' => $exception->getMessage(),
         ]);
 
-        $this->deleteFile();
+        $this->quarantineFile();
     }
 
     // ─── Leitura ─────────────────────────────────────────────────────────────
@@ -115,12 +118,42 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
                 'file' => $this->filePath,
             ]);
 
-            $this->deleteFile();
+            $this->quarantineFile();
 
             return null;
         }
 
         return array_values(array_filter($data, fn (mixed $r): bool => is_array($r)));
+    }
+
+    /**
+     * Move o arquivo para a quarentena em vez de apagar: a página não foi
+     * persistida e o JSON é a única cópia dos dados mapeados.
+     */
+    private function quarantineFile(): void
+    {
+        $disk = Storage::disk('local');
+
+        if (! $disk->exists($this->filePath)) {
+            return;
+        }
+
+        $target = self::QUARANTINE_DIR.'/'.basename($this->filePath);
+
+        if ($disk->move($this->filePath, $target)) {
+            Log::warning('ProcessPageResponseJob: arquivo movido para quarentena', [
+                'integration_id' => $this->integrationId,
+                'file' => $this->filePath,
+                'quarantine' => $target,
+            ]);
+
+            return;
+        }
+
+        Log::error('ProcessPageResponseJob: falha ao mover arquivo para quarentena', [
+            'integration_id' => $this->integrationId,
+            'file' => $this->filePath,
+        ]);
     }
 
     private function deleteFile(): void

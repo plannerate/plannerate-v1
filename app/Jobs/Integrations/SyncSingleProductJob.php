@@ -43,7 +43,9 @@ class SyncSingleProductJob implements ShouldQueue, TenantAware
         public ?string $dateFrom = null,
         public ?string $dateTo = null,
     ) {
-        $this->onQueue('imports-fetch');
+        // Fila critical (balance auto): lookup disparado pelo usuário não pode
+        // esperar atrás do fan-out em massa dos 5 workers de imports-fetch.
+        $this->onQueue('critical');
     }
 
     public function handle(SingleProductFetchService $service): void

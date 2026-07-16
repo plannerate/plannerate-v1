@@ -26,7 +26,12 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
 
     public int $tries = 3;
 
-    public int $timeout = 60;
+    /**
+     * A descoberta em modo página faz 1 sondagem HTTP síncrona POR LOJA (cada
+     * uma pode levar até integrations.timeout = 60s). Precisa caber várias
+     * sondagens, mas ficar abaixo do timeout do supervisor imports-fetch (180s).
+     */
+    public int $timeout = 170;
 
     public function __construct(
         public readonly string $integrationId,
@@ -59,18 +64,41 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         $dailyDiscoverer = new DailyModeDiscoverer($this->integrationId, $this->pathKey);
         $pageDiscoverer = new PageModeDiscoverer($this->integrationId, $this->pathKey);
 
-        foreach ($this->loadStores($integration, $requests) as $store) {
+        $stores = $this->loadStores($integration, $requests);
+        $failedStores = [];
+
+        foreach ($stores as $store) {
             if ($dailyDiscoverer->isApplicable($pathConfig)) {
                 $dailyDiscoverer->discover($integration, $pathConfig, $store, $this->forceFull);
-            } else {
-                try {
-                    $pageDiscoverer->discover($integration, $api, $config, $requests, $pathConfig, $store, $this->forceFull);
-                } catch (RuntimeException $e) {
-                    $this->fail($e->getMessage());
 
-                    return;
-                }
+                continue;
             }
+
+            // Checkpoint por loja: a falha de uma sondagem não pode abortar a
+            // descoberta das lojas restantes.
+            try {
+                $pageDiscoverer->discover($integration, $api, $config, $requests, $pathConfig, $store, $this->forceFull);
+            } catch (RuntimeException $e) {
+                $failedStores[] = (string) (data_get($store, 'id') ?? 'sem-loja');
+
+                Log::error('DiscoverIntegrationPagesJob: falha na descoberta da loja; continuando nas demais', [
+                    'integration_id' => $this->integrationId,
+                    'path_key' => $this->pathKey,
+                    'store_id' => data_get($store, 'id'),
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        // Só re-tenta quando TODAS falharam: nada foi despachado, então o retry
+        // não duplica fan-out. Com falha parcial, as lojas que passaram já
+        // despacharam seus jobs — re-tentar duplicaria as buscas delas.
+        if ($failedStores !== [] && count($failedStores) === count($stores)) {
+            throw new RuntimeException(sprintf(
+                'Descoberta falhou em todas as %d loja(s): %s',
+                count($stores),
+                implode(', ', $failedStores),
+            ));
         }
     }
 

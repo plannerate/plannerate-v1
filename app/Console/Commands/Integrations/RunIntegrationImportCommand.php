@@ -7,17 +7,53 @@ use App\Events\Tenant\IntegrationProcessStarted;
 use App\Jobs\Integrations\DiscoverIntegrationPagesJob;
 use App\Models\TenantIntegration;
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class RunIntegrationImportCommand extends Command
 {
+    /**
+     * Lock compartilhado com integration:backfill: impede que os dois disparem
+     * descobertas sobre os mesmos paths ao mesmo tempo (fan-out duplicado).
+     */
+    public const DISPATCH_LOCK_KEY = 'integrations:discovery-dispatch';
+
+    /** TTL do lock em segundos — cobre com folga a janela de despacho. */
+    public const DISPATCH_LOCK_SECONDS = 600;
+
     protected $signature = 'integration:run';
 
     protected $description = 'Executa importação de dados via integrações ativas';
 
     public function handle(): int
+    {
+        $lock = self::acquireDispatchLock();
+
+        if ($lock === null) {
+            $this->error('Outro despacho de descoberta (integration:run ou integration:backfill) está em andamento; abortado.');
+
+            return self::FAILURE;
+        }
+
+        try {
+            return $this->dispatchDiscoveries();
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /** Tenta adquirir o lock de despacho; null quando já está em uso. */
+    public static function acquireDispatchLock(): ?Lock
+    {
+        $lock = Cache::lock(self::DISPATCH_LOCK_KEY, self::DISPATCH_LOCK_SECONDS);
+
+        return $lock->get() ? $lock : null;
+    }
+
+    private function dispatchDiscoveries(): int
     {
         $integrations = $this->getActiveIntegrations();
 
@@ -71,7 +107,7 @@ class RunIntegrationImportCommand extends Command
             }
         }
 
-        $this->info(sprintf('Jobs de descoberta despachados: %d (queue: imports).', $totalJobs));
+        $this->info(sprintf('Jobs de descoberta despachados: %d (queue: imports-fetch).', $totalJobs));
 
         return self::SUCCESS;
     }

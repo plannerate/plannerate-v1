@@ -5,27 +5,42 @@ namespace App\Console\Commands\Integrations;
 use App\Jobs\Cleanup\CleanupOldSalesJob;
 use App\Jobs\Cleanup\CleanupOrphanSalesJob;
 use App\Jobs\Cleanup\DeactivateInactiveProductsJob;
+use App\Jobs\Cleanup\NotifyCleanupCompletedJob;
 use App\Jobs\Cleanup\RestoreSoldProductsJob;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
-use App\Models\User;
-use App\Notifications\AppNotification;
+use App\Services\Integrations\Support\ImportQueueMonitor;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class CleanupCommand extends Command
 {
     private const INACTIVE_DAYS = 120;
 
-    protected $signature = 'sync:cleanup {--tenant= : ID do tenant específico}';
+    /**
+     * Janela de frescor: sem NENHUMA venda nos últimos N dias, o import diário
+     * provavelmente está quebrado — desativar/limpar com base nesse snapshot
+     * desatualizado apagaria dados indevidamente.
+     */
+    private const SALES_FRESHNESS_DAYS = 3;
+
+    protected $signature = 'sync:cleanup
+        {--tenant= : ID do tenant específico}
+        {--force : Ignora as travas de segurança (backlog das filas de import e frescor das vendas)}';
 
     protected $description = 'Executa limpeza automática por TenantIntegration ativa';
 
     public function handle(): int
     {
+        if (! $this->option('force') && ! $this->importQueuesAreIdle()) {
+            return self::FAILURE;
+        }
+
         $integrations = $this->getActiveIntegrations();
 
         if ($integrations->isEmpty()) {
@@ -34,24 +49,40 @@ class CleanupCommand extends Command
             return self::SUCCESS;
         }
 
-        $results = [];
-
         foreach ($integrations as $integration) {
-            $summary = $this->processIntegration($integration);
-
-            if ($summary !== null) {
-                $results[] = $summary;
-            }
+            $this->processIntegration($integration);
         }
 
         $this->newLine();
-        $this->info('Verificação concluída.');
-
-        if ($results !== []) {
-            $this->sendCleanupCompletedNotification($results, $integrations->count());
-        }
+        $this->info('Verificação concluída. Jobs de limpeza despachados; a notificação sai ao fim de cada corrente.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Trava de segurança: com jobs de importação ainda pendentes, o cleanup
+     * agiria sobre um snapshot parcial (ex.: desativar produtos cujas vendas
+     * ainda estão na fila imports-process).
+     */
+    protected function importQueuesAreIdle(): bool
+    {
+        $pendingByQueue = ImportQueueMonitor::pendingJobsByQueue();
+        $totalPending = array_sum($pendingByQueue);
+
+        if ($totalPending === 0) {
+            return true;
+        }
+
+        $this->error(sprintf(
+            'Filas de importação com %d job(s) pendente(s); cleanup abortado para não apagar dados com base em import parcial (use --force para ignorar).',
+            $totalPending,
+        ));
+
+        Log::warning('sync:cleanup abortado: backlog nas filas de importação', [
+            'pending' => $pendingByQueue,
+        ]);
+
+        return false;
     }
 
     /**
@@ -70,46 +101,14 @@ class CleanupCommand extends Command
             ->get();
     }
 
-    /**
-     * @param  array<int, array{tenant_name: string, orphan_sales: int, old_sales: int, inactive_products: int, restore_sold: int, jobs_dispatched: int}>  $results
-     */
-    protected function sendCleanupCompletedNotification(array $results, int $totalIntegrations): void
-    {
-        try {
-            $users = User::all();
-
-            if ($users->isEmpty()) {
-                return;
-            }
-
-            $totalJobs = array_sum(array_column($results, 'jobs_dispatched'));
-            $notification = new AppNotification(
-                title: 'Limpeza concluída',
-                message: sprintf('%d integração(ões) verificada(s), %d job(s) despachado(s).', $totalIntegrations, $totalJobs),
-                type: 'success',
-            );
-
-            foreach ($users as $user) {
-                $user->notify($notification);
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Falha ao enviar notificação de conclusão do cleanup', [
-                'message' => $e->getMessage(),
-            ]);
-        }
-    }
-
-    /**
-     * @return array{tenant_name: string, orphan_sales: int, old_sales: int, inactive_products: int, restore_sold: int, jobs_dispatched: int}|null
-     */
-    protected function processIntegration(TenantIntegration $integration): ?array
+    protected function processIntegration(TenantIntegration $integration): void
     {
         $tenant = $integration->tenant;
 
         if (! $tenant instanceof Tenant) {
             $this->error(sprintf('Integração %s sem tenant relacionado; cleanup ignorado.', $integration->id));
 
-            return null;
+            return;
         }
 
         $this->newLine();
@@ -125,10 +124,10 @@ class CleanupCommand extends Command
         if ($shouldSwitchTenantContext && $tenantDatabase === '') {
             $this->error(sprintf('Tenant %s sem database configurado; cleanup ignorado.', $tenant->id));
 
-            return null;
+            return;
         }
 
-        $process = fn (): array => $this->processIntegrationOnConnection(
+        $process = fn () => $this->processIntegrationOnConnection(
             tenant: $tenant,
             integration: $integration,
             connection: $connection,
@@ -136,80 +135,110 @@ class CleanupCommand extends Command
         );
 
         if ($shouldSwitchTenantContext) {
-            return $tenant->execute($process);
+            $tenant->execute($process);
+
+            return;
         }
 
-        return $process();
+        $process();
     }
 
     /**
-     * @return array{tenant_name: string, orphan_sales: int, old_sales: int, inactive_products: int, restore_sold: int, jobs_dispatched: int}
+     * Os counts abaixo são só para o relatório do console: os jobs recebem o
+     * CRITÉRIO (cutoff/condição) e re-derivam as linhas em chunks na execução —
+     * o payload da fila não carrega mais arrays de IDs potencialmente enormes.
      */
     protected function processIntegrationOnConnection(
         Tenant $tenant,
         TenantIntegration $integration,
         string $connection,
         bool $shouldSwitchTenantContext,
-    ): array {
+    ): void {
         $tenantId = (string) $tenant->id;
-
-        $summary = [
-            'tenant_name' => $tenant->name,
-            'orphan_sales' => 0,
-            'old_sales' => 0,
-            'inactive_products' => 0,
-            'restore_sold' => 0,
-            'jobs_dispatched' => 0,
-        ];
-
         $jobs = collect();
 
-        $orphanSales = $this->checkOrphanSales($tenantId, $connection);
-        $summary['orphan_sales'] = $orphanSales['count'];
-
-        if ($orphanSales['ids'] !== []) {
-            $jobs->push(new CleanupOrphanSalesJob($tenantId, $orphanSales['ids'], $connection, $shouldSwitchTenantContext));
+        if ($this->countOrphanSales($tenantId, $connection) > 0) {
+            $jobs->push(new CleanupOrphanSalesJob($tenantId, $connection, $shouldSwitchTenantContext));
         }
 
-        $retentionsByPath = $this->getOldSalesRetentionsByPath($integration);
-        $oldSalesIds = [];
+        $salesAreFresh = (bool) $this->option('force') || $this->salesDataIsFresh($tenantId, $connection);
 
-        if ($retentionsByPath === []) {
-            $this->line('      Nenhum path com initial_days > 0 encontrado para limpeza de vendas antigas');
+        if (! $salesAreFresh) {
+            $this->warn(sprintf(
+                '      Nenhuma venda nos últimos %d dias; limpeza de vendas antigas e desativação de produtos puladas por segurança (use --force para ignorar).',
+                self::SALES_FRESHNESS_DAYS,
+            ));
+
+            Log::warning('Cleanup destrutivo pulado: vendas sem registro recente', [
+                'tenant_id' => $tenantId,
+                'freshness_days' => self::SALES_FRESHNESS_DAYS,
+            ]);
         }
 
-        foreach ($retentionsByPath as $pathKey => $initialDays) {
-            $result = $this->checkOldSales($tenantId, $connection, $initialDays, $pathKey);
-            $oldSalesIds = array_values(array_unique([...$oldSalesIds, ...$result['ids']]));
-        }
+        if ($salesAreFresh) {
+            $retentionsByPath = $this->getOldSalesRetentionsByPath($integration);
 
-        $summary['old_sales'] = count($oldSalesIds);
+            if ($retentionsByPath === []) {
+                $this->line('      Nenhum path com initial_days > 0 encontrado para limpeza de vendas antigas');
+            } else {
+                // União dos cortes por path = corte mais recente (menor retenção).
+                $oldSalesCutoff = now()->subDays(min($retentionsByPath))->toDateString();
 
-        if ($oldSalesIds !== []) {
-            $jobs->push(new CleanupOldSalesJob($tenantId, $oldSalesIds, $connection, $shouldSwitchTenantContext));
-        }
+                if ($this->countOldSales($tenantId, $connection, $oldSalesCutoff, $retentionsByPath) > 0) {
+                    $jobs->push(new CleanupOldSalesJob($tenantId, $oldSalesCutoff, $connection, $shouldSwitchTenantContext));
+                }
+            }
 
-        $inactiveProducts = $this->checkInactiveProducts($tenantId, $connection, self::INACTIVE_DAYS);
-        $summary['inactive_products'] = $inactiveProducts['count'];
+            $inactiveCutoff = now()->subDays(self::INACTIVE_DAYS)->toDateString();
 
-        if ($inactiveProducts['ids'] !== []) {
-            $jobs->push(new DeactivateInactiveProductsJob($tenantId, $inactiveProducts['ids'], $connection, $shouldSwitchTenantContext));
+            if ($this->countInactiveProducts($tenantId, $connection, $inactiveCutoff) > 0) {
+                $jobs->push(new DeactivateInactiveProductsJob($tenantId, $inactiveCutoff, $connection, $shouldSwitchTenantContext));
+            }
         }
 
         $restoreSold = $this->checkDeletedProductsWithSales($tenantId, $connection, self::INACTIVE_DAYS);
-        $summary['restore_sold'] = $restoreSold['count'];
 
         if ($restoreSold['ids'] !== []) {
             $jobs->push(new RestoreSoldProductsJob($tenantId, $restoreSold['ids'], $connection, $shouldSwitchTenantContext));
         }
 
         if ($jobs->isNotEmpty()) {
-            $summary['jobs_dispatched'] = $jobs->count();
-            Bus::chain($jobs->all())->dispatch();
-            $this->info("   {$jobs->count()} jobs despachados");
+            $jobCount = $jobs->count();
+
+            // Notificação só depois que a corrente inteira rodou (não no despacho);
+            // catch() alerta quando um elo falha e os seguintes deixam de rodar.
+            $jobs->push(new NotifyCleanupCompletedJob($tenantId, (string) $tenant->name, $jobCount));
+
+            Bus::chain($jobs->all())
+                ->catch(function (Throwable $e) use ($tenantId): void {
+                    Log::error('Corrente de cleanup falhou; jobs seguintes da corrente não rodaram', [
+                        'tenant_id' => $tenantId,
+                        'error' => $e->getMessage(),
+                    ]);
+                })
+                ->dispatch();
+
+            $this->info("   {$jobCount} jobs de limpeza despachados");
+        }
+    }
+
+    /**
+     * Dataset de vendas é considerado "fresco" quando existe venda registrada
+     * nos últimos SALES_FRESHNESS_DAYS — evidência de que o import diário roda.
+     */
+    protected function salesDataIsFresh(string $tenantId, string $connection): bool
+    {
+        $maxSaleDate = DB::connection($connection)
+            ->table('sales')
+            ->where('tenant_id', $tenantId)
+            ->max('sale_date');
+
+        if ($maxSaleDate === null) {
+            return false;
         }
 
-        return $summary;
+        return Carbon::parse((string) $maxSaleDate)
+            ->greaterThanOrEqualTo(now()->subDays(self::SALES_FRESHNESS_DAYS)->startOfDay());
     }
 
     /**
@@ -241,47 +270,35 @@ class CleanupCommand extends Command
     }
 
     /**
-     * @return array{count: int, ids: array<int, string>}
+     * @param  array<string, int>  $retentionsByPath
      */
-    protected function checkOldSales(string $tenantId, string $connection, int $periodDays, string $pathKey): array
+    protected function countOldSales(string $tenantId, string $connection, string $cutoffDate, array $retentionsByPath): int
     {
-        $cutoffDate = now()->subDays($periodDays)->toDateString();
-
-        $oldSales = DB::connection($connection)
+        $count = DB::connection($connection)
             ->table('sales')
             ->where('tenant_id', $tenantId)
             ->where('sale_date', '<', $cutoffDate)
-            ->select('id', 'ean', 'sale_date', 'total_sale_value')
-            ->get();
-
-        $count = $oldSales->count();
+            ->count();
 
         if ($count === 0) {
-            $this->line("      Path {$pathKey} (initial_days={$periodDays}): nenhuma venda antiga encontrada");
+            $this->line('      Nenhuma venda anterior ao período de retenção');
 
-            return ['count' => 0, 'ids' => []];
+            return 0;
         }
 
-        $this->warn("      Path {$pathKey} (initial_days={$periodDays}): {$count} venda(s) anteriores ao período");
+        $this->warn("      {$count} venda(s) anteriores ao período (corte {$cutoffDate})");
 
         Log::info('Vendas antigas identificadas', [
             'tenant_id' => $tenantId,
             'count' => $count,
             'cutoff_date' => $cutoffDate,
-            'period_days' => $periodDays,
-            'path_key' => $pathKey,
+            'retentions_by_path' => $retentionsByPath,
         ]);
 
-        return [
-            'count' => $count,
-            'ids' => $oldSales->pluck('id')->map(fn (mixed $id): string => (string) $id)->all(),
-        ];
+        return $count;
     }
 
-    /**
-     * @return array{count: int, ids: array<int, string>}
-     */
-    protected function checkOrphanSales(string $tenantId, string $connection): array
+    protected function countOrphanSales(string $tenantId, string $connection): int
     {
         $totalProducts = DB::connection($connection)
             ->table('products')
@@ -291,10 +308,10 @@ class CleanupCommand extends Command
         if ($totalProducts === 0) {
             $this->warn('      Nenhum produto encontrado; deleção de vendas ignorada por segurança.');
 
-            return ['count' => 0, 'ids' => []];
+            return 0;
         }
 
-        $orphanSales = DB::connection($connection)
+        $count = DB::connection($connection)
             ->table('sales')
             ->where('tenant_id', $tenantId)
             ->whereNotNull('product_id')
@@ -304,15 +321,12 @@ class CleanupCommand extends Command
                     ->whereColumn('products.id', 'sales.product_id')
                     ->whereColumn('products.tenant_id', 'sales.tenant_id');
             })
-            ->select('id', 'product_id', 'ean', 'sale_date')
-            ->get();
-
-        $count = $orphanSales->count();
+            ->count();
 
         if ($count === 0) {
             $this->line('      Nenhuma venda órfã encontrada');
 
-            return ['count' => 0, 'ids' => []];
+            return 0;
         }
 
         $this->warn("      {$count} vendas sem produto correspondente");
@@ -322,16 +336,10 @@ class CleanupCommand extends Command
             'count' => $count,
         ]);
 
-        return [
-            'count' => $count,
-            'ids' => $orphanSales->pluck('id')->map(fn (mixed $id): string => (string) $id)->all(),
-        ];
+        return $count;
     }
 
-    /**
-     * @return array{count: int, ids: array<int, string>}
-     */
-    protected function checkInactiveProducts(string $tenantId, string $connection, int $days): array
+    protected function countInactiveProducts(string $tenantId, string $connection, string $cutoffDate): int
     {
         $totalSales = DB::connection($connection)
             ->table('sales')
@@ -341,12 +349,10 @@ class CleanupCommand extends Command
         if ($totalSales === 0) {
             $this->warn('      Nenhuma venda encontrada; deleção de produtos ignorada por segurança.');
 
-            return ['count' => 0, 'ids' => []];
+            return 0;
         }
 
-        $cutoffDate = now()->subDays($days)->toDateString();
-
-        $inactiveProducts = DB::connection($connection)
+        $count = DB::connection($connection)
             ->table('products')
             ->where('tenant_id', $tenantId)
             ->whereNull('deleted_at')
@@ -364,15 +370,12 @@ class CleanupCommand extends Command
                     ->whereColumn('layers.tenant_id', 'products.tenant_id')
                     ->whereNull('layers.deleted_at');
             })
-            ->select('id', 'name', 'ean')
-            ->get();
-
-        $count = $inactiveProducts->count();
+            ->count();
 
         if ($count === 0) {
             $this->line('      Todos os produtos têm vendas no período');
 
-            return ['count' => 0, 'ids' => []];
+            return 0;
         }
 
         $this->warn("      {$count} produtos sem vendas no período");
@@ -380,13 +383,10 @@ class CleanupCommand extends Command
         Log::info('Produtos inativos identificados', [
             'tenant_id' => $tenantId,
             'count' => $count,
-            'days' => $days,
+            'cutoff_date' => $cutoffDate,
         ]);
 
-        return [
-            'count' => $count,
-            'ids' => $inactiveProducts->pluck('id')->map(fn (mixed $id): string => (string) $id)->all(),
-        ];
+        return $count;
     }
 
     /**

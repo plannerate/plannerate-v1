@@ -9,6 +9,7 @@ use App\Services\Integrations\FieldValueResolver;
 use App\Services\Integrations\IntegrationHttpClient;
 use App\Services\Integrations\RecordMapper;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
+use App\Services\Integrations\Support\ImportDiscardMetrics;
 use App\Services\Integrations\TenantRecordPersister;
 use App\Services\Integrations\TenantUpsertRecordPreparer;
 use Illuminate\Support\Carbon;
@@ -327,15 +328,22 @@ class SingleProductFetchService
         $now = Carbon::now()->toDateTimeString();
 
         $mapped = [];
+        $skipped = 0;
+        /** @var array<string, int> $skippedByField */
+        $skippedByField = [];
 
         foreach ($items as $item) {
             if (! is_array($item)) {
                 continue;
             }
 
-            [$record] = $this->mapper->mapWithRejectionReason($item, $fieldMap, $storeId, $validations);
+            [$record, $rejectedField] = $this->mapper->mapWithRejectionReason($item, $fieldMap, $storeId, $validations);
 
             if ($record === null) {
+                $skipped++;
+                $field = $rejectedField ?? ImportDiscardMetrics::GROUP_VALIDATION_FIELD;
+                $skippedByField[$field] = ($skippedByField[$field] ?? 0) + 1;
+
                 continue;
             }
 
@@ -345,6 +353,16 @@ class SingleProductFetchService
             $record['updated_at'] = $now;
 
             $mapped[] = $record;
+        }
+
+        if ($skipped > 0) {
+            Log::warning('SingleProductFetchService: registros descartados no mapping do lookup', [
+                'integration_id' => $integrationId,
+                'skipped' => $skipped,
+                'skipped_by_field' => $skippedByField,
+            ]);
+
+            ImportDiscardMetrics::record($integrationId, 'lookup', $storeId, count($mapped), $skipped, $skippedByField);
         }
 
         return array_values(TenantUpsertRecordPreparer::deduplicateById($mapped));
