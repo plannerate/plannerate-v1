@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Tenant\Editor;
 
-use App\Enums\WorkflowExecutionStatus;
+use App\Enums\GondolaEditDecision;
 use App\Models\Gondola as AppGondola;
-use App\Models\WorkflowGondolaExecution;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use App\Support\Workflow\GondolaEditGate;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 
@@ -16,23 +16,22 @@ class EditorPlanogramController extends GondolaController
     /**
      * Abre o editor visual da gôndola.
      *
-     * Bloqueio por etapa: se a gôndola tiver uma execução de workflow ativa
-     * cuja etapa esteja em modo somente leitura (access_mode = view), o editor
-     * não é aberto — o usuário é redirecionado para a visualização em PDF.
-     * Impede burlar o controle digitando a URL do editor diretamente.
+     * Controle de acesso (quando o módulo Kanban está ativo): só é possível
+     * abrir o editor de uma gôndola iniciada e pelo próprio usuário que a
+     * iniciou. Caso contrário, retorna 403 — impede burlar o controle digitando
+     * a URL do editor diretamente. Exceção de UX: se a gôndola foi iniciada pelo
+     * próprio usuário mas a etapa atual é somente-leitura (access_mode = view),
+     * redireciona para a visualização em PDF em vez de negar.
      */
     public function edit(string $record)
     {
-        $execution = WorkflowGondolaExecution::query()
-            ->where('gondola_id', $record)
-            ->where('status', WorkflowExecutionStatus::Active)
-            ->with(['step:id,workflow_template_id,access_mode', 'step.template:id,access_mode'])
-            ->orderByDesc('started_at')
-            ->first();
+        $decision = app(GondolaEditGate::class)->decide(auth()->user(), $record);
 
-        if ($execution !== null && ! $execution->allowsEditing()) {
+        if ($decision === GondolaEditDecision::ReadOnlyStep) {
             return redirect()->route('export.gondola.view', ['gondola' => $record]);
         }
+
+        abort_unless($decision->allowsEditing(), 403);
 
         return parent::edit($record);
     }

@@ -28,7 +28,7 @@ function onLeave(): void {
 <template>
     <div
         v-if="impersonation"
-        class="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-3 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 shadow-md"
+        class="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-3 bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-md"
     >
         <span>
             {{
@@ -41,7 +41,7 @@ function onLeave(): void {
         </span>
         <button
             type="button"
-            class="flex items-center gap-1.5 rounded-md bg-amber-950/10 px-3 py-1 font-semibold transition-colors hover:bg-amber-950/20"
+            class="flex items-center gap-1.5 rounded-md bg-black/15 px-3 py-1 font-semibold transition-colors hover:bg-black/25"
             @click="onLeave"
         >
             <LogOut class="size-3.5" />

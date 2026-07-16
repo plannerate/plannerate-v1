@@ -38,6 +38,17 @@
                 style="pointer-events: auto" />
         </div>
 
+        <!--
+            Tampo 3D: superfície da prateleira renderizada ATRÁS dos produtos
+            (z-index 40 < segmentos 50), logo acima da base física. Puramente
+            decorativo; só aparece no estilo "deck".
+        -->
+        <div v-if="showDeck" class="shelf-deck pointer-events-none absolute right-0 left-0" :style="{
+            top: `${shelfBasePosition - deckDepth}px`,
+            height: `${deckDepth}px`,
+            zIndex: 40,
+        }" />
+
         <!-- Drag Handle para mover a shelf -->
 
         <!-- Área de Drop Personalizada -->
@@ -65,32 +76,24 @@
             </div>
         </Transition>
 
-        <!-- Base da prateleira (superfície física) - ARRASTÁVEL -->
+        <!-- Base da prateleira (superfície física, pseudo-3D) - ARRASTÁVEL -->
         <div data-shelf="true" draggable="true" :style="{
             height: `${shelfHeight}px`,
             top: `${shelfBasePosition}px`,
-            zIndex: isDraggingShelf ? 120 : 130,    
+            zIndex: isDraggingShelf ? 120 : 130,
         }"
-            class="absolute right-0 left-0 cursor-grab border-t-2 border-slate-700 bg-slate-800/95 active:cursor-grabbing dark:border-slate-600 dark:bg-slate-700/95"
+            class="absolute right-0 left-0 cursor-grab rounded-[2px] active:cursor-grabbing"
             :class="{
                 'cursor-grabbing opacity-50 ring-2 ring-primary':
                     isDraggingShelf,
-                'hover:border-slate-600 hover:bg-slate-700/95 hover:ring-1 hover:ring-slate-500':
+                'hover:ring-1 hover:ring-slate-500':
                     !isDraggingShelf,
                 'ring-2 ring-inset ring-blue-500': isCategoryHighlighted,
-                'border-t-amber-500 dark:border-t-amber-400': isShelfLocked,
             }" @mousedown="handleMouseDown" @dragstart.stop="handleShelfDragStart" @dragend.stop="handleShelfDragEnd"
             @click.stop="handleSelectShelf">
-            <!-- Shelf label -->
-            <div class="pointer-events-none absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
-                :style="{
-                    fontSize: `${Math.max(8, Math.min(16, (10 * scale) / 3))}px`,
-                    zIndex: 1,
-                }">
-                <span class="flex items-center px-2 font-medium text-slate-300">
-                    Prat - {{ shelfDisplayNumber }}
-                </span>
-            </div>
+            <!-- Superfície física 3D + rótulo "Prat - N" (decoração; não captura eventos) -->
+            <ShelfBoard :height="shelfHeight" :scale="scale" :display-number="shelfDisplayNumber"
+                :locked="isShelfLocked" />
 
             <!--
                 Travar a prateleira contra a geração automática.
@@ -123,7 +126,7 @@ import { router } from '@inertiajs/vue3';
 import { Lock, LockOpen } from 'lucide-vue-next';
 import { computed, ref, toRef, watch } from 'vue';
 import { useT } from '@/composables/useT';
-import { selectedTemplateCategoryId, showZoneIndicators } from '../../../composables/plannerate/core/useGondolaState';
+import { selectedTemplateCategoryId, shelfBoardStyle, showZoneIndicators } from '../../../composables/plannerate/core/useGondolaState';
 import { usePlanogramEditor } from '../../../composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '../../../composables/plannerate/core/usePlanogramSelection';
 import { useShelfLayout } from '../../../composables/plannerate/geometry/useShelfLayout';
@@ -131,6 +134,7 @@ import { useShelfDrag } from '../../../composables/plannerate/interactions/useSh
 import { useShelfDragDrop } from '../../../composables/plannerate/interactions/useShelfDragDrop';
 import type { Section, Shelf as ShelfType } from '../../../types/planogram';
 import Segment from './Segment.vue';
+import ShelfBoard from './ShelfBoard.vue';
 
 interface Props {
     shelf: ShelfType;
@@ -238,6 +242,19 @@ const {
 });
 
 const isSelected = computed(() => selection.isShelfSelected(shelfRef.value));
+
+/**
+ * Tampo 3D — superfície da prateleira desenhada ATRÁS dos produtos.
+ *
+ * Precisa ficar num nível de empilhamento ABAIXO dos segmentos (z-index 50) para
+ * os produtos aparecerem apoiados sobre ela; por isso é renderizada aqui (irmã
+ * dos segmentos) e não dentro do `<div data-shelf>`, que tem z-index alto (130) e
+ * cobriria os produtos. Só existe no estilo `deck`.
+ */
+const showDeck = computed(() => shelfBoardStyle.value === 'deck');
+
+/** Profundidade visível do tampo em px — acompanha a escala do editor. */
+const deckDepth = computed(() => Math.max(6, Math.min(scale.value * 3, 14)));
 
 // ── Seleção de segmentos calculada aqui (nível Shelf), ESCOPADA a esta shelf ──
 // Antes, cada Segment subscrevia individualmente a selectedId e selectedItems,
@@ -355,3 +372,18 @@ function handleSelectShelf(event: MouseEvent) {
     selectedTemplateCategoryId.value = props.shelf.template_slot?.category_id ?? null;
 }
 </script>
+
+<style scoped>
+/*
+    Superfície do tampo (estilo "deck"): faixa clara vista em leve mergulho —
+    aresta frontal (base) mais clara/próxima, fundo (topo) mais escuro/recuado.
+    Fica atrás dos produtos, dando a leitura de profundidade da prateleira.
+*/
+.shelf-deck {
+    background: linear-gradient(to bottom, #6c7885 0%, #8b98a8 55%, #a7b3c1 100%);
+    border-radius: 3px 3px 0 0;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.4),
+        inset 0 -2px 3px -1px rgba(0, 0, 0, 0.25);
+}
+</style>

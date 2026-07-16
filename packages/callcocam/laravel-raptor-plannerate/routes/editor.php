@@ -79,10 +79,12 @@ Route::prefix('api')->name('api.')
             ->name('editor.gondolas.store');
 
         Route::put('editor/gondolas/{gondola}', [GondolaController::class, 'update'])
-            ->name('editor.gondolas.update');
+            ->name('editor.gondolas.update')
+            ->middleware('gondola.editable');
 
         Route::delete('editor/gondolas/{gondola}', [GondolaController::class, 'destroy'])
-            ->name('editor.gondolas.destroy');
+            ->name('editor.gondolas.destroy')
+            ->middleware('gondola.editable');
 
         Route::get('editor/gondolas/{gondola}/sections', [GondolaController::class, 'sections'])
             ->name('editor.gondolas.sections');
@@ -91,7 +93,8 @@ Route::prefix('api')->name('api.')
             ->name('editor.gondolas.products');
 
         Route::post('editor/gondolas/{gondola}/update-images', [GondolaController::class, 'updateImages'])
-            ->name('editor.gondolas.update-images');
+            ->name('editor.gondolas.update-images')
+            ->middleware('gondola.editable');
 
         Route::get('editor/categories', [CategoryController::class, 'index'])
             ->name('editor.categories.index');
@@ -103,13 +106,17 @@ Route::prefix('api')->name('api.')
         Route::get('editor/sections/{section}', [SectionController::class, 'show'])
             ->name('editor.sections.show');
         Route::post('editor/gondolas/{gondola}/sections', [SectionController::class, 'store'])
-            ->name('editor.sections.store');
+            ->name('editor.sections.store')
+            ->middleware('gondola.editable');
         Route::put('editor/sections/{id}', [SectionController::class, 'update'])
-            ->name('editor.sections.update');
+            ->name('editor.sections.update')
+            ->middleware('gondola.editable');
         Route::delete('editor/sections/{section}', [SectionController::class, 'destroy'])
-            ->name('editor.sections.destroy');
+            ->name('editor.sections.destroy')
+            ->middleware('gondola.editable');
         Route::post('editor/sections/{section}/transfer', [SectionController::class, 'transfer'])
-            ->name('editor.sections.transfer');
+            ->name('editor.sections.transfer')
+            ->middleware('gondola.editable');
 
         // Editor API Routes - Planograms & Gondolas
         Route::get('editor/planograms', [PlanogramApiController::class, 'index'])
@@ -119,27 +126,35 @@ Route::prefix('api')->name('api.')
 
         // Editor API Routes - Shelves
         Route::post('editor/sections/{section}/shelves', [ShelfController::class, 'store'])
-            ->name('editor.shelves.store');
+            ->name('editor.shelves.store')
+            ->middleware('gondola.editable');
         Route::put('editor/shelves/{id}', [ShelfController::class, 'update'])
-            ->name('editor.shelves.update');
+            ->name('editor.shelves.update')
+            ->middleware('gondola.editable');
         Route::delete('editor/shelves/{shelf}', [ShelfController::class, 'destroy'])
-            ->name('editor.shelves.destroy');
+            ->name('editor.shelves.destroy')
+            ->middleware('gondola.editable');
         Route::put('editor/shelves/{shelf}/lock', [ShelfController::class, 'toggleLock'])
-            ->name('editor.shelves.lock');
+            ->name('editor.shelves.lock')
+            ->middleware('gondola.editable');
 
         // Editor API Routes - Segments
         Route::put('editor/segments/{id}', [SegmentController::class, 'update'])
-            ->name('editor.segments.update');
+            ->name('editor.segments.update')
+            ->middleware('gondola.editable');
 
         // Editor API Routes - Layers
         Route::put('editor/layers/{id}', [LayerController::class, 'update'])
-            ->name('editor.layers.update');
+            ->name('editor.layers.update')
+            ->middleware('gondola.editable');
         Route::delete('editor/layers/{layer}', [LayerController::class, 'destroy'])
-            ->name('editor.layers.destroy');
+            ->name('editor.layers.destroy')
+            ->middleware('gondola.editable');
 
         // Gondola Save Changes (Delta/Diff)
         Route::post('editor/gondolas/{gondola}/save-changes', SaveChangesController::class)
-            ->name('editor.gondolas.save-changes');
+            ->name('editor.gondolas.save-changes')
+            ->middleware('gondola.editable');
 
         // Product Dimensions API
         Route::post('plannograma/{planogram}/products/{product}/dimensions', [ProductDimensionController::class, 'update'])

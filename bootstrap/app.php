@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\BlockActionsWhileImpersonating;
+use App\Http\Middleware\EnsureCanEditGondola;
 use App\Http\Middleware\EnsureValidImpersonationSession;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -84,6 +85,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'tenant.module.active' => RequireActiveTenantModule::class,
             'tenant.client.redirect' => RedirectClientRole::class,
+            'gondola.editable' => EnsureCanEditGondola::class,
             'tenant.url.defaults' => InjectTenantUrlDefaults::class,
             'impersonation.block' => BlockActionsWhileImpersonating::class,
             'landlord.only' => RequireLandlordDomain::class,

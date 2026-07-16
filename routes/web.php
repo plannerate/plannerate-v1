@@ -10,8 +10,12 @@ use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
 // Route::inertia('/',  'Welcome')->name('home');
 
+// Redireciona para "/" do host atual, e não para route('dashboard'): a rota
+// dashboard landlord tem Route::domain() fixo, então em um subdomínio de tenant
+// ela gera URL cross-origin (CORS/403). "/" resolve para o dashboard do próprio
+// host — tenant.dashboard no subdomínio, dashboard no landlord.
 Route::get('/hetail', function () {
-    return redirect()->route('dashboard');
+    return redirect('/');
 })->name('home');
 
 include __DIR__.'/landlord.php';
