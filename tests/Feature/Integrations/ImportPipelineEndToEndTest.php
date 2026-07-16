@@ -3,6 +3,7 @@
 use App\Jobs\Integrations\FetchIntegrationPageJob;
 use App\Jobs\Integrations\ProcessPageResponseJob;
 use App\Models\IntegrationApi;
+use App\Models\IntegrationImportRun;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
@@ -308,4 +309,43 @@ test('produtos — dois registros do mesmo EAN na mesma página viram uma linha 
     // Mesmo EAN → mesmo id determinístico → deduplicado para uma linha (o último vence).
     expect($rows)->toHaveCount(1)
         ->and($rows->first()->codigo_erp)->toBe('ERP-B');
+});
+
+// ─── Cobertura do run: fetch-concluído conta (mesmo dia vazio) ───────────────
+
+test('fetch marca cobertura do run: daily página 1 conta mesmo com dia vazio; página 2+ não', function (): void {
+    Storage::fake('local');
+    Bus::fake([ProcessPageResponseJob::class]);
+
+    // Dia de feriado: a API responde com zero venda (dados vazios).
+    Http::fake([
+        'erp.sysmo.test/vendas*' => Http::response(['dados' => [], 'meta' => ['last_page' => 1]]),
+    ]);
+
+    $integration = makeSysmoIntegration('e2e-coverage');
+    $run = IntegrationImportRun::startRun([
+        'tenant_id' => (string) $integration->tenant_id,
+        'integration_id' => (string) $integration->id,
+        'path_key' => 'sales',
+        'store_id' => null,
+        'mode' => 'daily',
+        'reference_date' => now()->toDateString(),
+        'expected_units' => 2,
+    ]);
+
+    // Página 1 de um dia SEM venda → cobre (o fetch rodou com sucesso).
+    (new FetchIntegrationPageJob(
+        (string) $integration->id, 'sales', 1, '2026-07-10', '2026-07-10', null, null,
+        autoPage: true, knownLastPage: null, runId: $run->id,
+    ))->handle();
+
+    expect($run->fresh()->covered_units)->toBe(1);
+
+    // Página 2 do mesmo dia (autoPage) → NÃO conta nova unidade.
+    (new FetchIntegrationPageJob(
+        (string) $integration->id, 'sales', 2, '2026-07-10', '2026-07-10', null, null,
+        autoPage: true, knownLastPage: null, runId: $run->id,
+    ))->handle();
+
+    expect($run->fresh()->covered_units)->toBe(1);
 });

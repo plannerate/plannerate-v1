@@ -62,7 +62,7 @@ class IntegrationImportRun extends Model
                 'expected_dates' => $attributes['expected_dates'] ?? null,
                 'force_full' => $attributes['force_full'] ?? false,
                 'persisted_records' => 0,
-                'covered_units' => null,
+                'covered_units' => 0,
                 'status' => 'running',
                 'discovered_at' => now(),
                 'reconciled_at' => null,
@@ -82,6 +82,25 @@ class IntegrationImportRun extends Model
 
         static::query()->whereKey($runId)->update([
             'persisted_records' => DB::raw('persisted_records + '.$count),
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
+     * Marca uma unidade (dia no daily / página no page) como FETCHADA — chamado
+     * pelo FetchIntegrationPageJob quando o fetch conclui com sucesso, mesmo com
+     * zero registros. É o sinal de cobertura correto: um dia sem venda (feriado)
+     * teve o fetch executado → coberto, sem falso-positivo de parcial.
+     * COALESCE: a coluna foi migrada como nullable; startRun inicia em 0.
+     */
+    public static function recordCovered(?string $runId): void
+    {
+        if ($runId === null) {
+            return;
+        }
+
+        static::query()->whereKey($runId)->update([
+            'covered_units' => DB::raw('COALESCE(covered_units, 0) + 1'),
             'updated_at' => now(),
         ]);
     }

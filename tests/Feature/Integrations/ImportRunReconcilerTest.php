@@ -1,150 +1,81 @@
 <?php
 
-use App\Models\IntegrationApi;
 use App\Models\IntegrationImportRun;
-use App\Models\Tenant;
-use App\Models\TenantIntegration;
 use App\Services\Integrations\Support\ImportRunReconciler;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /*
- * Isolation-safe (padrão do E2E): switch_tenant_tasks=[] → $tenant->execute()
- * passthrough; migra runs (landlord) + sales (tenant). Nunca toca no banco real.
+ * Reconciliação por covered_units (fetch-concluído) vs expected_units — sem
+ * query no tenant. Só precisa da tabela landlord. Nunca toca no banco real.
  */
 beforeEach(function (): void {
-    config(['multitenancy.switch_tenant_tasks' => []]);
-
     Artisan::call('migrate:fresh', [
         '--database' => 'landlord',
         '--path' => 'database/migrations/landlord',
         '--force' => true,
         '--no-interaction' => true,
     ]);
-
-    if (! DB::connection('tenant')->getSchemaBuilder()->hasTable('sales')) {
-        Artisan::call('migrate', [
-            '--database' => 'tenant',
-            '--path' => 'database/migrations/2026_04_23_250000_create_sales_table.php',
-            '--realpath' => false,
-            '--force' => true,
-            '--no-interaction' => true,
-        ]);
-    }
 });
 
-function makeRunReconcilerIntegration(): TenantIntegration
+function startTestRun(int $expected, array $overrides = []): IntegrationImportRun
 {
-    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
-        'name' => 'RECONCILER',
-        'slug' => 'reconciler-'.Str::lower(Str::random(6)),
-        'database' => (string) config('database.connections.landlord.database').'_rec',
-        'status' => 'active',
-    ]));
-
-    $api = IntegrationApi::query()->create([
-        'name' => 'REC API',
-        'slug' => 'rec-api-'.Str::lower(Str::random(6)),
-        'requests' => ['paths' => ['sales' => ['target_table' => 'sales', 'field_map' => []]]],
-        'response' => ['items_path' => 'dados'],
-        'is_active' => true,
-    ]);
-
-    return TenantIntegration::query()->create([
-        'tenant_id' => $tenant->id,
-        'integration_type' => $api->id,
-        'config' => [],
-        'is_active' => true,
-    ]);
+    return IntegrationImportRun::startRun(array_merge([
+        'tenant_id' => (string) str()->ulid(),
+        'integration_id' => (string) str()->ulid(),
+        'path_key' => 'sales',
+        'store_id' => (string) str()->ulid(),
+        'mode' => 'daily',
+        'reference_date' => now()->toDateString(),
+        'expected_units' => $expected,
+        'expected_dates' => null,
+    ], $overrides));
 }
 
-function insertRunReconcilerSale(string $tenantId, ?string $storeId, string $saleDate): void
-{
-    DB::connection('tenant')->table('sales')->insert([
-        'id' => (string) Str::ulid(),
-        'tenant_id' => $tenantId,
-        'store_id' => $storeId,
-        'ean' => '789',
-        'codigo_erp' => 'E1',
-        'sale_date' => $saleDate,
-        'promotion' => 'N',
-        'total_sale_value' => 10,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
-}
-
-test('daily: marca complete quando todos os dias esperados têm dado', function (): void {
-    $integration = makeRunReconcilerIntegration();
-    $tenantId = (string) $integration->tenant_id;
-    $days = [now()->toDateString(), now()->subDay()->toDateString(), now()->subDays(2)->toDateString()];
-
-    IntegrationImportRun::startRun([
-        'tenant_id' => $tenantId, 'integration_id' => (string) $integration->id, 'path_key' => 'sales',
-        'store_id' => null, 'mode' => 'daily', 'reference_date' => now()->toDateString(),
-        'expected_units' => 3, 'expected_dates' => $days,
-    ]);
-
-    foreach ($days as $d) {
-        insertRunReconcilerSale($tenantId, null, $d);
-    }
+test('complete quando covered >= expected', function (): void {
+    $run = startTestRun(3);
+    IntegrationImportRun::recordCovered($run->id);
+    IntegrationImportRun::recordCovered($run->id);
+    IntegrationImportRun::recordCovered($run->id);
 
     $summary = ImportRunReconciler::reconcileForDate(now()->toDateString());
-    $run = IntegrationImportRun::query()->where('tenant_id', $tenantId)->first();
 
     expect($summary)->toMatchArray(['reconciled' => 1, 'complete' => 1, 'partial' => 0])
-        ->and($run->status)->toBe('complete')
-        ->and($run->covered_units)->toBe(3)
-        ->and($run->reconciled_at)->not->toBeNull();
+        ->and($run->fresh()->status)->toBe('complete')
+        ->and($run->fresh()->reconciled_at)->not->toBeNull();
 });
 
-test('daily: marca partial quando falta dado de um dia esperado', function (): void {
-    $integration = makeRunReconcilerIntegration();
-    $tenantId = (string) $integration->tenant_id;
-    $days = [now()->toDateString(), now()->subDay()->toDateString(), now()->subDays(2)->toDateString()];
-
-    IntegrationImportRun::startRun([
-        'tenant_id' => $tenantId, 'integration_id' => (string) $integration->id, 'path_key' => 'sales',
-        'store_id' => null, 'mode' => 'daily', 'reference_date' => now()->toDateString(),
-        'expected_units' => 3, 'expected_dates' => $days,
-    ]);
-
-    // Só 2 dos 3 dias têm venda
-    insertRunReconcilerSale($tenantId, null, $days[0]);
-    insertRunReconcilerSale($tenantId, null, $days[1]);
-
-    ImportRunReconciler::reconcileForDate(now()->toDateString());
-    $run = IntegrationImportRun::query()->where('tenant_id', $tenantId)->first();
-
-    expect($run->status)->toBe('partial')
-        ->and($run->covered_units)->toBe(2);
-});
-
-test('page: complete se persistiu algo, partial se não', function (): void {
-    $integration = makeRunReconcilerIntegration();
-    $tenantId = (string) $integration->tenant_id;
-
-    $withData = IntegrationImportRun::startRun([
-        'tenant_id' => $tenantId, 'integration_id' => (string) $integration->id, 'path_key' => 'products',
-        'store_id' => null, 'mode' => 'page', 'reference_date' => now()->toDateString(),
-        'expected_units' => 5, 'expected_dates' => null,
-    ]);
-    IntegrationImportRun::recordPersisted($withData->id, 4200);
-
-    IntegrationImportRun::startRun([
-        'tenant_id' => $tenantId, 'integration_id' => (string) $integration->id, 'path_key' => 'products',
-        'store_id' => (string) Str::ulid(), 'mode' => 'page', 'reference_date' => now()->toDateString(),
-        'expected_units' => 3, 'expected_dates' => null,
-    ]); // persisted = 0
+test('partial quando covered < expected (fetch de um dia/página não rodou)', function (): void {
+    $run = startTestRun(3);
+    IntegrationImportRun::recordCovered($run->id);
+    IntegrationImportRun::recordCovered($run->id); // só 2 de 3
 
     ImportRunReconciler::reconcileForDate(now()->toDateString());
 
-    $good = IntegrationImportRun::query()->where('id', $withData->id)->first();
-    $empty = IntegrationImportRun::query()->where('store_id', '!=', null)->first();
+    expect($run->fresh()->status)->toBe('partial')
+        ->and($run->fresh()->covered_units)->toBe(2);
+});
 
-    expect($good->status)->toBe('complete')
-        ->and($good->covered_units)->toBe(5)
-        ->and($empty->status)->toBe('partial')
-        ->and($empty->covered_units)->toBe(0);
+test('dia de feriado (fetch rodou, zero venda) conta como coberto → sem falso-positivo', function (): void {
+    // 5 dias esperados; TODOS os 5 fetches rodaram (inclusive o do feriado, que
+    // trouxe zero venda). Antes (checagem por dado) daria parcial; agora complete.
+    $run = startTestRun(5);
+    for ($i = 0; $i < 5; $i++) {
+        IntegrationImportRun::recordCovered($run->id);
+    }
+
+    ImportRunReconciler::reconcileForDate(now()->toDateString());
+
+    expect($run->fresh()->status)->toBe('complete')
+        ->and($run->fresh()->covered_units)->toBe(5);
+});
+
+test('não reconcilia runs já concluídos nem de outra data', function (): void {
+    $done = startTestRun(1);
+    $done->update(['status' => 'complete']);
+    $otherDay = startTestRun(1, ['reference_date' => now()->subDay()->toDateString()]);
+
+    $summary = ImportRunReconciler::reconcileForDate(now()->toDateString());
+
+    expect($summary['reconciled'])->toBe(0)
+        ->and($otherDay->fresh()->status)->toBe('running');
 });

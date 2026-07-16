@@ -65,6 +65,16 @@ test('recordPersisted acumula de forma atômica e é no-op sem run', function ()
     expect($run->fresh()->persisted_records)->toBe(1021);
 });
 
+test('recordCovered incrementa covered_units de forma atômica e é no-op sem run', function (): void {
+    $run = IntegrationImportRun::startRun(runAttributes());
+
+    IntegrationImportRun::recordCovered($run->id);
+    IntegrationImportRun::recordCovered($run->id);
+    IntegrationImportRun::recordCovered(null); // no-op
+
+    expect($run->fresh()->covered_units)->toBe(2);
+});
+
 test('scopeRunningOn filtra runs do dia ainda não reconciliados', function (): void {
     IntegrationImportRun::startRun(runAttributes(['path_key' => 'sales']));
     $done = IntegrationImportRun::startRun(runAttributes(['path_key' => 'products', 'store_id' => null]));
