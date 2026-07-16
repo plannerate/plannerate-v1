@@ -96,6 +96,11 @@ it('filters out columns not present in the target table before upsert', function
 });
 
 it('chunks records into batches of 500', function (): void {
+    // Alvo SEM chave natural (não é products/sales) de propósito: isola o
+    // comportamento de chunking do upsert. A reconciliação de products/sales
+    // é coberta por TenantNaturalKeyReconcilerTest e pelo E2E do pipeline —
+    // aqui um alvo natural-keyed dispararia as queries de lookup do reconciler
+    // e poluiria este teste de chunking com mocks ortogonais.
     $upsertCallCount = 0;
     $columns = ['id', 'codigo_erp', 'tenant_id', 'created_at', 'updated_at'];
 
@@ -110,8 +115,8 @@ it('chunks records into batches of 500', function (): void {
     $tenant = Mockery::mock(Tenant::class);
     $tenant->shouldReceive('execute')->once()->andReturnUsing(function (Closure $callback) use (&$upsertCallCount, $columns): void {
         $schemaBuilder = Mockery::mock();
-        $schemaBuilder->shouldReceive('hasTable')->once()->with('sales')->andReturn(true);
-        $schemaBuilder->shouldReceive('getColumnListing')->once()->with('sales')->andReturn($columns);
+        $schemaBuilder->shouldReceive('hasTable')->once()->with('stores')->andReturn(true);
+        $schemaBuilder->shouldReceive('getColumnListing')->once()->with('stores')->andReturn($columns);
 
         $table = Mockery::mock();
         $table->shouldReceive('upsert')->times(3)->andReturnUsing(function () use (&$upsertCallCount): void {
@@ -123,7 +128,7 @@ it('chunks records into batches of 500', function (): void {
         $connection->shouldReceive('transaction')->once()->andReturnUsing(function (Closure $transaction) {
             return $transaction();
         });
-        $connection->shouldReceive('table')->times(3)->with('sales')->andReturn($table);
+        $connection->shouldReceive('table')->times(3)->with('stores')->andReturn($table);
 
         DB::shouldReceive('connection')->with('tenant')->zeroOrMoreTimes()->andReturn($connection);
 
@@ -136,7 +141,7 @@ it('chunks records into batches of 500', function (): void {
 
     Log::shouldReceive('info')->twice();
 
-    TenantRecordPersister::persist($integration, 'sales', $records);
+    TenantRecordPersister::persist($integration, 'stores', $records);
 
     expect($upsertCallCount)->toBe(3); // 500 + 500 + 100
 });
