@@ -44,8 +44,8 @@ scrape_configs:
         replacement: blackbox-exporter:9115
 
   # Métricas da aplicação Laravel (fila Horizon, jobs falhos). Endpoint /metrics
-  # protegido por bearer token, alcançado via Traefik. O instalador substitui
-  # __APP_DOMAIN__ e __METRICS_TOKEN__ a partir do manifest/.env.
+  # protegido por bearer token, alcançado via Traefik. O instalador substitui os
+  # placeholders de domínio e token (linhas abaixo) a partir do manifest/.env.
   - job_name: laravel-app
     scheme: https
     metrics_path: /metrics
