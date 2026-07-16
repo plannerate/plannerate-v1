@@ -85,6 +85,32 @@
                     {{ t('plannerate.dropdown.indicators.orientation_horizontal') }}
                 </button>
             </div>
+
+            <!-- Estilo da tábua da prateleira -->
+            <p class="px-1 pb-1.5 pt-3 text-xs font-medium text-muted-foreground">
+                {{ t('plannerate.dropdown.indicators.shelf_style') }}
+            </p>
+
+            <div class="grid grid-cols-3 gap-1.5">
+                <button
+                    v-for="style in shelfStyles"
+                    :key="style.key"
+                    type="button"
+                    class="flex flex-col items-center gap-1.5 rounded-md border px-1.5 py-2 text-[11px] font-medium transition-colors"
+                    :class="
+                        shelfBoardStyle === style.key
+                            ? 'border-green-600 bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400'
+                            : 'text-foreground hover:bg-accent'
+                    "
+                    @click="setShelfStyle(style.key)"
+                >
+                    <span
+                        class="h-4 w-full rounded-sm ring-1 ring-inset ring-black/10"
+                        :style="{ background: style.swatch }"
+                    />
+                    {{ t(style.labelKey) }}
+                </button>
+            </div>
         </DropdownMenuContent>
     </DropdownMenu>
 </template>
@@ -103,10 +129,10 @@ import { useSalesIndicators } from '@/composables/plannerate/analysis/useSalesIn
 import {
     currentGondola,
     indicatorOrientation,
-    selectedIndicator
-    
+    selectedIndicator,
+    shelfBoardStyle,
 } from '@/composables/plannerate/core/useGondolaState';
-import type {IndicatorOrientation} from '@/composables/plannerate/core/useGondolaState';
+import type {IndicatorOrientation, ShelfBoardStyle} from '@/composables/plannerate/core/useGondolaState';
 import {
     getIndicatorConfig,
     INDICATOR_NONE,
@@ -179,6 +205,25 @@ function select(key: string) {
 /** Define a orientação do selo de indicador (persistida via estado global). */
 function setOrientation(orientation: IndicatorOrientation) {
     indicatorOrientation.value = orientation;
+}
+
+/**
+ * Estilos da tábua da prateleira exibidos no seletor. `swatch` é um gradiente
+ * CSS que reproduz em miniatura a face da tábua (ver `ShelfBoard.vue`).
+ */
+const shelfStyles: { key: ShelfBoardStyle; labelKey: string; swatch: string }[] = [
+    { key: 'slate', labelKey: 'plannerate.dropdown.indicators.shelf_slate', swatch: 'linear-gradient(#64707f, #3f4855 42%, #1f242c)' },
+    { key: 'wood', labelKey: 'plannerate.dropdown.indicators.shelf_wood', swatch: 'linear-gradient(#c79a63, #a6743f 45%, #7c5027)' },
+    { key: 'white', labelKey: 'plannerate.dropdown.indicators.shelf_white', swatch: 'linear-gradient(#ffffff, #eef1f5 40%, #c4cbd4)' },
+    { key: 'chrome', labelKey: 'plannerate.dropdown.indicators.shelf_chrome', swatch: 'linear-gradient(#eef3f8, #7d8896 50%, #e6ecf2)' },
+    { key: 'persp', labelKey: 'plannerate.dropdown.indicators.shelf_persp', swatch: 'linear-gradient(#566270, #8e9cae 20%, #2b323b 74%, #12161b)' },
+    { key: 'deck', labelKey: 'plannerate.dropdown.indicators.shelf_deck', swatch: 'linear-gradient(#8b98a8 0 45%, #2b323b 45%)' },
+    { key: 'glass', labelKey: 'plannerate.dropdown.indicators.shelf_glass', swatch: 'linear-gradient(rgba(214,230,244,.85), rgba(96,132,170,.8))' },
+];
+
+/** Define o estilo da tábua da prateleira (persistido via estado global). */
+function setShelfStyle(style: ShelfBoardStyle) {
+    shelfBoardStyle.value = style;
 }
 
 // Se o indicador persistido (localStorage) depende de vendas, carrega ao montar.

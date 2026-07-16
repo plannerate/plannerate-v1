@@ -11,6 +11,21 @@ use App\Support\Modules\ModuleSlug;
 use App\Support\Modules\TenantModuleService;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 
+/**
+ * Policy da classe de modelo do PACOTE (`Callcocam\...\Models\Gondola`).
+ *
+ * Difere de `App\Policies\GondolaPolicy` apenas no `view()`: quando o módulo
+ * Kanban está ativo, exige que o usuário seja o RESPONSÁVEL ATUAL de uma execução
+ * iniciada (`current_responsible_id`). Isso é intencional e serve às telas de
+ * LEITURA que instanciam o modelo do pacote — relatório de geração, página de
+ * proposta de reotimização e banner de pendência — para acompanhar handoffs de
+ * revisão (o revisor atual vê o relatório).
+ *
+ * NÃO é o portão de EDIÇÃO do editor: a edição é controlada por
+ * `App\Support\Workflow\GondolaEditGate` (regra "quem iniciou", via
+ * `execution_started_by`). A diferença de campo entre as duas (responsável atual
+ * vs. quem iniciou) é proposital, não uma inconsistência.
+ */
 class GondolaPolicy
 {
     use ChecksRbacPermission;

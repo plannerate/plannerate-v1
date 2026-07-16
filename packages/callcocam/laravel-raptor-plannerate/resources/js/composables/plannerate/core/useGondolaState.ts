@@ -15,8 +15,20 @@ const STORAGE_KEY_PRODUCT_INDICATOR = 'plannerate:selectedIndicator';
 /** Chave de persistência da orientação do selo de indicador (vertical/horizontal) */
 const STORAGE_KEY_INDICATOR_ORIENTATION = 'plannerate:indicatorOrientation';
 
+/** Chave de persistência do estilo visual da tábua da prateleira */
+const STORAGE_KEY_SHELF_BOARD_STYLE = 'plannerate:shelfBoardStyle';
+
 /** Orientações possíveis do selo de indicador exibido na frente do produto. */
 export type IndicatorOrientation = 'vertical' | 'horizontal';
+
+/**
+ * Estilos visuais da tábua da prateleira (superfície física com profundidade
+ * pseudo-3D). Renderizados em `ShelfBoard.vue`.
+ */
+export type ShelfBoardStyle = 'slate' | 'wood' | 'white' | 'chrome' | 'persp' | 'deck' | 'glass';
+
+/** Estilos válidos — usado para validar o valor lido do localStorage. */
+export const SHELF_BOARD_STYLES: readonly ShelfBoardStyle[] = ['slate', 'wood', 'white', 'chrome', 'persp', 'deck', 'glass'];
 
 /**
  * Lê a orientação do selo de indicador do localStorage.
@@ -31,6 +43,21 @@ function readIndicatorOrientationFromStorage(): IndicatorOrientation {
     return window.localStorage.getItem(STORAGE_KEY_INDICATOR_ORIENTATION) === 'horizontal'
         ? 'horizontal'
         : 'vertical';
+}
+
+/**
+ * Lê o estilo da tábua da prateleira do localStorage.
+ * Retorna `'slate'` (metálico escuro, comportamento atual) quando não há valor
+ * salvo, fora do browser, ou o valor persistido é inválido.
+ */
+function readShelfBoardStyleFromStorage(): ShelfBoardStyle {
+    if (typeof window === 'undefined') {
+        return 'slate';
+    }
+
+    const stored = window.localStorage.getItem(STORAGE_KEY_SHELF_BOARD_STYLE);
+
+    return SHELF_BOARD_STYLES.includes(stored as ShelfBoardStyle) ? (stored as ShelfBoardStyle) : 'slate';
 }
 
 /**
@@ -129,6 +156,20 @@ export const indicatorOrientation = ref<IndicatorOrientation>(readIndicatorOrien
 watch(indicatorOrientation, (value) => {
     if (typeof window !== 'undefined') {
         window.localStorage.setItem(STORAGE_KEY_INDICATOR_ORIENTATION, value);
+    }
+});
+
+/**
+ * Estilo visual da tábua da prateleira, compartilhado por todas as instâncias de
+ * `ShelfBoard.vue`. Trocar o valor re-renderiza apenas as tábuas (ação rara,
+ * disparada pelo usuário) — mesmo padrão de `showZoneIndicators`.
+ */
+export const shelfBoardStyle = ref<ShelfBoardStyle>(readShelfBoardStyleFromStorage());
+
+// Persiste no localStorage sempre que o estilo da tábua mudar
+watch(shelfBoardStyle, (value) => {
+    if (typeof window !== 'undefined') {
+        window.localStorage.setItem(STORAGE_KEY_SHELF_BOARD_STYLE, value);
     }
 });
 

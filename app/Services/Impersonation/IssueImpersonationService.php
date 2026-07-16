@@ -49,10 +49,26 @@ class IssueImpersonationService
 
         // route() não pode ser usado aqui: routes/tenant.php não declara Route::domain(),
         // então route() a partir do domínio landlord geraria o host errado.
+        //
+        // O host salvo em primaryDomain é dado agnóstico de ambiente (ex.: sufixo
+        // .plannerate.com.br persiste igual em produção e local). Usar esse host cru
+        // mandaria a impersonation de qualquer tenant .com.br para produção mesmo
+        // rodando localmente. Por isso remontamos o host: subdomínio do tenant +
+        // domínio landlord do ambiente atual (config), preservando esquema e porta
+        // da requisição.
+        $subdomain = Str::before($tenant->primaryDomain->host, '.');
+        $host = $subdomain.'.'.config('app.landlord_domain');
+
+        $port = $request->getPort();
+
+        if ($port !== null && ! in_array($port, [80, 443], true)) {
+            $host .= ':'.$port;
+        }
+
         $consumeUrl = sprintf(
             '%s://%s/impersonation/consume/%s',
             $request->getScheme(),
-            $tenant->primaryDomain->host,
+            $host,
             $plainCode,
         );
 
