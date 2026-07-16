@@ -3,6 +3,7 @@
 namespace App\Jobs\Integrations;
 
 use App\Models\IntegrationApi;
+use App\Models\IntegrationImportRun;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\FieldValueResolver;
 use App\Services\Integrations\IntegrationHttpClient;
@@ -23,6 +24,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
+use Throwable;
 
 /**
  * Busca uma página específica da API e salva a resposta bruta em disco
@@ -136,6 +138,12 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             (string) $integration->id,
         );
 
+        // Cobertura do run: o fetch concluiu com sucesso (mesmo com zero
+        // registros — dia de feriado). Conta 1 unidade por dia (daily: só a
+        // página 1) ou por página (page mode: cada página). Antes de qualquer
+        // early-return, para o dia vazio também contar. Sempre embrulhado.
+        $this->recordRunCoverage();
+
         // Antes do early-return de página vazia: a checagem de extensão precisa
         // rodar mesmo quando a última página planejada não mapeou registros.
         if (! $this->autoPage && $this->knownLastPage !== null && $this->page >= $this->knownLastPage) {
@@ -175,6 +183,34 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
 
         if ($this->autoPage) {
             $this->dispatchNextPageIfNeeded($responseData, $responseMeta, $pathConfig);
+        }
+    }
+
+    /**
+     * Marca cobertura do run: 1 unidade por dia (daily: só página 1) ou por
+     * página (page mode: cada página). Defensivo — falha no tracking nunca
+     * quebra o fetch; `?? null` tolera jobs enfileirados antes do deploy.
+     */
+    private function recordRunCoverage(): void
+    {
+        $runId = $this->runId ?? null;
+
+        if ($runId === null) {
+            return;
+        }
+
+        // Daily (autoPage): páginas 2+ do mesmo dia não contam nova unidade.
+        if ($this->page !== 1 && $this->autoPage) {
+            return;
+        }
+
+        try {
+            IntegrationImportRun::recordCovered($runId);
+        } catch (Throwable $e) {
+            Log::warning('FetchIntegrationPageJob: falha ao registrar cobertura do run', [
+                'run_id' => $runId,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
