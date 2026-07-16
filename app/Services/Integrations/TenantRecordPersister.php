@@ -22,15 +22,16 @@ class TenantRecordPersister
     /**
      * @param  array<int, array<string, mixed>>  $records
      * @param  array<int, array<string, mixed>>  $pivotConfigs
+     * @return int Registros upsertados (0 quando nada a persistir)
      */
     public static function persist(
         TenantIntegration $integration,
         string $targetTable,
         array $records,
         array $pivotConfigs = [],
-    ): void {
+    ): int {
         if (self::shouldSkipPersist($targetTable, $records)) {
-            return;
+            return 0;
         }
 
         $integrationId = (string) $integration->id;
@@ -40,6 +41,8 @@ class TenantRecordPersister
         $upserted = self::persistWithinTenant($integration, $targetTable, $records, $pivotConfigs);
 
         self::logPersistFinished($integrationId, $targetTable, $upserted);
+
+        return $upserted;
     }
 
     /**

@@ -62,6 +62,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         public readonly ?string $storeDocument = null,
         public readonly bool $autoPage = false,
         public readonly ?int $knownLastPage = null,
+        public readonly ?string $runId = null,
     ) {
         $this->onQueue('imports-fetch');
     }
@@ -167,6 +168,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             $this->pathKey,
             $this->storeId,
             $filePath,
+            $this->runId,
         );
 
         if ($this->autoPage) {
@@ -221,6 +223,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
                 $this->dateStart, $this->dateEnd, $this->storeId, $this->storeDocument,
                 autoPage: false,
                 knownLastPage: $actualLastPage,
+                runId: $this->runId,
             )->delay(now()->addSeconds($index * $delaySeconds));
         }
     }
@@ -267,6 +270,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             $this->integrationId, $this->pathKey, $nextPage,
             $this->dateStart, $this->dateEnd, $this->storeId, $this->storeDocument,
             autoPage: true,
+            runId: $this->runId,
         );
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Integrations;
 
+use App\Models\IntegrationImportRun;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Support\ImportDiscardMetrics;
@@ -188,6 +189,39 @@ class IntegrationHealthCommand extends Command
             'stale' => $stale,
             'discards_today' => ImportDiscardMetrics::totalForToday($integrationId, $pathKey),
             'rounded_margin_in_window' => $data['rounded_margin'],
+            'last_run' => $this->lastRun($integrationId, $pathKey),
+        ];
+    }
+
+    /**
+     * Último run de importação da integração/path (proveniência real:
+     * status + cobertura + persistido, do integration_import_runs).
+     *
+     * @return array{status: string, reference_date: string, covered: ?int, expected: int, persisted: int}|null
+     */
+    private function lastRun(string $integrationId, string $pathKey): ?array
+    {
+        try {
+            $run = IntegrationImportRun::query()
+                ->where('integration_id', $integrationId)
+                ->where('path_key', $pathKey)
+                ->latest('discovered_at')
+                ->first();
+        } catch (\Throwable) {
+            // Tabela ainda não migrada (ex.: entre etapas de deploy) → sem run.
+            return null;
+        }
+
+        if ($run === null) {
+            return null;
+        }
+
+        return [
+            'status' => $run->status,
+            'reference_date' => (string) $run->reference_date,
+            'covered' => $run->covered_units,
+            'expected' => $run->expected_units,
+            'persisted' => $run->persisted_records,
         ];
     }
 
@@ -217,6 +251,10 @@ class IntegrationHealthCommand extends Command
 
         foreach ($integrations as $row) {
             if (($row['stale'] ?? false) || ($row['discards_today'] ?? 0) > 0) {
+                return true;
+            }
+
+            if (($row['last_run']['status'] ?? null) === 'partial') {
                 return true;
             }
         }
@@ -251,7 +289,7 @@ class IntegrationHealthCommand extends Command
         }
 
         $this->table(
-            ['Tenant', 'Path', 'Linhas', 'Última import.', 'Idade', 'Descartes/hoje', 'Margem ≤2c', 'Estado'],
+            ['Tenant', 'Path', 'Linhas', 'Última import.', 'Idade', 'Descartes', 'Margem ≤2c', 'Último run', 'Estado'],
             array_map(fn (array $r): array => [
                 $r['tenant'],
                 $r['path'],
@@ -260,12 +298,33 @@ class IntegrationHealthCommand extends Command
                 $r['age_days'] === null ? '—' : "{$r['age_days']}d",
                 $r['discards_today'] > 0 ? "⚠ {$r['discards_today']}" : '0',
                 $r['rounded_margin_in_window'] === null ? '—' : number_format((int) $r['rounded_margin_in_window']),
+                self::formatRun($r['last_run']),
                 $r['stale'] ? '🔴 atrasado' : '🟢 ok',
             ], $integrations),
         );
 
         $this->newLine();
         $this->line('<fg=gray>Margem ≤2c: vendas na janela do backfill com margem em ≤2 casas (progresso do backfill de precisão; não zera — margens legítimas de 2 casas sempre restam).</>');
+        $this->line('<fg=gray>Último run: ✓ concluído / ⚠ parcial (dias esperados vs. cobertos) / … em andamento, do integration_import_runs.</>');
         $this->line($alert ? '🔴 Há sinais de alerta (exit 1).' : '🟢 Tudo saudável.');
+    }
+
+    /**
+     * @param  array{status: string, covered: ?int, expected: int}|null  $run
+     */
+    private static function formatRun(?array $run): string
+    {
+        if ($run === null) {
+            return '—';
+        }
+
+        $ratio = ($run['covered'] ?? '?').'/'.$run['expected'];
+
+        return match ($run['status']) {
+            'complete' => "✓ {$ratio}",
+            'partial' => "⚠ {$ratio}",
+            'failed' => '✗ falhou',
+            default => "… {$run['expected']}",
+        };
     }
 }
