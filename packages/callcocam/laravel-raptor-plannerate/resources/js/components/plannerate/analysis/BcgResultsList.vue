@@ -78,6 +78,16 @@ let isSorting = false;
 const xAxis = computed(() => props.results[0]?.x_axis ?? 'quantidade');
 const yAxis = computed(() => props.results[0]?.y_axis ?? 'margem');
 
+/**
+ * Resultado agregado (exibido por categoria/nível): não há EAN por linha, então a
+ * coluna EAN é escondida e a coluna Produto assume a primeira posição fixa.
+ */
+const isAggregated = computed(() => {
+    const displayBy = props.results[0]?.display_by;
+
+    return Boolean(displayBy && displayBy !== 'produto');
+});
+
 const filteredResults = computed(() => {
     let filtered = [...props.results];
 
@@ -314,8 +324,8 @@ const formatNumber = (value: number) =>
                         <Table>
                             <TableHeader class="sticky top-0 z-10 bg-white dark:bg-gray-900">
                                 <TableRow class="bg-gray-100 text-xs dark:bg-gray-900">
-                                    <TableHeadAnalysis :label="t('plannerate.analysis.bcg_results.ean')" sort-key="ean" :sort-config="sortConfig" class="sticky-col-1 min-w-30" @sort="handleSort" />
-                                    <TableHeadAnalysis :label="t('plannerate.analysis.bcg_results.product')" sort-key="product_name" :sort-config="sortConfig" class="sticky-col-2 min-w-52" @sort="handleSort" />
+                                    <TableHeadAnalysis v-if="!isAggregated" :label="t('plannerate.analysis.bcg_results.ean')" sort-key="ean" :sort-config="sortConfig" class="sticky-col-1 min-w-30" @sort="handleSort" />
+                                    <TableHeadAnalysis :label="t('plannerate.analysis.bcg_results.product')" sort-key="product_name" :sort-config="sortConfig" :class="[isAggregated ? 'sticky-col-1' : 'sticky-col-2', 'min-w-52']" @sort="handleSort" />
                                     <TableHeadAnalysis :label="t('plannerate.analysis.bcg_results.quadrant')" sort-key="quadrant" :sort-config="sortConfig" @sort="handleSort" />
                                     <!-- Cabeçalhos nomeiam a MÉTRICA escolhida, não "Eixo X"/"Eixo Y" -->
                                     <TableHeadAnalysis :label="axisLabel(xAxis)" sort-key="x_value" :sort-config="sortConfig" @sort="handleSort" />
@@ -332,8 +342,8 @@ const formatNumber = (value: number) =>
                                     :class="[rowClass(item.quadrant, selectedProductId === item.product_id), 'cursor-pointer text-xs']"
                                     @click="selectedProductId = item.product_id"
                                 >
-                                    <TableCell class="sticky-col-1 py-2 font-mono text-[11px]">{{ item.ean }}</TableCell>
-                                    <TableCell class="sticky-col-2 max-w-[300px] min-w-[200px] py-2">
+                                    <TableCell v-if="!isAggregated" class="sticky-col-1 py-2 font-mono text-[11px]">{{ item.ean }}</TableCell>
+                                    <TableCell :class="[isAggregated ? 'sticky-col-1' : 'sticky-col-2', 'max-w-[300px] min-w-[200px] py-2']">
                                         <div class="flex flex-col">
                                             <span class="text-[11px] font-medium">{{ item.product_name }}</span>
                                             <span class="mt-0.5 text-[10px] text-muted-foreground">

@@ -305,8 +305,9 @@ it('withSpace soma o espaço dos produtos da categoria e corta pela mediana das 
         // baixo_baixo inchado (40 > 25) → reduzir
         ->and($result['catB']['acao_espaco'])->toBe('reduzir')
         ->and($result['catA']['share_threshold_gondola'])->toEqualWithDelta(25.0, 0.001)
-        // detalhe interno do agregado não vaza para o resultado
-        ->and($result['catA'])->not->toHaveKey('member_product_ids');
+        // os produtos membros seguem no resultado: o front os usa para marcar cada
+        // produto na gôndola com o selo da SUA categoria (modo exibir por categoria)
+        ->and($result['catA']['member_product_ids'])->toBe(['p1', 'p2']);
 });
 
 it('categoria sem nenhum produto com largura fica sem dimensão e sem ação de espaço', function (): void {

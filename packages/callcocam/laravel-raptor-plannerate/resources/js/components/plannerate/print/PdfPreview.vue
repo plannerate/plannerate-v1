@@ -3,6 +3,7 @@ import { router, usePage } from '@inertiajs/vue3';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import SaveChangesController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/SaveChangesController';
 import { useAbcClassification } from '@/composables/plannerate/analysis/useAbcClassification';
+import { useBcgAnalysis } from '@/composables/plannerate/analysis/useBcgAnalysis';
 import { useTargetStockAnalysis } from '@/composables/plannerate/analysis/useTargetStockAnalysis';
 import { usePdfGenerator } from '@/composables/plannerate/export/usePdfGenerator';
 import { useT } from '@/composables/useT';
@@ -56,6 +57,7 @@ const props = defineProps<Props>();
 const { t } = useT();
 const pdfGenerator = usePdfGenerator();
 const abcClassification = useAbcClassification();
+const bcgAnalysis = useBcgAnalysis();
 const targetStockAnalysis = useTargetStockAnalysis();
 const page = usePage<{ tenant?: { name?: string } }>();
 
@@ -234,12 +236,14 @@ async function generatePDF(
         ? isDownloading
         : pdfGenerator.isGenerating;
     const previousAbcVisibility = abcClassification.isVisible.value;
+    const previousBcgVisibility = bcgAnalysis.isVisible.value;
     const previousTargetStockVisibility = targetStockAnalysis.isVisible.value;
 
     try {
         generatedWithDownload = false;
         isExportingRef.value = true;
         abcClassification.setVisibility(false);
+        bcgAnalysis.setVisibility(false);
         targetStockAnalysis.setVisibility(false);
         await nextTick();
 
@@ -305,6 +309,7 @@ async function generatePDF(
         );
     } finally {
         abcClassification.setVisibility(previousAbcVisibility);
+        bcgAnalysis.setVisibility(previousBcgVisibility);
         targetStockAnalysis.setVisibility(previousTargetStockVisibility);
 
         await nextTick();
