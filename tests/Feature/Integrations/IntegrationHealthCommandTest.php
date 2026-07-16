@@ -72,7 +72,7 @@ function makeHealthIntegration(string $slug): TenantIntegration
     ]);
 }
 
-function insertHealthSale(string $tenantId, string $saleDate): void
+function insertHealthSale(string $tenantId, string $saleDate, ?float $margin = null): void
 {
     DB::connection('tenant')->table('sales')->insert([
         'id' => (string) Str::ulid(),
@@ -82,6 +82,7 @@ function insertHealthSale(string $tenantId, string $saleDate): void
         'sale_date' => $saleDate,
         'promotion' => 'N',
         'total_sale_value' => 10,
+        'margem_contribuicao' => $margin,
         'created_at' => now(),
         'updated_at' => now(),
     ]);
@@ -118,4 +119,22 @@ test('--json emite estrutura e alerta booleano', function (): void {
         ->and($payload['alert'])->toBeFalse()
         ->and($payload['global']['queue_total'])->toBe(0)
         ->and($payload['integrations'])->toHaveCount(2); // products + sales
+});
+
+test('indicador margem ≤2c conta só as vendas arredondadas na janela (não as de precisão cheia)', function (): void {
+    $integration = makeHealthIntegration('health-margin');
+    $tenantId = (string) $integration->tenant_id;
+
+    insertHealthSale($tenantId, now()->toDateString(), 5.25);      // arredondada → conta
+    insertHealthSale($tenantId, now()->subDay()->toDateString(), 10.50); // arredondada → conta
+    insertHealthSale($tenantId, now()->toDateString(), 5.2493);    // precisão cheia → NÃO conta
+
+    Artisan::call('integration:health', ['--tenant' => $tenantId, '--json' => true]);
+    $payload = json_decode(Artisan::output(), true);
+
+    $salesRow = collect($payload['integrations'])->firstWhere('path', 'sales');
+    $productsRow = collect($payload['integrations'])->firstWhere('path', 'products');
+
+    expect($salesRow['rounded_margin_in_window'])->toBe(2)
+        ->and($productsRow['rounded_margin_in_window'])->toBeNull(); // products não tem margem_contribuicao
 });
