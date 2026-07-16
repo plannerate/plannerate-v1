@@ -168,7 +168,9 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             $this->pathKey,
             $this->storeId,
             $filePath,
-            $this->runId,
+            // ?? null: jobs enfileirados antes do deploy que adicionou $runId
+            // desserializam sem a propriedade (typed prop não-inicializada).
+            $this->runId ?? null,
         );
 
         if ($this->autoPage) {
@@ -223,7 +225,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
                 $this->dateStart, $this->dateEnd, $this->storeId, $this->storeDocument,
                 autoPage: false,
                 knownLastPage: $actualLastPage,
-                runId: $this->runId,
+                runId: $this->runId ?? null,
             )->delay(now()->addSeconds($index * $delaySeconds));
         }
     }
@@ -270,7 +272,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             $this->integrationId, $this->pathKey, $nextPage,
             $this->dateStart, $this->dateEnd, $this->storeId, $this->storeDocument,
             autoPage: true,
-            runId: $this->runId,
+            runId: $this->runId ?? null,
         );
     }
 
