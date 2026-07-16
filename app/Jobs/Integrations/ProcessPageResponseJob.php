@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Integrations;
 
+use App\Models\IntegrationImportRun;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\TenantRecordPersister;
 use Illuminate\Bus\Queueable;
@@ -34,6 +35,7 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
         public readonly string $pathKey,
         public readonly ?string $storeId,
         public readonly string $filePath,
+        public readonly ?string $runId = null,
     ) {
         $this->onQueue('imports-process');
     }
@@ -78,7 +80,17 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
 
         $pivotConfigs = $this->normalizePivotConfigs((array) data_get($pathConfig, 'pivot_tables', []));
 
-        TenantRecordPersister::persist($integration, $targetTable, $records, $pivotConfigs);
+        $persisted = TenantRecordPersister::persist($integration, $targetTable, $records, $pivotConfigs);
+
+        // Progresso do run — nunca deixa o tracking quebrar a persistência.
+        try {
+            IntegrationImportRun::recordPersisted($this->runId, $persisted);
+        } catch (Throwable $e) {
+            Log::warning('ProcessPageResponseJob: falha ao registrar progresso do import run', [
+                'run_id' => $this->runId,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         $this->deleteFile();
     }

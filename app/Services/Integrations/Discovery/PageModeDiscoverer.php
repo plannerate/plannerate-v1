@@ -4,6 +4,7 @@ namespace App\Services\Integrations\Discovery;
 
 use App\Jobs\Integrations\FetchIntegrationPageJob;
 use App\Models\IntegrationApi;
+use App\Models\IntegrationImportRun;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\IntegrationHttpClient;
 use App\Services\Integrations\IntegrationPayloadBuilder;
@@ -98,7 +99,40 @@ class PageModeDiscoverer
             'url' => $url,
         ]);
 
-        $this->dispatchJobs($lastPage, $storeId, $storeDocument, $effectiveDateStart, $effectiveDateEnd);
+        $runId = $this->recordRun($integration, $store, $lastPage, $forceFull);
+
+        $this->dispatchJobs($lastPage, $storeId, $storeDocument, $effectiveDateStart, $effectiveDateEnd, $runId);
+    }
+
+    /**
+     * Abre o run do ciclo (esperado = páginas). Defensivo: falha no tracking
+     * nunca impede a descoberta/importação.
+     *
+     * @param  array{id: string, document: string}|null  $store
+     */
+    private function recordRun(TenantIntegration $integration, ?array $store, int $lastPage, bool $forceFull): ?string
+    {
+        try {
+            return IntegrationImportRun::startRun([
+                'tenant_id' => (string) $integration->tenant_id,
+                'integration_id' => (string) $integration->id,
+                'path_key' => $this->pathKey,
+                'store_id' => data_get($store, 'id'),
+                'mode' => 'page',
+                'reference_date' => now()->toDateString(),
+                'expected_units' => $lastPage,
+                'expected_dates' => null,
+                'force_full' => $forceFull,
+            ])->id;
+        } catch (\Throwable $e) {
+            Log::warning('PageModeDiscoverer: falha ao registrar import run', [
+                'integration_id' => $this->integrationId,
+                'path_key' => $this->pathKey,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 
     // ─── Datas ───────────────────────────────────────────────────────────────
@@ -323,6 +357,7 @@ class PageModeDiscoverer
         ?string $storeDocument,
         ?string $dateStart,
         ?string $dateEnd,
+        ?string $runId = null,
     ): void {
         $delaySeconds = (int) config('integrations.fetch_delay', 3);
 
@@ -332,6 +367,7 @@ class PageModeDiscoverer
                 $dateStart, $dateEnd, $storeId, $storeDocument,
                 autoPage: false,
                 knownLastPage: $lastPage,
+                runId: $runId,
             )->delay(now()->addSeconds(($page - 1) * $delaySeconds));
         }
     }

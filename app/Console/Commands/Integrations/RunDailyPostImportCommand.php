@@ -24,6 +24,7 @@ namespace App\Console\Commands\Integrations;
 
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Support\ImportQueueMonitor;
+use App\Services\Integrations\Support\ImportRunReconciler;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -45,6 +46,10 @@ class RunDailyPostImportCommand extends Command
         if (! $this->option('skip-queue-check') && ! $this->waitForImportQueuesToDrain()) {
             return self::FAILURE;
         }
+
+        // Filas vazias = não há mais trabalho → reconcilia os runs de hoje
+        // (marca complete/partial, loga parciais) antes de agir sobre os dados.
+        $this->reconcileImportRuns();
 
         $integrations = $this->getActiveIntegrations();
 
@@ -95,6 +100,30 @@ class RunDailyPostImportCommand extends Command
         $this->info('✅ Pipeline pós-importação concluído com sucesso.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Reconcilia os runs de importação de hoje (cobertura real vs. plano).
+     * Defensivo: falha na reconciliação não impede o pipeline pós-import.
+     */
+    protected function reconcileImportRuns(): void
+    {
+        try {
+            $summary = ImportRunReconciler::reconcileForDate(now()->toDateString());
+
+            if ($summary['reconciled'] > 0) {
+                $this->line(sprintf(
+                    '  Runs de importação reconciliados: %d (complete=%d, partial=%d)',
+                    $summary['reconciled'],
+                    $summary['complete'],
+                    $summary['partial'],
+                ));
+            }
+        } catch (\Throwable $e) {
+            Log::warning('sync:post-import: falha ao reconciliar import runs', [
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
