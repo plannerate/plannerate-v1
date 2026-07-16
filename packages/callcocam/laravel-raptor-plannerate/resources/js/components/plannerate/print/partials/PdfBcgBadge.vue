@@ -1,31 +1,24 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useBcgLabels } from '@/components/plannerate/analysis/bcg/labels';
 import type { BcgQuadrant } from '@/components/plannerate/analysis/bcg/types';
-import { useBcgAnalysis  } from '@/composables/plannerate/analysis/useBcgAnalysis';
-import type {BcgBadgeData} from '@/composables/plannerate/analysis/useBcgAnalysis';
+import { useBcgAnalysis } from '@/composables/plannerate/analysis/useBcgAnalysis';
+import type { BcgBadgeData } from '@/composables/plannerate/analysis/useBcgAnalysis';
 import { indicatorOrientation } from '@/composables/plannerate/core/useGondolaState';
 import { useT } from '@/composables/useT';
 
 /**
- * Selo do quadrante BCG na frente do produto, na gôndola.
- *
- * Segue o padrão do selo ABC: um pill branco com um círculo colorido (o símbolo do
- * quadrante) e, ao lado, a DESCRIÇÃO que a análise gera (o rótulo do quadrante —
- * "Alto valor – manutenção", "Incentivo – volume", etc.). A seta da ação (↑ ganhar
- * frente / ↓ ceder frente) aparece só quando há algo a fazer, para não virar ruído.
- *
- * Respeita o filtro por quadrante do painel de análises — assim o usuário isola, por
- * exemplo, só os "baixo valor" e vê onde eles estão fisicamente na gôndola.
+ * Selo do quadrante BCG para o print/PDF. Mesmo padrão do BcgBadge do editor: pill
+ * branco com o símbolo do quadrante e a DESCRIÇÃO que a análise gera, ancorado ao topo
+ * do produto e com dimensões escalonadas pelo fator do PDF.
  */
 interface Props {
     data?: BcgBadgeData;
-    /** Fator de escala do planograma (mesma base do selo ABC). */
     scale?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    scale: 3,
+    scale: 1,
 });
 
 const { t } = useT();
@@ -36,19 +29,11 @@ const visible = computed(
     () => Boolean(props.data) && isVisible.value && isQuadrantActive(props.data?.quadrant),
 );
 
-/** Orientação atual do selo (vertical = rotacionado 90°, horizontal = normal), igual ao ABC. */
 const orientation = computed(() => indicatorOrientation.value);
 
-/** Diâmetro do círculo do símbolo, escalonado como no selo ABC. */
 const iconSize = computed(() => Math.max(6 * props.scale, 11));
-
-/** Tamanho da fonte (símbolo e rótulo), escalonado como no selo ABC. */
 const fontSize = computed(() => Math.max(3.5 * props.scale, 6));
 
-/**
- * Cores dos quadrantes no círculo — mesmas famílias de matiz da tabela e do gráfico.
- * A cor segue a entidade: um produto verde na matriz é verde na gôndola.
- */
 const circleClasses = computed(() => {
     const classes: Record<BcgQuadrant, string> = {
         alto_alto: 'bg-green-600 text-white',
@@ -60,7 +45,6 @@ const circleClasses = computed(() => {
     return props.data ? classes[props.data.quadrant] : '';
 });
 
-/** Cor do texto do rótulo, tingida com a cor do quadrante sobre o fundo claro do pill. */
 const labelTextClass = computed(() => {
     const classes: Record<BcgQuadrant, string> = {
         alto_alto: 'text-green-700',
@@ -72,34 +56,14 @@ const labelTextClass = computed(() => {
     return props.data ? classes[props.data.quadrant] : '';
 });
 
-/** Descrição do quadrante gerada pela análise (depende dos eixos — ver bcg/labels.ts). */
 const label = computed(() =>
     props.data ? quadrantLabel(props.data.quadrant, props.data.x_axis, props.data.y_axis) : '',
 );
 
-/** Máximo de caracteres antes de truncar o rótulo (mantém o selo compacto na gôndola). */
-const MAX_LABEL_CHARS = 12;
-
-const hovered = ref(false);
-
-/**
- * Rótulo exibido: truncado por padrão, completo ao passar o mouse. Assim o selo fica
- * compacto na gôndola e ainda revela a descrição inteira quando o usuário quer lê-la.
- */
-const displayLabel = computed(() => {
-    if (hovered.value || label.value.length <= MAX_LABEL_CHARS) {
-        return label.value;
-    }
-
-    return `${label.value.slice(0, MAX_LABEL_CHARS - 1)}…`;
-});
-
-/** A ação só ganha destaque quando há algo a fazer: 'manter' não vira ruído visual. */
 const showAction = computed(
     () => props.data?.acao_espaco === 'aumentar' || props.data?.acao_espaco === 'reduzir',
 );
 
-/** Tooltip: quadrante + ação. É a leitura completa sem depender da cor. */
 const title = computed(() => {
     if (!props.data) {
         return '';
@@ -111,22 +75,19 @@ const title = computed(() => {
     return `${quadrant} — ${t('plannerate.analysis.bcg_selection.action')}: ${action}`;
 });
 
-/**
- * Padding/gap + transform, escalonados e pivotados como no selo ABC.
- * Vertical: rotaciona 90° pivotando no CENTRO DO CÍRCULO (não do pill), para o símbolo
- * ficar sempre na mesma base; o rótulo cresce para cima, independente do comprimento.
- * Horizontal: pill centralizado no produto.
- */
+/** Pill ancorado à base do produto (mesma posição do selo ABC), pivotando no círculo quando vertical. */
 const pillStyle = computed(() => {
     const half = iconSize.value / 2;
     const base: Record<string, string> = {
         gap: `${Math.max(0.75 * props.scale, 1.5)}px`,
         padding: `${Math.max(0.5 * props.scale, 1)}px ${Math.max(1.5 * props.scale, 3)}px ${Math.max(0.5 * props.scale, 1)}px ${Math.max(0.5 * props.scale, 1)}px`,
+        bottom: `${Math.max(1 * props.scale, 2)}px`,
     };
 
     if (orientation.value === 'vertical') {
         base.transformOrigin = `${half}px center`;
         base.transform = `translateX(-${half}px) rotate(-90deg)`;
+        base.bottom = `${Math.max(2 * props.scale, 4)}px`;
     } else {
         base.transform = 'translateX(-50%)';
     }
@@ -148,12 +109,9 @@ const labelStyle = computed(() => ({
 <template>
     <div
         v-if="visible && data"
-        class="pointer-events-auto relative flex items-center rounded-full bg-white/95 shadow-md"
-        :class="hovered ? 'z-[1000]' : ''"
+        class="pointer-events-none absolute left-1/2 z-[500] flex items-center rounded-full bg-white/95 shadow-md"
         :style="pillStyle"
         :title="title"
-        @mouseenter="hovered = true"
-        @mouseleave="hovered = false"
     >
         <!-- Símbolo do quadrante -->
         <span
@@ -164,9 +122,9 @@ const labelStyle = computed(() => ({
             {{ quadrantIcon(data.quadrant) }}
         </span>
 
-        <!-- Descrição gerada pela análise (truncada; completa no hover) + seta da ação -->
+        <!-- Descrição gerada pela análise + seta da ação -->
         <span class="font-bold whitespace-nowrap leading-none" :class="labelTextClass" :style="labelStyle">
-            {{ displayLabel }}<span v-if="showAction" aria-hidden="true"> {{ spaceActionIcon(data.acao_espaco) }}</span>
+            {{ label }}<span v-if="showAction" aria-hidden="true"> {{ spaceActionIcon(data.acao_espaco) }}</span>
         </span>
     </div>
 </template>

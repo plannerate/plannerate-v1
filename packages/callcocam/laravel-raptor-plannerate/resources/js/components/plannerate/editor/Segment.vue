@@ -39,11 +39,22 @@
             mesmo produto, e empilhá-las ou sobrepô-las por z-index esconderia uma.
         -->
         <div
-            v-if="paperRole || bcgBadgeData"
+            v-if="paperRole"
             class="absolute -top-2.5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5"
         >
             <PaperRoleBadge :role="paperRole" />
-            <BcgBadge :data="bcgBadgeData" />
+        </div>
+
+        <!--
+            Selo BCG no topo. Wrapper em left-1/2 sem -translate-x-1/2: o próprio pill se
+            centraliza/rotaciona (igual ao selo ABC), respeitando a orientação da tag.
+        -->
+        <div
+            v-if="bcgBadgeData"
+            class="pointer-events-none absolute left-1/2 z-90 flex items-center"
+            :style="bcgBadgeWrapperStyle"
+        >
+            <BcgBadge :data="bcgBadgeData" :scale="props.scale" />
         </div>
 
         <!-- Badge de sortimento ABC, na base do segmento -->
@@ -175,6 +186,11 @@ const abcRecommendation = computed(() => getRecommendation(layer.value?.product?
  * na prateleira em escalas pequenas.
  */
 const abcBadgeWrapperStyle = computed(() => ({
+    bottom: `${Math.max((props.scale || 3) * 2, 4)}px`,
+}));
+
+/** Selo BCG na mesma posição do ABC (base do segmento), escalonado. */
+const bcgBadgeWrapperStyle = computed(() => ({
     bottom: `${Math.max((props.scale || 3) * 2, 4)}px`,
 }));
 

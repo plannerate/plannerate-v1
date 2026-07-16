@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useAbcClassification } from '@/composables/plannerate/analysis/useAbcClassification'
+import { useBcgAnalysis } from '@/composables/plannerate/analysis/useBcgAnalysis'
 import type { Segment } from '@/types/planogram'
 import ProductIndicatorBadge from '../../editor/ProductIndicatorBadge.vue'
 import PdfAbcBadge from './PdfAbcBadge.vue'
+import PdfBcgBadge from './PdfBcgBadge.vue'
 import PdfLayer from './PdfLayer.vue'
 import PdfStockIndicator from './PdfStockIndicator.vue'
 import ProductDetailModal from './ProductDetailModal.vue'
@@ -28,6 +30,10 @@ const isHovered = ref(false)
 const showModal = ref(false)
 
 const { getClassification, getRecommendation } = useAbcClassification()
+const { getBcgData } = useBcgAnalysis()
+
+// Busca quadrante BCG + ação de espaço do produto pelo EAN (mesmo selo do editor)
+const bcgBadgeData = computed(() => getBcgData(props.segment.layer?.product?.ean))
 
 // Busca classificação ABC do produto pelo EAN
 const abcClassification = computed(() => {
@@ -71,6 +77,9 @@ function handleClick() {
 
     <!-- Indicador visual de performance A, B, C -->
     <PdfAbcBadge :classification="abcClassification" :recommendation="abcRecommendation" :scale="scaleFactor" />
+
+    <!-- Selo BCG (quadrante + ação), no topo do produto -->
+    <PdfBcgBadge :data="bcgBadgeData" :scale="scaleFactor" />
     
     <!-- Indicador visual de estoque alvo -->
     <PdfStockIndicator :segment="segment" :shelf-depth="shelfDepth" :scale="scaleFactor" />
