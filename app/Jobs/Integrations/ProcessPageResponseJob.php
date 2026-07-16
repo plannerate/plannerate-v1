@@ -83,8 +83,10 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
         $persisted = TenantRecordPersister::persist($integration, $targetTable, $records, $pivotConfigs);
 
         // Progresso do run — nunca deixa o tracking quebrar a persistência.
+        // ?? null: jobs enfileirados antes do deploy que adicionou $runId
+        // desserializam sem a propriedade (typed prop não-inicializada).
         try {
-            IntegrationImportRun::recordPersisted($this->runId, $persisted);
+            IntegrationImportRun::recordPersisted($this->runId ?? null, $persisted);
         } catch (Throwable $e) {
             Log::warning('ProcessPageResponseJob: falha ao registrar progresso do import run', [
                 'run_id' => $this->runId,
