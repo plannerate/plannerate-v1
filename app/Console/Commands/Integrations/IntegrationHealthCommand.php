@@ -134,9 +134,11 @@ class IntegrationHealthCommand extends Command
         $targetTable = (string) data_get($pathConfig, 'target_table', $pathKey);
         $integrationId = (string) $integration->id;
 
-        $data = $tenant->execute(function () use ($targetTable): array {
+        $initialDays = max(1, (int) data_get($pathConfig, 'initial_days', 200));
+
+        $data = $tenant->execute(function () use ($targetTable, $initialDays): array {
             if (! Schema::connection('tenant')->hasTable($targetTable)) {
-                return ['rows' => null, 'last_date' => null];
+                return ['rows' => null, 'last_date' => null, 'rounded_margin' => null];
             }
 
             $query = DB::connection('tenant')->table($targetTable);
@@ -153,7 +155,22 @@ class IntegrationHealthCommand extends Command
 
             $lastDate = $dateColumn !== null ? (clone $query)->max($dateColumn) : null;
 
-            return ['rows' => $rows, 'last_date' => $lastDate];
+            // Progresso do backfill de precisão da margem (só onde há
+            // margem_contribuicao + sale_date): linhas NA JANELA do backfill
+            // ainda com margem em ≤2 casas. Cai conforme o backfill reimporta.
+            // Não zera (margens legítimas de 2 casas), então é indicador, não alerta.
+            $roundedMargin = null;
+            if (Schema::connection('tenant')->hasColumn($targetTable, 'margem_contribuicao')
+                && Schema::connection('tenant')->hasColumn($targetTable, 'sale_date')) {
+                $cutoff = now()->subDays($initialDays)->toDateString();
+                $roundedMargin = (clone $query)
+                    ->where('sale_date', '>=', $cutoff)
+                    ->whereNotNull('margem_contribuicao')
+                    ->whereRaw('margem_contribuicao = round(margem_contribuicao, 2)')
+                    ->count();
+            }
+
+            return ['rows' => $rows, 'last_date' => $lastDate, 'rounded_margin' => $roundedMargin];
         });
 
         $lastDate = $data['last_date'] !== null ? Carbon::parse((string) $data['last_date']) : null;
@@ -170,6 +187,7 @@ class IntegrationHealthCommand extends Command
             'age_days' => $ageDays,
             'stale' => $stale,
             'discards_today' => ImportDiscardMetrics::totalForToday($integrationId, $pathKey),
+            'rounded_margin_in_window' => $data['rounded_margin'],
         ];
     }
 
@@ -233,7 +251,7 @@ class IntegrationHealthCommand extends Command
         }
 
         $this->table(
-            ['Tenant', 'Path', 'Linhas', 'Última import.', 'Idade', 'Descartes/hoje', 'Estado'],
+            ['Tenant', 'Path', 'Linhas', 'Última import.', 'Idade', 'Descartes/hoje', 'Margem ≤2c', 'Estado'],
             array_map(fn (array $r): array => [
                 $r['tenant'],
                 $r['path'],
@@ -241,11 +259,13 @@ class IntegrationHealthCommand extends Command
                 $r['last_import'] ?? '—',
                 $r['age_days'] === null ? '—' : "{$r['age_days']}d",
                 $r['discards_today'] > 0 ? "⚠ {$r['discards_today']}" : '0',
+                $r['rounded_margin_in_window'] === null ? '—' : number_format((int) $r['rounded_margin_in_window']),
                 $r['stale'] ? '🔴 atrasado' : '🟢 ok',
             ], $integrations),
         );
 
         $this->newLine();
+        $this->line('<fg=gray>Margem ≤2c: vendas na janela do backfill com margem em ≤2 casas (progresso do backfill de precisão; não zera — margens legítimas de 2 casas sempre restam).</>');
         $this->line($alert ? '🔴 Há sinais de alerta (exit 1).' : '🟢 Tudo saudável.');
     }
 }
