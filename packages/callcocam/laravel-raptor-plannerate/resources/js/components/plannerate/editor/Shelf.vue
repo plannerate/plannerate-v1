@@ -2,14 +2,17 @@
     <!-- Container: Área total da prateleira (do chão/prateleira anterior até esta) -->
     <div
         data-shelf-area="true"
-        class="group/shelf absolute hover:bg-primary/10"
+        class="group/shelf absolute"
         :class="[
+            isAreaHovered && !isSelected ? 'bg-primary/10' : '',
             isSelected ? 'bg-primary/5 ring-1 ring-inset ring-primary/60' : '',
             showZoneIndicators ? shelfZone.bgClass : '',
             isCategoryHighlighted && !isSelected ? 'ring-4 ring-inset ring-blue-500 bg-blue-500/5' : '',
         ]"
-        :style="shelfAreaStyle"
+        :style="[shelfAreaStyle, hoverStackStyle]"
         tabindex="0"
+        @mouseenter="isAreaHovered = true"
+        @mouseleave="isAreaHovered = false"
         @focus="handleFocusShelf"
         @click="handleSelectShelf"
         @dragover.prevent="handleProductDragOver"
@@ -187,6 +190,25 @@ function toggleShelfLock(): void {
         },
     );
 }
+
+/**
+ * Empilhamento no hover para resolver prateleiras sobrepostas.
+ *
+ * Como a área clicável tem altura mínima (ver `useShelfAreaCalculation`), quando
+ * duas prateleiras ficam fisicamente próximas suas áreas se sobrepõem. Sem uma
+ * ordem definida, passar o mouse sobre a faixa sobreposta fazia o destaque
+ * "piscar" alternando entre as duas e dificultava agarrar uma específica.
+ *
+ * Ao passar o mouse, esta prateleira sobe para a frente (z-index alto) e é a
+ * única destacada. Ela permanece na frente enquanto o cursor estiver sobre ela
+ * (a caixa não se move, logo não há alternância). Para mexer na outra, basta
+ * mover o cursor para a região exclusiva dela.
+ */
+const isAreaHovered = ref<boolean>(false);
+
+const hoverStackStyle = computed(() =>
+    isAreaHovered.value ? { zIndex: 200 } : undefined,
+);
 
 const scale = computed(() => props.scale || 3);
 
