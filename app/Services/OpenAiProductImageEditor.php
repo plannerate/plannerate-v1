@@ -5,12 +5,14 @@ namespace App\Services;
 use App\Contracts\ProductImageAiEditor;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Encoders\WebpEncoder;
-use Intervention\Image\Laravel\Facades\Image;
 use RuntimeException;
 
 class OpenAiProductImageEditor implements ProductImageAiEditor
 {
+    public function __construct(
+        protected ProductImageStandardizer $imageStandardizer
+    ) {}
+
     public function process(string $sourcePath, string $targetPath): string
     {
         $apiKey = (string) config('services.openai.api_key');
@@ -67,9 +69,10 @@ class OpenAiProductImageEditor implements ProductImageAiEditor
             throw new RuntimeException('Nao foi possivel obter o conteudo da imagem processada.');
         }
 
-        $image = Image::decodeBinary($editedBinary);
-        $encodedImage = $image->encode(new WebpEncoder(90));
-        Storage::disk('public')->put($targetPath, (string) $encodedImage);
+        // A OpenAI devolve 1024x1024; clampa ao padrão único antes de salvar
+        // para não jogar uma imagem grande no canvas.
+        $encodedImage = $this->imageStandardizer->encode($editedBinary);
+        Storage::disk('public')->put($targetPath, $encodedImage);
 
         return $targetPath;
     }

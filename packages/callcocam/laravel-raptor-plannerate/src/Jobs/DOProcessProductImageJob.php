@@ -118,16 +118,13 @@ class DOProcessProductImageJob implements NotTenantAware, ShouldQueue
 
     public function processImageFromStorage(?string $storagePath, Model $product)
     {
-        // Fator para converter as dimensões do produto (ex: cm) em pixels para exibição.
-        // Aumentado para um resultado visual maior. Ajuste se necessário.
-        $pixelMultiplier = 7;
-        // Qualidade da imagem WebP (0 a 100). 90 é alta qualidade.
-        $quality = 90;
-        // Teto de dimensão (px) do lado maior. Sem esse limite, produtos sem
-        // width/height cadastrados recaíam na resolução ORIGINAL (ex.: 5750px),
-        // gerando WebP de 2-5 MP que travam a decodificação no canvas (~1s por
-        // módulo). O canvas exibe a no máximo ~300px, então 512px cobre o zoom.
-        $maxSide = 512;
+        // Padrão único de dimensionamento (config/plannerate.php). Sem esse teto,
+        // produtos sem width/height cadastrados recaíam na resolução ORIGINAL
+        // (ex.: 5750px), gerando WebP de 2-5 MP que travam a decodificação no
+        // canvas (~1s por módulo). O canvas exibe a no máximo ~300px.
+        $pixelMultiplier = (int) config('plannerate.image.pixel_multiplier', 7);
+        $quality = (int) config('plannerate.image.quality', 90);
+        $maxSide = (int) config('plannerate.image.max_side', 384);
 
         try {
             // Dimensões agora estão diretamente no produto (tabela dimensions foi removida)

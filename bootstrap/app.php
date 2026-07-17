@@ -10,6 +10,7 @@ use App\Http\Middleware\Modules\RequireActiveTenantModule;
 use App\Http\Middleware\RedirectClientRole;
 use App\Http\Middleware\RequireLandlordDomain;
 use App\Http\Middleware\SetPermissionTeamContext;
+use App\Http\Middleware\ValidateDimensionShareToken;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -89,6 +90,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.url.defaults' => InjectTenantUrlDefaults::class,
             'impersonation.block' => BlockActionsWhileImpersonating::class,
             'landlord.only' => RequireLandlordDomain::class,
+            'dimension.share' => ValidateDimensionShareToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

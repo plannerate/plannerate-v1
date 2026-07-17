@@ -7,12 +7,14 @@ use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\LandlordRbacSeeder;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Intervention\Image\Laravel\Facades\Image;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
 beforeEach(function (): void {
@@ -44,6 +46,7 @@ beforeEach(function (): void {
 
 test('tenant can upload product image', function (): void {
     Storage::fake('public');
+    Storage::fake('do');
     $this->withoutMiddleware(NeedsTenant::class);
 
     $user = User::factory()->create();
@@ -61,16 +64,59 @@ test('tenant can upload product image', function (): void {
 
     $response
         ->assertOk()
-        ->assertJsonStructure(['path', 'public_url']);
+        ->assertJsonStructure(['path', 'public_url', 'original_url']);
 
     $path = (string) $response->json('path');
 
-    expect($path)->toStartWith("products/uploads/{$tenant->id}/");
+    expect($path)->toStartWith("products/uploads/{$tenant->id}/")
+        ->and($path)->toEndWith('.webp');
     Storage::disk('public')->assertExists($path);
+
+    // Cópia local padronizada: 600px sem dims → clampado ao teto (384).
+    $image = Image::decodeBinary(Storage::disk('public')->get($path));
+    expect(max($image->width(), $image->height()))->toBe(384);
+
+    // Regra do original: com o disco S3 (do) disponível, arquiva o bruto.
+    expect((string) $response->json('original_url'))->not()->toBe('');
+    expect(Storage::disk('do')->files("products/uploads/original/{$tenant->id}"))->not()->toBeEmpty();
+});
+
+test('tenant upload stores only local standardized copy when do disk is unavailable', function (): void {
+    Storage::fake('public');
+
+    // Simula o disco S3 indisponível: o probe lança e cai no fallback local.
+    $throwingDoDisk = Mockery::mock(Filesystem::class);
+    $throwingDoDisk->shouldReceive('exists')->andThrow(new RuntimeException('S3 indisponível'));
+    Storage::set('do', $throwingDoDisk);
+
+    $this->withoutMiddleware(NeedsTenant::class);
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeImageTenant('tenant-image-no-do');
+    assignImageTenantAdminRole($user, $tenant->id);
+    $tenant->makeCurrent();
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-image-no-do.'.config('app.landlord_domain')])
+        ->post(route('tenant.products.image.upload', ['subdomain' => 'tenant-image-no-do'], false), [
+            'file' => UploadedFile::fake()->image('product.png', 700, 500),
+        ]);
+
+    $response->assertOk();
+
+    $path = (string) $response->json('path');
+    Storage::disk('public')->assertExists($path);
+    expect($response->json('original_url'))->toBeNull();
+
+    $image = Image::decodeBinary(Storage::disk('public')->get($path));
+    expect(max($image->width(), $image->height()))->toBe(384);
 });
 
 test('tenant upload with product id stores file in tenant and product path and updates product url', function (): void {
     Storage::fake('public');
+    Storage::fake('do');
     $this->withoutMiddleware(NeedsTenant::class);
 
     $user = User::factory()->create();
@@ -100,7 +146,8 @@ test('tenant upload with product id stores file in tenant and product path and u
 
     $path = (string) $response->json('path');
 
-    expect($path)->toStartWith("products/uploads/{$tenant->id}/{$product->id}/");
+    // Caminho local padronizado é determinístico: {tenant}/{product}.webp
+    expect($path)->toBe("products/uploads/{$tenant->id}/{$product->id}.webp");
     Storage::disk('public')->assertExists($path);
     expect((string) $product->fresh()->url)->toBe($path);
 });

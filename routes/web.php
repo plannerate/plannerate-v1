@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\TenantSocialiteController;
+use App\Http\Controllers\Public\DimensionCorrectionController;
 use App\Http\Controllers\Tenant\ImpersonationController;
 use App\Http\Controllers\Tenant\PasswordSetupController;
 use App\Http\Middleware\SetPermissionTeamContext;
@@ -46,6 +47,17 @@ Route::middleware(['web', NeedsTenant::class])
         Route::post('/password/setup/{code}', [PasswordSetupController::class, 'update'])
             ->middleware('throttle:6,1')
             ->name('tenant.password-setup.update');
+    });
+
+// ── CORREÇÃO PÚBLICA DE DIMENSÕES — subdomain, sem auth, com NeedsTenant ───
+Route::middleware(['web', NeedsTenant::class, 'dimension.share'])
+    ->group(function (): void {
+        Route::get('/dimensoes/{code}', [DimensionCorrectionController::class, 'show'])
+            ->middleware('throttle:60,1')
+            ->name('public.dimensions.show');
+        Route::patch('/dimensoes/{code}/produtos/{product}', [DimensionCorrectionController::class, 'update'])
+            ->middleware('throttle:120,1')
+            ->name('public.dimensions.update');
     });
 // Route::prefix('admin')
 // ->group(function (): void {

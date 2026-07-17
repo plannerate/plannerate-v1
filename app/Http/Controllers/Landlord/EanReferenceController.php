@@ -10,11 +10,13 @@ use App\Http\Requests\Landlord\StoreEanReferenceRequest;
 use App\Http\Requests\Landlord\UpdateEanReferenceRequest;
 use App\Jobs\ProcessEanReferenceImageJob;
 use App\Models\EanReference;
+use App\Services\ProductImageStandardizer;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -186,7 +188,7 @@ class EanReferenceController extends Controller
         ]);
     }
 
-    public function uploadImage(Request $request): JsonResponse
+    public function uploadImage(Request $request, ProductImageStandardizer $imageStandardizer): JsonResponse
     {
         $this->authorize('create', EanReference::class);
 
@@ -194,12 +196,43 @@ class EanReferenceController extends Controller
             'file' => ['required', 'file', 'image', 'max:10240'],
         ]);
 
-        $path = $request->file('file')->store('ean-references/uploads', 'public');
+        $file = $request->file('file');
+        $binary = (string) $file->getContent();
+        $identifier = (string) Str::ulid();
+
+        // Regra 1: com o disco S3 (do) disponível, arquiva o arquivo original.
+        $originalUrl = null;
+        if ($this->doDiskAvailable()) {
+            $extension = $file->extension() ?: $file->getClientOriginalExtension() ?: 'bin';
+            $originalPath = "ean-references/uploads/original/{$identifier}.{$extension}";
+            Storage::disk('do')->put($originalPath, $binary);
+            $originalUrl = Storage::disk('do')->url($originalPath);
+        }
+
+        // Regra 2: cópia local padronizada (WebP ≤ teto).
+        $publicPath = "ean-references/uploads/{$identifier}.webp";
+        Storage::disk('public')->put($publicPath, $imageStandardizer->encode($binary));
 
         return response()->json([
-            'path' => $path,
-            'public_url' => Storage::disk('public')->url($path),
+            'path' => $publicPath,
+            'public_url' => Storage::disk('public')->url($publicPath),
+            'original_url' => $originalUrl,
         ]);
+    }
+
+    /**
+     * Detecta se o disco S3 (do) está acessível — uma falha de credencial/rede
+     * lança e cai no catch, então só arquivamos o original quando ele responde.
+     */
+    protected function doDiskAvailable(): bool
+    {
+        try {
+            Storage::disk('do')->exists('__probe__');
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function destroy(EanReference $eanReference): RedirectResponse

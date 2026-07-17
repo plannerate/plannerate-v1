@@ -10,6 +10,7 @@ use App\Http\Requests\Tenant\UploadProductImageRequest;
 use App\Jobs\ProcessProductImageWithAiJob;
 use App\Models\Product;
 use App\Models\ProductImageAiOperation;
+use App\Services\ProductImageStandardizer;
 use App\Services\ProductRepositoryImageResolver;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +25,8 @@ class ProductImageController extends Controller
 
     public function __construct(
         protected ProductRepositoryImageResolver $repositoryImageResolver,
-        protected ProductImageAiEditor $productImageAiEditor
+        protected ProductImageAiEditor $productImageAiEditor,
+        protected ProductImageStandardizer $imageStandardizer
     ) {}
 
     public function upload(UploadProductImageRequest $request): JsonResponse
@@ -33,7 +35,6 @@ class ProductImageController extends Controller
         $file = $request->file('file');
         $productId = trim((string) $request->input('product_id'));
         $product = null;
-        $storagePath = "products/uploads/{$tenantId}";
 
         if ($productId !== '') {
             $product = Product::query()
@@ -48,21 +49,55 @@ class ProductImageController extends Controller
             }
 
             $this->authorize('update', $product);
-            $storagePath = "{$storagePath}/{$product->id}";
         }
 
-        $path = $file->store($storagePath, 'public');
+        $binary = (string) $file->getContent();
+        $identifier = $product?->id ?? (string) Str::ulid();
+
+        // Regra 1: com o disco S3 (do) disponível, arquiva o arquivo original.
+        $originalUrl = null;
+        if ($this->doDiskAvailable()) {
+            $extension = $file->extension() ?: $file->getClientOriginalExtension() ?: 'bin';
+            $originalPath = "products/uploads/original/{$tenantId}/{$identifier}.{$extension}";
+            Storage::disk('do')->put($originalPath, $binary);
+            $originalUrl = Storage::disk('do')->url($originalPath);
+        }
+
+        // Regra 2: cópia local padronizada (WebP ≤ teto) — é a servida na gôndola.
+        $width = ($product && is_numeric($product->width)) ? (float) $product->width : null;
+        $height = ($product && is_numeric($product->height)) ? (float) $product->height : null;
+        $standardized = $this->imageStandardizer->encode($binary, $width, $height);
+
+        $publicPath = "products/uploads/{$tenantId}/{$identifier}.webp";
+        Storage::disk('public')->put($publicPath, $standardized);
 
         if ($product) {
             $product->update([
-                'url' => $path,
+                'url' => $publicPath,
             ]);
         }
 
         return response()->json([
-            'path' => $path,
-            'public_url' => Storage::disk('public')->url($path),
+            'path' => $publicPath,
+            'public_url' => Storage::disk('public')->url($publicPath),
+            'original_url' => $originalUrl,
         ]);
+    }
+
+    /**
+     * Detecta se o disco S3 (do) está acessível — mesmo probe usado pelo
+     * resolver de repositório. Uma falha de credencial/rede lança e cai no
+     * catch, então só arquivamos o original quando o disco responde.
+     */
+    protected function doDiskAvailable(): bool
+    {
+        try {
+            Storage::disk('do')->exists('__probe__');
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function destroy(string $product): JsonResponse

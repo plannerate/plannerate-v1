@@ -132,6 +132,16 @@ async function waitForImagesReady(
         return;
     }
 
+    // As imagens de produto do editor usam loading="lazy": as que estão fora do
+    // viewport nem começam a carregar, então o browser as manteria com
+    // complete=false e a captura sairia em branco (ou estouraria o timeout).
+    // Promovemos para eager antes de aguardar para forçar o carregamento.
+    for (const image of images) {
+        if (!image.complete && image.loading === 'lazy') {
+            image.loading = 'eager';
+        }
+    }
+
     await Promise.all(images.map((image) => waitForImageReady(image, timeoutMs)));
 }
 

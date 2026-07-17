@@ -8,11 +8,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Encoders\WebpEncoder;
-use Intervention\Image\Laravel\Facades\Image;
 
 class ProductRepositoryImageResolver
 {
+    public function __construct(
+        protected ProductImageStandardizer $imageStandardizer
+    ) {}
+
     /**
      * @var list<string>
      */
@@ -222,14 +224,6 @@ class ProductRepositoryImageResolver
         ?float $height,
         string $ean
     ): ?string {
-        // Fator para converter dimensoes de produto (cm) para pixels.
-        $pixelMultiplier = 7;
-        $quality = 90;
-        // Teto de dimensao (px) do lado maior — evita gerar WebP enormes quando
-        // o produto nao tem width/height e o calculo recai na resolucao original
-        // (decode lento no canvas). O canvas exibe a no maximo ~300px.
-        $maxSide = 512;
-
         try {
             $imageFile = Storage::disk('do')->get($sourcePath);
         } catch (\Throwable) {
@@ -241,35 +235,10 @@ class ProductRepositoryImageResolver
         }
 
         try {
-            $image = Image::decodeBinary($imageFile);
+            // Dimensionamento (teto/qualidade) centralizado no padrão único.
+            $encodedImage = $this->imageStandardizer->encode($imageFile, $width, $height);
 
-            $resolvedWidth = $width;
-            $resolvedHeight = $height;
-
-            if (! is_numeric($resolvedWidth) || $resolvedWidth <= 0) {
-                $resolvedWidth = $image->width() / $pixelMultiplier;
-            }
-
-            if (! is_numeric($resolvedHeight) || $resolvedHeight <= 0) {
-                $resolvedHeight = $image->height() / $pixelMultiplier;
-            }
-
-            $targetWidth = (int) ($resolvedWidth * $pixelMultiplier);
-            $targetHeight = (int) ($resolvedHeight * $pixelMultiplier);
-
-            // Teto de dimensao preservando a proporcao.
-            if ($targetWidth > $maxSide || $targetHeight > $maxSide) {
-                $clampScale = $maxSide / max($targetWidth, $targetHeight);
-                $targetWidth = (int) round($targetWidth * $clampScale);
-                $targetHeight = (int) round($targetHeight * $clampScale);
-            }
-            $targetWidth = max(1, $targetWidth);
-            $targetHeight = max(1, $targetHeight);
-
-            $image->resize($targetWidth, $targetHeight);
-            $encodedImage = $image->encode(new WebpEncoder($quality));
-
-            Storage::disk('public')->put($targetPath, (string) $encodedImage);
+            Storage::disk('public')->put($targetPath, $encodedImage);
 
             return $targetPath;
         } catch (\Throwable $exception) {
@@ -429,41 +398,11 @@ class ProductRepositoryImageResolver
         string $ean,
         string $sourceReference
     ): ?string {
-        $pixelMultiplier = 7;
-        $quality = 90;
-        // Teto de dimensao (px) do lado maior — ver justificativa no metodo acima.
-        $maxSide = 316;
-
         try {
-            $image = Image::decodeBinary($imageBinary);
+            // Dimensionamento (teto/qualidade) centralizado no padrão único.
+            $encodedImage = $this->imageStandardizer->encode($imageBinary, $width, $height);
 
-            $resolvedWidth = $width;
-            $resolvedHeight = $height;
-
-            if (! is_numeric($resolvedWidth) || $resolvedWidth <= 0) {
-                $resolvedWidth = $image->width() / $pixelMultiplier;
-            }
-
-            if (! is_numeric($resolvedHeight) || $resolvedHeight <= 0) {
-                $resolvedHeight = $image->height() / $pixelMultiplier;
-            }
-
-            $targetWidth = (int) ($resolvedWidth * $pixelMultiplier);
-            $targetHeight = (int) ($resolvedHeight * $pixelMultiplier);
-
-            // Teto de dimensao preservando a proporcao.
-            if ($targetWidth > $maxSide || $targetHeight > $maxSide) {
-                $clampScale = $maxSide / max($targetWidth, $targetHeight);
-                $targetWidth = (int) round($targetWidth * $clampScale);
-                $targetHeight = (int) round($targetHeight * $clampScale);
-            }
-            $targetWidth = max(1, $targetWidth);
-            $targetHeight = max(1, $targetHeight);
-
-            $image->resize($targetWidth, $targetHeight);
-            $encodedImage = $image->encode(new WebpEncoder($quality));
-
-            Storage::disk('public')->put($targetPath, (string) $encodedImage);
+            Storage::disk('public')->put($targetPath, $encodedImage);
 
             return $targetPath;
         } catch (\Throwable $exception) {

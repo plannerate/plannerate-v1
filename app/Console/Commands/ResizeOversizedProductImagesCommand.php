@@ -21,9 +21,9 @@ use Intervention\Image\Laravel\Facades\Image;
 class ResizeOversizedProductImagesCommand extends Command
 {
     protected $signature = 'plannerate:resize-oversized-images
-        {--max-side=512 : Lado maior alvo em pixels após o resize}
-        {--threshold=600 : Só reprocessa arquivos cujo lado maior excede este valor}
-        {--quality=90 : Qualidade do WebP de saída}
+        {--max-side= : Lado maior alvo em pixels após o resize (padrão: config plannerate.image.max_side)}
+        {--threshold=400 : Só reprocessa arquivos cujo lado maior excede este valor}
+        {--quality= : Qualidade do WebP de saída (padrão: config plannerate.image.quality)}
         {--dir=* : Diretórios no disco public a varrer (padrão: repositorioimages/frente e repositorioimagens/frente)}
         {--dry-run : Apenas lista o que seria alterado, sem reescrever nada}';
 
@@ -31,9 +31,10 @@ class ResizeOversizedProductImagesCommand extends Command
 
     public function handle(): int
     {
-        $maxSide = (int) $this->option('max-side');
+        // Sem opção explícita, cai no padrão único de config/plannerate.php.
+        $maxSide = (int) ($this->option('max-side') ?? config('plannerate.image.max_side', 384));
         $threshold = (int) $this->option('threshold');
-        $quality = (int) $this->option('quality');
+        $quality = (int) ($this->option('quality') ?? config('plannerate.image.quality', 90));
         $dryRun = (bool) $this->option('dry-run');
 
         $dirs = $this->option('dir');

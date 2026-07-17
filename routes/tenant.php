@@ -130,6 +130,12 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
         Route::patch('dimensions/{product}', [Tenant\ProductDimensionController::class, 'update'])
             ->name('dimensions.update');
 
+        // ── Links públicos de correção de dimensões (token) ───
+        Route::post('dimensions/share-tokens', [Tenant\DimensionShareTokenController::class, 'store'])
+            ->name('dimensions.share-tokens.store');
+        Route::delete('dimensions/share-tokens/{token}', [Tenant\DimensionShareTokenController::class, 'destroy'])
+            ->name('dimensions.share-tokens.destroy');
+
         // ── Similar Groups ────────────────────────────────────
         Route::get('similar-groups/products/search', [Tenant\SimilarGroupController::class, 'productSearch'])
             ->name('similar-groups.products.search');

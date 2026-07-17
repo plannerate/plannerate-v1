@@ -19,6 +19,7 @@ import ColumnHeader from '@/components/table/columns/ColumnHeader.vue';
 import ColumnStatusBadge from '@/components/table/columns/ColumnStatusBadge.vue';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
+import ShareDimensionDialog from '@/components/tenant/dimensions/ShareDimensionDialog.vue';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
@@ -235,6 +236,7 @@ const pageMeta = useCrudPageMeta({
 <template>
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <template #header-actions>
+            <ShareDimensionDialog :category-id="categoryId" />
             <Link :href="DimensionApprovalController.index.url()"
                 class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted">
                 <Check class="size-3.5 shrink-0" />

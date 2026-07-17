@@ -51,7 +51,7 @@ test('service resolves image path for product using existing webp from repositor
         'ean' => $ean,
     ]);
 
-    $service = new ProductRepositoryImageResolver;
+    $service = app(ProductRepositoryImageResolver::class);
 
     $result = $service->resolveForProduct($product);
 
@@ -70,7 +70,7 @@ test('service returns null when repository image is not found', function (): voi
         'ean' => '0000000000000',
     ]);
 
-    $service = new ProductRepositoryImageResolver;
+    $service = app(ProductRepositoryImageResolver::class);
 
     $result = $service->resolveForProduct($product);
 
@@ -100,7 +100,7 @@ test('service fetches product image from web when repository misses', function (
         '*' => Http::response([], 404),
     ]);
 
-    $service = new ProductRepositoryImageResolver;
+    $service = app(ProductRepositoryImageResolver::class);
     $result = $service->resolveByEan($ean);
 
     expect($result)->not()->toBeNull();
@@ -120,7 +120,7 @@ test('service resolves image from side angle in repository when front is missing
     $targetPath = "repositorioimages/frente/{$ean}.webp";
     Storage::disk('do')->put($sideWebpPath, 'binary-side-webp-content');
 
-    $service = new ProductRepositoryImageResolver;
+    $service = app(ProductRepositoryImageResolver::class);
     $result = $service->resolveByEan($ean);
 
     expect($result)->not()->toBeNull();
@@ -137,7 +137,7 @@ test('service converts png from repository to webp', function (): void {
     $webpPath = "repositorioimages/frente/{$ean}.webp";
     Storage::disk('do')->put($pngPath, UploadedFile::fake()->image('source.png', 200, 200)->getContent());
 
-    $service = new ProductRepositoryImageResolver;
+    $service = app(ProductRepositoryImageResolver::class);
 
     $result = $service->resolveByEan($ean);
 
@@ -170,7 +170,7 @@ test('service force mode bypasses ean reference cache and re-downloads image', f
 
     Storage::disk('do')->put("repositorioimagens/frente/{$ean}.webp", 'binary-webp-content');
 
-    $service = new ProductRepositoryImageResolver;
+    $service = app(ProductRepositoryImageResolver::class);
 
     $defaultResult = $service->resolveByEan($ean);
     expect($defaultResult)->not()->toBeNull();
