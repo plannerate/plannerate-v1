@@ -78,7 +78,7 @@ test('issuing a share link stores only the hashed code and a 7 day expiry', func
     ], 'landlord');
 });
 
-test('public page lists only products missing dimensions', function () {
+test('public page lists every product without a valid height or width, including drafts', function () {
     $tenant = dimensionShareTenant();
     $issuer = User::factory()->create();
 
@@ -86,9 +86,11 @@ test('public page lists only products missing dimensions', function () {
     $code = basename((string) parse_url($shareUrl, PHP_URL_PATH));
 
     $tenant->makeCurrent();
-    $missing = dimensionShareProduct('Produto Sem Medida', null);
-    dimensionShareProduct('Produto Com Medida', null, ['width' => 10, 'height' => 20, 'depth' => 5]);
-    dimensionShareProduct('Produto Rascunho', null, [], 'draft');
+    dimensionShareProduct('Produto Sem Medida', null);                                    // incluído (sem H/L)
+    dimensionShareProduct('Produto Rascunho Sem Medida', null, [], 'draft');              // incluído (rascunho conta)
+    dimensionShareProduct('Produto Zerado', null, ['width' => 0, 'height' => 0]);         // incluído (0 é inválido)
+    dimensionShareProduct('Produto Completo', null, ['width' => 10, 'height' => 20, 'depth' => 5]); // excluído (H e L válidas)
+    dimensionShareProduct('So Falta Profundidade', null, ['width' => 10, 'height' => 20]); // excluído (H e L válidas)
     CurrentTenantModel::forgetCurrent();
 
     $tenant->makeCurrent();
@@ -97,9 +99,8 @@ test('public page lists only products missing dimensions', function () {
     $response->assertOk();
     $response->assertInertia(fn (Assert $page) => $page
         ->component('public/DimensionCorrection')
-        ->where('totalRemaining', 1)
-        ->has('products', 1)
-        ->where('products.0.id', $missing->id)
+        ->where('totalRemaining', 3)
+        ->has('products', 3)
     );
 });
 

@@ -44,7 +44,7 @@ class DimensionCorrectionController extends Controller
             ->orderBy('id')
             ->when($after !== '', fn (Builder $query) => $query->where('id', '>', $after))
             ->limit(self::BATCH + 1)
-            ->get(['id', 'ean', 'name', 'codigo_erp']);
+            ->get(['id', 'ean', 'name', 'codigo_erp', 'width', 'height', 'depth']);
 
         $hasMore = $items->count() > self::BATCH;
         $items = $items->take(self::BATCH);
@@ -58,6 +58,10 @@ class DimensionCorrectionController extends Controller
                 'ean' => $product->ean,
                 'name' => $product->name,
                 'codigo_erp' => $product->codigo_erp,
+                // Valores atuais (pré-preenchem o formulário para não re-digitar/sobrescrever).
+                'width' => $product->width,
+                'height' => $product->height,
+                'depth' => $product->depth,
             ])->values(),
             'nextCursor' => $hasMore ? $items->last()?->id : null,
             'totalRemaining' => $this->missingProductsQuery($token)->count(),
@@ -103,19 +107,22 @@ class DimensionCorrectionController extends Controller
     }
 
     /**
-     * Query base dos produtos sem dimensão dentro do escopo (categoria) do token.
+     * Query base dos produtos sem dimensão válida dentro do escopo (categoria) do token.
+     *
+     * Considera "sem dimensão" todo produto cuja ALTURA ou LARGURA não seja um número
+     * positivo (null ou <= 0) — os campos essenciais. Não exclui rascunhos: a intenção
+     * é capturar todos os produtos que precisam de medida.
      */
     private function missingProductsQuery(TenantDimensionShareToken $token): Builder
     {
         $categoryIds = $this->categoryAndDescendantIds((string) ($token->category_id ?? ''));
 
         return Product::query()
-            ->where('status', '!=', 'draft')
             ->when($categoryIds !== [], fn (Builder $query) => $query->whereIn('category_id', $categoryIds))
             ->where(function (Builder $query): void {
                 $query
-                    ->whereNull('width')->orWhereNull('height')->orWhereNull('depth')
-                    ->orWhere('width', '<=', 0)->orWhere('height', '<=', 0)->orWhere('depth', '<=', 0);
+                    ->whereNull('height')->orWhere('height', '<=', 0)
+                    ->orWhereNull('width')->orWhere('width', '<=', 0);
             });
     }
 

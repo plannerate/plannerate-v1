@@ -9,6 +9,9 @@ type MissingProduct = {
     ean: string | null;
     name: string | null;
     codigo_erp: string | null;
+    width: string | number | null;
+    height: string | number | null;
+    depth: string | number | null;
 };
 
 const props = defineProps<{
@@ -38,13 +41,29 @@ const cursor = ref<string | null>(props.nextCursor);
 const remaining = ref<number>(props.totalRemaining);
 const loadingMore = ref(false);
 
-function ensureForm(id: string): void {
-    if (!forms[id]) {
-        forms[id] = { height: '', width: '', depth: '', confirming: false, saving: false, saved: false, error: '' };
+// Converte um valor de dimensão vindo do backend em string do input; medidas
+// inválidas (null/0) viram vazio para o colaborador preencher.
+function dimToString(value: string | number | null): string {
+    const parsed = typeof value === 'string' ? Number.parseFloat(value) : value;
+
+    return typeof parsed === 'number' && Number.isFinite(parsed) && parsed > 0 ? String(parsed) : '';
+}
+
+function ensureForm(row: MissingProduct): void {
+    if (!forms[row.id]) {
+        forms[row.id] = {
+            height: dimToString(row.height),
+            width: dimToString(row.width),
+            depth: dimToString(row.depth),
+            confirming: false,
+            saving: false,
+            saved: false,
+            error: '',
+        };
     }
 }
 
-rows.value.forEach((row) => ensureForm(row.id));
+rows.value.forEach((row) => ensureForm(row));
 
 // Carregamento incremental: cada visita parcial devolve o próximo lote (cursor por id),
 // que anexamos à lista — sem "drift" quando itens saem ao serem salvos.
@@ -54,7 +73,7 @@ watch(
         const existing = new Set(rows.value.map((row) => row.id));
         incoming.forEach((row) => {
             if (!existing.has(row.id)) {
-                ensureForm(row.id);
+                ensureForm(row);
                 rows.value.push(row);
             }
         });
