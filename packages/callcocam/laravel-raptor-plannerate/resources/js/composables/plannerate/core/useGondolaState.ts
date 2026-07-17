@@ -114,6 +114,12 @@ export const draggingShelfId = ref<string | null>(null);
 export const draggingShelfSectionId = ref<string | null>(null);
 export const draggingShelfOffset = ref(0); // Offset em pixels de onde clicou na shelf
 
+/**
+ * "Clipboard" interno do editor: id do segmento copiado com Ctrl+C (ou pelo
+ * menu de contexto). Ctrl+V cola na shelf selecionada via copySegmentToShelf.
+ */
+export const copiedSegmentId = ref<string | null>(null);
+
 // Configurações visuais
 export const scaleFactor = ref(3);
 export const showProductsPanel = ref(true);

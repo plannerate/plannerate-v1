@@ -151,12 +151,13 @@ describe('rejeitado e prateleira', () => {
         expect(t.getData(DND_KEYS.REJECTED_ID)).toBe('REJ1');
     });
 
-    it('prateleira usa as chaves legadas shelfId/sectionId com effect move', () => {
+    it('prateleira usa effect move e payload mínimo (dados reais nos refs globais)', () => {
         const t = dt();
         setShelfDragData(t, 'SHELF1', 'SEC1');
 
         expect(t.effectAllowed).toBe('move');
-        expect(t.getData(DND_KEYS.SHELF_ID)).toBe('SHELF1');
-        expect(t.getData(DND_KEYS.SECTION_ID)).toBe('SEC1');
+        // text/plain mínimo: alguns browsers (Firefox) não iniciam drag com
+        // dataTransfer vazio. O drop lê shelf/section dos refs globais.
+        expect(t.getData('text/plain')).toBe('SHELF1');
     });
 });

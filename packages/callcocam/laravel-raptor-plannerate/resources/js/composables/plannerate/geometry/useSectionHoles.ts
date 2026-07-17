@@ -134,6 +134,34 @@ return position;
 }
 
 /**
+ * Converte uma posição Y (cm, medida do TOPO da seção) no `shelf_position`
+ * final de uma prateleira: snap ao furo mais próximo + clamp aos limites
+ * físicos [0, height - baseHeight - shelfHeight].
+ *
+ * Sistema de coordenadas (convenção única — a mesma do render em
+ * useShelfLayout.shelfBasePosition): shelf_position = 0 é o topo visual da
+ * seção; a base (rodapé) fica na parte de BAIXO, então posições medidas do
+ * topo NÃO levam deslocamento de baseHeight. Antes, o dblclick "adicionar
+ * prateleira" somava/subtraía baseHeight e snapeava num furo diferente do
+ * drop para o mesmo Y — usar SEMPRE esta função nos dois fluxos.
+ */
+export function snapShelfTopToHole(
+    section: Partial<Section>,
+    shelfTopCm: number,
+    shelfHeightCm: number,
+): number {
+    const sectionCamel = toCamelCase(section);
+    const height = sectionCamel.height ?? DEFAULT_SECTION_FIELDS.height;
+    const baseHeight =
+        sectionCamel.baseHeight ?? DEFAULT_SECTION_FIELDS.baseHeight;
+
+    const nearest = findNearestHole(section, shelfTopCm);
+    const maxShelfTop = height - baseHeight - shelfHeightCm;
+
+    return Math.max(0, Math.min(maxShelfTop, nearest));
+}
+
+/**
  * Composable principal para cálculos de furos
  *
  * @param section - Seção para calcular os furos

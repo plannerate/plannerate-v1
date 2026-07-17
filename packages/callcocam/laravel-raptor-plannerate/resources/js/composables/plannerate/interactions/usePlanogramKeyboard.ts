@@ -7,6 +7,7 @@ import { validateShelfWidth } from '@plannerate/libs/validation';
 import { useSectionActions } from '../actions/useSectionActions';
 import { segmentsMoving, useSegmentActions } from '../actions/useSegmentActions';
 import { useShelfActions } from '../actions/useShelfActions';
+import { copiedSegmentId } from '../core/useGondolaState';
 import { usePlanogramEditor } from '../core/usePlanogramEditor';
 import { usePlanogramSelection } from '../core/usePlanogramSelection';
 import { DEFAULT_SECTION_FIELDS, toCamelCase } from '../fields/useSectionFields';
@@ -129,7 +130,8 @@ function handleNumberInput(
  * - Layer/Product: Arrow keys para ajustar quantities
  * - Layer/Product: Digitar números 0-9 para definir quantity (com debounce)
  * - Shelf: Ctrl+Arrows para mover posição/seção
- * - Global: Delete/Backspace, Ctrl+Z/Y, Ctrl+S
+ * - Global: Delete, Escape (limpa seleção), Ctrl+Z/Y, Ctrl+S,
+ *   Ctrl+C/V (copiar/colar segmento)
  */
 export function usePlanogramKeyboard() {
     const { t } = useT();
@@ -391,8 +393,17 @@ return false;
         }
 
         if (!event.ctrlKey && !event.metaKey) {
-return false;
-} // Requer Ctrl/Cmd
+            // Setas "nuas" com shelf selecionada: consome sem agir, para a
+            // página não rolar no meio da edição (mover exige Ctrl/Cmd).
+            // PageUp/PageDown/espaço continuam rolando normalmente.
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                event.preventDefault();
+
+                return true;
+            }
+
+            return false;
+        } // Requer Ctrl/Cmd
 
         const handledKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
 
@@ -474,6 +485,14 @@ return false;
 
         // Requer Ctrl/Cmd para evitar conflitos
         if (!event.ctrlKey && !event.metaKey) {
+            // Setas "nuas" com section selecionada: consome sem agir, para a
+            // página não rolar no meio da edição (mover exige Ctrl/Cmd).
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                event.preventDefault();
+
+                return true;
+            }
+
             return false;
         }
 
@@ -919,8 +938,23 @@ return;
     function handleGlobalShortcuts(event: KeyboardEvent) {
         const isCtrl = event.ctrlKey || event.metaKey;
 
-        // Delete/Backspace: Remove item selecionado
-        if (event.key === 'Delete' || event.key === 'Backspace') {
+        // Escape: limpa a seleção do editor.
+        // Dialogs/modais abertos têm prioridade (o Escape deles fecha o dialog
+        // sem mexer na seleção). O GenerationOverlay tem listener próprio de
+        // Escape (minimizar) que coexiste sem conflito funcional.
+        if (event.key === 'Escape') {
+            if (document.querySelector('[role="dialog"][data-state="open"]')) {
+                return;
+            }
+
+            selection.clearSelection();
+
+            return;
+        }
+
+        // Delete: Remove item selecionado.
+        // Backspace NÃO deleta (fácil de apertar sem querer em notebooks).
+        if (event.key === 'Delete') {
             event.preventDefault();
 
             const selectedItem = selection.selectedItem.value;
@@ -929,11 +963,19 @@ return;
 return;
 }
 
+            // Produto do painel esquerdo não é deletável pelo editor —
+            // avisa em vez do antigo no-op silencioso.
+            if (selectedItem.type === 'product') {
+                toast.info(t('plannerate.editor.product_delete_not_supported'));
+
+                return;
+            }
+
             // Só mostra modal para section, shelf e layer
             const supportedTypes = ['section', 'shelf', 'layer'];
 
             if (!supportedTypes.includes(selectedItem.type)) {
-                // Para outros tipos (segment, product), deleta diretamente
+                // Para outros tipos (segment), deleta diretamente
                 selection.deleteSelected();
 
                 return;
@@ -989,6 +1031,58 @@ return;
 
             if (editor.hasChanges?.value) {
                 editor.save();
+            }
+
+            return;
+        }
+
+        // Ctrl+C: copia o segmento selecionado (clipboard interno do editor)
+        if (isCtrl && event.key === 'c') {
+            // Cópia de texto real tem prioridade (não intercepta)
+            if (window.getSelection()?.toString()) {
+                return;
+            }
+
+            const selected = selection.selectedItem.value;
+
+            if (selected?.type === 'segment') {
+                copiedSegmentId.value = selected.id;
+                toast.info(t('plannerate.editor.clipboard.segment_copied'));
+                event.preventDefault();
+            }
+
+            return;
+        }
+
+        // Ctrl+V: cola o segmento copiado na shelf selecionada (ou na shelf
+        // do segmento selecionado)
+        if (isCtrl && event.key === 'v') {
+            if (!copiedSegmentId.value) {
+                return;
+            }
+
+            const selected = selection.selectedItem.value;
+            let targetShelfId: string | null = null;
+
+            if (selected?.type === 'shelf') {
+                targetShelfId = selected.id;
+            } else if (selected?.type === 'segment') {
+                targetShelfId =
+                    (selected.item as Segment).shelf_id ?? null;
+            }
+
+            if (!targetShelfId) {
+                toast.info(t('plannerate.editor.clipboard.paste_select_shelf'));
+
+                return;
+            }
+
+            event.preventDefault();
+
+            // copySegmentToShelf valida largura e mostra toast de "não cabe";
+            // origem deletada retorna false com warn — converte em toast.
+            if (!editor.copySegmentToShelf(copiedSegmentId.value, targetShelfId)) {
+                toast.error(t('plannerate.editor.clipboard.paste_failed'));
             }
 
             return;

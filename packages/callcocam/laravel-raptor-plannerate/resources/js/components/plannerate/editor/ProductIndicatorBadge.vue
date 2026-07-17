@@ -12,9 +12,10 @@
         independentemente do z. z alto (acima do StockIndicator) garante que
         fique sobre o produto e segmentos vizinhos da mesma prateleira.
     -->
+    <!-- z-91 = Z.INDICATOR: acima do StockIndicator (80) e dos selos ABC/BCG (90) -->
     <div
         v-if="config && isVisible"
-        class="pointer-events-none absolute left-1/2 z-[90] flex items-center whitespace-nowrap rounded-md font-bold shadow-md"
+        class="pointer-events-none absolute left-1/2 z-[91] flex items-center whitespace-nowrap rounded-md font-bold shadow-md"
         :class="config.badgeClass"
         :style="pillStyle"
         :title="displayValue"

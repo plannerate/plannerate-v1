@@ -8,6 +8,10 @@ import {
     reorderShelvesByPosition,
     updateShelfReactive,
 } from '../core/useReactivityHelpers';
+import {
+    activeToRawInsertIndex,
+    reindexShelfOrdering,
+} from './useSegmentOperations';
 
 /**
  * Operações relacionadas a Shelves
@@ -284,6 +288,7 @@ targetSection.shelves = [];
         onProductUsed: ((productId: string) => void) | undefined,
         recordChange: (change: any) => void,
         productDoesNotFitMessage = 'Product does not fit on selected shelf.',
+        targetIndex?: number,
     ): Segment | null {
         const found = findShelfById(shelfId);
 
@@ -331,14 +336,24 @@ targetSection.shelves = [];
         const segmentId = ulid();
         const layerId = ulid();
 
+        const activeCount = [...(shelf?.segments || [])].filter(
+            (s: Segment) => !s.deleted_at,
+        ).length;
+
+        // Ordering provisório: se há índice de inserção (preview de drop),
+        // usa-o; senão, fim da lista. O reindex abaixo consolida.
+        const insertOrdering =
+            targetIndex !== undefined &&
+            targetIndex >= 0 &&
+            targetIndex < activeCount
+                ? targetIndex + 1
+                : activeCount + 1;
+
         const newSegment = {
             id: segmentId,
             shelf_id: shelfId,
             quantity: 1,
-            ordering:
-                ([...(shelf?.segments || [])].filter(
-                    (s: Segment) => !s.deleted_at,
-                ).length || 0) + 1,
+            ordering: insertOrdering,
             _is_new: true,
         } as Segment;
 
@@ -362,8 +377,18 @@ targetSection.shelves = [];
             shelf.segments = [];
         }
 
-        // Adiciona novo segment
-        shelf.segments.push(newSegment);
+        // Insere na posição do preview (targetIndex é entre ativos) ou no fim
+        if (targetIndex !== undefined && targetIndex >= 0) {
+            const rawIdx = activeToRawInsertIndex(shelf.segments, targetIndex);
+            shelf.segments.splice(rawIdx, 0, newSegment);
+        } else {
+            shelf.segments.push(newSegment);
+        }
+
+        // Consolida o ordering de todos os segmentos ativos após a inserção
+        // (emite segment_reorder só para os que mudaram; o novo já está no
+        // ordering certo e é pulado). Ver reindexShelfOrdering.
+        reindexShelfOrdering(shelf, recordChange);
 
         // Força reatividade criando nova referência do array de segments
         shelf.segments = [...shelf.segments];

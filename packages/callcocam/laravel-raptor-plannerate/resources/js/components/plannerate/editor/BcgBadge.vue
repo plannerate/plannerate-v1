@@ -173,10 +173,15 @@ const labelStyle = computed(() => ({
 </script>
 
 <template>
+    <!--
+        data-bcg-badge: o wrapper no Segment.vue usa has-[[data-bcg-badge]:hover]
+        para se elevar a Z.BADGE_HOVER quando este selo está em hover — o antigo
+        z-[1000] aqui era neutralizado pelo stacking context do próprio wrapper.
+    -->
     <div
         v-if="visible && data"
+        data-bcg-badge
         class="pointer-events-auto relative flex items-center rounded-full bg-white/95 shadow-md"
-        :class="hovered ? 'z-[1000]' : ''"
         :style="pillStyle"
         :title="title"
         @mouseenter="hovered = true"

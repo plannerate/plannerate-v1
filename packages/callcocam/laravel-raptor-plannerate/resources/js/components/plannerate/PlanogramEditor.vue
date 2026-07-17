@@ -17,7 +17,7 @@
 import { router, usePage } from '@inertiajs/vue3';
 import { useEcho } from '@laravel/echo-vue';
 import { PanelLeftOpen, PanelRightOpen } from 'lucide-vue-next';
-import { computed, onMounted, provide, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { updateImages } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
@@ -27,6 +27,7 @@ import { wayfinderPath } from '../../libs/wayfinderPath';
 import Canvas from './Canvas.vue';
 import ConfirmDeleteDialog from './editor/ConfirmDeleteDialog.vue';
 import DuplicateSectionDialog from './editor/DuplicateSectionDialog.vue';
+import EditorContextMenu from './editor/EditorContextMenu.vue';
 import Header from './header/Header.vue';
 import Toolbar from './header/Toolbar.vue';
 import ToolbarDrawer from './header/ToolbarDrawer.vue';
@@ -114,6 +115,9 @@ if (props.record) {
 const keyboard = usePlanogramKeyboard();
 
 const headerAndToolbar = ref<HTMLElement | null>(null);
+
+// Guardado no escopo do setup para o disconnect no unmount (evita leak)
+let headerResizeObserver: ResizeObserver | null = null;
 const containerHeight = ref<number>(0);
 const storedLeftPanel = ref(false);
 const storedPropertiesPanel = ref(false);
@@ -321,7 +325,7 @@ onMounted(() => {
     }
 
     // Atualiza altura quando redimensionar
-    const resizeObserver = new ResizeObserver(() => {
+    headerResizeObserver = new ResizeObserver(() => {
         if (headerAndToolbar.value) {
             containerHeight.value =
                 window.innerHeight -
@@ -330,8 +334,13 @@ onMounted(() => {
     });
 
     if (headerAndToolbar.value) {
-        resizeObserver.observe(headerAndToolbar.value);
+        headerResizeObserver.observe(headerAndToolbar.value);
     }
+});
+
+onBeforeUnmount(() => {
+    headerResizeObserver?.disconnect();
+    headerResizeObserver = null;
 });
 
 const category = computed(() => {
@@ -409,5 +418,8 @@ const category = computed(() => {
             :item="keyboard.itemToDelete.value?.item" @update:open="
                 (val) => (keyboard.showDeleteConfirmDialog.value = val)
             " @confirm="keyboard.handleDeleteConfirm" />
+
+        <!-- Menu de contexto (botão direito) — global único para o canvas -->
+        <EditorContextMenu />
     </div>
 </template>

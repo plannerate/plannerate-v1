@@ -1,7 +1,13 @@
 <template>
+    <!--
+        pointer-events-none no root: o overlay cobre o produto inteiro (inset-0)
+        e sem isso roubava hover/click da imagem, trocando o cursor de grab para
+        pointer. Só o ícone central (tooltip) permanece interativo.
+        z-80 = Z.STOCK (constants/zIndex.ts).
+    -->
     <div
         v-if="stockInfo && stockStatus !== 'unknown' && isVisible"
-        class="absolute inset-0 z-[80] flex items-center justify-center rounded-sm"
+        class="pointer-events-none absolute inset-0 z-[80] flex items-center justify-center rounded-sm"
         :class="{
             'border-2 border-red-500 bg-red-500/20 dark:bg-red-500/30':
                 stockStatus === 'increase',
@@ -10,13 +16,14 @@
             'border-2 border-green-500 bg-green-500/20 dark:bg-green-500/30':
                 stockStatus === 'ok',
         }"
-        @click.stop="($event) => $emit('click', $event)"
     >
         <TooltipProvider :delay-duration="200">
             <Tooltip>
                 <TooltipTrigger as-child>
+                    <!-- Sem z próprio: o root (z-80 = Z.STOCK) cria o stacking
+                         context — um z alto aqui era local e enganava a leitura -->
                     <div
-                        class="absolute top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-white shadow-sm transition-transform hover:scale-105"
+                        class="pointer-events-auto absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-white shadow-sm transition-transform hover:scale-105"
                         :style="{ padding: `${iconPadding}px` }"
                         :class="{
                             'border border-red-500/70':
@@ -366,7 +373,6 @@ interface Props {
 
 const props = defineProps<Props>();
 
-defineEmits(['click']);
 
 const {
     getTargetStockData,

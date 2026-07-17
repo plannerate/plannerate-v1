@@ -85,9 +85,10 @@ function handleCanvasClick(event: MouseEvent) {
     const target = event.target as HTMLElement;
 
     // Verifica se o clique foi em um elemento que não deve deselecionar
+    // (inclui o menu de contexto do editor, portalado para o body)
     if (
         target.closest(
-            '[data-shelf], [data-segment], [data-section], [data-properties-panel], [data-products-panel], [data-modal], [data-slot="select-trigger"], [data-slot="select-content"], [data-slot="select-item"]',
+            '[data-shelf], [data-segment], [data-section], [data-properties-panel], [data-products-panel], [data-modal], [data-slot="select-trigger"], [data-slot="select-content"], [data-slot="select-item"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-item"]',
         )
     ) {
         return;

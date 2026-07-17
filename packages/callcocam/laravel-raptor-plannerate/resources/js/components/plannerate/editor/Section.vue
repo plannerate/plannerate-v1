@@ -8,14 +8,22 @@
             'bg-primary/5 ring-2 ring-primary': isShelfDropTarget,
         }"
         tabindex="0"
+        @pointerdown="handlePointerDown"
         @focus="handleFocusSection"
         @click="handleSelectSection"
         @dblclick="handleDoubleClick"
+        @contextmenu="handleSectionContextMenu"
         @dragover.prevent="handleSectionDragOver"
         @dragleave="handleSectionDragLeave"
         @drop.prevent="handleSectionDrop"
     >
         <Cremalheira :section="section" side="left" :scale="scale" />
+        <!-- Linha de preview: furo onde a prateleira arrastada vai encaixar -->
+        <div
+            v-if="isShelfDropTarget && shelfDropPreviewCm !== null"
+            class="pointer-events-none absolute right-0 left-0 h-[2px] rounded-full bg-primary shadow-[0_0_4px_rgba(0,0,0,0.35)]"
+            :style="{ top: `${shelfDropPreviewCm * scale}px`, zIndex: Z.SHELF_DROP_PREVIEW }"
+        />
         <Shelves
             :shelves="sortedShelves"
             :section="section"
@@ -40,6 +48,7 @@
 <script setup lang="ts">
 import { ulid } from 'ulid';
 import { computed, ref } from 'vue';
+import { Z } from '../../../composables/plannerate/constants/zIndex';
 import {
     draggingShelfId,
     draggingShelfOffset,
@@ -48,15 +57,12 @@ import {
 import { findShelfById } from '../../../composables/plannerate/core/useLookupHelpers';
 import { usePlanogramEditor } from '../../../composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '../../../composables/plannerate/core/usePlanogramSelection';
-import {
-    DEFAULT_SECTION_FIELDS,
-    toCamelCase,
-} from '../../../composables/plannerate/fields/useSectionFields';
 import { DEFAULT_SHELF_FIELDS } from '../../../composables/plannerate/fields/useShelfFields';
 import {
     calculateHoles,
-    findNearestHole,
+    snapShelfTopToHole,
 } from '../../../composables/plannerate/geometry/useSectionHoles';
+import { useEditorContextMenu } from '../../../composables/plannerate/interactions/useEditorContextMenu';
 import type { Section as SectionType } from '../../../types/planogram';
 import Cremalheira from './Cremalheira.vue';
 import Shelves from './Shelves.vue';
@@ -81,9 +87,17 @@ const totalWidth = computed(
 );
 const selection = usePlanogramSelection();
 const editor = usePlanogramEditor();
+const { openContextMenu } = useEditorContextMenu();
 
 // ===== Estado de Drag & Drop de Shelves =====
 const isShelfDropTarget = ref(false);
+
+/**
+ * Furo (cm, do topo da seção) onde a prateleira vai encaixar se for solta
+ * agora. Alimenta a linha de preview durante o dragover — antes o usuário só
+ * via o realce da seção inteira, sem saber em qual furo cairia.
+ */
+const shelfDropPreviewCm = ref<number | null>(null);
 
 function handleSectionDragOver(event: DragEvent) {
     // Só aceita se estiver arrastando uma shelf
@@ -94,6 +108,33 @@ return;
     event.preventDefault();
     event.dataTransfer!.dropEffect = 'move';
     isShelfDropTarget.value = true;
+
+    // Preview do furo de destino — mesma matemática do drop.
+    // Atribui SÓ quando muda (dragover roda a ~60fps; o snap discretiza para
+    // poucos valores, então na prática quase nunca dispara reatividade).
+    const shelfResult = findShelfById(draggingShelfId.value);
+
+    if (!shelfResult) {
+        return;
+    }
+
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const shelfTopY = Math.max(
+        0,
+        Math.min(
+            rect.height,
+            event.clientY - rect.top - (draggingShelfOffset.value || 0),
+        ),
+    );
+    const previewCm = snapShelfTopToHole(
+        props.section,
+        shelfTopY / scale.value,
+        shelfResult.shelf.shelf_height || 4,
+    );
+
+    if (shelfDropPreviewCm.value !== previewCm) {
+        shelfDropPreviewCm.value = previewCm;
+    }
 }
 
 function handleSectionDragLeave(event: DragEvent) {
@@ -107,6 +148,7 @@ return;
     // Só remove destaque se saiu completamente da section
     if (!target.contains(relatedTarget)) {
         isShelfDropTarget.value = false;
+        shelfDropPreviewCm.value = null;
     }
 }
 
@@ -151,31 +193,13 @@ function handleSectionDrop(event: DragEvent) {
     // Converte de pixels para centímetros (usando a escala)
     const shelfTopCm = shelfTopY / scale.value;
 
-    // Obtém dimensões da section para conversão correta
-    const sectionCamel = toCamelCase(props.section);
-    const baseHeightCm =
-        sectionCamel.baseHeight ?? DEFAULT_SECTION_FIELDS.baseHeight;
-
-    // Sistema de coordenadas:
-    // - shelf_position = 0 é o TOPO visual da seção
-    // - baseHeight é a altura da BASE (rodapé) na parte de BAIXO
-    // - Área útil vai de 0 até (height - baseHeight)
-    // - Os furos são calculados dentro da área útil (posições relativas de 0 a usableHeight)
-    
-    // shelfTopCm já é a posição do topo da shelf do topo da section
-    // Não precisa subtrair baseHeight pois ele está na parte de baixo!
-    
-    // Snap ao furo mais próximo
-    const nearestHolePosition = findNearestHole(
+    // Snap ao furo mais próximo + clamp — função canônica compartilhada com o
+    // dblclick "adicionar prateleira" (sistema de coordenadas documentado nela)
+    const finalShelfPosition = snapShelfTopToHole(
         props.section,
-        shelfTopCm, // Usa diretamente a posição do topo
+        shelfTopCm,
+        shelfHeightCm,
     );
-    
-    let finalShelfPosition = nearestHolePosition;
-
-    // Limites: [0, height - baseHeight - shelfHeight]
-    const maxShelfTop = (props.section.height ?? 0) - baseHeightCm - shelfHeightCm;
-    finalShelfPosition = Math.max(0, Math.min(maxShelfTop, finalShelfPosition));
 
     // Mesma section - move dentro
     if (sourceSectionId === props.section.id) {
@@ -194,6 +218,7 @@ function handleSectionDrop(event: DragEvent) {
 
     // Limpa estado
     isShelfDropTarget.value = false;
+    shelfDropPreviewCm.value = null;
     draggingShelfId.value = null;
     draggingShelfSectionId.value = null;
     draggingShelfOffset.value = 0;
@@ -231,7 +256,31 @@ const isSelected = computed(() => {
     return selection.isSectionSelected(props.section);
 });
 
+// Previne double-fire: ao clicar, o browser dispara @focus ANTES de @click.
+// Sem essa flag, selectItem() seria chamado duas vezes no mesmo clique
+// (mesmo padrão do Segment.vue). Diferente de lá, a seleção continua no
+// @click — a Section não é draggable, então o click nunca é engolido.
+let _skipFocusFromMouse = false;
+
+function handlePointerDown(event: PointerEvent) {
+    if (event.button !== 0) {
+        return;
+    }
+
+    _skipFocusFromMouse = true;
+    // Reset após o clique completar (focus acontece em < 50ms)
+    setTimeout(() => {
+        _skipFocusFromMouse = false;
+    }, 50);
+}
+
 function handleFocusSection() {
+    // Ignora focus gerado por mouse — o @click cuida da seleção.
+    // Só seleciona em focus por teclado (Tab).
+    if (_skipFocusFromMouse) {
+        return;
+    }
+
     selection.selectItem('section', props.section.id, props.section);
 }
 
@@ -239,9 +288,29 @@ function handleSelectSection(event: MouseEvent) {
     event.stopPropagation();
     selection.selectItem('section', props.section.id, props.section);
 }
+
+/**
+ * Botão direito na seção (fora de shelves/segmentos, que fazem .stop):
+ * seleciona e abre o menu de contexto do editor.
+ */
+function handleSectionContextMenu(event: MouseEvent) {
+    if (event.ctrlKey) {
+        // Gesto de Ctrl-drag do macOS — não abre menu (ver Segment.vue)
+        event.preventDefault();
+        event.stopPropagation();
+
+        return;
+    }
+
+    handleSelectSection(event);
+    openContextMenu(event, 'section', props.section.id);
+}
 // Handler para duplo clique na section (adiciona prateleira)
 function handleDoubleClick(event: MouseEvent) {
-    if ((event.target as HTMLElement).closest('[data-shelf], [data-segment]')) {
+    // [data-shelf-area] incluído: dblclick dentro da área de uma prateleira
+    // existente (mesmo em região "vazia" dela) não deve criar outra — só
+    // dblclick em espaço realmente livre da seção.
+    if ((event.target as HTMLElement).closest('[data-shelf], [data-segment], [data-shelf-area]')) {
         return;
     }
 
@@ -250,34 +319,29 @@ function handleDoubleClick(event: MouseEvent) {
     const offsetY = event.clientY - rect.top;
     const yPositionCm = offsetY / props.scale;
 
-    // Obtém dimensões da section para conversão correta
-    const sectionCamel = toCamelCase(props.section);
-    const baseHeightCm =
-        sectionCamel.baseHeight ?? DEFAULT_SECTION_FIELDS.baseHeight;
-
-    // yPositionCm é do topo total, precisa converter para área útil
-    const yPositionInUsableArea = yPositionCm - baseHeightCm;
-
-    // Encontra o furo mais próximo da posição clicada (relativo à área útil)
-    const nearestHoleInUsableArea = findNearestHole(
-        props.section,
-        yPositionInUsableArea,
-    );
-
-    // Converte de volta para o sistema de coordenadas do topo total
-    const nearestHole = baseHeightCm + nearestHoleInUsableArea;
-
     const lastShelf =
         sortedShelves.value.length > 0
             ? sortedShelves.value[sortedShelves.value.length - 1]
             : null;
+
+    const newShelfHeight =
+        lastShelf?.shelf_height ?? DEFAULT_SHELF_FIELDS.shelfHeight;
+
+    // Snap ao furo mais próximo + clamp — mesma função canônica do drop de
+    // prateleira (antes este fluxo deslocava por baseHeight e caía em furo
+    // diferente do drop para o mesmo Y)
+    const nearestHole = snapShelfTopToHole(
+        props.section,
+        yPositionCm,
+        newShelfHeight,
+    );
 
     const newShelfId = ulid();
     const newShelf = {
         id: newShelfId,
         // Gera código no mesmo padrão do backend: SHELF-{timestamp_segundos}
         code: `SHELF-${Math.floor(Date.now() / 1000)}`,
-        shelf_height: lastShelf?.shelf_height ?? DEFAULT_SHELF_FIELDS.shelfHeight,
+        shelf_height: newShelfHeight,
         // Herda largura da última prateleira ou usa a largura da seção como padrão
         shelf_width: lastShelf?.shelf_width || props.section.width,
         shelf_depth: lastShelf?.shelf_depth ?? DEFAULT_SHELF_FIELDS.shelfDepth,

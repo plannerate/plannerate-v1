@@ -1,10 +1,11 @@
 <template>
     <!-- Produtos um do lado do outro (horizontalmente) -->
     <div class="flex items-center" :style="distributionContainerStyle">
+        <!-- cursor-grab: o produto arrasta o segmento (mesma affordance do pai) -->
         <div
             v-for="(_, index) in getQuantity"
             :key="index"
-            class="z-20 cursor-pointer"
+            class="z-20 cursor-grab active:cursor-grabbing"
         >
             <img
                 v-if="hasImage"

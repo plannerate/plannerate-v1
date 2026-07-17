@@ -107,7 +107,11 @@ export function usePlanogramEditor() {
     /**
      * Move um segmento para outra prateleira
      */
-    function moveSegmentToShelf(segmentId: string, targetShelfId: string): boolean {
+    function moveSegmentToShelf(
+        segmentId: string,
+        targetShelfId: string,
+        targetIndex?: number,
+    ): boolean {
         const found = findSegmentById(segmentId);
 
         if (!found) {
@@ -135,6 +139,7 @@ export function usePlanogramEditor() {
                     targetShelfId,
                     recordChange,
                     t('plannerate.editor.product_does_not_fit_destination_shelf'),
+                    targetIndex,
                 ),
             historySnapshot: {
                 type: 'segment_transfer',
@@ -410,6 +415,7 @@ export function usePlanogramEditor() {
         productId: string,
         productData?: any,
         onProductUsed?: (productId: string) => void,
+        targetIndex?: number,
     ) {
         const shelf = findShelfById(shelfId);
 
@@ -426,6 +432,7 @@ export function usePlanogramEditor() {
                     onProductUsed,
                     recordChange,
                     t('plannerate.editor.product_does_not_fit_selected_shelf'),
+                    targetIndex,
                 ),
             historySnapshot: {
                 type: 'segment_update',

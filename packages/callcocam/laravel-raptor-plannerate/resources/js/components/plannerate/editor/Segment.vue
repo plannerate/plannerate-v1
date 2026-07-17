@@ -49,15 +49,20 @@
             Selo BCG no topo. Wrapper em left-1/2 sem -translate-x-1/2: o próprio pill se
             centraliza/rotaciona (igual ao selo ABC), respeitando a orientação da tag.
         -->
+        <!--
+            z-90 = Z.BADGES; o hover no selo interno eleva o wrapper para
+            z-95 = Z.BADGE_HOVER via :has() — sem isso o tooltip expandido do
+            BCG ficava preso no contexto do wrapper e não vencia os vizinhos.
+        -->
         <div
             v-if="bcgBadgeData"
-            class="pointer-events-none absolute left-1/2 z-90 flex items-center"
+            class="pointer-events-none absolute left-1/2 z-90 flex items-center has-[[data-bcg-badge]:hover]:z-[95]"
             :style="bcgBadgeWrapperStyle"
         >
             <BcgBadge :data="bcgBadgeData" :scale="props.scale" />
         </div>
 
-        <!-- Badge de sortimento ABC, na base do segmento -->
+        <!-- Badge de sortimento ABC, na base do segmento (z-90 = Z.BADGES) -->
         <div
             v-if="abcClassification"
             class="pointer-events-none absolute left-1/2 z-90 flex items-center"
@@ -67,7 +72,7 @@
         </div>
 
         <!-- Indicador visual de estoque alvo -->
-        <StockIndicator :segment="segment" :shelf-depth="shelfDepth" :scale="props.scale" @click="handleSegmentClick" />
+        <StockIndicator :segment="segment" :shelf-depth="shelfDepth" :scale="props.scale" />
 
         <!-- Selo configurável de indicador (Preço, Margem, Estoque, Ruptura) -->
         <ProductIndicatorBadge :product="layer?.product" :scale="props.scale" />
@@ -113,6 +118,37 @@
         </div>
     </div>
 </template>
+<script lang="ts">
+// ── Limpeza global de drop targets (escopo de MÓDULO — roda uma vez) ──
+// Antes cada instância de Segment registrava seus próprios listeners de window
+// (dragend/drop em capture): centenas de callbacks por drop em gôndolas
+// grandes. Agora há UM par de listeners compartilhado que percorre o Set de
+// clearers (mesmo padrão de refcount do usePlanogramKeyboard).
+const dropTargetClearers = new Set<() => void>();
+
+function clearAllDropTargets() {
+    dropTargetClearers.forEach((clear) => clear());
+}
+
+function registerDropTargetClearer(clear: () => void) {
+    if (dropTargetClearers.size === 0) {
+        window.addEventListener('dragend', clearAllDropTargets, true);
+        window.addEventListener('drop', clearAllDropTargets, true);
+    }
+
+    dropTargetClearers.add(clear);
+}
+
+function unregisterDropTargetClearer(clear: () => void) {
+    dropTargetClearers.delete(clear);
+
+    if (dropTargetClearers.size === 0) {
+        window.removeEventListener('dragend', clearAllDropTargets, true);
+        window.removeEventListener('drop', clearAllDropTargets, true);
+    }
+}
+</script>
+
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useAbcClassification } from '../../../composables/plannerate/analysis/useAbcClassification';
@@ -126,6 +162,7 @@ import {
 import { usePlanogramEditor } from '../../../composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '../../../composables/plannerate/core/usePlanogramSelection';
 import { DND_KEYS, hasSegmentData, isCopyModifier, setSegmentDragData } from '../../../composables/plannerate/dnd/transfer';
+import { useEditorContextMenu } from '../../../composables/plannerate/interactions/useEditorContextMenu';
 import type { Layer, Segment } from '../../../types/planogram';
 import AbcBadge from './AbcBadge.vue';
 import BcgBadge from './BcgBadge.vue';
@@ -165,6 +202,7 @@ const props = defineProps<Props>();
 const layer = computed<Layer | undefined>(() => props.segment.layer);
 const selection = usePlanogramSelection();
 const editor = usePlanogramEditor();
+const { openContextMenu } = useEditorContextMenu();
 
 /** Abre o painel de propriedades (injetado pelo PlanogramEditor) */
 const openProperties = inject<() => void>('openProperties');
@@ -265,19 +303,45 @@ function handlePointerDown(event: PointerEvent) {
     _skipFocusFromMouse = true;
     // Reset após o clique completar (focus acontece em < 50ms)
     setTimeout(() => {
- _skipFocusFromMouse = false; 
+ _skipFocusFromMouse = false;
 }, 50);
+
+    // Ctrl/Cmd+click: alterna este segmento na seleção múltipla.
+    // No macOS o gesto é Cmd+click (Ctrl+click é o clique secundário do
+    // sistema). Nota: Ctrl também é o modificador de cópia no drag — um
+    // Ctrl+drag alterna a seleção antes de copiar (efeito colateral aceito).
+    if (event.ctrlKey || event.metaKey) {
+        // Semeia a multi-seleção com o segmento já selecionado (single) para
+        // "Ctrl+click no segundo item" resultar em 2 selecionados — sem isso
+        // a seleção atual se perderia.
+        if (
+            selection.selectedItems.value.length === 0 &&
+            selection.selectedType.value === 'segment' &&
+            selection.selectedItem.value &&
+            selection.selectedId.value &&
+            selection.selectedId.value !== props.segment.id
+        ) {
+            selection.addToSelection(
+                'segment',
+                selection.selectedId.value,
+                selection.selectedItem.value.item as Segment,
+            );
+        }
+
+        selection.toggleSelection('segment', props.segment.id, props.segment);
+
+        return;
+    }
+
     selectThisSegment();
 }
 
 onMounted(() => {
-    window.addEventListener('dragend', clearDropTarget, true);
-    window.addEventListener('drop', clearDropTarget, true);
+    registerDropTargetClearer(clearDropTarget);
 });
 
 onBeforeUnmount(() => {
-    window.removeEventListener('dragend', clearDropTarget, true);
-    window.removeEventListener('drop', clearDropTarget, true);
+    unregisterDropTargetClearer(clearDropTarget);
 });
 
 function handleFocusSegment() {
@@ -310,12 +374,21 @@ function handleSegmentDoubleClick(event: MouseEvent) {
  * No macOS, Ctrl + botão esquerdo é o clique secundário do sistema: abre o menu
  * de contexto e aborta o arraste antes mesmo do dragstart — por isso "segurar
  * Ctrl e arrastar para copiar" não funcionava lá. Suprimimos o menu só nesse
- * caso (contextmenu com Ctrl pressionado); o botão direito puro segue normal.
+ * caso (contextmenu com Ctrl pressionado); o botão direito puro abre o menu
+ * de contexto do editor para este segmento.
  */
 function handleContextMenu(event: MouseEvent) {
     if (event.ctrlKey) {
+        // Suprime também para os ancestrais (shelf/section não devem abrir
+        // seus menus durante o gesto de Ctrl-drag do macOS)
         event.preventDefault();
+        event.stopPropagation();
+
+        return;
     }
+
+    selectThisSegment();
+    openContextMenu(event, 'segment', props.segment.id);
 }
 
 function handleDragStart(event: DragEvent) {
@@ -337,11 +410,15 @@ function handleDragStart(event: DragEvent) {
             isCopyModifier(event),
         );
 
-        // Define uma imagem de arrastar customizada
+        // Ghost ancorado no ponto real de agarre (não num offset fixo) — o
+        // segmento "segue o dedo", igual ao drag de prateleira.
         const dragImage = event.currentTarget as HTMLElement;
 
         if (dragImage) {
-            event.dataTransfer.setDragImage(dragImage, 20, 20);
+            const rect = dragImage.getBoundingClientRect();
+            const offsetX = Math.min(Math.max(event.clientX - rect.left, 0), rect.width);
+            const offsetY = Math.min(Math.max(event.clientY - rect.top, 0), rect.height);
+            event.dataTransfer.setDragImage(dragImage, offsetX, offsetY);
         }
     }
 }
@@ -412,6 +489,15 @@ return;
 }
 
     isDropTarget.value = false;
+
+    // Swap só vale para segmentos da MESMA shelf. Drop vindo de outra shelf
+    // deixa o evento borbulhar para a área da prateleira, que faz o
+    // move/copy (antes o swap era chamado à toa e falhava com warn).
+    const draggedShelfId = event.dataTransfer.getData(DND_KEYS.SEGMENT_SHELF_ID);
+
+    if (draggedShelfId && draggedShelfId !== props.segment.shelf_id) {
+        return;
+    }
 
     const draggedSegmentId = event.dataTransfer.getData(DND_KEYS.SEGMENT_ID);
 

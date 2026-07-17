@@ -10,6 +10,79 @@ import { currentGondola } from '../core/useGondolaState';
 import { findSegmentById } from '../core/useLookupHelpers';
 
 /**
+ * Reindexa o `ordering` dos segmentos ATIVOS de uma shelf conforme a ordem
+ * atual do array (1-based), registrando `segment_reorder` apenas para os que
+ * efetivamente mudaram.
+ *
+ * `ordering` é a fonte única de verdade da ordem: é o que o backend persiste
+ * e usa no reload (Shelf::segments() ordena por `ordering`). Antes, mover
+ * segmento entre shelves atualizava só `position` (campo que o reload ignora):
+ * a ordem parecia certa em memória, mas podia mudar após salvar + recarregar,
+ * e um swap posterior (que re-sorta por `ordering`) "pulava" o item movido.
+ *
+ * ATENÇÃO à ordem das chamadas: `pendingChanges` é um Map por entidade cujo
+ * merge preserva o `type` da PRIMEIRA mudança registrada. Registre
+ * `segment_transfer`/`segment_copy` ANTES de reindexar — e garanta que o
+ * segmento movido já esteja com o `ordering` final para o reindex não emitir
+ * um `segment_reorder` que engoliria o transfer.
+ */
+/**
+ * Converte um índice entre segmentos ATIVOS (o que a medição de DOM produz —
+ * segmentos deletados não são renderizados) no índice correspondente no array
+ * BRUTO `shelf.segments` (que pode conter deletados intercalados). Sem isso,
+ * splice por índice ativo cairia no lugar errado quando há soft-deletes.
+ */
+export function activeToRawInsertIndex(
+    segments: any[],
+    activeIndex: number,
+): number {
+    let seen = 0;
+
+    for (let i = 0; i < segments.length; i++) {
+        if (segments[i].deleted_at) {
+            continue;
+        }
+
+        if (seen === activeIndex) {
+            return i;
+        }
+
+        seen++;
+    }
+
+    return segments.length;
+}
+
+export function reindexShelfOrdering(
+    shelf: any,
+    recordChange: (change: any) => void,
+): void {
+    const activeSegments = (shelf.segments || []).filter(
+        (s: any) => !s.deleted_at,
+    );
+
+    activeSegments.forEach((seg: any, idx: number) => {
+        const newOrdering = idx + 1;
+
+        if (seg.ordering === newOrdering) {
+            return;
+        }
+
+        seg.ordering = newOrdering;
+
+        recordChange({
+            type: 'segment_reorder',
+            entityType: 'segment',
+            entityId: seg.id,
+            data: {
+                shelf_id: shelf.id,
+                ordering: newOrdering,
+            },
+        });
+    });
+}
+
+/**
  * Move um segmento de uma prateleira para outra
  */
 export function moveSegmentToShelf(
@@ -17,6 +90,7 @@ export function moveSegmentToShelf(
     targetShelfId: string,
     recordChange: (change: any) => void,
     productDoesNotFitMessage = 'Product does not fit on destination shelf.',
+    targetIndex?: number,
 ): boolean {
     if (!currentGondola.value) {
         console.warn('⚠️ Nenhuma gôndola carregada');
@@ -100,11 +174,6 @@ break;
 
         if (index > -1) {
             sourceShelf.segments.splice(index, 1);
-            // Reposiciona segmentos restantes
-            sourceShelf.segments.forEach((seg: any, idx: number) => {
-                seg.position = idx;
-            });
-            sourceShelf.segments = [...sourceShelf.segments];
         }
     }
 
@@ -114,8 +183,40 @@ break;
     }
 
     segment.shelf_id = targetShelfId;
-    segment.position = targetShelf.segments.length;
-    targetShelf.segments.push(segment);
+
+    // Insere na posição apontada pelo preview (targetIndex é entre segmentos
+    // ativos) ou no fim.
+    if (targetIndex !== undefined && targetIndex >= 0) {
+        const rawIdx = activeToRawInsertIndex(targetShelf.segments, targetIndex);
+        targetShelf.segments.splice(rawIdx, 0, segment);
+    } else {
+        targetShelf.segments.push(segment);
+    }
+
+    // Ordering final do segmento movido = sua posição ativa (1-based) no array.
+    // Setar ANTES do reindex para ele não emitir reorder deste segmento
+    // (o transfer registrado abaixo já carrega o ordering — ver helper).
+    segment.ordering =
+        targetShelf.segments
+            .filter((s: any) => !s.deleted_at)
+            .findIndex((s: any) => s.id === segment.id) + 1;
+
+    // Registra o transfer PRIMEIRO (o merge do Map preserva o type inicial)
+    recordChange({
+        type: 'segment_transfer',
+        entityType: 'segment',
+        entityId: segmentId,
+        data: {
+            from_shelf_id: sourceShelfId,
+            to_shelf_id: targetShelfId,
+            position: segment.ordering,
+        },
+    });
+
+    // Compacta o ordering das duas shelves (persistido via segment_reorder)
+    reindexShelfOrdering(sourceShelf, recordChange);
+    reindexShelfOrdering(targetShelf, recordChange);
+
     targetShelf.segments = [...targetShelf.segments];
 
     // Força reatividade
@@ -148,18 +249,6 @@ break;
     if (currentGondola.value.sections) {
         currentGondola.value.sections = [...currentGondola.value.sections];
     }
-
-    // Registra mudança
-    recordChange({
-        type: 'segment_transfer',
-        entityType: 'segment',
-        entityId: segmentId,
-        data: {
-            from_shelf_id: sourceShelfId,
-            to_shelf_id: targetShelfId,
-            position: segment.position,
-        },
-    });
 
     return true;
 }
@@ -236,13 +325,18 @@ break;
         }
     }
 
-    // Cria cópia profunda do segmento com novos IDs
+    // Cria cópia profunda do segmento com novos IDs.
+    // `ordering` explícito (fim da lista ativa): o spread copiaria o ordering
+    // da origem, colidindo com um segmento existente no destino.
     const newSegmentId = ulid();
+    const newOrdering =
+        (targetShelf.segments?.filter((s: any) => !s.deleted_at).length || 0) + 1;
     const newSegment: Segment = {
         ...segment,
         id: newSegmentId,
         shelf_id: targetShelfId,
-        position: targetShelf.segments?.length || 0,
+        ordering: newOrdering,
+        position: newOrdering,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
     };
@@ -288,7 +382,8 @@ break;
         currentGondola.value.sections = [...currentGondola.value.sections];
     }
 
-    // Registra mudança
+    // Registra mudança (chave `position` é o contrato de wire — o backend
+    // mapeia para a coluna `ordering`)
     recordChange({
         type: 'segment_copy',
         entityType: 'segment',
@@ -296,7 +391,7 @@ break;
         data: {
             source_segment_id: segmentId,
             shelf_id: targetShelfId,
-            position: newSegment.position,
+            position: newSegment.ordering,
             layer: newSegment.layer,
         },
     });

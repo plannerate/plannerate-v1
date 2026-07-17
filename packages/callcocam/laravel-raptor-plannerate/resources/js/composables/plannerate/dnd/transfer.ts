@@ -12,7 +12,7 @@
 
 import type { Product } from '@/types/planogram';
 
-/** MIME types customizados (e chaves simples legadas do drag de prateleira). */
+/** MIME types customizados dos drags do editor. */
 export const DND_KEYS = {
     /** JSON do produto único arrastado do painel de produtos */
     PRODUCT: 'application/x-product',
@@ -30,9 +30,6 @@ export const DND_KEYS = {
     IS_COPY: 'application/x-is-copy',
     /** id do registro de produto rejeitado (drag a partir do drawer de rejeitados) */
     REJECTED_ID: 'application/x-rejected-id',
-    /** chaves simples do drag de prateleira (mantidas por compatibilidade) */
-    SHELF_ID: 'shelfId',
-    SECTION_ID: 'sectionId',
 } as const;
 
 // ─── Modificador de cópia ─────────────────────────────────────────────────────
@@ -105,11 +102,19 @@ export function setRejectedProductDragData(
     dt.setData(DND_KEYS.REJECTED_ID, rejectedId);
 }
 
-/** Prepara o dataTransfer para o drag de uma prateleira (chaves legadas). */
+/**
+ * Prepara o dataTransfer para o drag de uma prateleira.
+ *
+ * Os dados reais (shelf/section de origem, offset) vivem nos refs globais
+ * `draggingShelfId`/`draggingShelfSectionId`/`draggingShelfOffset` — o drop lê
+ * de lá (dataTransfer.getData é vazio no dragover por protected mode). O
+ * `text/plain` mínimo existe porque alguns browsers (Firefox) não iniciam o
+ * drag com dataTransfer vazio.
+ */
 export function setShelfDragData(dt: DataTransfer, shelfId: string, sectionId: string): void {
+    void sectionId;
     dt.effectAllowed = 'move';
-    dt.setData(DND_KEYS.SHELF_ID, shelfId);
-    dt.setData(DND_KEYS.SECTION_ID, sectionId);
+    dt.setData('text/plain', shelfId);
 }
 
 // ─── Leitura (dragover/drop) ──────────────────────────────────────────────────

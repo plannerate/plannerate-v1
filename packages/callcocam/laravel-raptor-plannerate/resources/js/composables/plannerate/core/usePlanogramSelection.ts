@@ -236,7 +236,23 @@ export function usePlanogramSelection() {
      * Deleta o item atualmente selecionado (atalho de teclado)
      */
     async function deleteSelected(): Promise<boolean> {
-        const { type } = selectedItem.value as SelectedItem;
+        // Lote: 2+ segmentos multi-selecionados (Ctrl/Cmd+click no canvas).
+        // Seleções mistas caem no fluxo single abaixo (comportamento atual).
+        const multi = [...selectedItems.value];
+
+        if (multi.length > 1 && multi.every((i) => i.type === 'segment')) {
+            for (const entry of multi) {
+                await deleteSegment(entry.item as Segment);
+            }
+
+            clearSelection();
+
+            return true;
+        }
+
+        // Optional chaining: chamadas diretas (fora do keyboard) podem chegar
+        // aqui com seleção nula — não pode lançar TypeError.
+        const type = selectedItem.value?.type;
 
         if (!type) {
 return false;

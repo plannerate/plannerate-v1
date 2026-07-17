@@ -11,10 +11,12 @@
         ]"
         :style="[shelfAreaStyle, hoverStackStyle]"
         tabindex="0"
+        @pointerdown="handleAreaPointerDown"
         @mouseenter="isAreaHovered = true"
         @mouseleave="isAreaHovered = false"
         @focus="handleFocusShelf"
         @click="handleSelectShelf"
+        @contextmenu="handleShelfContextMenu"
         @dragover.prevent="handleProductDragOver"
         @dragleave="handleProductDragLeave"
         @drop.prevent="handleProductDrop"
@@ -25,13 +27,13 @@
             class="absolute top-0 left-0 flex h-full w-1.5 cursor-default items-center justify-center"
             :class="shelfZone.borderClass"
             :title="shelfZone.label"
-            style="z-index: 135"
+            :style="{ zIndex: Z.ZONE }"
             @click.stop
         />
         <!-- Segmentos um do lado do outro (horizontalmente) -->
         <div v-if="segments.length > 0" class="absolute right-0 left-0 flex"
             :class="[alignmentClass, isHookType ? 'items-start' : 'items-end']"
-            style="z-index: 50; pointer-events: none" :style="[segmentsPositionStyle, justifyDistributionStyle]">
+            style="pointer-events: none" :style="[{ zIndex: Z.SEGMENTS }, segmentsPositionStyle, justifyDistributionStyle]">
             <Segment v-for="(segment, index) in segments" :key="segment.id" :segment="segment" :scale="scale"
                 :shelf-depth="shelf.shelf_depth" :isFirstInShelf="index === 0"
                 :isLastInShelf="index === segments.length - 1" :facing-gap="justifyGap ?? undefined"
@@ -49,7 +51,7 @@
         <div v-if="showDeck" class="shelf-deck pointer-events-none absolute right-0 left-0" :style="{
             top: `${shelfBasePosition - deckDepth}px`,
             height: `${deckDepth}px`,
-            zIndex: 40,
+            zIndex: Z.DECK,
         }" />
 
         <!-- Drag Handle para mover a shelf -->
@@ -61,29 +63,39 @@
             <div v-if="isDropTarget"
                 class="pointer-events-none absolute inset-0  flex flex-col items-center justify-center gap-2 rounded-sm border-2 border-dashed border-primary bg-primary/15"
                 :style="{
-                    zIndex: 140,
+                    zIndex: Z.DROP_OVERLAY,
                 }">
                 <svg class="size-8 text-primary drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 <span class="text-sm font-semibold text-primary drop-shadow-lg">
-                    Solte aqui
+                    {{ t('plannerate.editor.drop_overlay.drop_here') }}
                 </span>
                 <span class="text-xs font-medium text-primary/80 drop-shadow">
-                    Prat  - {{ shelfDisplayNumber }}
+                    {{ t('plannerate.editor.drop_overlay.shelf_label', { number: String(shelfDisplayNumber) }) }}
                 </span>
-                <span class="mt-1 text-[10px] font-light text-primary/70">
-                    Ctrl para copiar
+                <!-- Copiar/mover só se aplica a segmento; produto é sempre "copy" -->
+                <span v-if="dropKind === 'segment'" class="mt-1 text-[10px] font-light text-primary/70">
+                    {{ t('plannerate.editor.drop_overlay.ctrl_to_copy') }}
                 </span>
             </div>
         </Transition>
+
+        <!-- Linha de inserção: onde o produto/segmento entra na ordem da shelf -->
+        <div v-if="isDropTarget && insertLineX !== null"
+            class="pointer-events-none absolute top-0 w-0.5 -translate-x-1/2 rounded-full bg-primary shadow-[0_0_4px_rgba(0,0,0,0.4)]"
+            :style="{
+                left: `${insertLineX}px`,
+                height: `${shelfBasePosition}px`,
+                zIndex: Z.DROP_OVERLAY,
+            }" />
 
         <!-- Base da prateleira (superfície física, pseudo-3D) - ARRASTÁVEL -->
         <div data-shelf="true" draggable="true" :style="{
             height: `${shelfHeight}px`,
             top: `${shelfBasePosition}px`,
-            zIndex: isDraggingShelf ? 120 : 130,
+            zIndex: isDraggingShelf ? Z.SHELF_DRAGGING : Z.SHELF_BASE,
         }"
             class="absolute right-0 left-0 cursor-grab rounded-[2px] active:cursor-grabbing"
             :class="{
@@ -129,10 +141,12 @@ import { router } from '@inertiajs/vue3';
 import { Lock, LockOpen } from 'lucide-vue-next';
 import { computed, ref, toRef, watch } from 'vue';
 import { useT } from '@/composables/useT';
+import { Z } from '../../../composables/plannerate/constants/zIndex';
 import { selectedTemplateCategoryId, shelfBoardStyle, showZoneIndicators } from '../../../composables/plannerate/core/useGondolaState';
 import { usePlanogramEditor } from '../../../composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '../../../composables/plannerate/core/usePlanogramSelection';
 import { useShelfLayout } from '../../../composables/plannerate/geometry/useShelfLayout';
+import { useEditorContextMenu } from '../../../composables/plannerate/interactions/useEditorContextMenu';
 import { useShelfDrag } from '../../../composables/plannerate/interactions/useShelfDrag';
 import { useShelfDragDrop } from '../../../composables/plannerate/interactions/useShelfDragDrop';
 import type { Section, Shelf as ShelfType } from '../../../types/planogram';
@@ -207,13 +221,14 @@ function toggleShelfLock(): void {
 const isAreaHovered = ref<boolean>(false);
 
 const hoverStackStyle = computed(() =>
-    isAreaHovered.value ? { zIndex: 200 } : undefined,
+    isAreaHovered.value ? { zIndex: Z.SHELF_HOVER } : undefined,
 );
 
 const scale = computed(() => props.scale || 3);
 
 const selection = usePlanogramSelection();
 const editor = usePlanogramEditor();
+const { openContextMenu } = useEditorContextMenu();
 
 const shelfRef = toRef(props, 'shelf');
 const sectionRef = toRef(props, 'section');
@@ -225,6 +240,8 @@ const displayNumberRef = toRef(props, 'displayNumber');
 // Usa composable para drag & drop de produtos/segments apenas
 const {
     isDropTarget,
+    dropKind,
+    insertLineX,
     handleDragOver: handleProductDragOver,
     handleDragLeave: handleProductDragLeave,
     handleDrop: handleProductDrop,
@@ -373,7 +390,30 @@ const isCategoryHighlighted = computed(
         props.shelf.template_slot.category_id === selectedTemplateCategoryId.value,
 );
 
+// Previne double-fire: ao clicar, o browser dispara @focus ANTES de @click.
+// Sem essa flag, selectItem() seria chamado duas vezes no mesmo clique
+// (mesmo padrão do Segment.vue). A seleção continua no @click.
+let _skipFocusFromMouse = false;
+
+function handleAreaPointerDown(event: PointerEvent) {
+    if (event.button !== 0) {
+        return;
+    }
+
+    _skipFocusFromMouse = true;
+    // Reset após o clique completar (focus acontece em < 50ms)
+    setTimeout(() => {
+        _skipFocusFromMouse = false;
+    }, 50);
+}
+
 function handleFocusShelf() {
+    // Ignora focus gerado por mouse — o @click cuida da seleção.
+    // Só seleciona em focus por teclado (Tab).
+    if (_skipFocusFromMouse) {
+        return;
+    }
+
     selection.selectItem('shelf', props.shelf.id, props.shelf, {
         section: props.section,
         lastShelf: props.lastShelf,
@@ -392,6 +432,24 @@ function handleSelectShelf(event: MouseEvent) {
     // Sincroniza a categoria do template com o estado global para que o
     // CategoryConfigPanel realce o card correspondente.
     selectedTemplateCategoryId.value = props.shelf.template_slot?.category_id ?? null;
+}
+
+/**
+ * Botão direito na área/base da prateleira: seleciona e abre o menu de
+ * contexto do editor. Segmentos tratam o próprio contextmenu (com .stop),
+ * então aqui só chegam cliques fora deles.
+ */
+function handleShelfContextMenu(event: MouseEvent) {
+    if (event.ctrlKey) {
+        // Gesto de Ctrl-drag do macOS — não abre menu (ver Segment.vue)
+        event.preventDefault();
+        event.stopPropagation();
+
+        return;
+    }
+
+    handleSelectShelf(event);
+    openContextMenu(event, 'shelf', props.shelf.id);
 }
 </script>
 
