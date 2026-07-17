@@ -8,6 +8,15 @@
                 </DialogDescription>
             </DialogHeader>
 
+            <!-- Contexto: gôndola atual (origem/destino conforme o modo) -->
+            <div class="flex items-center gap-2 rounded-md bg-muted/40 px-3 py-2 text-xs">
+                <LayoutGrid class="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span class="text-muted-foreground">{{ t('plannerate.sidebar.transfer_section.from_label') }}:</span>
+                <span class="truncate font-medium text-foreground">
+                    {{ currentGondola?.name ?? t('plannerate.sidebar.transfer_section.current_gondola') }}
+                </span>
+            </div>
+
             <Tabs v-model="operationMode" class="w-full">
                 <TabsList class="grid w-full grid-cols-2">
                     <TabsTrigger value="send">
@@ -20,7 +29,7 @@
                     </TabsTrigger>
                 </TabsList>
 
-                <!-- Modo: Enviar Seção -->
+                <!-- Modo: Enviar Módulo -->
                 <TabsContent value="send" class="space-y-4 py-4">
                     <div class="rounded-lg border bg-muted/50 p-3">
                         <p class="text-sm font-medium">
@@ -31,25 +40,25 @@
                         </p>
                     </div>
 
-                    <!-- Select de Seção (quando não há seção pré-selecionada) -->
+                    <!-- Select de Módulo (quando não há módulo pré-selecionado) -->
                     <div v-if="!section" class="space-y-2">
                         <Label for="send-section-select">{{ t('plannerate.sidebar.transfer_section.section') }}</Label>
-                        <select
-                            id="send-section-select"
-                            v-model="selectedSectionToSend"
-                            :disabled="isLoadingCurrentSections"
-                            class="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            <option value="">{{ t('plannerate.sidebar.transfer_section.select_section') }}</option>
-                            <option
-                                v-for="sectionItem in currentGondolaSections"
-                                :key="sectionItem.id"
-                                :value="sectionItem.id"
-                            >
-                                {{ sectionItem.name }}
-                            </option>
-                        </select>
-                        <p v-if="isLoadingCurrentSections" class="text-sm text-muted-foreground">
+                        <Select v-model="selectedSectionToSend" :disabled="isLoadingCurrentSections">
+                            <SelectTrigger id="send-section-select" class="h-9 w-full">
+                                <SelectValue :placeholder="t('plannerate.sidebar.transfer_section.select_section')" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="sectionItem in currentGondolaSections"
+                                    :key="sectionItem.id"
+                                    :value="sectionItem.id"
+                                >
+                                    {{ sectionItem.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p v-if="isLoadingCurrentSections" class="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Loader2 class="h-3.5 w-3.5 animate-spin" />
                             {{ t('plannerate.sidebar.transfer_section.loading_sections') }}
                         </p>
                     </div>
@@ -57,69 +66,71 @@
                     <!-- Select de Planograma -->
                     <div class="space-y-2">
                         <Label for="send-planogram-select">{{ t('plannerate.sidebar.transfer_section.planogram') }}</Label>
-                        <select
-                            id="send-planogram-select"
-                            v-model="selectedPlanogramId"
-                            @change="handlePlanogramChange"
-                            class="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            <option value="">{{ t('plannerate.sidebar.transfer_section.select_planogram') }}</option>
-                            <option
-                                v-for="planogram in planograms"
-                                :key="planogram.id"
-                                :value="planogram.id"
-                            >
-                                {{ planogram.name }}
-                            </option>
-                        </select>
+                        <Select v-model="selectedPlanogramId" @update:model-value="handlePlanogramChange">
+                            <SelectTrigger id="send-planogram-select" class="h-9 w-full">
+                                <SelectValue :placeholder="t('plannerate.sidebar.transfer_section.select_planogram')" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="planogram in planograms"
+                                    :key="planogram.id"
+                                    :value="planogram.id"
+                                >
+                                    {{ planogram.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <!-- Select de Gôndola -->
                     <div class="space-y-2">
                         <Label for="send-gondola-select">{{ t('plannerate.sidebar.transfer_section.gondola') }}</Label>
-                        <select
-                            id="send-gondola-select"
-                            v-model="selectedGondolaId"
-                            :disabled="!selectedPlanogramId || isLoadingGondolas"
-                            class="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            <option value="">{{ t('plannerate.sidebar.transfer_section.select_gondola') }}</option>
-                            <option
-                                v-for="gondola in gondolas"
-                                :key="gondola.id"
-                                :value="gondola.id"
-                            >
-                                {{ gondola.name }}
-                            </option>
-                        </select>
-                        <p v-if="isLoadingGondolas" class="text-sm text-muted-foreground">
+                        <Select v-model="selectedGondolaId" :disabled="!selectedPlanogramId || isLoadingGondolas">
+                            <SelectTrigger id="send-gondola-select" class="h-9 w-full">
+                                <SelectValue :placeholder="t('plannerate.sidebar.transfer_section.select_gondola')" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="gondola in gondolas"
+                                    :key="gondola.id"
+                                    :value="gondola.id"
+                                >
+                                    {{ gondola.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p v-if="isLoadingGondolas" class="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Loader2 class="h-3.5 w-3.5 animate-spin" />
                             {{ t('plannerate.sidebar.transfer_section.loading_gondolas') }}
                         </p>
                     </div>
 
                     <!-- Informações adicionais -->
-                    <div v-if="selectedGondolaId && !isSameGondola" class="rounded-lg border border-blue-200 bg-blue-50/50 p-3 dark:border-blue-800 dark:bg-blue-950/20">
-                        <p class="text-sm text-blue-900 dark:text-blue-100">
-                            <strong>ℹ️</strong> {{ t('plannerate.sidebar.transfer_section.info_move_to_end') }}
+                    <div v-if="isSameGondola" class="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-800 dark:bg-amber-950/20">
+                        <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <p class="text-sm text-amber-900 dark:text-amber-100">
+                            {{ t('plannerate.sidebar.transfer_section.warning_already_in_gondola') }}
                         </p>
                     </div>
-                    <div v-else-if="isSameGondola" class="rounded-lg border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-800 dark:bg-amber-950/20">
-                        <p class="text-sm text-amber-900 dark:text-amber-100">
-                            <strong>⚠️</strong> A seção já está nesta gôndola
+                    <div v-else-if="selectedGondolaId" class="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50/50 p-3 dark:border-blue-800 dark:bg-blue-950/20">
+                        <Info class="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+                        <p class="text-sm text-blue-900 dark:text-blue-100">
+                            {{ t('plannerate.sidebar.transfer_section.info_move_to_end') }}
                         </p>
                     </div>
 
-                    <Button 
-                        @click="handleTransfer" 
+                    <Button
+                        @click="handleTransfer"
                         :disabled="!selectedGondolaId || isTransferring || isSameGondola || (!section && !selectedSectionToSend)"
                         class="w-full"
                     >
                         <Loader2 v-if="isTransferring" class="mr-2 h-4 w-4 animate-spin" />
-                        {{ isSameGondola ? t('plannerate.sidebar.transfer_section.same_gondola') : t('plannerate.sidebar.transfer_section.move_section') }}
+                        <ArrowRight v-else class="mr-2 h-4 w-4" />
+                        {{ sendButtonLabel }}
                     </Button>
                 </TabsContent>
 
-                <!-- Modo: Trazer Seção -->
+                <!-- Modo: Trazer Módulo -->
                 <TabsContent value="receive" class="space-y-4 py-4">
                     <div class="rounded-lg border bg-muted/50 p-3">
                         <p class="text-sm font-medium">{{ t('plannerate.sidebar.transfer_section.receive_from_other') }}</p>
@@ -131,89 +142,94 @@
                     <!-- Select de Planograma -->
                     <div class="space-y-2">
                         <Label for="receive-planogram-select">{{ t('plannerate.sidebar.transfer_section.planogram') }}</Label>
-                        <select
-                            id="receive-planogram-select"
-                            v-model="receivePlanogramId"
-                            @change="handleReceivePlanogramChange"
-                            class="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            <option value="">{{ t('plannerate.sidebar.transfer_section.select_planogram') }}</option>
-                            <option
-                                v-for="planogram in planograms"
-                                :key="planogram.id"
-                                :value="planogram.id"
-                            >
-                                {{ planogram.name }}
-                            </option>
-                        </select>
+                        <Select v-model="receivePlanogramId" @update:model-value="handleReceivePlanogramChange">
+                            <SelectTrigger id="receive-planogram-select" class="h-9 w-full">
+                                <SelectValue :placeholder="t('plannerate.sidebar.transfer_section.select_planogram')" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="planogram in planograms"
+                                    :key="planogram.id"
+                                    :value="planogram.id"
+                                >
+                                    {{ planogram.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <!-- Select de Gôndola -->
                     <div class="space-y-2">
                         <Label for="receive-gondola-select">{{ t('plannerate.sidebar.transfer_section.gondola') }}</Label>
-                        <select
-                            id="receive-gondola-select"
+                        <Select
                             v-model="receiveGondolaId"
-                            @change="handleReceiveGondolaChange"
+                            @update:model-value="handleReceiveGondolaChange"
                             :disabled="!receivePlanogramId || isLoadingReceiveGondolas"
-                            class="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            <option value="">{{ t('plannerate.sidebar.transfer_section.select_gondola') }}</option>
-                            <option
-                                v-for="gondola in receiveGondolas"
-                                :key="gondola.id"
-                                :value="gondola.id"
-                            >
-                                {{ gondola.name }}
-                            </option>
-                        </select>
-                        <p v-if="isLoadingReceiveGondolas" class="text-sm text-muted-foreground">
+                            <SelectTrigger id="receive-gondola-select" class="h-9 w-full">
+                                <SelectValue :placeholder="t('plannerate.sidebar.transfer_section.select_gondola')" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="gondola in receiveGondolas"
+                                    :key="gondola.id"
+                                    :value="gondola.id"
+                                >
+                                    {{ gondola.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p v-if="isLoadingReceiveGondolas" class="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Loader2 class="h-3.5 w-3.5 animate-spin" />
                             {{ t('plannerate.sidebar.transfer_section.loading_gondolas') }}
                         </p>
                     </div>
 
-                    <!-- Select de Seção -->
+                    <!-- Select de Módulo -->
                     <div class="space-y-2">
                         <Label for="receive-section-select">{{ t('plannerate.sidebar.transfer_section.section') }}</Label>
-                        <select
-                            id="receive-section-select"
-                            v-model="selectedSectionId"
-                            :disabled="!receiveGondolaId || isLoadingSections"
-                            class="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            <option value="">{{ t('plannerate.sidebar.transfer_section.select_section') }}</option>
-                            <option
-                                v-for="sectionItem in availableSections"
-                                :key="sectionItem.id"
-                                :value="sectionItem.id"
-                            >
-                                {{ sectionItem.name }}
-                            </option>
-                        </select>
-                        <p v-if="isLoadingSections" class="text-sm text-muted-foreground">
+                        <Select v-model="selectedSectionId" :disabled="!receiveGondolaId || isLoadingSections">
+                            <SelectTrigger id="receive-section-select" class="h-9 w-full">
+                                <SelectValue :placeholder="t('plannerate.sidebar.transfer_section.select_section')" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="sectionItem in availableSections"
+                                    :key="sectionItem.id"
+                                    :value="sectionItem.id"
+                                >
+                                    {{ sectionItem.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p v-if="isLoadingSections" class="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Loader2 class="h-3.5 w-3.5 animate-spin" />
                             {{ t('plannerate.sidebar.transfer_section.loading_sections') }}
                         </p>
                     </div>
 
                     <!-- Informações adicionais -->
-                    <div v-if="selectedSectionId && !isCurrentGondola" class="rounded-lg border border-green-200 bg-green-50/50 p-3 dark:border-green-800 dark:bg-green-950/20">
-                        <p class="text-sm text-green-900 dark:text-green-100">
-                            <strong>ℹ️</strong> {{ t('plannerate.sidebar.transfer_section.info_receive_to_end') }}
+                    <div v-if="isCurrentGondola" class="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-800 dark:bg-amber-950/20">
+                        <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <p class="text-sm text-amber-900 dark:text-amber-100">
+                            {{ t('plannerate.sidebar.transfer_section.warning_already_in_gondola') }}
                         </p>
                     </div>
-                    <div v-else-if="isCurrentGondola" class="rounded-lg border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-800 dark:bg-amber-950/20">
-                        <p class="text-sm text-amber-900 dark:text-amber-100">
-                            <strong>⚠️</strong> A seção já está nesta gôndola
+                    <div v-else-if="selectedSectionId" class="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50/50 p-3 dark:border-green-800 dark:bg-green-950/20">
+                        <Info class="mt-0.5 h-4 w-4 shrink-0 text-green-600 dark:text-green-400" />
+                        <p class="text-sm text-green-900 dark:text-green-100">
+                            {{ t('plannerate.sidebar.transfer_section.info_receive_to_end') }}
                         </p>
                     </div>
 
-                    <Button 
-                        @click="handleReceive" 
+                    <Button
+                        @click="handleReceive"
                         :disabled="!selectedSectionId || isTransferring || isCurrentGondola"
                         class="w-full"
                     >
                         <Loader2 v-if="isTransferring" class="mr-2 h-4 w-4 animate-spin" />
-                        {{ isCurrentGondola ? t('plannerate.sidebar.transfer_section.same_gondola') : t('plannerate.sidebar.transfer_section.receive_section') }}
+                        <ArrowLeft v-else class="mr-2 h-4 w-4" />
+                        {{ receiveButtonLabel }}
                     </Button>
                 </TabsContent>
             </Tabs>
@@ -233,7 +249,7 @@
                         v-if="operationHistory.length > 0"
                         variant="ghost"
                         size="sm"
-                        @click="handleClearHistory"
+                        @click="clearHistoryDialogOpen = true"
                         :disabled="isReverting"
                         class="h-7 text-xs text-muted-foreground hover:text-destructive"
                     >
@@ -307,16 +323,49 @@
                     {{ t('plannerate.sidebar.transfer_section.close') }}
                 </Button>
             </DialogFooter>
+
+            <!-- Confirmação de limpar histórico -->
+            <AlertDialog v-model:open="clearHistoryDialogOpen">
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{{ t('plannerate.sidebar.transfer_section.clear_history_title') }}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {{ t('plannerate.sidebar.transfer_section.clear_history_description') }}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{{ t('plannerate.sidebar.transfer_section.cancel') }}</AlertDialogCancel>
+                        <AlertDialogAction
+                            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            @click="confirmClearHistory"
+                        >
+                            {{ t('plannerate.sidebar.transfer_section.clear_confirm') }}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </DialogContent>
     </Dialog>
 </template>
 
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
-import axios from 'axios';
-import { ArrowLeft, ArrowRight, Clock, History, Loader2, RotateCcw, Trash2 } from 'lucide-vue-next';
+import { router, useHttp } from '@inertiajs/vue3';
+import { AlertTriangle, ArrowLeft, ArrowRight, Clock, History, Info, LayoutGrid, Loader2, RotateCcw, Trash2 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import { sections as gondolaSectionsRoute } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
+import { gondolas as planogramGondolasRoute, index as planogramsIndexRoute } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/PlanogramApiController';
+import { transfer } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/SectionController';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -328,6 +377,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
@@ -344,10 +394,17 @@ interface OperationHistory {
     fromGondolaName?: string;
     toGondolaId: string;
     toGondolaName?: string;
-    originalOrdering: number;
     timestamp: number;
     description: string;
 }
+
+interface SelectOption {
+    id: string;
+    name: string;
+}
+
+/** Formato das collections da API do editor (Laravel Resource: { data: [...] }). */
+type ApiCollection<T> = { data?: T[] };
 
 interface Props {
     open?: boolean;
@@ -366,7 +423,6 @@ const emit = defineEmits<Emits>();
 const { t } = useT();
 
 const editor = usePlanogramEditor();
-// const _page = usePage();
 
 // Estado local
 const isOpen = computed({
@@ -380,20 +436,19 @@ const operationMode = ref<'send' | 'receive'>('send');
 // Estado para modo "Enviar"
 const selectedPlanogramId = ref<string>('');
 const selectedGondolaId = ref<string>('');
-const selectedSectionToSend = ref<string>(''); // Seção selecionada quando não há seção pré-selecionada
-const currentGondolaSections = ref<any[]>([]); // Modulos da gôndola atual
+const selectedSectionToSend = ref<string>(''); // Módulo selecionado quando não há módulo pré-selecionado
+const currentGondolaSections = ref<SelectOption[]>([]); // Modulos da gôndola atual
 const isLoadingCurrentSections = ref(false);
-const planograms = ref<any[]>([]);
-const gondolas = ref<any[]>([]);
-const isLoadingPlanograms = ref(false);
+const planograms = ref<SelectOption[]>([]);
+const gondolas = ref<SelectOption[]>([]);
 const isLoadingGondolas = ref(false);
 
 // Estado para modo "Trazer"
 const receivePlanogramId = ref<string>('');
 const receiveGondolaId = ref<string>('');
-const receiveGondolas = ref<any[]>([]);
+const receiveGondolas = ref<SelectOption[]>([]);
 const selectedSectionId = ref<string>('');
-const availableSections = ref<any[]>([]);
+const availableSections = ref<SelectOption[]>([]);
 const isLoadingReceiveGondolas = ref(false);
 const isLoadingSections = ref(false);
 
@@ -401,6 +456,14 @@ const isLoadingSections = ref(false);
 const isTransferring = ref(false);
 const isReverting = ref(false);
 const revertingOperationId = ref<string | null>(null);
+const clearHistoryDialogOpen = ref(false);
+
+// Requisições standalone ao backend próprio via useHttp (Inertia v3 — sem axios)
+const planogramsHttp = useHttp<Record<string, never>, ApiCollection<SelectOption>>();
+const sendGondolasHttp = useHttp<Record<string, never>, ApiCollection<SelectOption>>();
+const sendSectionsHttp = useHttp<Record<string, never>, ApiCollection<SelectOption>>();
+const receiveGondolasHttp = useHttp<Record<string, never>, ApiCollection<SelectOption>>();
+const receiveSectionsHttp = useHttp<Record<string, never>, ApiCollection<SelectOption>>();
 
 // Chave para localStorage
 const STORAGE_KEY = 'transfer_section_history';
@@ -499,25 +562,37 @@ const isCurrentGondola = computed(() => {
     return receiveGondolaId.value === currentGondola.value?.id;
 });
 
+// Rótulos dos botões
+const sendButtonLabel = computed(() => {
+    return isSameGondola.value
+        ? t('plannerate.sidebar.transfer_section.same_gondola')
+        : t('plannerate.sidebar.transfer_section.move_section');
+});
+
+const receiveButtonLabel = computed(() => {
+    return isCurrentGondola.value
+        ? t('plannerate.sidebar.transfer_section.same_gondola')
+        : t('plannerate.sidebar.transfer_section.receive_section');
+});
+
 // Inicializa quando abre o dialog
 watch(() => props.open, async (isOpen) => {
     if (isOpen) {
         // Recarrega histórico do localStorage (caso tenha sido atualizado em outra aba)
-        const storedHistory = loadHistoryFromStorage();
-        operationHistory.value = storedHistory;
-        
+        operationHistory.value = loadHistoryFromStorage();
+
         // Carrega lista de planogramas
         await loadPlanograms();
-        
+
         // Define planograma e gôndola atuais como padrão (modo Enviar)
         if (currentGondola.value) {
             selectedPlanogramId.value = currentGondola.value.planogram_id || '';
             selectedGondolaId.value = currentGondola.value.id;
-            
+
             // Carrega gondolas do planograma atual
             await loadGondolas(currentGondola.value.planogram_id || '');
-            
-            // Se não há seção pré-selecionada, carrega seções da gôndola atual
+
+            // Se não há módulo pré-selecionado, carrega módulos da gôndola atual
             if (!props.section && currentGondola.value.id) {
                 await loadCurrentGondolaSections(currentGondola.value.id);
             }
@@ -529,8 +604,8 @@ watch(() => props.open, async (isOpen) => {
         selectedSectionId.value = '';
         receiveGondolas.value = [];
         availableSections.value = [];
-        
-        // Reseta seção selecionada para enviar
+
+        // Reseta módulo selecionado para enviar
         selectedSectionToSend.value = '';
     }
 });
@@ -556,16 +631,13 @@ watch(operationMode, () => {
  * Carrega lista de planogramas disponíveis
  */
 async function loadPlanograms() {
-    isLoadingPlanograms.value = true;
-
     try {
-        const response = await axios.get('/api/editor/planograms');
-        planograms.value = response.data.data;
+        await planogramsHttp.get(planogramsIndexRoute.url());
+        planograms.value = planogramsHttp.response?.data ?? [];
     } catch (error) {
         console.error('Erro ao carregar planogramas:', error);
         toast.error(t('plannerate.sidebar.transfer_section.errors.load_planograms'));
-    } finally {
-        isLoadingPlanograms.value = false;
+        planograms.value = [];
     }
 }
 
@@ -582,18 +654,19 @@ async function loadGondolas(planogramId: string) {
     isLoadingGondolas.value = true;
 
     try {
-        const response = await axios.get(`/api/editor/planograms/${planogramId}/gondolas`);
-        gondolas.value = response.data.data;
+        await sendGondolasHttp.get(planogramGondolasRoute.url({ planogram: planogramId }));
+        gondolas.value = sendGondolasHttp.response?.data ?? [];
     } catch (error) {
         console.error('Erro ao carregar gôndolas:', error);
         toast.error(t('plannerate.sidebar.transfer_section.errors.load_gondolas'));
+        gondolas.value = [];
     } finally {
         isLoadingGondolas.value = false;
     }
 }
 
 /**
- * Carrega seções da gôndola atual (para seleção quando não há seção pré-selecionada)
+ * Carrega módulos da gôndola atual (para seleção quando não há módulo pré-selecionado)
  */
 async function loadCurrentGondolaSections(gondolaId: string) {
     if (!gondolaId) {
@@ -605,18 +678,19 @@ async function loadCurrentGondolaSections(gondolaId: string) {
     isLoadingCurrentSections.value = true;
 
     try {
-        const response = await axios.get(`/api/editor/gondolas/${gondolaId}/sections`);
-        currentGondolaSections.value = response.data.data || [];
+        await sendSectionsHttp.get(gondolaSectionsRoute.url({ gondola: gondolaId }));
+        currentGondolaSections.value = sendSectionsHttp.response?.data ?? [];
     } catch (error) {
-        console.error('Erro ao carregar seções da gôndola:', error);
+        console.error('Erro ao carregar módulos da gôndola:', error);
         toast.error(t('plannerate.sidebar.transfer_section.errors.load_sections'));
+        currentGondolaSections.value = [];
     } finally {
         isLoadingCurrentSections.value = false;
     }
 }
 
 /**
- * Handler para mudança de planograma
+ * Handler para mudança de planograma (modo Enviar)
  */
 async function handlePlanogramChange() {
     selectedGondolaId.value = '';
@@ -654,18 +728,19 @@ async function loadReceiveGondolas(planogramId: string) {
     isLoadingReceiveGondolas.value = true;
 
     try {
-        const response = await axios.get(`/api/editor/planograms/${planogramId}/gondolas`);
-        receiveGondolas.value = response.data.data;
+        await receiveGondolasHttp.get(planogramGondolasRoute.url({ planogram: planogramId }));
+        receiveGondolas.value = receiveGondolasHttp.response?.data ?? [];
     } catch (error) {
         console.error('Erro ao carregar gôndolas:', error);
         toast.error(t('plannerate.sidebar.transfer_section.errors.load_gondolas'));
+        receiveGondolas.value = [];
     } finally {
         isLoadingReceiveGondolas.value = false;
     }
 }
 
 /**
- * Carrega seções da gôndola selecionada (modo Trazer)
+ * Carrega módulos da gôndola selecionada (modo Trazer)
  */
 async function loadSections(gondolaId: string) {
     if (!gondolaId) {
@@ -677,23 +752,24 @@ async function loadSections(gondolaId: string) {
     isLoadingSections.value = true;
 
     try {
-        const response = await axios.get(`/api/editor/gondolas/${gondolaId}/sections`);
-        availableSections.value = response.data.data || [];
+        await receiveSectionsHttp.get(gondolaSectionsRoute.url({ gondola: gondolaId }));
+        availableSections.value = receiveSectionsHttp.response?.data ?? [];
     } catch (error) {
-        console.error('Erro ao carregar seções:', error);
+        console.error('Erro ao carregar módulos:', error);
         toast.error(t('plannerate.sidebar.transfer_section.errors.load_sections'));
+        availableSections.value = [];
     } finally {
         isLoadingSections.value = false;
     }
 }
 
 /**
- * Transfere a seção para a gôndola selecionada (modo Enviar)
+ * Move o módulo para a gôndola selecionada (modo Enviar)
  */
-async function handleTransfer() {
-    // Determina qual seção usar: pré-selecionada ou selecionada no select
+function handleTransfer() {
+    // Determina qual módulo usar: pré-selecionado ou selecionado no select
     const sectionIdToTransfer = props.section?.id || selectedSectionToSend.value;
-    
+
     if (!sectionIdToTransfer || !selectedGondolaId.value) {
         return;
     }
@@ -706,94 +782,83 @@ async function handleTransfer() {
 
     isTransferring.value = true;
 
-    try {
-        // Busca informações da seção antes de transferir (para obter ordering)
-        let sectionData: any = null;
-        let sectionName = '';
-        
-        try {
-            const sectionInfo = await axios.get(`/api/editor/sections/${sectionIdToTransfer}`);
-            sectionData = sectionInfo.data.data || sectionInfo.data;
-            sectionName = sectionData?.name || props.section?.name || t('plannerate.sidebar.transfer_section.unnamed_section');
-        } catch (error) {
-            console.warn('Não foi possível buscar informações da seção:', error);
-            sectionName = props.section?.name || t('plannerate.sidebar.transfer_section.unnamed_section');
-        }
-        
-        // Busca informações das gôndolas para o histórico
-        const fromGondola = gondolas.value.find(g => g.id === currentGondola.value?.id) || 
-                           { id: currentGondola.value?.id || '', name: t('plannerate.sidebar.transfer_section.current_gondola') };
-        const toGondola = gondolas.value.find(g => g.id === selectedGondolaId.value) || 
-                         { id: selectedGondolaId.value, name: t('plannerate.sidebar.transfer_section.destination_gondola') };
+    const historyEntry = buildSendHistoryEntry(sectionIdToTransfer);
 
-        // Salva informações para reverter
-        const historyEntry: OperationHistory = {
-            id: `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            type: 'send',
-            sectionId: sectionIdToTransfer,
-            sectionName: sectionName,
-            fromGondolaId: currentGondola.value?.id || '',
-            fromGondolaName: fromGondola.name,
-            toGondolaId: selectedGondolaId.value,
-            toGondolaName: toGondola.name,
-            originalOrdering: sectionData?.ordering || props.section?.ordering || 0,
-            timestamp: Date.now(),
-            description: t('plannerate.sidebar.transfer_section.sent_description', { from: fromGondola.name, to: toGondola.name }),
-        };
+    router.post(
+        transfer.url({ section: sectionIdToTransfer }),
+        {
+            gondola_id: selectedGondolaId.value,
+        },
+        {
+            preserveScroll: true,
+            preserveState: false, // Força reload dos dados
+            onSuccess: async () => {
+                toast.success(t('plannerate.sidebar.transfer_section.success.moved'));
 
-        // Faz a requisição para mover a seção
-        router.post(
-            `/api/editor/sections/${sectionIdToTransfer}/transfer`,
-            {
-                gondola_id: selectedGondolaId.value,
-            },
-            {
-                preserveScroll: true,
-                preserveState: false, // Força reload dos dados
-                onSuccess: async () => {
-                    toast.success(t('plannerate.sidebar.transfer_section.success.moved'));
-                    // Adiciona ao histórico
-                    operationHistory.value.unshift(historyEntry);
-                    // Salva no localStorage
-                    saveHistoryToStorage();
-                    // Mantém o dialog aberto
-                    // Reseta apenas os campos
-                    selectedGondolaId.value = '';
-                    selectedSectionToSend.value = '';
+                operationHistory.value.unshift(historyEntry);
+                saveHistoryToStorage();
 
-                    if (currentGondola.value) {
-                        selectedPlanogramId.value = currentGondola.value.planogram_id || '';
-                        selectedGondolaId.value = currentGondola.value.id;
+                // Mantém o dialog aberto — reseta apenas os campos
+                selectedGondolaId.value = '';
+                selectedSectionToSend.value = '';
 
-                        // Recarrega seções se não há seção pré-selecionada
-                        if (!props.section) {
-                            await loadCurrentGondolaSections(currentGondola.value.id);
-                        }
+                if (currentGondola.value) {
+                    selectedPlanogramId.value = currentGondola.value.planogram_id || '';
+                    selectedGondolaId.value = currentGondola.value.id;
+
+                    // Recarrega módulos se não há módulo pré-selecionado
+                    if (!props.section) {
+                        await loadCurrentGondolaSections(currentGondola.value.id);
                     }
-                },
-                onError: (errors) => {
-                    console.error('Erro ao mover seção:', errors);
-                    const errorMessage = typeof errors === 'string' 
-                        ? errors 
-                        : errors?.error || 'Erro ao mover seção';
-                    toast.error(errorMessage);
-                },
-                onFinish: () => {
-                    isTransferring.value = false;
-                },
-            }
-        );
-    } catch (error) {
-        console.error('Erro ao mover seção:', error);
-        toast.error(t('plannerate.sidebar.transfer_section.errors.move_section'));
-        isTransferring.value = false;
-    }
+                }
+            },
+            onError: (errors) => {
+                console.error('Erro ao mover módulo:', errors);
+                const errorMessage = typeof errors === 'string'
+                    ? errors
+                    : errors?.error || t('plannerate.sidebar.transfer_section.errors.move_section');
+                toast.error(errorMessage);
+            },
+            onFinish: () => {
+                isTransferring.value = false;
+            },
+        },
+    );
 }
 
 /**
- * Traz a seção selecionada para a gôndola atual (modo Trazer)
+ * Monta a entrada de histórico para uma movimentação de envio.
  */
-async function handleReceive() {
+function buildSendHistoryEntry(sectionId: string): OperationHistory {
+    const sectionName = props.section?.name
+        || currentGondolaSections.value.find(s => s.id === sectionId)?.name
+        || t('plannerate.sidebar.transfer_section.unnamed_section');
+
+    const fromGondola = {
+        id: currentGondola.value?.id || '',
+        name: currentGondola.value?.name || t('plannerate.sidebar.transfer_section.current_gondola'),
+    };
+    const toGondola = gondolas.value.find(g => g.id === selectedGondolaId.value)
+        || { id: selectedGondolaId.value, name: t('plannerate.sidebar.transfer_section.destination_gondola') };
+
+    return {
+        id: `op_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        type: 'send',
+        sectionId,
+        sectionName,
+        fromGondolaId: fromGondola.id,
+        fromGondolaName: fromGondola.name,
+        toGondolaId: selectedGondolaId.value,
+        toGondolaName: toGondola.name,
+        timestamp: Date.now(),
+        description: t('plannerate.sidebar.transfer_section.sent_description', { from: fromGondola.name, to: toGondola.name }),
+    };
+}
+
+/**
+ * Traz o módulo selecionado para a gôndola atual (modo Trazer)
+ */
+function handleReceive() {
     if (!selectedSectionId.value || !currentGondola.value?.id) {
         return;
     }
@@ -806,160 +871,127 @@ async function handleReceive() {
 
     isTransferring.value = true;
 
-    try {
-        // Busca informações da seção antes de transferir (para obter ordering)
-        let sectionData: any = null;
+    const historyEntry = buildReceiveHistoryEntry(selectedSectionId.value);
 
-        try {
-            const sectionInfo = await axios.get(`/api/editor/sections/${selectedSectionId.value}`);
-            sectionData = sectionInfo.data.data || sectionInfo.data;
-        } catch (error) {
-            console.warn('Não foi possível buscar informações da seção:', error);
-        }
-        
-        // Busca informações das gôndolas para o histórico
-        const fromGondola = receiveGondolas.value.find(g => g.id === receiveGondolaId.value) || 
-                           { id: receiveGondolaId.value, name: t('plannerate.sidebar.transfer_section.origin_gondola') };
-        const toGondola = { 
-            id: currentGondola.value.id, 
-            name: currentGondola.value.name || t('plannerate.sidebar.transfer_section.current_gondola')
-        };
+    router.post(
+        transfer.url({ section: selectedSectionId.value }),
+        {
+            gondola_id: currentGondola.value.id,
+        },
+        {
+            preserveScroll: true,
+            preserveState: false, // Força reload dos dados
+            onSuccess: () => {
+                toast.success(t('plannerate.sidebar.transfer_section.success.received'));
 
-        // Busca a seção selecionada na lista
-        const selectedSection = availableSections.value.find(s => s.id === selectedSectionId.value);
+                operationHistory.value.unshift(historyEntry);
+                saveHistoryToStorage();
 
-        // Salva informações para reverter
-        const historyEntry: OperationHistory = {
-            id: `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            type: 'receive',
-            sectionId: selectedSectionId.value,
-            sectionName: selectedSection?.name || sectionData?.name || t('plannerate.sidebar.transfer_section.unnamed_section'),
-            fromGondolaId: receiveGondolaId.value,
-            fromGondolaName: fromGondola.name,
-            toGondolaId: currentGondola.value.id,
-            toGondolaName: toGondola.name,
-            originalOrdering: sectionData?.ordering || selectedSection?.ordering || 0,
-            timestamp: Date.now(),
-            description: t('plannerate.sidebar.transfer_section.received_description', { from: fromGondola.name, to: toGondola.name }),
-        };
-
-        // Faz a requisição para mover a seção
-        router.post(
-            `/api/editor/sections/${selectedSectionId.value}/transfer`,
-            {
-                gondola_id: currentGondola.value.id,
+                // Mantém o dialog aberto — reseta apenas os campos
+                receiveGondolaId.value = '';
+                selectedSectionId.value = '';
+                availableSections.value = [];
             },
-            {
-                preserveScroll: true,
-                preserveState: false, // Força reload dos dados
-                onSuccess: () => {
-                    toast.success(t('plannerate.sidebar.transfer_section.success.received'));
-                    // Adiciona ao histórico
-                    operationHistory.value.unshift(historyEntry);
-                    // Salva no localStorage
-                    saveHistoryToStorage();
-                    // Mantém o dialog aberto
-                    // Reseta apenas os campos
-                    receiveGondolaId.value = '';
-                    selectedSectionId.value = '';
-                    availableSections.value = [];
-                },
-                onError: (errors) => {
-                    console.error('Erro ao trazer seção:', errors);
-                    const errorMessage = typeof errors === 'string' 
-                        ? errors 
-                        : errors?.error || 'Erro ao trazer seção';
-                    toast.error(errorMessage);
-                },
-                onFinish: () => {
-                    isTransferring.value = false;
-                },
-            }
-        );
-    } catch (error) {
-        console.error('Erro ao trazer seção:', error);
-        toast.error(t('plannerate.sidebar.transfer_section.errors.receive_section'));
-        isTransferring.value = false;
-    }
+            onError: (errors) => {
+                console.error('Erro ao trazer módulo:', errors);
+                const errorMessage = typeof errors === 'string'
+                    ? errors
+                    : errors?.error || t('plannerate.sidebar.transfer_section.errors.receive_section');
+                toast.error(errorMessage);
+            },
+            onFinish: () => {
+                isTransferring.value = false;
+            },
+        },
+    );
 }
 
 /**
- * Reverte uma operação do histórico
+ * Monta a entrada de histórico para uma movimentação de recebimento.
  */
-async function revertOperation(operation: OperationHistory) {
-    if (isReverting.value || revertingOperationId.value) {
-return;
+function buildReceiveHistoryEntry(sectionId: string): OperationHistory {
+    const fromGondola = receiveGondolas.value.find(g => g.id === receiveGondolaId.value)
+        || { id: receiveGondolaId.value, name: t('plannerate.sidebar.transfer_section.origin_gondola') };
+    const toGondola = {
+        id: currentGondola.value?.id || '',
+        name: currentGondola.value?.name || t('plannerate.sidebar.transfer_section.current_gondola'),
+    };
+    const selectedSection = availableSections.value.find(s => s.id === sectionId);
+
+    return {
+        id: `op_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        type: 'receive',
+        sectionId,
+        sectionName: selectedSection?.name || t('plannerate.sidebar.transfer_section.unnamed_section'),
+        fromGondolaId: receiveGondolaId.value,
+        fromGondolaName: fromGondola.name,
+        toGondolaId: toGondola.id,
+        toGondolaName: toGondola.name,
+        timestamp: Date.now(),
+        description: t('plannerate.sidebar.transfer_section.received_description', { from: fromGondola.name, to: toGondola.name }),
+    };
 }
+
+/**
+ * Reverte uma operação do histórico (recoloca o módulo na gôndola de origem)
+ */
+function revertOperation(operation: OperationHistory) {
+    if (isReverting.value || revertingOperationId.value) {
+        return;
+    }
 
     revertingOperationId.value = operation.id;
     isReverting.value = true;
 
-    try {
-        // Faz a requisição para reverter a transferência
-        router.post(
-            `/api/editor/sections/${operation.sectionId}/transfer`,
-            {
-                gondola_id: operation.fromGondolaId,
-            },
-            {
-                preserveScroll: true,
-                preserveState: false,
-                onSuccess: () => {
-                    toast.success(t('plannerate.sidebar.transfer_section.success.reverted'));
-                    // Remove do histórico
-                    const index = operationHistory.value.findIndex(op => op.id === operation.id);
+    router.post(
+        transfer.url({ section: operation.sectionId }),
+        {
+            gondola_id: operation.fromGondolaId,
+        },
+        {
+            preserveScroll: true,
+            preserveState: false,
+            onSuccess: () => {
+                toast.success(t('plannerate.sidebar.transfer_section.success.reverted'));
+                // Remove do histórico
+                const index = operationHistory.value.findIndex(op => op.id === operation.id);
 
-                    if (index !== -1) {
-                        operationHistory.value.splice(index, 1);
-                        // Salva no localStorage
-                        saveHistoryToStorage();
-                    }
-                },
-                onError: (errors) => {
-                    console.error('Erro ao reverter operação:', errors);
-                    const errorMessage = typeof errors === 'string' 
-                        ? errors 
-                        : errors?.error || 'Erro ao reverter operação';
-                    toast.error(errorMessage);
-                },
-                onFinish: () => {
-                    isReverting.value = false;
-                    revertingOperationId.value = null;
-                },
-            }
-        );
-    } catch (error: any) {
-        console.error('Erro ao reverter operação:', error);
-        const errorMessage = error?.response?.data?.error || error?.message || 'Erro ao reverter operação';
-        toast.error(errorMessage);
-        isReverting.value = false;
-        revertingOperationId.value = null;
-    }
+                if (index !== -1) {
+                    operationHistory.value.splice(index, 1);
+                    saveHistoryToStorage();
+                }
+            },
+            onError: (errors) => {
+                console.error('Erro ao reverter operação:', errors);
+                const errorMessage = typeof errors === 'string'
+                    ? errors
+                    : errors?.error || t('plannerate.sidebar.transfer_section.errors.move_section');
+                toast.error(errorMessage);
+            },
+            onFinish: () => {
+                isReverting.value = false;
+                revertingOperationId.value = null;
+            },
+        },
+    );
 }
 
 /**
- * Limpa o histórico de operações (com confirmação)
+ * Confirma a limpeza do histórico (acionado pelo AlertDialog)
  */
-function handleClearHistory() {
-    if (operationHistory.value.length === 0) {
-return;
-}
+function confirmClearHistory() {
+    operationHistory.value = [];
 
-    // Confirmação simples via toast
-    if (confirm(t('plannerate.sidebar.transfer_section.confirm_clear_history'))) {
-        operationHistory.value = [];
-
-        // Remove do localStorage
-        try {
-            if (isBrowser) {
-                window.localStorage.removeItem(STORAGE_KEY);
-            }
-        } catch (error) {
-            console.warn('Erro ao remover histórico do localStorage:', error);
+    try {
+        if (isBrowser) {
+            window.localStorage.removeItem(STORAGE_KEY);
         }
-
-        toast.success(t('plannerate.sidebar.transfer_section.success.history_cleared'));
+    } catch (error) {
+        console.warn('Erro ao remover histórico do localStorage:', error);
     }
+
+    clearHistoryDialogOpen.value = false;
+    toast.success(t('plannerate.sidebar.transfer_section.success.history_cleared'));
 }
 
 /**

@@ -24,6 +24,9 @@ export type ChangeType =
     | 'layer_update' // Atualiza propriedades de uma camada
     | 'layer_create' // Cria nova camada
     | 'segment_update' // Atualiza propriedades de um segmento
+    | 'segment_reorder' // Reordena um segmento na mesma shelf (via ordering)
+    | 'segment_transfer' // Move um segmento para outra shelf
+    | 'segment_copy' // Copia um segmento para outra shelf
     | 'gondola_update' // Atualiza propriedades gerais da gôndola
     | 'gondola_scale' // Altera escala/zoom da gôndola
     | 'gondola_alignment' // Altera alinhamento da gôndola
@@ -59,6 +62,7 @@ export interface SavePayload {
  */
 export interface RecordChangeOptions {
     schedule?: boolean; // Se deve agendar auto-save (default: true)
+    replace?: boolean; // Se true, SOBRESCREVE a entrada pendente (type + data) em vez de mesclar (default: false)
     onSaved?: () => void | Promise<void>; // Callback executado após save com sucesso
 }
 
@@ -194,15 +198,22 @@ export function usePlanogramChanges() {
         // Verifica se já existe mudança para esta entidade
         const existing = pendingChanges.value.get(key);
 
-        if (existing) {
-            // Mescla dados mantendo o histórico
+        if (existing && !options.replace) {
+            // Mescla dados mantendo o histórico.
+            //
+            // ATENÇÃO: o merge PRESERVA o `type` da PRIMEIRA mudança. Para
+            // undo/redo isso é perigoso — o delta do undo (ex.: segment_update)
+            // seria engolido pela edição ainda pendente (ex.: segment_transfer),
+            // fazendo o backend re-aplicar a operação original em vez do undo.
+            // Por isso undo/redo passa `replace: true` (ver useSnapshotManager).
             pendingChanges.value.set(key, {
                 ...existing,
                 data: { ...existing.data, ...change.data },
                 timestamp: Date.now(),
             });
         } else {
-            // Cria nova mudança
+            // Cria nova mudança OU sobrescreve a pendente (replace) — o undo/redo
+            // define o estado-alvo completo da entidade, então deve vencer.
             pendingChanges.value.set(key, {
                 ...change,
                 timestamp: Date.now(),
@@ -221,7 +232,7 @@ export function usePlanogramChanges() {
         // Verifica se deve salvar imediatamente ou agendar
         if (options.schedule !== false) {
             const changeCount = pendingChanges.value.size;
-            
+
             // Se atingiu o threshold, salva imediatamente
             if (changeCount >= MAX_PENDING_CHANGES_BEFORE_SAVE) {
                 scheduleAutoSave(0); // Delay 0 = salva imediatamente
@@ -345,7 +356,9 @@ export function usePlanogramChanges() {
 
             if (!targetRoute) {
                 throw new Error(
-                    t('plannerate.composables.planogram_changes.save_route_not_configured'),
+                    t(
+                        'plannerate.composables.planogram_changes.save_route_not_configured',
+                    ),
                 );
             }
 
@@ -363,10 +376,14 @@ export function usePlanogramChanges() {
                         preserveState: true,
                         onSuccess: async (page) => {
                             // Captura antes de limpar: o save continha remoções de produto?
-                            lastSaveHadRemovals.value = Array.from(pendingChanges.value.values()).some(
+                            lastSaveHadRemovals.value = Array.from(
+                                pendingChanges.value.values(),
+                            ).some(
                                 (c) =>
-                                    (c.type === 'segment_update' && c.data?.deleted_at) ||
-                                    (c.type === 'layer_update' && c.data?.deleted_at),
+                                    (c.type === 'segment_update' &&
+                                        c.data?.deleted_at) ||
+                                    (c.type === 'layer_update' &&
+                                        c.data?.deleted_at),
                             );
 
                             // Reconciliação com backend (opcional)
@@ -387,21 +404,26 @@ export function usePlanogramChanges() {
                             }
 
                             // Executa callbacks pendentes ANTES de limpar
-                            const callbacksToExecute = Array.from(pendingCallbacks.values()).flat();
-                            
+                            const callbacksToExecute = Array.from(
+                                pendingCallbacks.values(),
+                            ).flat();
+
                             // Limpa mudanças e atualiza timestamp
                             clearChanges();
                             lastSavedAt.value = Date.now();
-                            
+
                             // Executa callbacks DEPOIS de limpar (para evitar re-save)
                             for (const callback of callbacksToExecute) {
                                 try {
                                     await callback();
                                 } catch (error) {
-                                    console.error('❌ Erro ao executar callback onSaved:', error);
+                                    console.error(
+                                        '❌ Erro ao executar callback onSaved:',
+                                        error,
+                                    );
                                 }
                             }
-                            
+
                             resolve(true);
                         },
                         onError: (errors) => {
@@ -455,8 +477,9 @@ export function usePlanogramChanges() {
      * Indica se está próximo do threshold de salvamento automático
      * Útil para mostrar feedback visual ao usuário
      */
-    const isNearSaveThreshold = computed(() => 
-        pendingChanges.value.size >= MAX_PENDING_CHANGES_BEFORE_SAVE * 0.7
+    const isNearSaveThreshold = computed(
+        () =>
+            pendingChanges.value.size >= MAX_PENDING_CHANGES_BEFORE_SAVE * 0.7,
     );
 
     /**

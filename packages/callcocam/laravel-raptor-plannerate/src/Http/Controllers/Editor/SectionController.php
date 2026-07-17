@@ -9,9 +9,11 @@
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
 use App\Models\Tenant;
+use App\Support\Workflow\GondolaEditGate;
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Models\Section;
+use Callcocam\LaravelRaptorPlannerate\Services\Editor\SectionService;
 use Callcocam\LaravelRaptorPlannerate\Services\Editor\ShelfStructureService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -180,9 +182,10 @@ class SectionController extends Controller
 
             $section = Section::findOrFail($sectionId);
             $targetGondolaId = $validated['gondola_id'];
+            $sourceGondolaId = $section->gondola_id;
 
             // Verifica se não é a mesma gôndola
-            if ($section->gondola_id === $targetGondolaId) {
+            if ($sourceGondolaId === $targetGondolaId) {
                 return back()->withErrors([
                     'error' => 'A seção já está nesta gôndola.',
                 ]);
@@ -196,6 +199,11 @@ class SectionController extends Controller
                 'gondola_id' => $targetGondolaId,
                 'ordering' => $maxOrdering + 1,
             ]);
+
+            // Fecha a lacuna de ordering deixada na gôndola de origem
+            if ($sourceGondolaId) {
+                app(SectionService::class)->reorderByOrdering((string) $sourceGondolaId);
+            }
 
             $this->plannerateTenantDatabase()->commit();
 
@@ -211,6 +219,58 @@ class SectionController extends Controller
 
             return back()->withErrors([
                 'error' => 'Erro ao transferir seção: '.$e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Copia (deep copy) uma seção inteira — com prateleiras, segmentos e
+     * camadas — para outra gôndola, sem remover a original.
+     */
+    public function copyToGondola(Request $request, string $sectionId, GondolaEditGate $gate)
+    {
+        $tenantConnectionName = config('multitenancy.tenant_database_connection_name');
+        $gondolasTable = is_string($tenantConnectionName) && $tenantConnectionName !== ''
+            ? $tenantConnectionName.'.gondolas'
+            : 'gondolas';
+
+        $validated = $request->validate([
+            'gondola_id' => ['required', 'string', Rule::exists($gondolasTable, 'id')],
+        ]);
+
+        $targetGondolaId = $validated['gondola_id'];
+
+        // O middleware gondola.editable gateia a gôndola de ORIGEM (via {section}).
+        // A cópia grava na gôndola de DESTINO, então valida a edição do destino aqui.
+        if ($gate->kanbanActive()) {
+            $user = $request->user();
+
+            if ($user === null || ! $gate->decide($user, $targetGondolaId)->allowsEditing()) {
+                return back()->withErrors([
+                    'error' => 'Você não tem permissão para editar a gôndola de destino.',
+                ]);
+            }
+        }
+
+        try {
+            $this->plannerateTenantDatabase()->beginTransaction();
+
+            app(SectionService::class)->deepCopyToGondola($sectionId, $targetGondolaId);
+
+            $this->plannerateTenantDatabase()->commit();
+
+            return back();
+        } catch (\Exception $e) {
+            $this->plannerateTenantDatabase()->rollBack();
+
+            Log::error('Erro ao copiar seção', [
+                'section_id' => $sectionId,
+                'gondola_id' => $targetGondolaId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->withErrors([
+                'error' => 'Erro ao copiar seção: '.$e->getMessage(),
             ]);
         }
     }

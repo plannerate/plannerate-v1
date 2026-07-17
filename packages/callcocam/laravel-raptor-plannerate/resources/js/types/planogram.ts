@@ -51,7 +51,9 @@ export interface Product {
     grouping?: string;
     grouping_normalized?: string;
     category_id?: string | null;
-    category?: { id: string; name: string; category_id?: string | null } | string;
+    category?:
+        | { id: string; name: string; category_id?: string | null }
+        | string;
     status?: string;
     /** Indica se o produto tem dimensões (altura, largura e profundidade) preenchidas. */
     has_dimensions?: boolean;
@@ -239,7 +241,35 @@ export type SelectionType =
     | 'section'
     | null;
 
-export type ActionType = 'section' | 'shelf' | 'segment' | 'layer' | 'product' | 'section_update' | 'sections_reorder' | 'shelf_update' | 'segment_update' | 'layer_update' | 'product_update' | 'gondola_update' | 'gondola_scale' | 'gondola_alignment' | 'gondola_flow' | 'segment_position' | 'shelf_position' | 'shelf_transfer' | 'segment_transfer' | 'segment_copy' | 'layer_create' | 'segment_create' | 'shelf_create' | 'section_create' | 'gondola_create';
+export type ActionType =
+    | 'section'
+    | 'shelf'
+    | 'segment'
+    | 'layer'
+    | 'product'
+    | 'section_update'
+    | 'sections_reorder'
+    | 'segments_reorder'
+    | 'shelf_update'
+    | 'segment_update'
+    | 'layer_update'
+    | 'product_update'
+    | 'gondola_update'
+    | 'gondola_scale'
+    | 'gondola_alignment'
+    | 'gondola_flow'
+    | 'segment_position'
+    | 'shelf_position'
+    | 'shelf_transfer'
+    | 'shelf_delete'
+    | 'section_delete'
+    | 'segment_transfer'
+    | 'segment_copy'
+    | 'layer_create'
+    | 'segment_create'
+    | 'shelf_create'
+    | 'section_create'
+    | 'gondola_create';
 
 export type EntityType =
     | 'shelf'
@@ -270,7 +300,6 @@ export interface Category {
     parent?: Category;
     children?: Category[];
 }
-
 
 export interface AbcAnalysis {
     id: string;

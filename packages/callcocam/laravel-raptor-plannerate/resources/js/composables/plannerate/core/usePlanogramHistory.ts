@@ -6,6 +6,7 @@ interface HistorySnapshot {
     sectionId?: string;
     sectionIds?: string[]; // Para operações em múltiplas seções (ex: reordenação)
     segmentId?: string;
+    segmentIds?: string[]; // Para operações em múltiplos segmentos (ex: swap/reordenação na mesma shelf)
     layerId?: string;
     beforeState: any; // Estado completo ANTES da ação
     afterState: any; // Estado completo DEPOIS da ação
@@ -50,35 +51,39 @@ export function usePlanogramHistory() {
         try {
             // Pega apenas os últimos N itens para não exceder quota
             const itemsToSave = historyStack.value.slice(-localStorageMaxSize);
-            
+
             // Calcula o índice ajustado
             const offset = historyStack.value.length - itemsToSave.length;
             const adjustedIndex = currentIndex.value - offset;
-            
+
             const data = {
                 history: itemsToSave,
                 currentIndex: adjustedIndex,
                 savedAt: Date.now(),
             };
-            
+
             window.localStorage.setItem(localStorageKey, JSON.stringify(data));
-          
         } catch {
             // Se exceder quota, limpa e tenta novamente com menos itens
-              try {
+            try {
                 const itemsToSave = historyStack.value.slice(-5); // Apenas 5 itens
                 const offset = historyStack.value.length - itemsToSave.length;
                 const adjustedIndex = currentIndex.value - offset;
-                
+
                 const data = {
                     history: itemsToSave,
                     currentIndex: adjustedIndex,
                     savedAt: Date.now(),
                 };
-                
-                window.localStorage.setItem(localStorageKey, JSON.stringify(data));
-              } catch {
-                console.error('❌ Falha ao salvar histórico mesmo no modo reduzido');
+
+                window.localStorage.setItem(
+                    localStorageKey,
+                    JSON.stringify(data),
+                );
+            } catch {
+                console.error(
+                    '❌ Falha ao salvar histórico mesmo no modo reduzido',
+                );
             }
         }
     }
@@ -118,39 +123,41 @@ export function usePlanogramHistory() {
             const saved = window.localStorage.getItem(localStorageKey);
 
             if (!saved) {
-return false;
-}
-            
+                return false;
+            }
+
             const data = JSON.parse(saved);
-            
+
             // Valida estrutura
             if (!data.history || !Array.isArray(data.history)) {
                 console.warn('⚠️ Histórico inválido no localStorage');
 
                 return false;
             }
-            
+
             // Verifica se não é muito antigo (mais de 24h)
             const savedAt = data.savedAt || 0;
             const age = Date.now() - savedAt;
             const maxAge = 24 * 60 * 60 * 1000; // 24 horas
-            
+
             if (age > maxAge) {
                 window.localStorage.removeItem(localStorageKey);
 
                 return false;
             }
-            
+
             historyStack.value = data.history;
             currentIndex.value = Math.min(
                 data.currentIndex,
                 data.history.length - 1,
             );
-            
-             
+
             return true;
         } catch (error) {
-            console.warn('⚠️ Erro ao carregar histórico do localStorage:', error);
+            console.warn(
+                '⚠️ Erro ao carregar histórico do localStorage:',
+                error,
+            );
             window.localStorage.removeItem(localStorageKey);
 
             return false;
@@ -183,11 +190,11 @@ return false;
     function initializeHistory() {
         // Tenta carregar do localStorage primeiro
         const loaded = loadFromLocalStorage();
-        
+
         if (!loaded) {
             historyStack.value = [];
             currentIndex.value = -1;
-        } 
+        }
     }
 
     /**
@@ -195,8 +202,8 @@ return false;
      */
     function cloneState(state: any): any {
         if (!state) {
-return null;
-}
+            return null;
+        }
 
         // structuredClone é nativo e bem mais rápido que o round-trip JSON para
         // objetos grandes (árvore de snapshot). Faz fallback para JSON quando o
@@ -329,7 +336,7 @@ return null;
         clearHistory,
         getRecentActions,
         cloneState,
-        
+
         // Patch retroativo no beforeState da ação atual
         patchCurrentBeforeState,
 

@@ -393,6 +393,11 @@ return [
         'sent_description' => 'Enviada de ":from" para ":to"',
         'received_description' => 'Trazida de ":from" para ":to"',
         'confirm_clear_history' => 'Tem certeza que deseja limpar todo o histórico de operações?',
+        'from_label' => 'De',
+        'clear_history_title' => 'Limpar histórico?',
+        'clear_history_description' => 'Isso remove todo o histórico de operações deste navegador. Esta ação não pode ser desfeita.',
+        'clear_confirm' => 'Limpar tudo',
+        'cancel' => 'Cancelar',
         'time' => [
             'now' => 'Agora mesmo',
             'seconds_ago' => 'Há :count segundos',

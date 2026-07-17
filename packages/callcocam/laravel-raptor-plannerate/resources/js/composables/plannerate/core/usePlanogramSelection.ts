@@ -14,7 +14,13 @@
  * filtro/highlight de categoria — não é seleção de item e está fora deste contrato.
  */
 import { computed, readonly, ref } from 'vue';
-import type { Layer, Product, Section, Segment, Shelf } from '@/types/planogram';
+import type {
+    Layer,
+    Product,
+    Section,
+    Segment,
+    Shelf,
+} from '@/types/planogram';
 import { usePlanogramEditor } from './usePlanogramEditor';
 
 interface SelectedItem {
@@ -255,23 +261,17 @@ export function usePlanogramSelection() {
         const type = selectedItem.value?.type;
 
         if (!type) {
-return false;
-}
+            return false;
+        }
 
         // const strategy =  deletionStrategies[type as keyof typeof deletionStrategies];
         switch (type) {
             case 'shelf':
-                return await deleteShelf(
-                    selectedItem.value?.item as Shelf 
-                );
+                return await deleteShelf(selectedItem.value?.item as Shelf);
             case 'layer':
-                return await deleteLayer(
-                    selectedItem.value?.item as Layer 
-                );
+                return await deleteLayer(selectedItem.value?.item as Layer);
             case 'segment':
-                return await deleteSegment(
-                    selectedItem.value?.item as Segment 
-                );
+                return await deleteSegment(selectedItem.value?.item as Segment);
             case 'section':
                 return await deleteSection(selectedItem.value?.item as Section);
         }
@@ -279,17 +279,14 @@ return false;
         return false;
     }
 
-    async function deleteShelf(
-        shelf: Shelf,
-    ): Promise<boolean> {
+    async function deleteShelf(shelf: Shelf): Promise<boolean> {
         if (!shelf?.id) {
-return false;
-}
+            return false;
+        }
 
-        // Soft delete - marca como deletado
-        editor.updateShelf(shelf.id, {
-            deleted_at: new Date().toISOString(),
-        });
+        // Soft delete via editor.deleteShelf (snapshot shelf_delete com clone
+        // completo → undo restaura mesmo após re-hidratação).
+        editor.deleteShelf(shelf.id);
 
         // Limpa seleção após deletar
         clearSelection();
@@ -297,12 +294,10 @@ return false;
         return true;
     }
 
-    async function deleteLayer(
-        layer: Layer,
-    ): Promise<boolean> {
+    async function deleteLayer(layer: Layer): Promise<boolean> {
         if (!layer?.id) {
-return false;
-}
+            return false;
+        }
 
         // Soft delete - marca como deletado
         editor.updateLayer(layer.id, {
@@ -315,12 +310,10 @@ return false;
         return true;
     }
 
-    async function deleteSegment(
-        segment: Segment,
-    ): Promise<boolean> {
+    async function deleteSegment(segment: Segment): Promise<boolean> {
         if (!segment?.id) {
-return false;
-}
+            return false;
+        }
 
         // Soft delete - marca como deletado
         editor.updateSegment(segment.id, {
@@ -335,13 +328,12 @@ return false;
 
     async function deleteSection(section: Section): Promise<boolean> {
         if (!section?.id) {
-return false;
-}
+            return false;
+        }
 
-        // Soft delete - marca como deletado
-        editor.updateSection(section.id, {
-            deleted_at: new Date().toISOString(),
-        });
+        // Soft delete via editor.deleteSection (snapshot section_delete com clone
+        // completo → undo restaura mesmo após re-hidratação).
+        editor.deleteSection(section.id);
 
         // Reordena seções no front após deletar
         editor.reorderSectionsByOrdering();

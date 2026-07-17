@@ -11,6 +11,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Services\Editor;
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 /**
  * Service para operações de negócio relacionadas a Sections (Módulos).
@@ -210,5 +211,154 @@ class SectionService
         }
 
         return $updatedCount;
+    }
+
+    /**
+     * Copia (deep copy) uma section inteira — com prateleiras, segmentos e
+     * camadas — para outra gôndola, no fim da ordenação de destino.
+     *
+     * Gera novos ULIDs para section/shelf/segment/layer e regrava os campos
+     * `code`/`slug` únicos; o `product_id` das camadas é PRESERVADO (o produto
+     * é referência, não uma cópia — mesma regra do copySegmentToShelf no editor).
+     * Copia apenas linhas ativas (não deletadas). Deve rodar dentro de uma
+     * transação do banco tenant (o controller abre/commita).
+     *
+     * @return string ULID da nova section
+     */
+    public function deepCopyToGondola(string $sourceSectionId, string $targetGondolaId): string
+    {
+        $source = $this->plannerateTenantTable('sections')->where('id', $sourceSectionId)->first();
+
+        if (! $source) {
+            throw new \RuntimeException("Seção de origem não encontrada: {$sourceSectionId}");
+        }
+
+        $gondola = $this->plannerateTenantTable('gondolas')->where('id', $targetGondolaId)->first();
+
+        if (! $gondola) {
+            throw new \RuntimeException("Gôndola de destino não encontrada: {$targetGondolaId}");
+        }
+
+        $now = now();
+        $tenantId = $gondola->tenant_id ?? null;
+        $userId = auth()->id();
+
+        // 1) Nova section no fim da gôndola de destino
+        $newSectionId = $this->newUlid();
+        $maxOrdering = $this->plannerateTenantTable('sections')->where('gondola_id', $targetGondolaId)->max('ordering') ?? 0;
+
+        $this->plannerateTenantTable('sections')->insert(array_merge((array) $source, [
+            'id' => $newSectionId,
+            'gondola_id' => $targetGondolaId,
+            'tenant_id' => $tenantId,
+            'user_id' => $userId,
+            'ordering' => $maxOrdering + 1,
+            'code' => 'SEC-'.strtoupper(substr($newSectionId, -10)),
+            'slug' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+            'deleted_at' => null,
+        ]));
+
+        // 2) Prateleiras
+        $shelves = $this->plannerateTenantTable('shelves')
+            ->where('section_id', $sourceSectionId)
+            ->whereNull('deleted_at')
+            ->get();
+
+        $shelfIdMap = [];
+        $shelfRows = [];
+
+        foreach ($shelves as $shelf) {
+            $newShelfId = $this->newUlid();
+            $shelfIdMap[$shelf->id] = $newShelfId;
+            $shelfRows[] = array_merge((array) $shelf, [
+                'id' => $newShelfId,
+                'section_id' => $newSectionId,
+                'tenant_id' => $tenantId,
+                'code' => 'SHF-'.strtoupper(substr($newShelfId, -10)),
+                'created_at' => $now,
+                'updated_at' => $now,
+                'deleted_at' => null,
+            ]);
+        }
+
+        if (! empty($shelfRows)) {
+            $this->plannerateTenantTable('shelves')->insert($shelfRows);
+        }
+
+        // 3) Segmentos
+        $segmentIdMap = [];
+        $segmentRows = [];
+
+        if (! empty($shelfIdMap)) {
+            $segments = $this->plannerateTenantTable('segments')
+                ->whereIn('shelf_id', array_keys($shelfIdMap))
+                ->whereNull('deleted_at')
+                ->get();
+
+            foreach ($segments as $segment) {
+                $newSegmentId = $this->newUlid();
+                $segmentIdMap[$segment->id] = $newSegmentId;
+                $segmentRows[] = array_merge((array) $segment, [
+                    'id' => $newSegmentId,
+                    'shelf_id' => $shelfIdMap[$segment->shelf_id],
+                    'tenant_id' => $tenantId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                    'deleted_at' => null,
+                ]);
+            }
+
+            if (! empty($segmentRows)) {
+                $this->plannerateTenantTable('segments')->insert($segmentRows);
+            }
+        }
+
+        // 4) Camadas (mantém product_id — produto é referência, não cópia)
+        $layerRows = [];
+
+        if (! empty($segmentIdMap)) {
+            $layers = $this->plannerateTenantTable('layers')
+                ->whereIn('segment_id', array_keys($segmentIdMap))
+                ->whereNull('deleted_at')
+                ->get();
+
+            foreach ($layers as $layer) {
+                $layerRows[] = array_merge((array) $layer, [
+                    'id' => $this->newUlid(),
+                    'segment_id' => $segmentIdMap[$layer->segment_id],
+                    'tenant_id' => $tenantId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                    'deleted_at' => null,
+                ]);
+            }
+
+            if (! empty($layerRows)) {
+                $this->plannerateTenantTable('layers')->insert($layerRows);
+            }
+        }
+
+        $this->reorderByOrdering($targetGondolaId);
+
+        Log::info('✅ Módulo copiado (deep copy)', [
+            'source_section_id' => $sourceSectionId,
+            'new_section_id' => $newSectionId,
+            'target_gondola_id' => $targetGondolaId,
+            'shelves' => count($shelfRows),
+            'segments' => count($segmentRows),
+            'layers' => count($layerRows),
+        ]);
+
+        return $newSectionId;
+    }
+
+    /**
+     * Gera um ULID em minúsculas (mesma convenção do trait HasUlids dos models).
+     */
+    protected function newUlid(): string
+    {
+        return strtolower((string) Str::ulid());
     }
 }

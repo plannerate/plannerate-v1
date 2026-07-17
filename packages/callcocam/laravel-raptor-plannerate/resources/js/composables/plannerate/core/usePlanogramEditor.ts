@@ -76,7 +76,10 @@ export function usePlanogramEditor() {
     /**
      * Reordena segment dentro da mesma shelf (swap de posições)
      */
-    function swapSegmentPositions(segment1Id: string, segment2Id: string): boolean {
+    function swapSegmentPositions(
+        segment1Id: string,
+        segment2Id: string,
+    ): boolean {
         const segment1 = findSegmentById(segment1Id);
         const segment2 = findSegmentById(segment2Id);
 
@@ -88,11 +91,15 @@ export function usePlanogramEditor() {
             return false;
         }
 
+        // Snapshot de reordenação captura AMBOS os segmentos: o swap troca o
+        // `ordering` dos dois, então o undo precisa reverter/persistir os dois.
+        // Capturar só um (o antigo 'segment_position') deixava os dois com o
+        // mesmo `ordering` após o undo → ordem errada no reload.
         const result = commitOptimistic({
             apply: () => swapSegmentOp(segment1Id, segment2Id, recordChange),
             historySnapshot: {
-                type: 'segment_position',
-                segmentId: segment1Id,
+                type: 'segments_reorder',
+                segmentIds: [segment1Id, segment2Id],
                 shelfId: segment1.shelf.id,
                 sectionId: segment1.section.id,
                 description: `Reordenar produto na prateleira`,
@@ -138,7 +145,9 @@ export function usePlanogramEditor() {
                     segmentId,
                     targetShelfId,
                     recordChange,
-                    t('plannerate.editor.product_does_not_fit_destination_shelf'),
+                    t(
+                        'plannerate.editor.product_does_not_fit_destination_shelf',
+                    ),
                     targetIndex,
                 ),
             historySnapshot: {
@@ -158,7 +167,10 @@ export function usePlanogramEditor() {
     /**
      * Copia um segmento para outra prateleira
      */
-    function copySegmentToShelf(segmentId: string, targetShelfId: string): boolean {
+    function copySegmentToShelf(
+        segmentId: string,
+        targetShelfId: string,
+    ): boolean {
         const found = findSegmentById(segmentId);
 
         if (!found) {
@@ -184,7 +196,9 @@ export function usePlanogramEditor() {
                     segmentId,
                     targetShelfId,
                     recordChange,
-                    t('plannerate.editor.product_does_not_fit_destination_shelf'),
+                    t(
+                        'plannerate.editor.product_does_not_fit_destination_shelf',
+                    ),
                 ),
             historySnapshot: {
                 type: 'segment_copy',
@@ -207,7 +221,10 @@ export function usePlanogramEditor() {
     /**
      * Move shelf dentro da mesma section (drag vertical)
      */
-    function moveShelfWithinSection(shelfId: string, newPosition: number): boolean {
+    function moveShelfWithinSection(
+        shelfId: string,
+        newPosition: number,
+    ): boolean {
         const shelf = findShelfById(shelfId);
 
         if (!shelf) {
@@ -215,7 +232,12 @@ export function usePlanogramEditor() {
         }
 
         const result = commitOptimistic({
-            apply: () => shelfOps.moveShelfWithinSection(shelfId, newPosition, recordChange),
+            apply: () =>
+                shelfOps.moveShelfWithinSection(
+                    shelfId,
+                    newPosition,
+                    recordChange,
+                ),
             historySnapshot: {
                 type: 'shelf_position',
                 shelfId: shelfId,
@@ -232,7 +254,11 @@ export function usePlanogramEditor() {
     /**
      * Move shelf para outra section (drag horizontal)
      */
-    function moveShelfToSection(shelfId: string, targetSectionId: string, newPosition: number): boolean {
+    function moveShelfToSection(
+        shelfId: string,
+        targetSectionId: string,
+        newPosition: number,
+    ): boolean {
         const shelf = findShelfById(shelfId);
 
         if (!shelf) {
@@ -240,7 +266,13 @@ export function usePlanogramEditor() {
         }
 
         const result = commitOptimistic({
-            apply: () => shelfOps.moveShelfToSection(shelfId, targetSectionId, newPosition, recordChange),
+            apply: () =>
+                shelfOps.moveShelfToSection(
+                    shelfId,
+                    targetSectionId,
+                    newPosition,
+                    recordChange,
+                ),
             historySnapshot: {
                 type: 'shelf_transfer',
                 shelfId: shelfId,
@@ -257,8 +289,8 @@ export function usePlanogramEditor() {
     function invertShelvesOrder(sectionId: string): void {
         commitOptimistic({
             apply: () => {
- shelfOps.invertShelvesOrder(sectionId, recordChange); 
-},
+                shelfOps.invertShelvesOrder(sectionId, recordChange);
+            },
         });
     }
 
@@ -276,16 +308,26 @@ export function usePlanogramEditor() {
                 const shelves = (section.shelves || [])
                     .filter((s: any) => !s.deleted_at)
                     .map((shelf: any) => {
-                        const snappedPosition = findNearestHole(section, shelf.shelf_position || 0);
+                        const snappedPosition = findNearestHole(
+                            section,
+                            shelf.shelf_position || 0,
+                        );
 
                         const segments = (shelf.segments || [])
                             .filter((seg: any) => !seg.deleted_at)
                             .map((seg: any) => ({
                                 ...seg,
-                                layers: seg.layers?.filter((layer: any) => !layer.deleted_at) || [],
+                                layers:
+                                    seg.layers?.filter(
+                                        (layer: any) => !layer.deleted_at,
+                                    ) || [],
                             }));
 
-                        return { ...shelf, shelf_position: snappedPosition, segments };
+                        return {
+                            ...shelf,
+                            shelf_position: snappedPosition,
+                            segments,
+                        };
                     });
 
                 return { ...section, shelves };
@@ -330,7 +372,8 @@ export function usePlanogramEditor() {
 
         if (savedScale) {
             const scale = parseFloat(savedScale);
-            scaleFactor.value = scale >= 1 && scale <= 10 ? scale : gondola.scale_factor || 3;
+            scaleFactor.value =
+                scale >= 1 && scale <= 10 ? scale : gondola.scale_factor || 3;
         } else {
             scaleFactor.value = gondola.scale_factor || 3;
         }
@@ -354,15 +397,21 @@ export function usePlanogramEditor() {
                 currentGondola.value = { ...currentGondola.value!, ...updates };
 
                 if (currentGondola.value.planogram?.gondolas) {
-                    const gondolaIndex = currentGondola.value.planogram.gondolas.findIndex(
-                        (g) => g.id === currentGondola.value!.id,
-                    );
+                    const gondolaIndex =
+                        currentGondola.value.planogram.gondolas.findIndex(
+                            (g) => g.id === currentGondola.value!.id,
+                        );
 
                     if (gondolaIndex !== -1) {
                         currentGondola.value.planogram.gondolas = [
-                            ...currentGondola.value.planogram.gondolas.slice(0, gondolaIndex),
+                            ...currentGondola.value.planogram.gondolas.slice(
+                                0,
+                                gondolaIndex,
+                            ),
                             currentGondola.value,
-                            ...currentGondola.value.planogram.gondolas.slice(gondolaIndex + 1),
+                            ...currentGondola.value.planogram.gondolas.slice(
+                                gondolaIndex + 1,
+                            ),
                         ];
                     }
                 }
@@ -477,7 +526,12 @@ export function usePlanogramEditor() {
     function updateSection(sectionId: string, updates: Partial<any>) {
         return commitOptimistic({
             apply: () =>
-                sectionOps.updateSection(sectionId, updates, updateSectionReactive, recordChange),
+                sectionOps.updateSection(
+                    sectionId,
+                    updates,
+                    updateSectionReactive,
+                    recordChange,
+                ),
             historySnapshot: {
                 type: 'section_update',
                 sectionId: sectionId,
@@ -489,16 +543,90 @@ export function usePlanogramEditor() {
     }
 
     /**
+     * Exclui (soft-delete) uma prateleira registrando um snapshot `shelf_delete`
+     * com clone COMPLETO da shelf (incluindo segmentos). O clone completo é
+     * necessário porque, após auto-save + re-hidratação, o sanitizeGondola remove
+     * a shelf deletada da árvore — o undo então a reinsere a partir deste estado.
+     */
+    function deleteShelf(shelfId: string) {
+        const found = findShelfById(shelfId);
+
+        if (!found) {
+            return null;
+        }
+
+        const deletedAt = new Date().toISOString();
+        const fullState = history.cloneState({
+            ...found.shelf,
+            section_id: found.section.id,
+            deleted_at: null,
+        });
+
+        return commitOptimistic({
+            apply: () =>
+                shelfOps.updateShelf(
+                    shelfId,
+                    { deleted_at: deletedAt },
+                    recordChange,
+                ),
+            historySnapshot: {
+                type: 'shelf_delete',
+                shelfId,
+                sectionId: found.section.id,
+                description: `Excluir prateleira`,
+                beforeState: fullState,
+                afterState: { ...fullState, deleted_at: deletedAt },
+            },
+        });
+    }
+
+    /**
+     * Exclui (soft-delete) uma seção/módulo registrando um snapshot
+     * `section_delete` com clone COMPLETO da seção (incluindo prateleiras). Ver
+     * deleteShelf para o motivo do clone completo.
+     */
+    function deleteSection(sectionId: string) {
+        const section = findSectionById(sectionId);
+
+        if (!section) {
+            return null;
+        }
+
+        const deletedAt = new Date().toISOString();
+        const fullState = history.cloneState({ ...section, deleted_at: null });
+
+        return commitOptimistic({
+            apply: () =>
+                sectionOps.updateSection(
+                    sectionId,
+                    { deleted_at: deletedAt },
+                    updateSectionReactive,
+                    recordChange,
+                ),
+            historySnapshot: {
+                type: 'section_delete',
+                sectionId,
+                description: `Excluir seção`,
+                beforeState: fullState,
+                afterState: { ...fullState, deleted_at: deletedAt },
+            },
+        });
+    }
+
+    /**
      * Troca a ordem de seções capturando TODAS as mudanças em um único snapshot
      */
-    function swapSectionsOrdering(sectionIds: string[], newOrderings: Record<string, number>) {
+    function swapSectionsOrdering(
+        sectionIds: string[],
+        newOrderings: Record<string, number>,
+    ) {
         if (!currentGondola.value?.sections) {
             return;
         }
 
         return commitOptimistic({
             apply: () => {
-                sectionIds.forEach(sectionId => {
+                sectionIds.forEach((sectionId) => {
                     const section = findSectionById(sectionId);
 
                     if (section && newOrderings[sectionId] !== undefined) {
@@ -507,10 +635,12 @@ export function usePlanogramEditor() {
                 });
 
                 if (currentGondola.value?.sections) {
-                    currentGondola.value.sections = [...currentGondola.value.sections];
+                    currentGondola.value.sections = [
+                        ...currentGondola.value.sections,
+                    ];
                 }
 
-                sectionIds.forEach(sectionId => {
+                sectionIds.forEach((sectionId) => {
                     if (newOrderings[sectionId] !== undefined) {
                         recordChange({
                             type: 'section_update',
@@ -548,19 +678,29 @@ export function usePlanogramEditor() {
                 found.shelf.segments = updatedSegments;
 
                 const updatedShelves = [...found.section.shelves];
-                const shelfIndex = updatedShelves.findIndex((s: any) => s.id === found.shelf.id);
+                const shelfIndex = updatedShelves.findIndex(
+                    (s: any) => s.id === found.shelf.id,
+                );
 
                 if (shelfIndex !== -1) {
-                    updatedShelves[shelfIndex] = { ...found.shelf, segments: updatedSegments };
+                    updatedShelves[shelfIndex] = {
+                        ...found.shelf,
+                        segments: updatedSegments,
+                    };
                     found.section.shelves = updatedShelves;
                 }
 
                 if (currentGondola.value?.sections) {
                     const updatedSections = [...currentGondola.value.sections];
-                    const sectionIndex = updatedSections.findIndex((s: any) => s.id === found.section.id);
+                    const sectionIndex = updatedSections.findIndex(
+                        (s: any) => s.id === found.section.id,
+                    );
 
                     if (sectionIndex !== -1) {
-                        updatedSections[sectionIndex] = { ...found.section, shelves: updatedShelves };
+                        updatedSections[sectionIndex] = {
+                            ...found.section,
+                            shelves: updatedShelves,
+                        };
                         currentGondola.value.sections = updatedSections;
                     }
                 }
@@ -587,8 +727,8 @@ export function usePlanogramEditor() {
     function invertSegmentsOrder(shelfId: string): void {
         commitOptimistic({
             apply: () => {
- shelfOps.invertSegmentsOrder(shelfId, recordChange); 
-},
+                shelfOps.invertSegmentsOrder(shelfId, recordChange);
+            },
         });
     }
 
@@ -601,7 +741,12 @@ export function usePlanogramEditor() {
 
         return commitOptimistic({
             apply: () => {
-                updateSegmentReactive(found.section, found.shelfIndex, found.segmentIndex, { layer: updates });
+                updateSegmentReactive(
+                    found.section,
+                    found.shelfIndex,
+                    found.segmentIndex,
+                    { layer: updates },
+                );
 
                 return found.segment.layer;
             },
@@ -647,13 +792,19 @@ export function usePlanogramEditor() {
 
         const changeKey = `product_${product.id}`;
         const existingChange = changes.getPendingChange(changeKey);
-        const existingDimensions = existingChange?.data?.product_dimension || {};
+        const existingDimensions =
+            existingChange?.data?.product_dimension || {};
 
         return commitOptimistic({
             apply: () => {
-                updateSegmentReactive(found.section, found.shelfIndex, found.segmentIndex, {
-                    product: updatedProduct,
-                });
+                updateSegmentReactive(
+                    found.section,
+                    found.shelfIndex,
+                    found.segmentIndex,
+                    {
+                        product: updatedProduct,
+                    },
+                );
 
                 return product;
             },
@@ -662,7 +813,10 @@ export function usePlanogramEditor() {
                 entityType: 'product',
                 entityId: product.id,
                 data: {
-                    product_dimension: { ...existingDimensions, [dimension]: value },
+                    product_dimension: {
+                        ...existingDimensions,
+                        [dimension]: value,
+                    },
                 },
             },
             onSaved,
@@ -683,7 +837,8 @@ export function usePlanogramEditor() {
 
         const changeKey = `product_${product.id}`;
         const existingChange = changes.getPendingChange(changeKey);
-        const existingDimensions = existingChange?.data?.product_dimension || {};
+        const existingDimensions =
+            existingChange?.data?.product_dimension || {};
 
         return commitOptimistic({
             apply: () => updatedProduct,
@@ -692,7 +847,10 @@ export function usePlanogramEditor() {
                 entityType: 'product',
                 entityId: product.id,
                 data: {
-                    product_dimension: { ...existingDimensions, [dimension]: value },
+                    product_dimension: {
+                        ...existingDimensions,
+                        [dimension]: value,
+                    },
                 },
             },
             onSaved,
@@ -778,7 +936,12 @@ export function usePlanogramEditor() {
         const results: any[] = [];
 
         for (const product of products) {
-            const result = updateProductDimensionDirectly(product, dimension, value, onSaved);
+            const result = updateProductDimensionDirectly(
+                product,
+                dimension,
+                value,
+                onSaved,
+            );
 
             if (result) {
                 results.push(result);
@@ -827,22 +990,22 @@ export function usePlanogramEditor() {
     }
 
     function increaseScale() {
- setScale(scaleFactor.value + 0.5); 
-}
+        setScale(scaleFactor.value + 0.5);
+    }
     function decreaseScale() {
- setScale(scaleFactor.value - 0.5); 
-}
+        setScale(scaleFactor.value - 0.5);
+    }
 
     // ========================================================================
     // TOOLBAR / UI STATE
     // ========================================================================
 
     function toggleGrid() {
- showGrid.value = !showGrid.value; 
-}
+        showGrid.value = !showGrid.value;
+    }
     function toggleZoneIndicators() {
- showZoneIndicators.value = !showZoneIndicators.value; 
-}
+        showZoneIndicators.value = !showZoneIndicators.value;
+    }
 
     // ========================================================================
     // ALINHAMENTO
@@ -855,10 +1018,10 @@ export function usePlanogramEditor() {
 
         const result = commitOptimistic({
             apply: () => {
- currentGondola.value!.alignment = alignment;
+                currentGondola.value!.alignment = alignment;
 
- return true; 
-},
+                return true;
+            },
             historySnapshot: {
                 type: 'gondola_alignment',
                 description: `Alterar alinhamento para ${alignment}`,
@@ -877,17 +1040,17 @@ export function usePlanogramEditor() {
     }
 
     function alignLeft() {
- return setAlignment('left'); 
-}
+        return setAlignment('left');
+    }
     function alignRight() {
- return setAlignment('right'); 
-}
+        return setAlignment('right');
+    }
     function alignCenter() {
- return setAlignment('center'); 
-}
+        return setAlignment('center');
+    }
     function alignJustify() {
- return setAlignment('justify'); 
-}
+        return setAlignment('justify');
+    }
 
     // ========================================================================
     // FLUXO DA GÔNDOLA
@@ -898,14 +1061,17 @@ export function usePlanogramEditor() {
             return false;
         }
 
-        const flowLabel = flow === 'left_to_right' ? 'Esquerda → Direita' : 'Direita → Esquerda';
+        const flowLabel =
+            flow === 'left_to_right'
+                ? 'Esquerda → Direita'
+                : 'Direita → Esquerda';
 
         const result = commitOptimistic({
             apply: () => {
- currentGondola.value!.flow = flow;
+                currentGondola.value!.flow = flow;
 
- return true; 
-},
+                return true;
+            },
             historySnapshot: {
                 type: 'gondola_flow',
                 description: `Alterar direção para ${flowLabel}`,
@@ -929,7 +1095,8 @@ export function usePlanogramEditor() {
         }
 
         const currentFlow = currentGondola.value.flow || 'left_to_right';
-        const newFlow = currentFlow === 'left_to_right' ? 'right_to_left' : 'left_to_right';
+        const newFlow =
+            currentFlow === 'left_to_right' ? 'right_to_left' : 'left_to_right';
 
         return setFlow(newFlow);
     }
@@ -975,8 +1142,8 @@ export function usePlanogramEditor() {
             preserveScroll: true,
             preserveState: false,
             onSuccess: () => {
- showDeleteConfirmation.value = false; 
-},
+                showDeleteConfirmation.value = false;
+            },
             onError: (errors) => {
                 console.error('Erro ao remover gôndola:', errors);
                 showDeleteConfirmation.value = false;
@@ -1000,7 +1167,10 @@ export function usePlanogramEditor() {
         const snapshot = history.redoAction();
 
         if (snapshot) {
-            applySnapshot({ ...snapshot, beforeState: snapshot.afterState }, true);
+            applySnapshot(
+                { ...snapshot, beforeState: snapshot.afterState },
+                true,
+            );
         }
     }
 
@@ -1043,8 +1213,8 @@ export function usePlanogramEditor() {
     // ========================================================================
 
     function showPerformance() {
- showPerformanceModal.value = true; 
-}
+        showPerformanceModal.value = true;
+    }
 
     function print() {
         if (!currentGondola.value?.id) {
@@ -1070,7 +1240,9 @@ export function usePlanogramEditor() {
      */
     async function exportAsImage() {
         try {
-            const element = document.querySelector('[data-planogram-canvas]') as HTMLElement | null;
+            const element = document.querySelector(
+                '[data-planogram-canvas]',
+            ) as HTMLElement | null;
 
             if (!element) {
                 console.error('❌ Elemento do canvas não encontrado');
@@ -1147,6 +1319,8 @@ export function usePlanogramEditor() {
         invertShelvesOrder,
         updateShelf,
         updateSection,
+        deleteShelf,
+        deleteSection,
         updateSegment,
         invertSegmentsOrder,
         updateLayer,
@@ -1206,7 +1380,8 @@ export function usePlanogramEditor() {
         removeRejectedProductLocally: rejectedOps.removeRejectedProductLocally,
         deleteRejectedProduct: rejectedOps.deleteRejectedProduct,
         placeFromRejected: rejectedOps.placeFromRejected,
-        patchRejectedProductToLastAction: rejectedOps.patchRejectedProductToLastAction,
+        patchRejectedProductToLastAction:
+            rejectedOps.patchRejectedProductToLastAction,
         swapRejectedProduct: rejectedOps.swapRejectedProduct,
     };
 }

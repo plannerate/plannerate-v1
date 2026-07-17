@@ -26,6 +26,8 @@ return [
     'transfer_section' => 'Transferir Módulo',
     'transfer_module_tooltip' => 'Transferir módulo entre gôndolas',
     'transfer_module' => 'Transferir Módulo',
+    'paste_module_chip' => 'Colar ":name"',
+    'clear_clipboard' => 'Descartar módulo copiado',
     'map_link_tooltip' => 'Vincular gôndola a uma posição no mapa da loja',
     'map_remove' => 'Remover do Mapa',
     'map_store' => 'Mapa da Loja',

@@ -13,6 +13,7 @@ import { usePlanogramSelection } from '../core/usePlanogramSelection';
 import { DEFAULT_SECTION_FIELDS, toCamelCase } from '../fields/useSectionFields';
 import { calculateHolePositions } from '../geometry/useSectionHoles';
 import { shouldShowDeleteConfirm } from '../shared/usePlanogramUtils';
+import { useModuleClipboard } from './useModuleClipboard';
 
 // ============================================================================
 // ESTADO GLOBAL (SINGLETON PATTERN)
@@ -137,6 +138,7 @@ export function usePlanogramKeyboard() {
     const { t } = useT();
     const selection = usePlanogramSelection();
     const editor = usePlanogramEditor();
+    const moduleClipboard = useModuleClipboard();
 
     const buildShelfWidthExceededMessage = (
         totalWidth: number,
@@ -1036,7 +1038,8 @@ return;
             return;
         }
 
-        // Ctrl+C: copia o segmento selecionado (clipboard interno do editor)
+        // Ctrl+C: copia o item selecionado. Segmento → clipboard interno de
+        // segmento; Seção (módulo) → clipboard persistente de módulo.
         if (isCtrl && event.key === 'c') {
             // Cópia de texto real tem prioridade (não intercepta)
             if (window.getSelection()?.toString()) {
@@ -1049,40 +1052,69 @@ return;
                 copiedSegmentId.value = selected.id;
                 toast.info(t('plannerate.editor.clipboard.segment_copied'));
                 event.preventDefault();
+            } else if (selected?.type === 'section') {
+                moduleClipboard.copyModule(selected.item as Section, 'copy');
+                event.preventDefault();
             }
 
             return;
         }
 
-        // Ctrl+V: cola o segmento copiado na shelf selecionada (ou na shelf
-        // do segmento selecionado)
-        if (isCtrl && event.key === 'v') {
-            if (!copiedSegmentId.value) {
+        // Ctrl+X: recorta (move) o módulo selecionado para o clipboard persistente
+        if (isCtrl && event.key === 'x') {
+            if (window.getSelection()?.toString()) {
                 return;
             }
 
             const selected = selection.selectedItem.value;
-            let targetShelfId: string | null = null;
 
-            if (selected?.type === 'shelf') {
-                targetShelfId = selected.id;
-            } else if (selected?.type === 'segment') {
-                targetShelfId =
-                    (selected.item as Segment).shelf_id ?? null;
+            if (selected?.type === 'section') {
+                moduleClipboard.copyModule(selected.item as Section, 'cut');
+                event.preventDefault();
             }
 
-            if (!targetShelfId) {
-                toast.info(t('plannerate.editor.clipboard.paste_select_shelf'));
+            return;
+        }
+
+        // Ctrl+V: precedência documentada — cola SEGMENTO quando há segmento
+        // copiado E um alvo de prateleira (shelf/segment selecionado); senão,
+        // cola MÓDULO do clipboard persistente na gôndola atual.
+        if (isCtrl && event.key === 'v') {
+            const selected = selection.selectedItem.value;
+
+            if (copiedSegmentId.value) {
+                let targetShelfId: string | null = null;
+
+                if (selected?.type === 'shelf') {
+                    targetShelfId = selected.id;
+                } else if (selected?.type === 'segment') {
+                    targetShelfId = (selected.item as Segment).shelf_id ?? null;
+                }
+
+                if (targetShelfId) {
+                    event.preventDefault();
+
+                    // copySegmentToShelf valida largura e mostra toast de "não cabe";
+                    // origem deletada retorna false com warn — converte em toast.
+                    if (!editor.copySegmentToShelf(copiedSegmentId.value, targetShelfId)) {
+                        toast.error(t('plannerate.editor.clipboard.paste_failed'));
+                    }
+
+                    return;
+                }
+            }
+
+            // Colar módulo (clipboard cross-gôndola) na gôndola aberta
+            if (moduleClipboard.clipboard.value) {
+                event.preventDefault();
+                moduleClipboard.pasteIntoCurrentGondola();
 
                 return;
             }
 
-            event.preventDefault();
-
-            // copySegmentToShelf valida largura e mostra toast de "não cabe";
-            // origem deletada retorna false com warn — converte em toast.
-            if (!editor.copySegmentToShelf(copiedSegmentId.value, targetShelfId)) {
-                toast.error(t('plannerate.editor.clipboard.paste_failed'));
+            // Havia segmento copiado, mas sem prateleira-alvo: orienta o usuário
+            if (copiedSegmentId.value) {
+                toast.info(t('plannerate.editor.clipboard.paste_select_shelf'));
             }
 
             return;

@@ -21,6 +21,7 @@ import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { updateImages } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
+import { MODULE_MOVED_STORAGE_KEY, useModuleClipboard } from '@/composables/plannerate/interactions/useModuleClipboard';
 import { usePlanogramKeyboard } from '@/composables/plannerate/interactions/usePlanogramKeyboard';
 import { useT } from '@/composables/useT';
 import { wayfinderPath } from '../../libs/wayfinderPath';
@@ -103,6 +104,7 @@ const resolvedSubdomain = computed(() => {
 
 // Usa o composable para gerenciar o estado
 const editor = usePlanogramEditor();
+const moduleClipboard = useModuleClipboard();
 const authUserId = computed(() => page.props.auth?.user?.id);
 
 // Inicializa o editor imediatamente se houver record
@@ -156,6 +158,46 @@ const reloadEditorRecord = () => {
     router.reload({
         only: ['record'],
     });
+};
+
+/**
+ * Se esta gôndola é a ORIGEM de um módulo recém-recortado (movido para outra) e a
+ * página chegou "velha" ainda mostrando o módulo — porque trocar de gôndola é uma
+ * navegação Inertia que reaproveita este componente (o `onMounted` não dispara de
+ * novo) e/ou serve dados do cache — busca o record fresco do servidor. O flag é
+ * consumido no ato (à prova de loop), então só recarrega quando há resíduo real.
+ */
+const reloadIfStaleAfterCut = (
+    record: { id?: string; sections?: { id: string }[] } | null | undefined,
+) => {
+    if (!record?.id) {
+        return;
+    }
+
+    const sectionIds = (record.sections ?? []).map((section) => section.id);
+
+    if (moduleClipboard.consumeStaleSourceReload(record.id, sectionIds)) {
+        reloadEditorRecord();
+    }
+};
+
+// Voltar pelo botão do navegador restaura a página congelada do bfcache — nem o
+// `onMounted` nem o watcher disparam; o `pageshow` com `persisted` é o único sinal.
+const handlePageShow = (event: PageTransitionEvent) => {
+    if (event.persisted) {
+        reloadIfStaleAfterCut(props.record);
+    }
+};
+
+// A origem pode estar aberta em OUTRA aba do navegador enquanto o recorte é colado
+// na aba de destino. Trocar de aba não dispara navegação nesta página; o evento
+// `storage` (que só chega às OUTRAS abas do mesmo domínio) é o único sinal de que
+// um módulo desta gôndola acabou de sair. `newValue` nulo = remoção do flag (a
+// própria consumção), que ignoramos.
+const handleModuleMovedStorage = (event: StorageEvent) => {
+    if (event.key === MODULE_MOVED_STORAGE_KEY && event.newValue) {
+        reloadIfStaleAfterCut(props.record);
+    }
 };
 
 const saveChangesAndReloadEditorRecord = async () => {
@@ -230,6 +272,10 @@ watch(
 
         editor.initializeEditor(record);
         editor.setSaveChangesRoute(props.saveChangesRoute || '');
+
+        // Trocar de gôndola reaproveita este componente (sem remount): é aqui — não
+        // no onMounted — que detectamos a origem "velha" de um módulo recortado.
+        reloadIfStaleAfterCut(record);
     },
 );
 
@@ -314,6 +360,9 @@ onMounted(() => {
             window.localStorage.getItem('planogram-properties-manual-open') === 'true';
     }
 
+    // Cobre o caso de remount/carga inicial; a troca de gôndola cai no watcher acima.
+    reloadIfStaleAfterCut(props.record);
+
     if (props.record) {
         editor.initializeEditor(props.record);
         editor.setSaveChangesRoute(props.saveChangesRoute || '');
@@ -336,11 +385,21 @@ onMounted(() => {
     if (headerAndToolbar.value) {
         headerResizeObserver.observe(headerAndToolbar.value);
     }
+
+    if (isBrowser) {
+        window.addEventListener('pageshow', handlePageShow);
+        window.addEventListener('storage', handleModuleMovedStorage);
+    }
 });
 
 onBeforeUnmount(() => {
     headerResizeObserver?.disconnect();
     headerResizeObserver = null;
+
+    if (isBrowser) {
+        window.removeEventListener('pageshow', handlePageShow);
+        window.removeEventListener('storage', handleModuleMovedStorage);
+    }
 });
 
 const category = computed(() => {

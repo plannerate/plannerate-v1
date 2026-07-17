@@ -13,6 +13,8 @@ import {
     ArrowRightLeft,
     Check,
     ChevronDown,
+    ClipboardPaste,
+    Copy,
     FlipHorizontal,
     Grid3x3,
     LayoutGrid,
@@ -21,6 +23,7 @@ import {
     Plus,
     Redo2,
     Save,
+    Scissors,
     Search,
     Sparkles,
     Thermometer,
@@ -56,6 +59,7 @@ import {
 import { usePlanogramChanges } from '@/composables/plannerate/core/usePlanogramChanges';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
+import { useModuleClipboard } from '@/composables/plannerate/interactions/useModuleClipboard';
 import { useT } from '@/composables/useT';
 
 // Types
@@ -104,6 +108,12 @@ const selection = usePlanogramSelection();
 const page = usePage();
 const { t } = useT();
 
+/**
+ * Área de transferência de módulo (copiar/recortar → colar entre gôndolas).
+ * O chip de colar abaixo é a pista visual do clipboard cross-página.
+ */
+const moduleClipboard = useModuleClipboard();
+
 // ============================================================================
 // PROPS & EMITS
 // ============================================================================
@@ -128,6 +138,21 @@ const gondolas = computed(() => editor.gondolasAvailable());
  * Usado para highlight na navegação
  */
 const currentGondolaId = computed(() => editor.currentGondola.value?.id || '');
+
+/**
+ * Mostra o chip de "colar módulo" só quando há um módulo no clipboard vindo de
+ * OUTRA gôndola (colar na mesma gôndola de origem é redundante: cópia = Ctrl+D;
+ * recorte = no-op). É o que torna o clipboard cross-página descobrível.
+ */
+const pasteChip = computed(() => {
+    const clip = moduleClipboard.clipboard.value;
+
+    if (!clip || clip.sourceGondolaId === currentGondolaId.value) {
+        return null;
+    }
+
+    return clip;
+});
 
 /**
  * Fator de escala atual (zoom)
@@ -699,6 +724,27 @@ function gondolaHref(gondola: Gondola): string {
                         <ArrowRightLeft class="size-4" />
                         {{ t('plannerate.toolbar.transfer_module') }}
                     </ButtonWithTooltip>
+
+                    <!-- Chip de colar módulo (clipboard cross-gôndola) -->
+                    <div v-if="pasteChip"
+                        class="flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 py-0.5 pl-1.5 pr-0.5 text-xs">
+                        <component :is="pasteChip.operation === 'cut' ? Scissors : Copy"
+                            class="size-3 shrink-0 text-primary" />
+                        <button type="button"
+                            class="flex items-center gap-1 rounded px-1 py-0.5 font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
+                            :disabled="moduleClipboard.isPasting.value"
+                            :title="t('plannerate.toolbar.paste_module_chip', { name: pasteChip.sectionName })"
+                            @click="moduleClipboard.pasteIntoCurrentGondola()">
+                            <ClipboardPaste class="size-3.5 shrink-0" />
+                            <span class="max-w-32 truncate">{{ t('plannerate.toolbar.paste_module_chip', { name: pasteChip.sectionName }) }}</span>
+                        </button>
+                        <button type="button"
+                            class="rounded p-0.5 text-muted-foreground hover:bg-primary/10 hover:text-destructive"
+                            :title="t('plannerate.toolbar.clear_clipboard')"
+                            @click="moduleClipboard.clearClipboard()">
+                            <X class="size-3" />
+                        </button>
+                    </div>
                 </div>
 
                 <Separator orientation="vertical" class="h-8" />

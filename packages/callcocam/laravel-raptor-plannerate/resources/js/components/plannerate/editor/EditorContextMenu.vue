@@ -56,6 +56,7 @@ import {
 import { usePlanogramEditor } from '../../../composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '../../../composables/plannerate/core/usePlanogramSelection';
 import { useEditorContextMenu } from '../../../composables/plannerate/interactions/useEditorContextMenu';
+import { useModuleClipboard } from '../../../composables/plannerate/interactions/useModuleClipboard';
 import { usePlanogramKeyboard } from '../../../composables/plannerate/interactions/usePlanogramKeyboard';
 import { shouldShowDeleteConfirm } from '../../../composables/plannerate/shared/usePlanogramUtils';
 import type { Section, Segment, Shelf } from '../../../types/planogram';
@@ -72,6 +73,7 @@ interface MenuEntry {
 const { t } = useT();
 const editor = usePlanogramEditor();
 const selection = usePlanogramSelection();
+const moduleClipboard = useModuleClipboard();
 const {
     isContextMenuOpen,
     contextMenuX,
@@ -241,6 +243,23 @@ const menuEntries = computed<MenuEntry[]>(() => {
     const actions = useSectionActions(() => section as Section);
 
     return [
+        {
+            label: t('plannerate.editor.context_menu.copy_module'),
+            shortcut: 'Ctrl+C',
+            run: () => moduleClipboard.copyModule(section as Section, 'copy'),
+        },
+        {
+            label: t('plannerate.editor.context_menu.cut_module'),
+            shortcut: 'Ctrl+X',
+            run: () => moduleClipboard.copyModule(section as Section, 'cut'),
+        },
+        {
+            label: t('plannerate.editor.context_menu.paste_module'),
+            shortcut: 'Ctrl+V',
+            disabled: !moduleClipboard.clipboard.value,
+            run: () => moduleClipboard.pasteIntoCurrentGondola(),
+        },
+        { separator: true },
         {
             label: t('plannerate.editor.context_menu.move_left'),
             shortcut: 'Ctrl+←',

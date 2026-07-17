@@ -117,6 +117,9 @@ Route::prefix('api')->name('api.')
         Route::post('editor/sections/{section}/transfer', [SectionController::class, 'transfer'])
             ->name('editor.sections.transfer')
             ->middleware('gondola.editable');
+        Route::post('editor/sections/{section}/copy', [SectionController::class, 'copyToGondola'])
+            ->name('editor.sections.copy')
+            ->middleware('gondola.editable');
 
         // Editor API Routes - Planograms & Gondolas
         Route::get('editor/planograms', [PlanogramApiController::class, 'index'])
