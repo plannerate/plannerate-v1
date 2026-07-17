@@ -8,6 +8,14 @@ interface ShelfAreaOptions {
     minAreaHeight?: number;
 }
 
+/**
+ * Quanto a área da prateleira do TOPO pode crescer ACIMA do topo da seção (cm).
+ * A prateleira de cima não tem prateleira acima para estender a área de drop,
+ * então ela avança para o espaço vazio acima da gôndola — mas de forma limitada,
+ * para não capturar hover/clique numa faixa grande acima do planograma.
+ */
+const MAX_TOP_OVERSHOOT_CM = 30;
+
 interface ShelfAreaResult {
     areaStartCm: number;
     areaHeightCm: number;
@@ -66,17 +74,23 @@ export function useShelfAreaCalculation() {
 
         // Garante altura mínima para área clicável
         if (areaHeightCm < minAreaHeight) {
-            // Ajusta o início para garantir altura mínima
-            // Mas respeita o limite: não pode começar acima da prateleira anterior
-            const newStart = Math.max(0, areaEndCm - minAreaHeight);
+            const targetStart = areaEndCm - minAreaHeight;
 
-            // Se há prateleira anterior, não pode ultrapassar ela
             if (previousShelf) {
+                // Não pode começar acima da prateleira anterior nem do topo (0)
                 const previousEnd =
                     previousShelf.shelf_position + previousShelf.shelf_height;
-                areaStartCm = Math.max(previousEnd, newStart);
+
+                areaStartCm = Math.max(previousEnd, Math.max(0, targetStart));
             } else {
-                areaStartCm = newStart;
+                // Prateleira do TOPO: não há nada acima para estender, então a
+                // área cresce PARA CIMA além do topo da seção (start negativo),
+                // ocupando o espaço vazio acima da gôndola. Isso dá uma área de
+                // drop utilizável sem mover nada visível: os produtos são
+                // ancorados ao FUNDO da área (areaEnd, inalterado) e a base
+                // física tem posição absoluta independente de areaStart.
+                // Limitado a MAX_TOP_OVERSHOOT_CM acima do topo (start = 0).
+                areaStartCm = Math.max(targetStart, -MAX_TOP_OVERSHOOT_CM);
             }
 
             areaHeightCm = areaEndCm - areaStartCm;
