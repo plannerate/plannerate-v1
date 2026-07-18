@@ -387,6 +387,7 @@ function handleClose() {
                 class="resize-none text-sm min-h-[72px]"
                 :disabled="noteSending"
                 @keydown.ctrl.enter="submitNote"
+                @keydown.meta.enter="submitNote"
               />
               <div class="flex items-center justify-between">
                 <span class="text-[10px] text-muted-foreground">{{ t('plannerate.print.product_detail.ctrl_enter_to_send') }}</span>

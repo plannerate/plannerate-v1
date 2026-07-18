@@ -13,6 +13,7 @@ import { usePlanogramSelection } from '../core/usePlanogramSelection';
 import { DEFAULT_SECTION_FIELDS, toCamelCase } from '../fields/useSectionFields';
 import { calculateHolePositions } from '../geometry/useSectionHoles';
 import { shouldShowDeleteConfirm } from '../shared/usePlanogramUtils';
+import { isDeleteShortcut, isMacPlatform } from './keyboardPlatform';
 import { useModuleClipboard } from './useModuleClipboard';
 
 // ============================================================================
@@ -30,6 +31,9 @@ const itemToDelete = ref<{
     type: 'section' | 'shelf' | 'layer';
     item: Section | Shelf | Layer;
 } | null>(null);
+
+// Detecta macOS uma vez: em notebook Mac a tecla "delete" emite Backspace.
+const IS_MAC = isMacPlatform();
 
 // Contador de referências para rastrear quantas instâncias estão usando o listener
 let keyboardListenerRefCount = 0;
@@ -955,8 +959,10 @@ return;
         }
 
         // Delete: Remove item selecionado.
-        // Backspace NÃO deleta (fácil de apertar sem querer em notebooks).
-        if (event.key === 'Delete') {
+        // No macOS a tecla "delete" do notebook emite Backspace (sem forward-Delete),
+        // então aceitamos Backspace SÓ no Mac. Em Windows/Linux mantém só Delete
+        // (têm tecla dedicada; Backspace ali é fácil de apertar sem querer).
+        if (isDeleteShortcut(event, IS_MAC)) {
             event.preventDefault();
 
             const selectedItem = selection.selectedItem.value;
