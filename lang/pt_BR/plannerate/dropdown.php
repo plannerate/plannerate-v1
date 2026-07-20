@@ -15,6 +15,7 @@ return [
         'preview_pdf' => 'Visualizar PDF',
         'download_pdf' => 'Baixar PDF',
         'share_qr' => 'QR Code',
+        'share_dimensions' => 'Corrigir dimensões',
     ],
     'reports' => [
         'title' => 'Relatórios',

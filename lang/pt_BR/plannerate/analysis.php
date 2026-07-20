@@ -182,12 +182,54 @@ return [
         'negative_margin_tooltip' => 'Vendido com margem de contribuição negativa.',
         'no_dimension_tooltip' => 'Produto sem largura cadastrada: o espaço não pôde ser medido, então não há recomendação.',
 
-        // Rótulos da planilha original — válidos SÓ no preset X=quantidade, Y=margem
+        // Rótulos do preset canônico X=quantidade, Y=margem.
+        // O nome aponta o que o produto PRECISA, não o eixo em que ele já é forte:
+        //   forte_x = vende muito com margem baixa  → precisa de Margem
+        //   forte_y = margem boa mas vende pouco    → precisa de Giro
         'canonical' => [
-            'alto_alto' => 'Alto valor — manutenção',
-            'forte_x' => 'Incentivo — volume',
-            'forte_y' => 'Incentivo — lucro',
-            'baixo_baixo' => 'Baixo valor — revisar',
+            'alto_alto' => 'Alto desempenho — Proteger',
+            'forte_x' => 'Incentivo — Margem',
+            'forte_y' => 'Incentivo — Giro',
+            'baixo_baixo' => 'Baixo desempenho — Revisar',
+        ],
+
+        'actions_title' => 'Ações recomendadas',
+
+        // Ações por quadrante. Só valem no preset canônico (quantidade × margem):
+        // fora dele, "revisar preço" ou "aumentar frentes" viram conselho sem lastro,
+        // porque o eixo fraco não é mais margem nem giro.
+        'canonical_actions' => [
+            'alto_alto' => [
+                'Manter a disponibilidade',
+                'Priorizar o abastecimento',
+                'Manter ou ampliar o número de frentes',
+                'Evitar rupturas',
+                'Preservar a exposição e a localização do produto',
+            ],
+            'forte_x' => [
+                'Revisar o preço de venda',
+                'Avaliar custos e rentabilidade',
+                'Renegociar condições com fornecedores',
+                'Rever descontos aplicados',
+                'Avaliar a frequência e a intensidade das promoções',
+                'Reduzir perdas que comprometam a margem',
+            ],
+            'forte_y' => [
+                'Ampliar a visibilidade',
+                'Revisar a localização',
+                'Aumentar o número de frentes',
+                'Testar ações promocionais',
+                'Verificar se o preço está limitando as vendas',
+                'Avaliar rupturas ou baixa disponibilidade',
+            ],
+            'baixo_baixo' => [
+                'Avaliar a permanência no sortimento',
+                'Revisar exposição e localização',
+                'Verificar a competitividade do preço',
+                'Avaliar rupturas e disponibilidade',
+                'Analisar sazonalidade e tempo de cadastro',
+                'Considerar redução de espaço, substituição ou retirada',
+            ],
         ],
 
         // Fora do preset canônico o rótulo é derivado dos eixos escolhidos, senão mentiria

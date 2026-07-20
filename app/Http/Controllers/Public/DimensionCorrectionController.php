@@ -70,9 +70,13 @@ class DimensionCorrectionController extends Controller
 
     public function update(UpdatePublicDimensionRequest $request, string $code, string $product, EanReferenceBackfiller $backfiller): JsonResponse
     {
-        $this->token($request);
+        $token = $this->token($request);
 
-        $model = Product::query()->whereKey($product)->firstOrFail();
+        // Restringe a escrita ao escopo do token: sem isso, quem tem um link válido
+        // consegue alterar QUALQUER produto do tenant passando o ID na URL, e o escopo
+        // seria apenas cosmético. Não usa missingProductsQuery() porque corrigir um
+        // valor já preenchido é legítimo.
+        $model = $this->scopedProductsQuery($token)->whereKey($product)->firstOrFail();
 
         $validated = $request->validated();
 
@@ -107,7 +111,7 @@ class DimensionCorrectionController extends Controller
     }
 
     /**
-     * Query base dos produtos sem dimensão válida dentro do escopo (categoria) do token.
+     * Query base dos produtos sem dimensão válida dentro do escopo do token.
      *
      * Considera "sem dimensão" todo produto cuja ALTURA ou LARGURA não seja um número
      * positivo (null ou <= 0) — os campos essenciais. Não exclui rascunhos: a intenção
@@ -115,15 +119,29 @@ class DimensionCorrectionController extends Controller
      */
     private function missingProductsQuery(TenantDimensionShareToken $token): Builder
     {
-        $categoryIds = $this->categoryAndDescendantIds((string) ($token->category_id ?? ''));
-
-        return Product::query()
-            ->when($categoryIds !== [], fn (Builder $query) => $query->whereIn('category_id', $categoryIds))
+        return $this->scopedProductsQuery($token)
             ->where(function (Builder $query): void {
                 $query
                     ->whereNull('height')->orWhere('height', '<=', 0)
                     ->orWhereNull('width')->orWhere('width', '<=', 0);
             });
+    }
+
+    /**
+     * Produtos que o token alcança, sem o filtro de "sem dimensão".
+     *
+     * Separado de missingProductsQuery() porque o update precisa aceitar um produto que
+     * já tem medida (correção de um valor digitado errado), mas nunca um produto fora
+     * do escopo.
+     *
+     * Sem categoria no token, alcança o tenant inteiro.
+     */
+    private function scopedProductsQuery(TenantDimensionShareToken $token): Builder
+    {
+        $categoryIds = $this->categoryAndDescendantIds((string) ($token->category_id ?? ''));
+
+        return Product::query()
+            ->when($categoryIds !== [], fn (Builder $query) => $query->whereIn('category_id', $categoryIds));
     }
 
     private function token(Request $request): TenantDimensionShareToken

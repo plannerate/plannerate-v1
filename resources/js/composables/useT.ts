@@ -26,5 +26,27 @@ export function useT() {
         return result
     }
 
-    return { t }
+    /**
+     * Lê uma chave cujo valor é uma LISTA no arquivo de tradução (ex.: as ações
+     * recomendadas de cada quadrante BCG). `t()` não serve: ele faz String(value)
+     * e um array viraria "[object Object]"/itens concatenados.
+     *
+     * Devolve `[]` quando a chave não existe ou não é uma lista.
+     */
+    function tList(key: string): string[] {
+        const keys = key.split('.')
+        let value: unknown = (page.props.translations as TranslationNode | undefined) ?? {}
+
+        for (const currentKey of keys) {
+            if (value && typeof value === 'object' && currentKey in value) {
+                value = (value as TranslationNode)[currentKey]
+            } else {
+                return []
+            }
+        }
+
+        return Array.isArray(value) ? value.map(String) : []
+    }
+
+    return { t, tList }
 }

@@ -212,6 +212,12 @@ export interface Gondola {
         gondolas?: Gondola[];
         start_date?: string | null;
         end_date?: string | null;
+        category_id?: string | null;
+        category?: {
+            id: string;
+            name: string;
+            full_path?: string | null;
+        };
         store_id?: string;
         store?: {
             id: string;

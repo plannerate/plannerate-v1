@@ -25,6 +25,10 @@
                 <QrCode class="mr-2 size-4" />
                 {{ t('plannerate.dropdown.distribution.share_qr') }}
             </DropdownMenuItem>
+            <DropdownMenuItem @click="showShareDimensionsModal = true">
+                <Ruler class="mr-2 size-4" />
+                {{ t('plannerate.dropdown.distribution.share_dimensions') }}
+            </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
     <!-- ============================================================
@@ -32,13 +36,23 @@
          ============================================================ -->
     <ShareQRCodeModal v-model:open="showShareQRModal" :gondola-id="currentGondola?.id"
         :gondola-name="currentGondola?.name" />
+
+    <!-- ============================================================
+         MODAL DE CORREÇÃO DE DIMENSÕES (link público)
+         Escopo: a categoria do planograma — e não os produtos da gôndola, porque
+         produto sem dimensão nunca chega a ser posicionado numa gôndola. O objetivo
+         é justamente medir os que ainda estão fora dela.
+         ============================================================ -->
+    <ShareDimensionDialog v-model:open="showShareDimensionsModal" hide-trigger
+        :category-id="planogramCategoryId" :category-label="planogramCategoryName" />
 </template>
 <script setup lang="ts">
-import { ChevronDown, Download, ExternalLink, Eye, QrCode, Share2 } from 'lucide-vue-next';
+import { ChevronDown, Download, ExternalLink, Eye, QrCode, Ruler, Share2 } from 'lucide-vue-next';
 
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
 import { show as gondolaShare } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaShareController';
+import ShareDimensionDialog from '@/components/tenant/dimensions/ShareDimensionDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -57,6 +71,17 @@ const { t } = useT();
  * Estado do modal de compartilhamento/QR code
  */
 const showShareQRModal = ref(false);
+
+/**
+ * Estado do modal de link público de correção de dimensões
+ */
+const showShareDimensionsModal = ref(false);
+
+/**
+ * Categoria do planograma — escopo do link de correção de dimensões.
+ */
+const planogramCategoryId = computed(() => currentGondola.value?.planogram?.category_id ?? null);
+const planogramCategoryName = computed(() => currentGondola.value?.planogram?.category?.name ?? null);
 
 // ============================================================================
 // PDF EXPORT HANDLERS

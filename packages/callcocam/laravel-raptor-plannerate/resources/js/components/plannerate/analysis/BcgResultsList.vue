@@ -24,6 +24,12 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useAnalysisExport } from '@/composables/plannerate/analysis/useAnalysisExport';
 import { useT } from '@/composables/useT';
 
@@ -44,6 +50,9 @@ const { exportBcgToCsv } = useAnalysisExport();
 const {
     axisLabel,
     quadrantLabel,
+    quadrantDescription,
+    quadrantActions,
+    actionsTitle,
     quadrantIcon,
     quadrantBadgeClass,
     rowClass,
@@ -214,7 +223,9 @@ const formatNumber = (value: number) =>
 </script>
 
 <template>
-    <div v-if="results.length > 0" class="space-y-2">
+    <!-- Um único Provider para a tabela inteira: um por linha seria desperdício -->
+    <TooltipProvider v-if="results.length > 0" :delay-duration="200">
+    <div class="space-y-2">
         <!-- Filtros e Busca -->
         <Card>
             <CardContent class="pt-1 pb-1">
@@ -353,9 +364,48 @@ const formatNumber = (value: number) =>
                                     </TableCell>
                                     <TableCell class="py-2">
                                         <div class="flex items-center gap-1">
-                                            <Badge variant="outline" :class="['text-[10px] font-semibold', quadrantBadgeClass(item.quadrant)]">
-                                                {{ quadrantLabel(item.quadrant, item.x_axis, item.y_axis) }}
-                                            </Badge>
+                                            <!-- Tag do quadrante: hover abre as ações recomendadas -->
+                                            <Tooltip>
+                                                <TooltipTrigger as-child>
+                                                    <Badge variant="outline" :class="['cursor-help text-[10px] font-semibold', quadrantBadgeClass(item.quadrant)]">
+                                                        {{ quadrantLabel(item.quadrant, item.x_axis, item.y_axis) }}
+                                                    </Badge>
+                                                </TooltipTrigger>
+                                                <TooltipContent
+                                                    side="right"
+                                                    align="start"
+                                                    :side-offset="8"
+                                                    :collision-padding="16"
+                                                    class="z-[9999] max-h-[68vh] w-[min(20rem,calc(100vw-1rem))] overflow-hidden border border-border bg-background p-0 shadow-2xl"
+                                                >
+                                                    <div class="max-h-[68vh] space-y-2 overflow-y-auto p-3">
+                                                        <div :class="['rounded-lg border p-2 text-center', quadrantBadgeClass(item.quadrant)]">
+                                                            <p class="text-xs font-bold">
+                                                                <span aria-hidden="true">{{ quadrantIcon(item.quadrant) }}</span>
+                                                                {{ quadrantLabel(item.quadrant, item.x_axis, item.y_axis) }}
+                                                            </p>
+                                                        </div>
+                                                        <p class="text-[11px] leading-snug text-muted-foreground">
+                                                            {{ quadrantDescription(item.quadrant) }}
+                                                        </p>
+                                                        <div v-if="quadrantActions(item.quadrant, item.x_axis, item.y_axis).length">
+                                                            <p class="mb-1 text-[11px] font-semibold text-foreground">
+                                                                {{ actionsTitle() }}
+                                                            </p>
+                                                            <ul class="space-y-0.5">
+                                                                <li
+                                                                    v-for="action in quadrantActions(item.quadrant, item.x_axis, item.y_axis)"
+                                                                    :key="action"
+                                                                    class="flex gap-1.5 text-[11px] leading-snug text-muted-foreground"
+                                                                >
+                                                                    <span aria-hidden="true" class="text-foreground">•</span>
+                                                                    <span>{{ action }}</span>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </TooltipContent>
+                                            </Tooltip>
                                             <!-- Em cima da linha de corte: pode trocar de quadrante por ruído -->
                                             <span
                                                 v-if="item.is_borderline"
@@ -402,6 +452,7 @@ const formatNumber = (value: number) =>
             </div>
         </div>
     </div>
+    </TooltipProvider>
 </template>
 
 <style scoped>

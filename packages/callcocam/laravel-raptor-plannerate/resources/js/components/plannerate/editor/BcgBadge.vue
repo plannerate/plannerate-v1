@@ -43,6 +43,8 @@ const {
     axisLabel,
     quadrantLabel,
     quadrantDescription,
+    quadrantActions,
+    actionsTitle,
     quadrantIcon,
     spaceActionLabel,
     spaceActionIcon,
@@ -98,6 +100,11 @@ const showAction = computed(
     () => props.data?.acao_espaco === 'aumentar' || props.data?.acao_espaco === 'reduzir',
 );
 
+/** Ações recomendadas do quadrante (vazio fora do preset canônico — ver bcg/labels.ts). */
+const actions = computed(() =>
+    props.data ? quadrantActions(props.data.quadrant, props.data.x_axis, props.data.y_axis) : [],
+);
+
 // Dimensões proporcionais à escala da gôndola (mesma fórmula do StockIndicator)
 const markerSize = computed(() => Math.max(6, Math.min(20, props.scale * 4)));
 const markerPadding = computed(() => Math.max(2, Math.min(8, props.scale * 2)));
@@ -133,9 +140,9 @@ const markerPadding = computed(() => Math.max(2, Math.min(8, props.scale * 2)));
                     :side-offset="8"
                     :collision-padding="16"
                     :avoid-collisions="true"
-                    class="z-[9999] w-[min(18rem,calc(100vw-1rem))] border border-border bg-background p-0 shadow-2xl"
+                    class="z-[9999] max-h-[68vh] w-[min(18rem,calc(100vw-1rem))] overflow-hidden border border-border bg-background p-0 shadow-2xl"
                 >
-                    <div class="space-y-2.5 p-3">
+                    <div class="max-h-[68vh] space-y-2.5 overflow-y-auto p-3">
                         <!-- Quadrante -->
                         <div
                             class="rounded-lg border p-2 text-center"
@@ -148,6 +155,23 @@ const markerPadding = computed(() => Math.max(2, Math.min(8, props.scale * 2)));
                             <p class="mt-0.5 text-[10px] text-muted-foreground">
                                 {{ quadrantDescription(data.quadrant) }}
                             </p>
+                        </div>
+
+                        <!-- Ações recomendadas do quadrante -->
+                        <div v-if="actions.length" class="rounded-lg border border-border bg-accent/50 p-2">
+                            <p class="mb-1 text-[11px] font-semibold text-foreground">
+                                {{ actionsTitle() }}
+                            </p>
+                            <ul class="space-y-0.5">
+                                <li
+                                    v-for="action in actions"
+                                    :key="action"
+                                    class="flex gap-1.5 text-[11px] leading-snug text-muted-foreground"
+                                >
+                                    <span aria-hidden="true" class="text-foreground">•</span>
+                                    <span>{{ action }}</span>
+                                </li>
+                            </ul>
                         </div>
 
                         <!-- Eixos usados: o rótulo do quadrante é derivado deles -->

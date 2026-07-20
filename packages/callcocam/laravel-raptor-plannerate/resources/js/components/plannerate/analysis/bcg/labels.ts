@@ -15,7 +15,7 @@ import type {BcgAxis, BcgQuadrant, BcgSpaceAction} from './types';
  * é derivado das métricas escolhidas ("Alto em Valor, baixo em Quantidade").
  */
 export function useBcgLabels() {
-    const { t } = useT()
+    const { t, tList } = useT()
 
     const axisLabel = (axis: BcgAxis): string => t(AXIS_LABEL_KEYS[axis])
 
@@ -46,6 +46,26 @@ export function useBcgLabels() {
     /** Descrição estratégica do quadrante (não é ordem de ação — ver docs/BCG-PLANO.md). */
     const quadrantDescription = (quadrant: BcgQuadrant): string =>
         t(`plannerate.analysis.bcg_selection.${quadrant}_desc`)
+
+    /**
+     * Ações recomendadas do quadrante.
+     *
+     * Só existem no preset canônico (X = quantidade, Y = margem) — pela mesma razão dos
+     * rótulos: as ações nomeiam o eixo FRACO ("revisar preço" para quem tem margem baixa,
+     * "aumentar frentes" para quem gira pouco). Com outros eixos esse eixo fraco não é
+     * mais margem nem giro, e a lista viraria conselho sem lastro. Fora do preset devolve
+     * lista vazia, e a UI mostra apenas a descrição do quadrante.
+     */
+    const quadrantActions = (quadrant: BcgQuadrant, xAxis: BcgAxis, yAxis: BcgAxis): string[] => {
+        if (!isCanonicalPreset(xAxis, yAxis)) {
+            return []
+        }
+
+        return tList(`plannerate.analysis.bcg_results.canonical_actions.${quadrant}`)
+    }
+
+    /** Título da lista de ações recomendadas. */
+    const actionsTitle = (): string => t('plannerate.analysis.bcg_results.actions_title')
 
     /** Símbolo do quadrante — usado no filtro e no selo da gôndola. */
     const quadrantIcon = (quadrant: BcgQuadrant): string => {
@@ -142,6 +162,8 @@ export function useBcgLabels() {
         axisLabel,
         quadrantLabel,
         quadrantDescription,
+        quadrantActions,
+        actionsTitle,
         quadrantIcon,
         quadrantBadgeClass,
         quadrantStyle,

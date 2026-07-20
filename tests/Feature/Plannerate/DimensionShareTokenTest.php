@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\TenantDimensionShareToken;
 use App\Models\User;
+use App\Services\DimensionShare\DimensionShareScope;
 use App\Services\DimensionShare\IssueDimensionShareService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -125,6 +126,57 @@ test('public page respects the category scope of the token', function () {
         ->has('products', 1)
         ->where('products.0.id', $inScope->id)
     );
+});
+
+test('the category scope reaches products in descendant categories that are not on any gondola', function () {
+    $tenant = dimensionShareTenant();
+    $issuer = User::factory()->create();
+
+    // Cenário real do editor: o planograma aponta para uma categoria-raiz e os produtos
+    // sem medida vivem nas subcategorias, ainda fora de qualquer gôndola.
+    $tenant->makeCurrent();
+    $root = Category::query()->create(['name' => 'Cereais']);
+    $child = Category::query()->create(['name' => 'Farináceos', 'category_id' => $root->id]);
+    $inScope = dimensionShareProduct('Farinha Sem Medida', $child->id);
+    dimensionShareProduct('Outra Categoria', null);
+    CurrentTenantModel::forgetCurrent();
+
+    ['shareUrl' => $shareUrl] = dimensionShareIssue($tenant, $root->id, $issuer);
+    $code = basename((string) parse_url($shareUrl, PHP_URL_PATH));
+
+    $tenant->makeCurrent();
+    $response = $this->get(dimensionShareUrl($tenant, "dimensoes/{$code}"));
+
+    $response->assertOk();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->where('totalRemaining', 1)
+        ->has('products', 1)
+        ->where('products.0.id', $inScope->id)
+    );
+});
+
+test('the public link cannot update a product outside the scope of the token', function () {
+    $tenant = dimensionShareTenant();
+    $issuer = User::factory()->create();
+
+    $tenant->makeCurrent();
+    $category = Category::query()->create(['name' => 'Bebidas']);
+    dimensionShareProduct('No Escopo', $category->id);
+    $outsider = dimensionShareProduct('Fora do Escopo', null);
+    CurrentTenantModel::forgetCurrent();
+
+    ['shareUrl' => $shareUrl] = dimensionShareIssue($tenant, $category->id, $issuer);
+    $code = basename((string) parse_url($shareUrl, PHP_URL_PATH));
+
+    $tenant->makeCurrent();
+    $response = $this->patchJson(
+        dimensionShareUrl($tenant, "dimensoes/{$code}/produtos/{$outsider->id}"),
+        ['width' => 10, 'height' => 20, 'depth' => 5],
+    );
+
+    $response->assertNotFound();
+
+    expect($outsider->fresh()->width)->toBeEmpty();
 });
 
 test('saving dimensions through the public link updates the product and removes it from the list', function () {
@@ -326,7 +378,12 @@ function dimensionShareIssue(Tenant $tenant, ?string $categoryId, User $issuer):
 {
     $request = Request::create('http://'.$tenant->primaryDomain->host.'/dimensions');
 
-    return app(IssueDimensionShareService::class)->issue($tenant, $categoryId, null, $issuer, $request);
+    return app(IssueDimensionShareService::class)->issue(
+        $tenant,
+        DimensionShareScope::make(categoryId: $categoryId),
+        $issuer,
+        $request,
+    );
 }
 
 /**

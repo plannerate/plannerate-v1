@@ -21,6 +21,8 @@ const {
     axisLabel,
     quadrantLabel,
     quadrantDescription,
+    quadrantActions,
+    actionsTitle,
     quadrantStyle,
     spaceActionLabel,
     spaceActionIcon,
@@ -80,6 +82,26 @@ const formatNumber = (value: number): string =>
                     <div class="mt-0.5 text-[10px] text-muted-foreground">
                         {{ quadrantDescription(selected.quadrant) }}
                     </div>
+                </div>
+
+                <!-- Ações recomendadas do quadrante -->
+                <div
+                    v-if="quadrantActions(selected.quadrant, selected.x_axis, selected.y_axis).length"
+                    class="rounded-lg border border-border bg-background p-2"
+                >
+                    <p class="mb-1 text-[11px] font-semibold text-foreground">
+                        {{ actionsTitle() }}
+                    </p>
+                    <ul class="space-y-0.5">
+                        <li
+                            v-for="action in quadrantActions(selected.quadrant, selected.x_axis, selected.y_axis)"
+                            :key="action"
+                            class="flex gap-1.5 text-[11px] leading-snug text-muted-foreground"
+                        >
+                            <span aria-hidden="true" class="text-foreground">•</span>
+                            <span>{{ action }}</span>
+                        </li>
+                    </ul>
                 </div>
 
                 <!-- Avisos que mudam a leitura do quadrante -->

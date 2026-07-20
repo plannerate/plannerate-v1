@@ -16,20 +16,19 @@ class IssueDimensionShareService
     private const TTL_DAYS = 7;
 
     /**
-     * Emite um link público de correção de dimensões para um tenant, opcionalmente
-     * restrito a uma categoria. Guarda apenas o hash do código; o código em texto
-     * puro só existe na URL retornada.
+     * Emite um link público de correção de dimensões para um tenant, delimitado pelo
+     * escopo informado (categoria, gôndola ou tenant inteiro). Guarda apenas o hash do
+     * código; o código em texto puro só existe na URL retornada.
      *
      * @return array{token: TenantDimensionShareToken, shareUrl: string}
      */
-    public function issue(Tenant $tenant, ?string $categoryId, ?string $categoryName, User $issuer, Request $request): array
+    public function issue(Tenant $tenant, DimensionShareScope $scope, User $issuer, Request $request): array
     {
         $plainCode = Str::random(48);
 
         $token = TenantDimensionShareToken::query()->create([
             'tenant_id' => $tenant->id,
-            'category_id' => $categoryId !== null && $categoryId !== '' ? $categoryId : null,
-            'category_name' => $categoryName,
+            ...$scope->toAttributes(),
             'issuer_id' => $issuer->id,
             'issuer_name' => $issuer->name,
             'issuer_email' => $issuer->email,

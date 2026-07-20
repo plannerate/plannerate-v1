@@ -34,6 +34,7 @@ use Callcocam\LaravelRaptorPlannerate\Models\Segment;
 use Callcocam\LaravelRaptorPlannerate\Models\Shelf;
 use Callcocam\LaravelRaptorPlannerate\Models\User;
 use Callcocam\LaravelRaptorPlannerate\Services\Editor\GondolaPayloadService;
+use Callcocam\LaravelRaptorPlannerate\Services\Editor\GondolaProductResolver;
 use Callcocam\LaravelRaptorPlannerate\Services\Editor\GondolaService;
 use Callcocam\LaravelRaptorPlannerate\Services\Generation\GenerationQueueDispatcher;
 use Illuminate\Http\Request;
@@ -308,29 +309,10 @@ class GondolaController extends Controller
             );
         }
 
-        // Obter IDs de produtos já usados na gôndola.
-        // Usa JOINs via segment -> shelf -> section para evitar depender de colunas
-        // auxiliares inexistentes em layers.
-        //
-        // Os JOINs são de query builder cru, então o global scope de SoftDeletes não se
-        // aplica: é obrigatório filtrar deleted_at em TODOS os níveis. Remover um produto
-        // do editor soft-deleta apenas o segment (ver SegmentService::update), deixando a
-        // layer filha com deleted_at NULL — sem estes filtros o produto removido continua
-        // contando como usado e não volta para a lista de disponíveis.
+        // Obter IDs de produtos já usados na gôndola (ver GondolaProductResolver para
+        // por que a query precisa filtrar deleted_at em todos os níveis da cadeia).
         $gondolaId = $gondolaModel->id;
-        $usedProductIds = Layer::query()
-            ->join('segments', 'segments.id', '=', 'layers.segment_id')
-            ->join('shelves', 'shelves.id', '=', 'segments.shelf_id')
-            ->join('sections', 'sections.id', '=', 'shelves.section_id')
-            ->where('sections.gondola_id', $gondolaId)
-            ->whereNotNull('product_id')
-            ->whereNull('layers.deleted_at')
-            ->whereNull('segments.deleted_at')
-            ->whereNull('shelves.deleted_at')
-            ->whereNull('sections.deleted_at')
-            ->distinct()
-            ->pluck('layers.product_id')
-            ->toArray();
+        $usedProductIds = app(GondolaProductResolver::class)->productIdsInGondola($gondolaId);
 
         // Query de produtos
         // Carrega a cadeia de pais (até 7 níveis) para que getFullHierarchy() não faça

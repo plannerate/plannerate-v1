@@ -3,6 +3,7 @@ import { useHttp } from '@inertiajs/vue3';
 import { Check, Copy, Link2, Loader2, Share2, Trash2 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import { destroy, store } from '@/actions/App/Http/Controllers/Tenant/DimensionShareTokenController';
 import {
     Dialog,
     DialogContent,
@@ -13,13 +14,26 @@ import {
 } from '@/components/ui/dialog';
 import { useT } from '@/composables/useT';
 
-const props = defineProps<{
-    categoryId: string | null;
-}>();
+const props = withDefaults(
+    defineProps<{
+        categoryId?: string | null;
+        /** Nome da categoria, para rotular o escopo antes de gerar o link. */
+        categoryLabel?: string | null;
+        /** Oculta o botão embutido — use quando o dialog é aberto de fora (menu, etc.). */
+        hideTrigger?: boolean;
+    }>(),
+    {
+        categoryId: null,
+        categoryLabel: null,
+        hideTrigger: false,
+    },
+);
 
 const { t } = useT();
 
-const open = ref(false);
+// defineModel para que o dialog funcione tanto sozinho (com o próprio trigger)
+// quanto controlado de fora, quando aberto por um item de menu.
+const open = defineModel<boolean>('open', { default: false });
 const generating = ref(false);
 const revoking = ref(false);
 const shareUrl = ref('');
@@ -38,8 +52,11 @@ const generateHttp = useHttp<{ category_id: string | null }, GenerateResponse>({
 const revokeHttp = useHttp<Record<string, never>, { ok: boolean }>({});
 
 const scopeLabel = computed(() => {
-    if (categoryName.value) {
-        return t('app.tenant.dimensions.share.scope_category', { name: categoryName.value });
+    // Antes de gerar não há resposta do servidor: cai na prop para já mostrar o escopo.
+    const category = categoryName.value ?? props.categoryLabel;
+
+    if (category) {
+        return t('app.tenant.dimensions.share.scope_category', { name: category });
     }
 
     return t('app.tenant.dimensions.share.scope_all');
@@ -65,7 +82,7 @@ async function generate(): Promise<void> {
 
     try {
         generateHttp.category_id = props.categoryId ?? null;
-        const payload = await generateHttp.submit({ url: '/dimensions/share-tokens', method: 'post' });
+        const payload = await generateHttp.submit({ url: store.url(), method: 'post' });
 
         shareUrl.value = payload.url;
         tokenId.value = payload.token_id;
@@ -103,7 +120,7 @@ async function revoke(): Promise<void> {
     revoking.value = true;
 
     try {
-        await revokeHttp.submit({ url: `/dimensions/share-tokens/${tokenId.value}`, method: 'delete' });
+        await revokeHttp.submit({ url: destroy.url(tokenId.value), method: 'delete' });
         shareUrl.value = '';
         tokenId.value = '';
         toast.success(t('app.tenant.dimensions.share.revoked'));
@@ -117,7 +134,7 @@ async function revoke(): Promise<void> {
 
 <template>
     <Dialog v-model:open="open">
-        <DialogTrigger as-child>
+        <DialogTrigger v-if="!hideTrigger" as-child>
             <button type="button"
                 class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted">
                 <Share2 class="size-3.5 shrink-0" />
