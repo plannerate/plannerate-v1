@@ -119,6 +119,15 @@ class SidebarNavigationService
                             ->icon('folder-kanban')
                             ->authorize('viewAny', UsefulLink::class)
                             ->setOrder(50);
+                    })
+                    // Sem authorize(): a ferramenta é client-side e não lê dado nenhum do
+                    // sistema, então basta estar autenticado no landlord para usá-la.
+                    ->item('landlord.proposal-generator', function ($item): void {
+                        $item
+                            ->label(__('app.landlord.proposal_generator.navigation'))
+                            ->href(route('landlord.proposal-generator.index', absolute: false))
+                            ->icon('file-text')
+                            ->setOrder(60);
                     });
             })
             ->group('landlord.access', function ($group): void {

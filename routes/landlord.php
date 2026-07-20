@@ -24,6 +24,9 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->except(['show'])
         ->names('landlord.plans');
 
+    Route::get('proposal-generator', [Landlord\ProposalGeneratorController::class, 'index'])
+        ->name('landlord.proposal-generator.index');
+
     Route::resource('tenants', Landlord\TenantController::class)
         ->except(['show'])
         ->names('landlord.tenants');
