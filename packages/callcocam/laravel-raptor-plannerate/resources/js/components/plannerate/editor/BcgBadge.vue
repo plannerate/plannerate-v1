@@ -1,26 +1,35 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useBcgLabels } from '@/components/plannerate/analysis/bcg/labels';
 import type { BcgQuadrant } from '@/components/plannerate/analysis/bcg/types';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useBcgAnalysis  } from '@/composables/plannerate/analysis/useBcgAnalysis';
 import type {BcgBadgeData} from '@/composables/plannerate/analysis/useBcgAnalysis';
-import { indicatorOrientation } from '@/composables/plannerate/core/useGondolaState';
 import { useT } from '@/composables/useT';
 
 /**
- * Selo do quadrante BCG na frente do produto, na gôndola.
+ * Película do quadrante BCG sobre o produto, na gôndola.
  *
- * Segue o padrão do selo ABC: um pill branco com um círculo colorido (o símbolo do
- * quadrante) e, ao lado, a DESCRIÇÃO que a análise gera (o rótulo do quadrante —
- * "Alto valor – manutenção", "Incentivo – volume", etc.). A seta da ação (↑ ganhar
- * frente / ↓ ceder frente) aparece só quando há algo a fazer, para não virar ruído.
+ * Segue o padrão do StockIndicator: em vez de um rótulo solto na base, o produto
+ * inteiro recebe uma película colorida pela sua classificação, com um marcador
+ * central que abre o detalhe no hover. Ler a gôndola vira varredura de cor — dá
+ * para ver de longe onde estão os "baixo valor" sem ler texto nenhum.
  *
- * Respeita o filtro por quadrante do painel de análises — assim o usuário isola, por
- * exemplo, só os "baixo valor" e vê onde eles estão fisicamente na gôndola.
+ * Cores por quadrante, iguais às da tabela e do gráfico (a cor segue a entidade):
+ *   alto_alto → verde | forte_x → azul | forte_y → amarelo | baixo_baixo → vermelho
+ *
+ * pointer-events-none no root: a película cobre o produto (inset-0) e sem isso
+ * roubaria hover/click da imagem. Só o marcador central é interativo.
+ * z-79 = Z.BCG_OVERLAY (constants/zIndex.ts).
  */
 interface Props {
     data?: BcgBadgeData;
-    /** Fator de escala do planograma (mesma base do selo ABC). */
+    /** Fator de escala do planograma (mesma base do StockIndicator). */
     scale?: number;
 }
 
@@ -30,179 +39,151 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { t } = useT();
 const { isVisible, isQuadrantActive } = useBcgAnalysis();
-const { quadrantLabel, quadrantIcon, spaceActionLabel, spaceActionIcon } = useBcgLabels();
+const {
+    axisLabel,
+    quadrantLabel,
+    quadrantDescription,
+    quadrantIcon,
+    spaceActionLabel,
+    spaceActionIcon,
+} = useBcgLabels();
 
 const visible = computed(
     () => Boolean(props.data) && isVisible.value && isQuadrantActive(props.data?.quadrant),
 );
 
-/** Orientação atual do selo (vertical = rotacionado 90°, horizontal = normal), igual ao ABC. */
-const orientation = computed(() => indicatorOrientation.value);
-
-/** Diâmetro do círculo do símbolo, escalonado como no selo ABC. */
-const iconSize = computed(() => Math.max(6 * props.scale, 11));
-
-/** Tamanho da fonte (símbolo e rótulo), escalonado como no selo ABC. */
-const fontSize = computed(() => Math.max(3.5 * props.scale, 6));
-
-/**
- * Cores dos quadrantes no círculo — mesmas famílias de matiz da tabela e do gráfico.
- * A cor segue a entidade: um produto verde na matriz é verde na gôndola.
- */
-const circleClasses = computed(() => {
+/** Película: borda sólida + fundo translúcido na cor do quadrante. */
+const overlayClasses = computed(() => {
     const classes: Record<BcgQuadrant, string> = {
-        alto_alto: 'bg-green-600 text-white',
-        forte_x: 'bg-blue-600 text-white',
-        forte_y: 'bg-yellow-500 text-gray-900',
-        baixo_baixo: 'bg-red-600 text-white',
+        alto_alto: 'border-2 border-green-500 bg-green-500/20 dark:bg-green-500/30',
+        forte_x: 'border-2 border-blue-500 bg-blue-500/20 dark:bg-blue-500/30',
+        forte_y: 'border-2 border-yellow-500 bg-yellow-500/20 dark:bg-yellow-500/30',
+        baixo_baixo: 'border-2 border-red-500 bg-red-500/20 dark:bg-red-500/30',
     };
 
     return props.data ? classes[props.data.quadrant] : '';
 });
 
-/** Cor do texto do rótulo, tingida com a cor do quadrante sobre o fundo claro do pill. */
-const labelTextClass = computed(() => {
+/** Borda do marcador central, na cor do quadrante. */
+const markerBorderClasses = computed(() => {
     const classes: Record<BcgQuadrant, string> = {
-        alto_alto: 'text-green-700',
-        forte_x: 'text-blue-700',
-        forte_y: 'text-yellow-700',
-        baixo_baixo: 'text-red-700',
+        alto_alto: 'border border-green-500/70',
+        forte_x: 'border border-blue-500/70',
+        forte_y: 'border border-yellow-500/70',
+        baixo_baixo: 'border border-red-500/70',
     };
 
     return props.data ? classes[props.data.quadrant] : '';
 });
 
-/**
- * Modo "exibir por categoria": o selo representa o GRUPO ao qual o produto pertence
- * (mesmo selo em todos os produtos da categoria), não o produto em si.
- */
-const isCategory = computed(() => Boolean(props.data?.display_by && props.data.display_by !== 'produto'));
+/** Cor do símbolo do quadrante dentro do marcador. */
+const markerTextClasses = computed(() => {
+    const classes: Record<BcgQuadrant, string> = {
+        alto_alto: 'text-green-600',
+        forte_x: 'text-blue-600',
+        forte_y: 'text-yellow-600',
+        baixo_baixo: 'text-red-600',
+    };
 
-/**
- * Rótulo do selo. No modo por categoria mostramos o NOME da categoria (marca o grupo);
- * no modo por produto, a descrição do quadrante gerada pela análise (ver bcg/labels.ts).
- */
-const label = computed(() => {
-    if (!props.data) {
-        return '';
-    }
-
-    if (isCategory.value) {
-        return props.data.group_label ?? '';
-    }
-
-    return quadrantLabel(props.data.quadrant, props.data.x_axis, props.data.y_axis);
+    return props.data ? classes[props.data.quadrant] : '';
 });
 
-/** Máximo de caracteres antes de truncar o rótulo (mantém o selo compacto na gôndola). */
-const MAX_LABEL_CHARS = 12;
+/** Descrição do quadrante gerada pela análise (depende dos eixos — ver bcg/labels.ts). */
+const label = computed(() =>
+    props.data ? quadrantLabel(props.data.quadrant, props.data.x_axis, props.data.y_axis) : '',
+);
 
-const hovered = ref(false);
-
-/**
- * Rótulo exibido: truncado por padrão, completo ao passar o mouse. Assim o selo fica
- * compacto na gôndola e ainda revela a descrição inteira quando o usuário quer lê-la.
- */
-const displayLabel = computed(() => {
-    if (hovered.value || label.value.length <= MAX_LABEL_CHARS) {
-        return label.value;
-    }
-
-    return `${label.value.slice(0, MAX_LABEL_CHARS - 1)}…`;
-});
-
-/** A ação só ganha destaque quando há algo a fazer: 'manter' não vira ruído visual. */
+/** A ação só aparece em destaque quando há algo a fazer: 'manter' não vira ruído. */
 const showAction = computed(
     () => props.data?.acao_espaco === 'aumentar' || props.data?.acao_espaco === 'reduzir',
 );
 
-/** Tooltip: quadrante + ação. É a leitura completa sem depender da cor. */
-const title = computed(() => {
-    if (!props.data) {
-        return '';
-    }
-
-    const quadrant = quadrantLabel(props.data.quadrant, props.data.x_axis, props.data.y_axis);
-    const action = spaceActionLabel(props.data.acao_espaco);
-    const base = `${quadrant} — ${t('plannerate.analysis.bcg_selection.action')}: ${action}`;
-
-    // No modo por categoria, deixa explícito de qual grupo é o selo.
-    if (isCategory.value) {
-        const category = props.data.group_label
-            ? `${t('plannerate.analysis.bcg_selection.category_badge')}: ${props.data.group_label} · `
-            : `${t('plannerate.analysis.bcg_selection.category_hint')} · `;
-
-        return `${category}${base}`;
-    }
-
-    return base;
-});
-
-/**
- * Padding/gap + transform, escalonados e pivotados como no selo ABC.
- * Vertical: rotaciona 90° pivotando no CENTRO DO CÍRCULO (não do pill), para o símbolo
- * ficar sempre na mesma base; o rótulo cresce para cima, independente do comprimento.
- * Horizontal: pill centralizado no produto.
- */
-const pillStyle = computed(() => {
-    const half = iconSize.value / 2;
-    const base: Record<string, string> = {
-        gap: `${Math.max(0.75 * props.scale, 1.5)}px`,
-        padding: `${Math.max(0.5 * props.scale, 1)}px ${Math.max(1.5 * props.scale, 3)}px ${Math.max(0.5 * props.scale, 1)}px ${Math.max(0.5 * props.scale, 1)}px`,
-    };
-
-    if (orientation.value === 'vertical') {
-        base.transformOrigin = `${half}px center`;
-        base.transform = `translateX(-${half}px) rotate(-90deg)`;
-    } else {
-        base.transform = 'translateX(-50%)';
-    }
-
-    return base;
-});
-
-const circleStyle = computed(() => ({
-    fontSize: `${fontSize.value}px`,
-    width: `${iconSize.value}px`,
-    height: `${iconSize.value}px`,
-}));
-
-const labelStyle = computed(() => ({
-    fontSize: `${fontSize.value}px`,
-}));
+// Dimensões proporcionais à escala da gôndola (mesma fórmula do StockIndicator)
+const markerSize = computed(() => Math.max(6, Math.min(20, props.scale * 4)));
+const markerPadding = computed(() => Math.max(2, Math.min(8, props.scale * 2)));
 </script>
 
 <template>
-    <!--
-        data-bcg-badge: o wrapper no Segment.vue usa has-[[data-bcg-badge]:hover]
-        para se elevar a Z.BADGE_HOVER quando este selo está em hover — o antigo
-        z-[1000] aqui era neutralizado pelo stacking context do próprio wrapper.
-    -->
     <div
         v-if="visible && data"
-        data-bcg-badge
-        class="pointer-events-auto relative flex items-center rounded-full bg-white/95 shadow-md"
-        :style="pillStyle"
-        :title="title"
-        @mouseenter="hovered = true"
-        @mouseleave="hovered = false"
+        class="pointer-events-none absolute inset-0 z-[79] flex items-center justify-center rounded-sm"
+        :class="overlayClasses"
     >
-        <!-- Símbolo do quadrante -->
-        <span
-            class="flex items-center justify-center rounded-full font-bold leading-none"
-            :class="circleClasses"
-            :style="circleStyle"
-        >
-            {{ quadrantIcon(data.quadrant) }}
-        </span>
+        <TooltipProvider :delay-duration="200">
+            <Tooltip>
+                <TooltipTrigger as-child>
+                    <!-- Sem z próprio: o root (z-79 = Z.BCG_OVERLAY) cria o stacking context -->
+                    <div
+                        class="pointer-events-auto absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white font-bold shadow-sm transition-transform hover:scale-105"
+                        :class="[markerBorderClasses, markerTextClasses]"
+                        :style="{
+                            padding: `${markerPadding}px`,
+                            width: `${markerSize + markerPadding * 2}px`,
+                            height: `${markerSize + markerPadding * 2}px`,
+                            fontSize: `${markerSize}px`,
+                            lineHeight: '1',
+                        }"
+                    >
+                        {{ quadrantIcon(data.quadrant) }}
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent
+                    side="right"
+                    align="start"
+                    :side-offset="8"
+                    :collision-padding="16"
+                    :avoid-collisions="true"
+                    class="z-[9999] w-[min(18rem,calc(100vw-1rem))] border border-border bg-background p-0 shadow-2xl"
+                >
+                    <div class="space-y-2.5 p-3">
+                        <!-- Quadrante -->
+                        <div
+                            class="rounded-lg border p-2 text-center"
+                            :class="overlayClasses"
+                        >
+                            <p class="text-xs font-bold text-foreground">
+                                <span aria-hidden="true">{{ quadrantIcon(data.quadrant) }}</span>
+                                {{ label }}
+                            </p>
+                            <p class="mt-0.5 text-[10px] text-muted-foreground">
+                                {{ quadrantDescription(data.quadrant) }}
+                            </p>
+                        </div>
 
-        <!--
-            Rótulo (truncado; completo no hover) + seta da ação.
-            No modo por categoria, um marcador (▦) antecede o nome do grupo, deixando
-            claro que o selo é da CATEGORIA e não do produto individual.
-        -->
-        <span class="font-bold whitespace-nowrap leading-none" :class="labelTextClass" :style="labelStyle">
-            <span v-if="isCategory" aria-hidden="true" class="opacity-70">▦ </span>{{ displayLabel }}<span v-if="showAction" aria-hidden="true"> {{ spaceActionIcon(data.acao_espaco) }}</span>
-        </span>
+                        <!-- Eixos usados: o rótulo do quadrante é derivado deles -->
+                        <div class="rounded-lg border border-border bg-accent/50 p-2 text-[11px]">
+                            <p class="mb-1 font-semibold text-muted-foreground">
+                                {{ t('plannerate.analysis.bcg_params.axis_title') }}
+                            </p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-muted-foreground">{{ t('plannerate.analysis.bcg_params.x_axis') }}</span>
+                                <span class="font-semibold text-foreground">{{ axisLabel(data.x_axis) }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-muted-foreground">{{ t('plannerate.analysis.bcg_params.y_axis') }}</span>
+                                <span class="font-semibold text-foreground">{{ axisLabel(data.y_axis) }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Ação sugerida de espaço -->
+                        <div
+                            class="rounded-lg border p-2 text-center"
+                            :class="showAction ? 'border-border bg-accent' : 'border-dashed border-border'"
+                        >
+                            <p class="text-[10px] text-muted-foreground">
+                                {{ t('plannerate.analysis.bcg_selection.action') }}
+                            </p>
+                            <p
+                                class="text-xs font-semibold"
+                                :class="showAction ? 'text-foreground' : 'text-muted-foreground'"
+                            >
+                                <span aria-hidden="true">{{ spaceActionIcon(data.acao_espaco) }}</span>
+                                {{ spaceActionLabel(data.acao_espaco) }}
+                            </p>
+                        </div>
+                    </div>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     </div>
 </template>

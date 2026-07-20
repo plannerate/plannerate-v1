@@ -25,12 +25,29 @@
                         <!-- Divider -->
                         <div class="border-t border-border" />
 
-                        <label class="text-sm font-medium text-foreground">{{ t('plannerate.sidebar.products.filters') }}</label>
                         <Popover>
                             <PopoverTrigger as-child>
                                 <button
-                                    class="w-full px-3 py-2 text-left text-sm font-medium border border-input rounded-md hover:bg-accent transition-colors">
-                                    {{ t('plannerate.sidebar.products.market_classification') }}
+                                    class="w-full px-3 py-2 text-left border border-input rounded-md hover:bg-accent transition-colors">
+                                    <span class="block text-[11px] uppercase tracking-wide text-muted-foreground">
+                                        {{ t('plannerate.sidebar.products.market_classification') }}
+                                    </span>
+                                    <span v-if="isLoadingCategoryPath"
+                                        class="mt-0.5 block text-sm text-muted-foreground">
+                                        {{ t('plannerate.sidebar.products.loading') }}
+                                    </span>
+                                    <template v-else-if="categoryPath.length">
+                                        <span v-if="categoryAncestors.length"
+                                            class="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
+                                            {{ categoryAncestors.join(' / ') }}
+                                        </span>
+                                        <span class="block text-sm font-medium leading-snug text-foreground">
+                                            {{ categoryLeaf }}
+                                        </span>
+                                    </template>
+                                    <span v-else class="mt-0.5 block text-sm text-muted-foreground">
+                                        {{ t('plannerate.sidebar.products.all_categories') }}
+                                    </span>
                                 </button>
                             </PopoverTrigger>
                             <PopoverContent align="start" class="w-full md:max-w-7xl   z-[1000]">
@@ -69,12 +86,14 @@
 </template>
 <script setup lang="ts">
 import { X } from 'lucide-vue-next';
-import { onMounted, provide, ref, useTemplateRef } from 'vue';
+import { computed, onMounted, provide, ref, useTemplateRef, watch } from 'vue';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useProductsPanel } from '@/composables/plannerate/products/useProductsPanel';
 import { useT } from '@/composables/useT';
+import editorCategories from '@/routes/api/editor/categories';
 import type { Category as CategoryType } from '@/types/planogram';
+import { wayfinderPath } from '../../../../libs/wayfinderPath';
 import Category from './CategorySelect.vue';
 import ProductFilters from './Filters.vue';
 import ProductList from './ProductList.vue';
@@ -122,6 +141,66 @@ const {
     category: props.category || null,
     scrollContainer,
 });
+
+/**
+ * Hierarquia da categoria filtrada, exibida no próprio botão do popover para que
+ * dê para saber o que está filtrado sem abrir o seletor.
+ *
+ * Resolvida aqui — e não lida do CategorySelect — porque aquele componente vive
+ * dentro do PopoverContent e é desmontado com o popover fechado, que é justamente
+ * quando o caminho precisa aparecer.
+ */
+const categoryPath = ref<string[]>([]);
+const isLoadingCategoryPath = ref(false);
+const categoryAncestors = computed(() => categoryPath.value.slice(0, -1));
+const categoryLeaf = computed(() => categoryPath.value[categoryPath.value.length - 1] ?? '');
+
+const loadCategoryPath = async (categoryId: string): Promise<void> => {
+    if (!categoryId) {
+        categoryPath.value = [];
+
+        return;
+    }
+
+    isLoadingCategoryPath.value = true;
+
+    try {
+        const url = wayfinderPath(
+            editorCategories.show.url({ subdomain: props.subdomain, categoryId }),
+        );
+        const response = await fetch(url, {
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        if (!response.ok) {
+            categoryPath.value = [];
+
+            return;
+        }
+
+        const data = await response.json();
+
+        categoryPath.value = Array.isArray(data.hierarchy)
+            ? data.hierarchy.map((item: { name?: string }) => item.name).filter(Boolean)
+            : [];
+    } catch {
+        categoryPath.value = [];
+    } finally {
+        isLoadingCategoryPath.value = false;
+    }
+};
+
+watch(
+    () => filters.category,
+    (categoryId) => {
+        loadCategoryPath(categoryId);
+    },
+    { immediate: true },
+);
 
 // Emite a função de reload para o componente pai no mount
 onMounted(() => {

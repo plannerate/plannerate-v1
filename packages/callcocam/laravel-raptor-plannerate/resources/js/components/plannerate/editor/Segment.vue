@@ -46,21 +46,10 @@
         </div>
 
         <!--
-            Selo BCG no topo. Wrapper em left-1/2 sem -translate-x-1/2: o próprio pill se
-            centraliza/rotaciona (igual ao selo ABC), respeitando a orientação da tag.
+            Película do quadrante BCG: cobre o produto inteiro (inset-0), como o
+            StockIndicator. Sem wrapper posicionado — o próprio componente é o overlay.
         -->
-        <!--
-            z-90 = Z.BADGES; o hover no selo interno eleva o wrapper para
-            z-95 = Z.BADGE_HOVER via :has() — sem isso o tooltip expandido do
-            BCG ficava preso no contexto do wrapper e não vencia os vizinhos.
-        -->
-        <div
-            v-if="bcgBadgeData"
-            class="pointer-events-none absolute left-1/2 z-90 flex items-center has-[[data-bcg-badge]:hover]:z-[95]"
-            :style="bcgBadgeWrapperStyle"
-        >
-            <BcgBadge :data="bcgBadgeData" :scale="props.scale" />
-        </div>
+        <BcgBadge :data="bcgBadgeData" :scale="props.scale" />
 
         <!-- Badge de sortimento ABC, na base do segmento (z-90 = Z.BADGES) -->
         <div
@@ -224,11 +213,6 @@ const abcRecommendation = computed(() => getRecommendation(layer.value?.product?
  * na prateleira em escalas pequenas.
  */
 const abcBadgeWrapperStyle = computed(() => ({
-    bottom: `${Math.max((props.scale || 3) * 2, 4)}px`,
-}));
-
-/** Selo BCG na mesma posição do ABC (base do segmento), escalonado. */
-const bcgBadgeWrapperStyle = computed(() => ({
     bottom: `${Math.max((props.scale || 3) * 2, 4)}px`,
 }));
 

@@ -311,6 +311,12 @@ class GondolaController extends Controller
         // Obter IDs de produtos já usados na gôndola.
         // Usa JOINs via segment -> shelf -> section para evitar depender de colunas
         // auxiliares inexistentes em layers.
+        //
+        // Os JOINs são de query builder cru, então o global scope de SoftDeletes não se
+        // aplica: é obrigatório filtrar deleted_at em TODOS os níveis. Remover um produto
+        // do editor soft-deleta apenas o segment (ver SegmentService::update), deixando a
+        // layer filha com deleted_at NULL — sem estes filtros o produto removido continua
+        // contando como usado e não volta para a lista de disponíveis.
         $gondolaId = $gondolaModel->id;
         $usedProductIds = Layer::query()
             ->join('segments', 'segments.id', '=', 'layers.segment_id')
@@ -319,6 +325,9 @@ class GondolaController extends Controller
             ->where('sections.gondola_id', $gondolaId)
             ->whereNotNull('product_id')
             ->whereNull('layers.deleted_at')
+            ->whereNull('segments.deleted_at')
+            ->whereNull('shelves.deleted_at')
+            ->whereNull('sections.deleted_at')
             ->distinct()
             ->pluck('layers.product_id')
             ->toArray();
@@ -352,7 +361,10 @@ class GondolaController extends Controller
                     ->join('sections', 'sections.id', '=', 'shelves.section_id')
                     ->whereColumn('layers.product_id', 'products.id')
                     ->where('sections.gondola_id', $gondolaId)
-                    ->whereNull('layers.deleted_at');
+                    ->whereNull('layers.deleted_at')
+                    ->whereNull('segments.deleted_at')
+                    ->whereNull('shelves.deleted_at')
+                    ->whereNull('sections.deleted_at');
             });
         }
 

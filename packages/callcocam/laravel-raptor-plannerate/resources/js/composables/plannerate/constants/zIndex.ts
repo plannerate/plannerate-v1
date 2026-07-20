@@ -18,12 +18,15 @@
  * - DECK (40)           → Shelf.vue (tampo 3D decorativo, atrás dos produtos)
  * - SEGMENTS (50)       → Shelf.vue (container de segmentos; também o ring de
  *                         segmento selecionado e o indicador de drop/swap)
+ * - BCG_OVERLAY (79)    → BcgBadge.vue (película do quadrante sobre o produto;
+ *                         logo abaixo de STOCK para o ícone do estoque alvo
+ *                         continuar clicável quando as duas análises estão ligadas)
  * - STOCK (80)          → StockIndicator.vue (overlay sobre o produto)
- * - BADGES (90)         → Segment.vue (wrappers dos selos ABC/BCG)
+ * - BADGES (90)         → Segment.vue (wrapper do selo ABC)
  * - INDICATOR (91)      → ProductIndicatorBadge.vue (acima de STOCK e dos
  *                         selos — desempata o antigo empate triplo em 90)
- * - BADGE_HOVER (95)    → Segment.vue (wrapper do BCG quando o selo interno
- *                         está em hover — tooltip expandido vence os vizinhos)
+ * - BADGE_HOVER (95)    → livre. Era o wrapper do selo BCG em hover, removido quando
+ *                         o BCG virou película (BCG_OVERLAY) com tooltip próprio.
  * - SHELF_DRAGGING (120)→ Shelf.vue (base física durante o arraste)
  * - SHELF_BASE (130)    → Shelf.vue (base física em repouso)
  * - ZONE (135)          → Shelf.vue (faixa lateral de zona)
@@ -38,6 +41,7 @@ export const Z = {
     PAPER_BADGE: 30,
     DECK: 40,
     SEGMENTS: 50,
+    BCG_OVERLAY: 79,
     STOCK: 80,
     BADGES: 90,
     INDICATOR: 91,

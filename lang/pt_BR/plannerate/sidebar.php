@@ -55,6 +55,7 @@ return [
         'select_level' => 'Selecione :level',
         'root_locked' => 'Categoria base do planograma',
         'root_locked_hint' => 'Refinamento restrito às subcategorias desta categoria.',
+        'all_categories' => 'Todas as categorias',
         'levels' => [
             'segmento_varejista' => 'Segmento Varejista',
             'departamento' => 'Departamento',
