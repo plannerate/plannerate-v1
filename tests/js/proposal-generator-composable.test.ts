@@ -23,6 +23,8 @@ vi.mock('vue-sonner', () => ({ toast: toastSpy }));
 
 const { useProposalGenerator } =
     await import('@/composables/landlord/useProposalGenerator');
+const { blankItem } =
+    await import('@/composables/landlord/proposalCalculations');
 
 const DRAFTS_KEY = 'plannerate-proposals-v10';
 const LEGACY_KEY = 'plannerate-proposals-v09';
@@ -78,6 +80,82 @@ describe('proposta inicial', () => {
             store: 9000,
             monthlyOriginal: 12000,
         });
+    });
+});
+
+describe('retomada ao recarregar a página', () => {
+    const draft = (over: Record<string, unknown>) => ({
+        id: 'x',
+        num: 'AAAAAAAAAA',
+        client: '',
+        items: [],
+        mods: [],
+        conds: [],
+        savedAt: '2026-01-01T00:00:00.000Z',
+        ...over,
+    });
+
+    it('sem nada salvo, abre uma proposta de fábrica', () => {
+        const gen = useProposalGenerator();
+        gen.init();
+
+        expect(gen.form.client).toBe('');
+        expect(gen.items.value).toHaveLength(4);
+    });
+
+    it('reabre a última proposta salva', () => {
+        storage.setItem(
+            DRAFTS_KEY,
+            JSON.stringify([draft({ id: 'a', client: 'Cliente A' })]),
+        );
+
+        const gen = useProposalGenerator();
+        gen.init();
+
+        expect(gen.form.client).toBe('Cliente A');
+        expect(gen.form.id).toBe('a');
+    });
+
+    it('escolhe pela data de gravação, não pela posição na lista', () => {
+        // A mais recente está no FIM do array: regravar atualiza no lugar, sem subir.
+        storage.setItem(
+            DRAFTS_KEY,
+            JSON.stringify([
+                draft({
+                    id: 'antiga',
+                    client: 'Antiga',
+                    savedAt: '2026-01-01T10:00:00.000Z',
+                }),
+                draft({
+                    id: 'recente',
+                    client: 'Recente',
+                    savedAt: '2026-06-30T18:20:00.000Z',
+                }),
+            ]),
+        );
+
+        const gen = useProposalGenerator();
+        gen.init();
+
+        expect(gen.form.client).toBe('Recente');
+    });
+
+    it('regravar a proposta retomada atualiza em vez de duplicar', () => {
+        storage.setItem(
+            DRAFTS_KEY,
+            JSON.stringify([draft({ id: 'a', client: 'Cliente A' })]),
+        );
+
+        const gen = useProposalGenerator();
+        gen.init();
+        gen.items.value = [
+            { ...blankItem(), name: 'Setup', qty: 1, unit: 100 },
+        ];
+        gen.form.client = 'Cliente A editado';
+        gen.saveDraft();
+
+        expect(gen.drafts.value).toHaveLength(1);
+        expect(gen.drafts.value[0].client).toBe('Cliente A editado');
     });
 });
 

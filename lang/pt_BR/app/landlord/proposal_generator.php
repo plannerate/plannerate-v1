@@ -142,6 +142,7 @@ return [
     ],
 
     'actions' => [
+        'back_to_dashboard' => 'Voltar ao painel',
         'new' => 'Nova proposta',
         'save' => 'Salvar proposta',
         'export' => 'Exportar',

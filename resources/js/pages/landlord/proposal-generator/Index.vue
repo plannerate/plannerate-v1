@@ -5,15 +5,15 @@
  * Editor à esquerda, documento A4 ao vivo à direita. Estado, rascunhos e modelo padrão
  * ficam no localStorage do navegador (mesmas chaves da ferramenta original).
  */
-import { Head, setLayoutProps } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { onMounted, provide } from 'vue';
-import ProposalGeneratorController from '@/actions/App/Http/Controllers/Landlord/ProposalGeneratorController';
 import {
     PROPOSAL_GENERATOR_KEY,
     useProposalGenerator,
 } from '@/composables/landlord/useProposalGenerator';
 import { useT } from '@/composables/useT';
-import AppLayout from '@/layouts/AppLayout.vue';
+import ToolLayout from '@/layouts/ToolLayout.vue';
+import { dashboard } from '@/routes';
 import ProposalDocument from './partials/ProposalDocument.vue';
 import ProposalEditor from './partials/ProposalEditor.vue';
 
@@ -24,23 +24,19 @@ const gen = useProposalGenerator();
 
 provide(PROPOSAL_GENERATOR_KEY, gen);
 
-setLayoutProps({
-    breadcrumbs: [
-        {
-            title: k('navigation'),
-            href: ProposalGeneratorController.index
-                .url()
-                .replace(/^\/\/[^/]+/, ''),
-        },
-    ],
-});
+// A rota do painel é absoluta (inclui o domínio do landlord); o Link precisa do caminho.
+const dashboardHref = dashboard.url().replace(/^\/\/[^/]+/, '') || '/';
 
 // localStorage só existe no cliente — inicializar aqui evita divergência com o SSR.
 onMounted(() => gen.init());
 </script>
 
 <template>
-    <AppLayout>
+    <ToolLayout
+        :back-href="dashboardHref"
+        :back-label="k('actions.back_to_dashboard')"
+        :title="k('title')"
+    >
         <Head :title="k('title')" />
 
         <div class="proposal-generator">
@@ -63,7 +59,7 @@ onMounted(() => gen.init());
                 </main>
             </div>
         </div>
-    </AppLayout>
+    </ToolLayout>
 </template>
 
 <style>
@@ -85,12 +81,22 @@ onMounted(() => gen.init());
     --ok: #5abf18;
     --r: 12px;
     --font: Poppins, 'Segoe UI', Arial, sans-serif;
-    /* Altura do cabeçalho do AppLayout (barra h-12 + margem). */
-    --pg-offset: 4.5rem;
 
     font-family: var(--font);
     color: var(--light);
     background: var(--bg);
+
+    /*
+     * Ocupa exatamente a altura que sobra do ToolLayout.
+     *
+     * `flex: 1` em vez de `calc(100vh - altura-da-barra)`: o ToolLayout é um flex column
+     * de altura travada (`h-screen`), então ele mesmo calcula o que sobra — sem depender
+     * de um offset chutado que quebraria se a barra mudasse de altura.
+     */
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .proposal-generator * {
@@ -104,17 +110,24 @@ onMounted(() => gen.init());
     font: inherit;
 }
 
+/*
+ * Duas colunas de altura fixa: nada rola na página, cada coluna rola por dentro.
+ * `overflow: hidden` aqui é o que impede o conteúdo de esticar o grid e devolver a
+ * barra de rolagem para a página inteira.
+ */
 .proposal-generator .app {
     display: grid;
     grid-template-columns: 450px 1fr;
-    align-items: start;
-    min-height: calc(100vh - var(--pg-offset));
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
+/* Editor fixo: quem rola é o .scroll interno, entre o cabeçalho e os botões. */
 .proposal-generator .editor {
-    position: sticky;
-    top: 0;
-    height: calc(100vh - var(--pg-offset));
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
     background: var(--panel);
     border-right: 1px solid var(--line);
     display: flex;
@@ -334,10 +347,13 @@ onMounted(() => gen.init());
     grid-column: 1 / -1;
 }
 
+/* A única área que rola de verdade. */
 .proposal-generator .preview {
     background: #e8eae8;
     padding: 28px 24px 70px;
-    overflow: auto;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .proposal-generator .toolbar {
@@ -1007,14 +1023,28 @@ onMounted(() => gen.init());
  * cliente em uma coluna só.
  */
 @media screen and (max-width: 1180px) {
+    /*
+     * Estreito demais para duas colunas: volta a empilhar.
+     *
+     * Como o ToolLayout trava a altura da viewport, quem rola aqui é o próprio
+     * .proposal-generator — sem esse `overflow-y`, o conteúdo empilhado ficaria
+     * simplesmente cortado, já que a página não rola mais.
+     */
+    .proposal-generator {
+        display: block;
+        overflow-y: auto;
+    }
+
     .proposal-generator .app {
         display: block;
+        overflow: visible;
     }
 
     .proposal-generator .editor {
         position: relative;
         width: 100%;
         height: auto;
+        overflow: visible;
     }
 
     .proposal-generator .scroll {
@@ -1023,6 +1053,8 @@ onMounted(() => gen.init());
 
     .proposal-generator .preview {
         padding: 15px 8px 50px;
+        height: auto;
+        overflow: visible;
     }
 
     .proposal-generator .doc {

@@ -714,9 +714,40 @@ export function useProposalGenerator() {
         return adjustmentLabel(itemAdjustment(item));
     }
 
+    /**
+     * Rascunho gravado mais recentemente.
+     *
+     * Ordena por `savedAt` em vez de pegar o primeiro da lista: regravar uma proposta
+     * antiga a atualiza no lugar, sem trazê-la para o topo — a posição no array não diz
+     * qual foi salva por último. `savedAt` é ISO 8601, que ordena certo como string.
+     */
+    function mostRecentDraft(): ProposalState | null {
+        if (!drafts.value.length) {
+            return null;
+        }
+
+        return [...drafts.value].sort((a, b) =>
+            String(b.savedAt ?? '').localeCompare(String(a.savedAt ?? '')),
+        )[0];
+    }
+
+    /**
+     * Abertura da página: retoma a última proposta salva neste navegador. Só cai numa
+     * proposta nova quando ainda não há nada gravado.
+     */
     function init(): void {
         loadDrafts();
         templateSavedAt.value = templateData()?.savedAt ?? null;
+
+        const last = mostRecentDraft();
+
+        if (last) {
+            apply(last);
+            warnings.value = [];
+
+            return;
+        }
+
         newProposal();
     }
 

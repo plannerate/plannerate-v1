@@ -2,6 +2,7 @@
 
 return [
     'actions' => [
+        'back' => 'Voltar',
         'edit' => 'Editar',
         'delete' => 'Excluir',
         'delete_permanent' => 'Excluir definitivamente',
