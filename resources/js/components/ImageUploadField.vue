@@ -12,12 +12,15 @@ const props = withDefaults(defineProps<{
     name: string;
     label: string;
     ean?: string | null;
+    /** Nome do produto — alimenta a geração por IA quando nenhuma foto real é encontrada. */
+    description?: string | null;
     initialUrl?: string | null;
     initialPath?: string | null;
     accept?: string;
     maxSizeMb?: number;
     aiEnabled?: boolean;
 }>(), {
+    description: null,
     initialUrl: null,
     initialPath: null,
     accept: 'image/*',
@@ -56,9 +59,10 @@ const statusHttp = useHttp<Record<string, never>, {
     public_url?: string;
     error_message?: string;
 }>({});
-const repositoryHttp = useHttp<{ ean: string; process_with_ai: boolean }, { path?: string; public_url?: string; ai_processed?: boolean; ai_error?: string }>({
+const repositoryHttp = useHttp<{ ean: string; process_with_ai: boolean; description: string }, { path?: string; public_url?: string; ai_processed?: boolean; ai_error?: string }>({
     ean: '',
     process_with_ai: false,
+    description: '',
 });
 
 function toHttpRoute(route: { url: string; method: string }): UrlMethodPair {
@@ -294,6 +298,7 @@ async function fetchFromRepository(): Promise<boolean> {
     try {
         repositoryHttp.ean = currentEan;
         repositoryHttp.process_with_ai = props.aiEnabled;
+        repositoryHttp.description = (props.description ?? '').trim();
 
         const payload = await repositoryHttp.submit(
             toHttpRoute(imageRoutes.repository.fetch())

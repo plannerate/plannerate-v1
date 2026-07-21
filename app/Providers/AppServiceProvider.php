@@ -44,7 +44,7 @@ use App\Policies\TenantPolicy;
 use App\Policies\UserPolicy;
 use App\Policies\WorkflowExecutionPolicy;
 use App\Policies\WorkflowTemplatePolicy;
-use App\Services\OpenAiProductImageEditor;
+use App\Services\GeminiProductImageEditor;
 use App\Support\Navigation\Menu\Contracts\ResolvesMenuAuthorization;
 use App\Support\Navigation\Menu\MenuAuthorizationResolver;
 use App\Support\Translation\MergingFileLoader;
@@ -68,7 +68,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(ResolvesMenuAuthorization::class, MenuAuthorizationResolver::class);
-        $this->app->bind(ProductImageAiEditor::class, OpenAiProductImageEditor::class);
+        $this->app->bind(ProductImageAiEditor::class, GeminiProductImageEditor::class);
         $this->registerTranslationLoader();
     }
 

@@ -39,6 +39,19 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
     ],
 
+    'product_images' => [
+        /*
+         * Último recurso do ProductRepositoryImageResolver: gerar a arte com IA quando o
+         * produto não existe no repositório da DO nem nos catálogos web.
+         *
+         * Default FALSE de propósito: geração de imagem no Gemini tem cota ZERO no free tier
+         * (429 RESOURCE_EXHAUSTED, "limit: 0"), então sem billing habilitado no projeto do
+         * Google Cloud toda tentativa é uma chamada HTTP condenada. Só ligue depois de
+         * confirmar que a chave tem cota de imagem.
+         */
+        'ai_fallback' => env('PRODUCT_IMAGE_AI_FALLBACK', false),
+    ],
+
     'cosmos' => [
         'token' => env('COSMOS_TOKEN'),
         'url' => env('COSMOS_URL', 'https://api.cosmos.bluesoft.com.br'),

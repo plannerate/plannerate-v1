@@ -513,6 +513,7 @@ const pageMeta = useCrudPageMeta({
                                     t('app.tenant.products.form.sections.image')
                                 "
                                 :ean="ean"
+                                :description="productName"
                                 :initial-url="props.product?.image_url ?? ''"
                                 :initial-path="props.product?.url ?? ''"
                                 :ai-enabled="true"

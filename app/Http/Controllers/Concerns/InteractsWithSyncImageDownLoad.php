@@ -53,7 +53,7 @@ trait InteractsWithSyncImageDownLoad
             ->all();
 
         if (empty($normalizedEans)) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => 'Nenhum EAN válido informado.']);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('app.tenant.products.images.no_valid_ean')]);
 
             return redirect()->back();
         }
@@ -61,13 +61,16 @@ trait InteractsWithSyncImageDownLoad
         $tenant = Tenant::current();
 
         if (! $tenant) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => 'Contexto de tenant não encontrado.']);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('app.tenant.products.images.no_tenant')]);
 
             return redirect()->back();
         }
 
-        // Só processa se o tenant tiver o módulo image-bank habilitado
+        // Só processa se o tenant tiver o módulo image-bank habilitado. Avisa explicitamente:
+        // sair calado aqui é indistinguível de um botão quebrado para quem clicou.
         if (! app(TenantModuleService::class)->tenantHasActiveModule($tenant, ModuleSlug::IMAGE_BANK)) {
+            Inertia::flash('toast', ['type' => 'warning', 'message' => __('app.tenant.products.images.module_inactive')]);
+
             return redirect()->back();
         }
 
@@ -122,16 +125,18 @@ trait InteractsWithSyncImageDownLoad
         $parts = [];
 
         if ($synced > 0) {
-            $parts[] = "{$synced} produto(s) com imagem atualizada";
+            $parts[] = __('app.tenant.products.images.summary_synced', ['count' => $synced]);
         }
 
         if ($queued > 0) {
-            $parts[] = "{$queued} EAN(s) em download em segundo plano";
+            $parts[] = __('app.tenant.products.images.summary_queued', ['count' => $queued]);
         }
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Atualização de imagens iniciada: '.implode(', ', $parts ?: ['nenhuma alteração']).'.',
+            'message' => __('app.tenant.products.images.started', [
+                'summary' => implode(', ', $parts ?: [__('app.tenant.products.images.summary_none')]),
+            ]),
         ]);
 
         return redirect()->back();

@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Ai\Enums\Lab;
+use Laravel\Ai\Image;
 
 class ProductRepositoryImageResolver
 {
@@ -36,15 +38,18 @@ class ProductRepositoryImageResolver
     protected array $lastResolutionDebug = [];
 
     /**
+     * @param  string|null  $description  Nome/descrição do produto. Sem ela a geração por IA é
+     *                                    pulada: o EAN sozinho não diz ao modelo o que desenhar.
      * @return array{path: string, public_url: string}|null
      */
-    public function resolveByEan(string $ean, ?float $width = null, ?float $height = null, bool $force = false): ?array
+    public function resolveByEan(string $ean, ?float $width = null, ?float $height = null, bool $force = false, ?string $description = null): ?array
     {
         $normalizedEan = EanReference::normalizeEan($ean);
         $this->lastResolutionDebug = [
             'ean' => $normalizedEan,
             'repository_attempts' => [],
             'web_attempts' => [],
+            'ai_attempt' => null,
             'result' => null,
         ];
 
@@ -118,6 +123,22 @@ class ProductRepositoryImageResolver
             ];
         }
 
+        // Prioridade 6: último recurso — IA gera a arte a partir da descrição do produto.
+        $aiPath = $this->resolveFromAi(
+            ean: $normalizedEan,
+            description: $description,
+        );
+
+        if ($aiPath !== null) {
+            $this->lastResolutionDebug['result'] = 'resolved_from_ai';
+            $this->saveToEanReference($normalizedEan, $aiPath);
+
+            return [
+                'path' => $aiPath,
+                'public_url' => Storage::disk('public')->url($aiPath),
+            ];
+        }
+
         $this->lastResolutionDebug['result'] = 'not_found';
         $this->logMissingImage($normalizedEan);
 
@@ -137,6 +158,7 @@ class ProductRepositoryImageResolver
             ean: (string) $product->ean,
             width: $width,
             height: $height,
+            description: is_string($product->name) ? $product->name : null,
         );
 
         return $result['path'] ?? null;
@@ -356,6 +378,73 @@ class ProductRepositoryImageResolver
         }
 
         return null;
+    }
+
+    /**
+     * Último recurso: nenhuma foto real do produto existe: pede uma ao Gemini.
+     *
+     * A arte gerada NÃO é a embalagem real — vai para `repositorioimages/ia/`, e não para
+     * `repositorioimages/frente/`, justamente para dar para auditar e limpar depois com um
+     * `where image_front_url like 'repositorioimages/ia/%'`.
+     *
+     * Devolve null (sem gerar nada) quando o fallback está desligado ou quando não há
+     * descrição: com o EAN sozinho o modelo desenharia um produto qualquer.
+     */
+    protected function resolveFromAi(string $ean, ?string $description): ?string
+    {
+        if (! config('services.product_images.ai_fallback')) {
+            $this->lastResolutionDebug['ai_attempt'] = ['status' => 'disabled'];
+
+            return null;
+        }
+
+        $description = trim((string) $description);
+
+        if ($description === '') {
+            $this->lastResolutionDebug['ai_attempt'] = ['status' => 'skipped_no_description'];
+
+            return null;
+        }
+
+        $targetPath = sprintf('repositorioimages/ia/%s.webp', $ean);
+
+        try {
+            $response = Image::of(sprintf(
+                'Product packaging photo for a supermarket catalog: %s. Front view, centered, '.
+                'plain white background, studio lighting, photorealistic, no text overlay, no watermark.',
+                $description,
+            ))->square()->timeout(120)->generate(Lab::Gemini);
+
+            $binary = $response->firstImage()->content();
+
+            if ($binary === '') {
+                $this->lastResolutionDebug['ai_attempt'] = ['status' => 'empty_response'];
+
+                return null;
+            }
+
+            Storage::disk('public')->put($targetPath, $this->imageStandardizer->encode($binary));
+        } catch (\Throwable $e) {
+            Log::warning('ProductRepositoryImageResolver: falha ao gerar imagem com IA', [
+                'ean' => $ean,
+                'description' => $description,
+                'error' => $e->getMessage(),
+            ]);
+
+            $this->lastResolutionDebug['ai_attempt'] = [
+                'status' => 'failed',
+                'error' => $e->getMessage(),
+            ];
+
+            return null;
+        }
+
+        $this->lastResolutionDebug['ai_attempt'] = [
+            'status' => 'generated',
+            'path' => $targetPath,
+        ];
+
+        return $targetPath;
     }
 
     /**

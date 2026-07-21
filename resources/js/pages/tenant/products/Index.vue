@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ChevronDown, ImageDown, ShoppingCart, SlidersHorizontal, X } from 'lucide-vue-next';
 import { computed, nextTick, ref, watch } from 'vue';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
@@ -70,7 +70,14 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
+const page = usePage();
 const { meta: productsMeta, rows: productsRows, loading: productsLoading } = useDeferredPaginator(() => props.products, 10);
+const activeModules = computed<string[]>(() => {
+    const tenant = (page.props.tenant ?? null) as { active_modules?: string[] } | null;
+
+    return Array.isArray(tenant?.active_modules) ? tenant.active_modules : [];
+});
+const canUseImageBank = computed(() => activeModules.value.includes('image-bank'));
 const productsIndexPath = ProductController.index
     .url()
     .replace(/^\/\/[^/]+/, '');
@@ -169,11 +176,11 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex flex-wrap items-center justify-end gap-2">
-                <button v-if="can.update" type="button" :disabled="isUpdatingImages || pageEans.length === 0 || productsLoading"
+                <button v-if="can.update && canUseImageBank" type="button" :disabled="isUpdatingImages || pageEans.length === 0 || productsLoading"
                     class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                     @click="updateImages">
                     <ImageDown class="size-3.5 shrink-0" :class="{ 'animate-pulse': isUpdatingImages }" />
-                    {{ isUpdatingImages ? 'Enviando...' : 'Atualizar imagens' }}
+                    {{ isUpdatingImages ? t('app.tenant.products.images.loading') : t('app.tenant.products.images.button') }}
                 </button>
                 <NewActionButton v-if="can.create" :href="ProductController.create.url()">
                     {{ t('app.tenant.products.actions.new') }}

@@ -64,6 +64,17 @@ return [
         'force_deleted' => 'Produto excluído definitivamente.',
         'restored' => 'Produto restaurado com sucesso.',
     ],
+    'images' => [
+        'button' => 'Atualizar imagens',
+        'loading' => 'Enviando...',
+        'module_inactive' => 'O módulo Banco de Imagens não está ativo para este cliente.',
+        'no_valid_ean' => 'Nenhum EAN válido informado.',
+        'no_tenant' => 'Contexto de cliente não encontrado.',
+        'started' => 'Atualização de imagens iniciada: :summary.',
+        'summary_synced' => ':count produto(s) com imagem atualizada',
+        'summary_queued' => ':count EAN(s) em download em segundo plano',
+        'summary_none' => 'nenhuma alteração',
+    ],
     'sync' => [
         'button' => 'Sincronizar da API',
         'loading' => 'Sincronizando...',

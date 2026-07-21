@@ -201,7 +201,10 @@ class ProductImageController extends Controller
     {
         $ean = (string) $request->string('ean');
         $processWithAi = $request->boolean('process_with_ai');
-        $result = $this->repositoryImageResolver->resolveByEan($ean);
+        $result = $this->repositoryImageResolver->resolveByEan(
+            $ean,
+            description: $request->filled('description') ? (string) $request->string('description') : null,
+        );
         $resolutionDebug = $this->repositoryImageResolver->lastResolutionDebug();
 
         if ($result === null) {

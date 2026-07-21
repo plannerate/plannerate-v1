@@ -29,6 +29,7 @@ class FetchRepositoryProductImageRequest extends FormRequest
         return [
             'ean' => ['required', 'string', 'max:255'],
             'process_with_ai' => ['nullable', 'boolean'],
+            'description' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

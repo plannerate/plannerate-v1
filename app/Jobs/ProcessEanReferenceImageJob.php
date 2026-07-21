@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\EanReference;
+use App\Models\Product;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\AppNotification;
 use App\Services\EanReferenceImageSyncService;
@@ -59,7 +61,11 @@ class ProcessEanReferenceImageJob implements NotTenantAware, ShouldQueue
             return;
         }
 
-        $result = $imageResolver->resolveByEan($normalizedEan, force: $this->force);
+        $result = $imageResolver->resolveByEan(
+            $normalizedEan,
+            force: $this->force,
+            description: $this->resolveProductDescription($normalizedEan),
+        );
         $path = is_array($result) ? ($result['path'] ?? null) : null;
 
         if (! is_string($path) || $path === '') {
@@ -79,5 +85,32 @@ class ProcessEanReferenceImageJob implements NotTenantAware, ShouldQueue
         }
 
         $syncService->syncOne($normalizedEan, $path, $this->tenantIds);
+    }
+
+    /**
+     * Nome do produto para alimentar a geração por IA (último recurso do resolver).
+     *
+     * O job é NotTenantAware e o ean_references não guarda descrição, então o único lugar
+     * com um nome legível é a tabela de produtos do tenant que pediu o download.
+     */
+    private function resolveProductDescription(string $normalizedEan): ?string
+    {
+        foreach ($this->tenantIds as $tenantId) {
+            $tenant = Tenant::query()->find($tenantId);
+
+            if (! $tenant instanceof Tenant) {
+                continue;
+            }
+
+            $name = $tenant->execute(
+                fn (): ?string => Product::query()->where('ean', $normalizedEan)->value('name')
+            );
+
+            if (is_string($name) && trim($name) !== '') {
+                return $name;
+            }
+        }
+
+        return null;
     }
 }
