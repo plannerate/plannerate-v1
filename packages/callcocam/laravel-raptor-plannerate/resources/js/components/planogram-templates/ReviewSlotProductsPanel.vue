@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
 import { ImageDown } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import type {
     PlanogramTemplateSlot,
     SlotAnalysisData,
+    SlotAnalysisRow,
 } from '@/components/planogram-templates/types';
+import ProductPlaceholder from '@/components/plannerate/editor/ProductPlaceholder.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useT } from '@/composables/useT';
@@ -20,8 +23,34 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useT();
+const page = usePage();
+
+// O backend recusa a sincronização sem o módulo image-bank; sem isso o botão aparece
+// para tenants que nunca vão conseguir usá-lo.
+const canUseImageBank = computed(() => {
+    const tenant = (page.props.tenant ?? null) as { active_modules?: string[] } | null;
+
+    return Array.isArray(tenant?.active_modules) && tenant.active_modules.includes('image-bank');
+});
 
 const localFilter = ref('');
+
+/**
+ * Mesmo tratamento de imagem quebrada do Layer.vue do editor: URL ausente, arte de
+ * fallback do accessor `image_url` do pacote (img/fallback/*) ou erro de carregamento
+ * caem todos no ProductPlaceholder, que se adapta a qualquer proporção.
+ */
+const failedImageIds = ref<Set<string>>(new Set());
+
+const hasImage = (row: SlotAnalysisRow): boolean => {
+    const url = row.url;
+
+    return Boolean(url) && !url.includes('/img/fallback/') && !failedImageIds.value.has(row.product_id);
+};
+
+const onImageError = (row: SlotAnalysisRow): void => {
+    failedImageIds.value = new Set(failedImageIds.value).add(row.product_id);
+};
 
 const filteredRows = computed(() => {
     if (!props.analysis) {
@@ -74,7 +103,7 @@ const summaryColClass = computed(() => {
         <div class="mb-2 flex items-center justify-between gap-2">
             <p class="text-sm font-semibold">{{ t('planogram-templates.review_panel.title') }}</p>
             <Button
-                v-if="props.analysis && props.analysis.rows.length > 0"
+                v-if="canUseImageBank && props.analysis && props.analysis.rows.length > 0"
                 type="button"
                 size="sm"
                 variant="outline"
@@ -192,18 +221,20 @@ const summaryColClass = computed(() => {
                                         class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/20"
                                     >
                                         <img
-                                            v-if="row.url"
+                                            v-if="hasImage(row)"
                                             :src="row.url"
                                             :alt="row.name"
                                             class="h-full w-full object-contain"
                                             loading="lazy"
+                                            @error="onImageError(row)"
                                         />
-                                        <span
+                                        <ProductPlaceholder
                                             v-else
-                                            class="text-[10px] text-muted-foreground"
-                                        >
-                                            {{ t('planogram-templates.review_panel.no_image') }}
-                                        </span>
+                                            :width="64"
+                                            :height="64"
+                                            :name="row.name"
+                                            :ean="row.ean"
+                                        />
                                     </div>
                                     <div class="min-w-0">
                                         <p class="line-clamp-2 font-medium">

@@ -9,6 +9,7 @@ return [
     'confirm_update_images_title' => 'Atualizar imagens da gôndola?',
     'confirm_update_images_description' => 'As imagens dos produtos na gôndola serão atualizadas. Deseja continuar?',
     'confirm_update_images_action' => 'Sim, atualizar',
+    'gondola_not_found' => 'Gôndola não encontrada.',
     'sales_data' => [
         'title' => 'Dados de Vendas',
         'use_existing' => 'Usar análise de Sortimento existente',

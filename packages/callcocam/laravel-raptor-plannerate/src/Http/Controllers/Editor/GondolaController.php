@@ -9,8 +9,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
 use App\Enums\WorkflowExecutionStatus;
-use App\Jobs\ProcessEanReferenceImageJob;
-use App\Models\EanReference;
+use App\Http\Controllers\Concerns\InteractsWithSyncImageDownLoad;
 use App\Models\Tenant;
 use App\Models\WorkflowGondolaExecution;
 use App\Models\WorkflowPlanogramStep;
@@ -37,6 +36,7 @@ use Callcocam\LaravelRaptorPlannerate\Services\Editor\GondolaPayloadService;
 use Callcocam\LaravelRaptorPlannerate\Services\Editor\GondolaProductResolver;
 use Callcocam\LaravelRaptorPlannerate\Services\Editor\GondolaService;
 use Callcocam\LaravelRaptorPlannerate\Services\Generation\GenerationQueueDispatcher;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +44,8 @@ use Inertia\Inertia;
 
 class GondolaController extends Controller
 {
+    use InteractsWithSyncImageDownLoad;
+
     protected function getBackRoute(Gondola $gondola): string
     {
         return route('tenant.planograms.index', ['record' => $gondola->planogram_id], false);
@@ -418,20 +420,14 @@ class GondolaController extends Controller
         ]);
     }
 
-    public function updateImages(string $gondola)
+    public function updateImages(string $gondola): RedirectResponse
     {
         $gondolaModel = Gondola::find($gondola);
+
         if (! $gondolaModel) {
-            return redirect()->back()->with('error', 'Gôndola não encontrada.');
-        }
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('plannerate.header.gondola_not_found')]);
 
-        $tenant = Tenant::current();
-        if (! $tenant) {
-            return redirect()->back()->with('error', 'Contexto de tenant não encontrado.');
-        }
-
-        if (! app(TenantModuleService::class)->tenantHasActiveModule($tenant, ModuleSlug::IMAGE_BANK)) {
-            return redirect()->back()->with('error', 'Módulo de banco de imagens não habilitado.');
+            return redirect()->back();
         }
 
         // Coleta os EANs de todos os produtos presentes nas prateleiras da gôndola
@@ -455,6 +451,7 @@ class GondolaController extends Controller
             ->pluck('product_id')
             ->toArray();
 
+        /** @var list<string> $rawEans */
         $rawEans = Product::query()
             ->whereIn('id', $productIds)
             ->pluck('ean')
@@ -462,79 +459,9 @@ class GondolaController extends Controller
             ->values()
             ->toArray();
 
-        // Normaliza e deduplica os EANs coletados
-        $normalizedEans = collect($rawEans)
-            ->filter(fn (mixed $ean): bool => is_string($ean) && trim($ean) !== '')
-            ->map(fn (string $ean): string => EanReference::normalizeEan($ean))
-            ->filter(fn (string $ean): bool => $ean !== '')
-            ->unique()
-            ->values()
-            ->all();
-
-        if (empty($normalizedEans)) {
-            return redirect()->back()->with('warning', 'Nenhum produto com EAN encontrado na gôndola.');
-        }
-
-        $tenantId = (string) $tenant->id;
-
-        // EANs com imagem já cacheada em ean_references → atualiza products.url diretamente
-        $referencesWithImage = EanReference::query()
-            ->whereIn('ean', $normalizedEans)
-            ->whereNotNull('image_front_url')
-            ->where('image_front_url', '!=', '')
-            ->whereNull('deleted_at')
-            ->get(['id', 'ean', 'image_front_url']);
-
-        $eansWithImage = $referencesWithImage
-            ->pluck('ean')
-            ->map(fn (mixed $e): string => (string) $e)
-            ->all();
-
-        $eansNeedingDownload = array_values(array_diff($normalizedEans, $eansWithImage));
-
-        $synced = 0;
-        $queued = 0;
-
-        // Sincroniza diretamente os produtos que já têm imagem cacheada
-        foreach ($referencesWithImage as $reference) {
-            $path = (string) $reference->image_front_url;
-            $ean = (string) $reference->ean;
-
-            $count = Product::query()
-                ->where('ean', $ean)
-                ->where(fn ($q) => $q->whereNull('url')->orWhere('url', '!=', $path))
-                ->update(['url' => $path, 'updated_at' => now()]);
-
-            $synced += $count;
-        }
-
-        // EANs sem imagem: garante registro em ean_references e despacha download em background
-        foreach ($eansNeedingDownload as $ean) {
-            /** @var EanReference $reference */
-            $reference = EanReference::firstOrCreate(['ean' => $ean]);
-
-            ProcessEanReferenceImageJob::dispatch(
-                eanReferenceId: (string) $reference->id,
-                force: false,
-                tenantIds: [$tenantId],
-            );
-            $queued++;
-        }
-
-        $parts = [];
-
-        if ($synced > 0) {
-            $parts[] = "{$synced} produto(s) com imagem atualizada";
-        }
-
-        if ($queued > 0) {
-            $parts[] = "{$queued} EAN(s) em download em segundo plano";
-        }
-
-        return redirect()->back()->with(
-            'success',
-            'Atualização de imagens iniciada: '.implode(', ', $parts ?: ['nenhuma alteração']).'.'
-        );
+        // Normalização, gate de módulo, cache do ean_references e despacho ficam no trait —
+        // este método só descobre QUAIS EANs a gôndola usa.
+        return $this->syncImagesForEans($rawEans);
     }
 
     /**

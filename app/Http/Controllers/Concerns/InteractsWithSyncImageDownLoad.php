@@ -23,6 +23,11 @@ use Inertia\Inertia;
  *
  * NÃO usa ProcessProductImagesByEansJob/DOProcessProductImageJob do package, pois esses
  * jobs resolvem produto por ID de schema legado e ignoram o cache do ean_references.
+ *
+ * Pontos de entrada que compartilham este fluxo: lista de produtos (ProductController),
+ * análise de slot do template (TemplateSlotController) e editor de gôndola
+ * (Editor\GondolaController) — os dois últimos entram por {@see syncImagesForEans()},
+ * que recebe os EANs já coletados em vez de lê-los do request.
  */
 trait InteractsWithSyncImageDownLoad
 {
@@ -43,6 +48,20 @@ trait InteractsWithSyncImageDownLoad
         /** @var list<string> $rawEans */
         $rawEans = (array) $request->input('eans', []);
 
+        return $this->syncImagesForEans($rawEans);
+    }
+
+    /**
+     * Miolo compartilhado da sincronização de imagens.
+     *
+     * Recebe EANs crus (de qualquer origem: request da lista de produtos, análise de slot do
+     * template, camadas de uma gôndola) e devolve o redirect com o toast já montado. Existe
+     * para que nenhum ponto de entrada volte a duplicar o fluxo e ficar órfão das correções.
+     *
+     * @param  list<string>  $rawEans
+     */
+    protected function syncImagesForEans(array $rawEans): RedirectResponse
+    {
         // Normaliza e deduplica os EANs recebidos
         $normalizedEans = collect($rawEans)
             ->filter(fn (mixed $ean): bool => is_string($ean) && trim($ean) !== '')

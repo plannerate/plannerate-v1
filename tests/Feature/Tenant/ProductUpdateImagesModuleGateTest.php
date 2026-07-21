@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Concerns\InteractsWithSyncImageDownLoad;
 use App\Jobs\ProcessEanReferenceImageJob;
 use App\Models\Module;
 use App\Models\Product;
@@ -110,6 +111,38 @@ test('avisa e não despacha download quando o módulo image-bank está inativo',
 
     $response->assertRedirect();
 
+    Queue::assertNotPushed(ProcessEanReferenceImageJob::class);
+
+    expect(session('inertia.flash_data.toast'))->toMatchArray([
+        'type' => 'warning',
+        'message' => __('app.tenant.products.images.module_inactive'),
+    ]);
+});
+
+test('o editor de gôndola passa pelo mesmo gate de módulo do trait', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    setupImageGateTenant('tenant-img-gondola', $user, withImageBank: false);
+
+    Queue::fake();
+
+    // Sem o módulo, o miolo compartilhado avisa em vez de sair calado — antes deste
+    // refactor o GondolaController flashava em `error`, chave que ninguém lê no front.
+    $controller = new class
+    {
+        use InteractsWithSyncImageDownLoad;
+
+        /** @param list<string> $eans */
+        public function run(array $eans)
+        {
+            return $this->syncImagesForEans($eans);
+        }
+    };
+
+    $response = $controller->run(['7891234567895']);
+
+    expect($response->getStatusCode())->toBe(302);
     Queue::assertNotPushed(ProcessEanReferenceImageJob::class);
 
     expect(session('inertia.flash_data.toast'))->toMatchArray([
