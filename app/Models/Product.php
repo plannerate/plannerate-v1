@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\DimensionStatus;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\HasCategory;
+use App\Models\Traits\HasStoreScopedMetrics;
 use App\Models\Traits\UsesTenantConnection;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,7 +22,7 @@ use Tall\Sluggable\SlugOptions;
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
-    use BelongsToTenant, HasCategory, HasFactory, HasSlug, HasUlids, SoftDeletes, UsesTenantConnection;
+    use BelongsToTenant, HasCategory, HasFactory, HasSlug, HasStoreScopedMetrics, HasUlids, SoftDeletes, UsesTenantConnection;
 
     /**
      * The attributes that are mass assignable.
@@ -178,7 +179,7 @@ class Product extends Model
     public function stores(): BelongsToMany
     {
         return $this->belongsToMany(Store::class, 'product_store')
-            ->withPivot(['tenant_id', 'last_synced_at'])
+            ->withPivot(['tenant_id', 'last_synced_at', 'current_stock', 'last_purchase_date'])
             ->withTimestamps();
     }
 

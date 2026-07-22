@@ -178,6 +178,10 @@ class ProductController extends Controller
         $this->applyTrashedToQuery($query, $trashed);
 
         return $query
+            // Estoque e última compra vivem em `product_store` (métrica POR LOJA).
+            // A listagem é tenant-wide, então mostra o consolidado: soma do estoque
+            // de todas as lojas e a compra mais recente entre elas.
+            ->withStoreMetrics()
             ->with(['category:id,name', 'stores:id,name'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {

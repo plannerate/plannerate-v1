@@ -55,8 +55,13 @@ final readonly class SlotReviewAnalysisService
                 'id', 'name', 'ean', 'codigo_erp', 'brand',
                 'category_id', 'status', 'packaging_content',
                 'weight', 'url', 'width', 'height', 'depth', 'unit',
-                'price', 'packaging_type', 'current_stock',
+                'price', 'packaging_type',
             ])
+            // `current_stock` sai de `product_store` (métrica POR LOJA) e por isso
+            // não está na lista acima. Template não é por loja, então a expansão de
+            // facings por estoque usa o consolidado de todas as lojas.
+            // withStoreMetrics() depois do select(): select() zeraria os subselects.
+            ->withStoreMetrics()
             ->when(
                 $categoryIds !== [],
                 fn ($q) => $q->whereIn('category_id', $categoryIds),

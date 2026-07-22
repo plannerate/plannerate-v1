@@ -9,6 +9,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Models;
 
 use App\Models\Traits\BelongsToTenant;
+use App\Models\Traits\HasStoreScopedMetrics;
 use Callcocam\LaravelRaptorPlannerate\Models\Traits\UsesPlannerateTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
-    use BelongsToTenant, HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
+    use BelongsToTenant, HasStoreScopedMetrics, HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
 
     protected $guarded = ['id'];
 

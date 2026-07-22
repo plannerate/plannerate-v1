@@ -17,6 +17,7 @@ use App\Support\Authorization\PermissionName;
 use App\Support\Modules\ModuleSlug;
 use App\Support\Modules\TenantModuleService;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\AutoGenerateConfigDTO;
+use Callcocam\LaravelRaptorPlannerate\Concerns\ResolvesGondolaStoreId;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\Editor\StoreGondolaRequest;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\Editor\UpdateGondolaRequest;
@@ -44,7 +45,7 @@ use Inertia\Inertia;
 
 class GondolaController extends Controller
 {
-    use InteractsWithSyncImageDownLoad;
+    use InteractsWithSyncImageDownLoad, ResolvesGondolaStoreId;
 
     protected function getBackRoute(Gondola $gondola): string
     {
@@ -63,11 +64,20 @@ class GondolaController extends Controller
         $gondola = $this->findGondolaOrFail($record);
         $this->authorize('view', $gondola);
 
+        // `current_stock` sai de `product_store`, não da coluna homônima de `products`:
+        // é métrica POR LOJA. Por isso fica fora da lista de colunas e entra via
+        // forStore(), que resolve a loja do planograma (ou do cluster).
+        $storeId = $this->resolveGondolaStoreId($gondola);
+
         $gondola->load([
             'planogram.gondolas:id,planogram_id,name,slug',
             'planogram.category',
             'sections.gondola:id,scale_factor',
-            'sections.shelves.segments.layer.product:id,name,ean,codigo_erp,url,width,height,depth,weight,current_stock,brand,status,category_id,type,reference,color,flavor,fragrance,subbrand,packaging_type,packaging_content,measurement_unit,price',
+            // select() antes de forStore(): select() zera as colunas acumuladas e
+            // levaria junto os subselects da pivot.
+            'sections.shelves.segments.layer.product' => fn ($query) => $query
+                ->select('id', 'name', 'ean', 'codigo_erp', 'url', 'width', 'height', 'depth', 'weight', 'brand', 'status', 'category_id', 'type', 'reference', 'color', 'flavor', 'fragrance', 'subbrand', 'packaging_type', 'packaging_content', 'measurement_unit', 'price')
+                ->forStore($storeId),
             'sections.shelves.segments.layer.product.category:id,name,category_id',
             // Carrega a cadeia de pais (até 7 níveis) para que category_full_path
             // (via getFullHierarchy()) não faça queries extras por nível.

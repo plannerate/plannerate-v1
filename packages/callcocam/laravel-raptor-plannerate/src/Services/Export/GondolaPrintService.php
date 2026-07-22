@@ -2,8 +2,10 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Export;
 
+use Callcocam\LaravelRaptorPlannerate\Concerns\ResolvesGondolaStoreId;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -12,6 +14,8 @@ use Illuminate\Support\Facades\Storage;
 
 class GondolaPrintService
 {
+    use ResolvesGondolaStoreId;
+
     public function __construct(
         protected QRCodeService $qrCodeService
     ) {}
@@ -146,11 +150,13 @@ class GondolaPrintService
      */
     public function generatePdfByModules(string $gondolaId, $download = false)
     {
-        $gondola = Gondola::with([
+        $gondola = Gondola::findOrFail($gondolaId);
+
+        $gondola->load([
             'sections',
             'sections.shelves',
-            'sections.shelves.segments.layer.product',
-        ])->findOrFail($gondolaId);
+            'sections.shelves.segments.layer.product' => $this->productWithStoreMetrics($gondola),
+        ]);
 
         $sections = $gondola->sections; // Limitar a 100 módulos para evitar PDFs muito grandes
 
@@ -169,6 +175,30 @@ class GondolaPrintService
         ];
 
         return view('pdf.gondola.modules', $data);
+    }
+
+    /**
+     * Constraint do eager-load do produto que traz as métricas da loja da gôndola.
+     *
+     * `current_stock` vive em `product_store` porque é POR LOJA — os selos de
+     * Estoque e Ruptura do PDF liam a coluna congelada de `products` antes disto.
+     *
+     * @return \Closure(Builder): Builder
+     */
+    protected function productWithStoreMetrics(Gondola $gondola): \Closure
+    {
+        // resolveGondolaStoreId() faz loadMissing do planograma com 3 colunas. Se ele
+        // ainda não estava carregado, descarrega depois: um planograma parcial
+        // pendurado faz a view do PDF ler null em qualquer outra coluna.
+        $planogramWasLoaded = $gondola->relationLoaded('planogram');
+
+        $storeId = $this->resolveGondolaStoreId($gondola);
+
+        if (! $planogramWasLoaded) {
+            $gondola->unsetRelation('planogram');
+        }
+
+        return fn ($query) => $query->forStore($storeId);
     }
 
     /**
@@ -201,14 +231,16 @@ class GondolaPrintService
      */
     public function prepareGondolaData(string $gondolaId): array
     {
-        $gondola = Gondola::with([
+        $gondola = Gondola::findOrFail($gondolaId);
+
+        $gondola->load([
             'sections',
             'sections.shelves',
-            'sections.shelves.segments.layer.product',
+            'sections.shelves.segments.layer.product' => $this->productWithStoreMetrics($gondola),
             'sections.shelves.segments.layer.product.category:id,name',
             'planogram',
             'planogram.category',
-        ])->findOrFail($gondolaId);
+        ]);
 
         // Processar imagens de produtos para base64
         $this->processProductImages($gondola->sections);

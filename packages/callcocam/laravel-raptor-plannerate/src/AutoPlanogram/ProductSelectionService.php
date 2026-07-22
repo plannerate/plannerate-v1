@@ -323,6 +323,10 @@ class ProductSelectionService
      * Quando $storeId é informado, aplica filtro de sortimento via product_store:
      * apenas produtos autorizados para aquela loja entram no pool.
      *
+     * `forStore()` também recorta as métricas por loja (`current_stock`,
+     * `last_purchase_date`), que vivem em `product_store`. É por aqui que o
+     * TemplatePlacementEngine recebe o estoque certo ao expandir facings.
+     *
      * @param  list<string>  $categoryIds
      * @param  string|null  $storeId  ID da loja para filtro de sortimento; null = sem filtro
      * @return Collection<int, Product>
@@ -334,6 +338,7 @@ class ProductSelectionService
         }
 
         $query = Product::on($this->plannerateTenantConnectionName())
+            ->forStore($storeId)
             ->whereIn('category_id', $categoryIds)
             ->with(['category.parent.parent.parent.parent.parent.parent']);
 

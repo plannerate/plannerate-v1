@@ -109,15 +109,24 @@ class TargetStockService
             throw new \InvalidArgumentException('tenant_id é obrigatório para calcular estoque alvo');
         }
 
-        // Se não foi passado estoque atual, busca diretamente da tabela products
+        // Se não foi passado estoque atual, busca da pivot `product_store` recortada
+        // pela loja dos filtros. Sem loja, `forStore()` consolida todas — o número
+        // do tenant, não o de uma loja arbitrária.
+        //
+        // O nulo é filtrado aqui e não com `whereNotNull` porque a coluna do SELECT
+        // é um subselect da pivot: um whereNotNull olharia para `products`.
         if (empty($currentStock)) {
+            $storeId = isset($filters['store_id']) ? (string) $filters['store_id'] : null;
+
             $currentStock = Product::query()
+                ->forStore($storeId)
                 ->whereIn('ean', $eans)
-                ->whereNotNull('current_stock')
                 ->pluck('current_stock', 'ean')
+                ->filter(fn (mixed $stock): bool => $stock !== null)
                 ->toArray();
 
-            Log::info('TargetStock - current_stock carregado da tabela products', [
+            Log::info('TargetStock - current_stock carregado de product_store', [
+                'store_id' => $storeId,
                 'eans_com_estoque' => count($currentStock),
             ]);
         }

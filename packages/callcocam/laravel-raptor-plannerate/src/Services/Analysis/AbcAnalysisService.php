@@ -302,9 +302,17 @@ class AbcAnalysisService
         // Calcula média ponderada para cada produto
         $productsWithWeight = $this->calculateWeightedAverage($salesData);
 
-        // Busca produtos com suas categorias para determinar o ID do 5º nível
+        // Busca produtos com suas categorias para determinar o ID do 5º nível.
+        // `forStore()` recorta estoque e última compra pela loja da análise — as
+        // duas alimentam o status do produto (ruptura), e vivem em `product_store`.
+        $storeId = isset($filters['store_id']) ? (string) $filters['store_id'] : null;
         $productIds = $productsWithWeight->pluck('product_id')->unique()->toArray();
-        $products = Product::with(['category'])->whereIn('id', $productIds)->get()->keyBy('id');
+        $products = Product::query()
+            ->forStore($storeId)
+            ->with(['category'])
+            ->whereIn('id', $productIds)
+            ->get()
+            ->keyBy('id');
 
         // Busca última venda de todos os produtos de uma vez (otimização N+1)
         $lastSalesByProduct = $this->getLastSalesForProducts($productIds);
@@ -331,7 +339,7 @@ class AbcAnalysisService
             $sorted = $categoryProducts->sortByDesc('media_ponderada');
 
             // Calcula porcentagens e classificação ABC (passa cache de últimas vendas)
-            $processed = $this->calculatePercentagesAndClassification($sorted, $level5CategoryId, $products, $lastSalesByProduct);
+            $processed = $this->calculatePercentagesAndClassification($sorted, $level5CategoryId, $products, $lastSalesByProduct, $storeId);
 
             $result = $result->merge($processed);
         }
@@ -562,12 +570,14 @@ class AbcAnalysisService
      * @param  string  $categoryId  ID da categoria do 5º nível para agrupamento
      * @param  Collection|null  $productsCache  Cache de produtos já carregados (opcional)
      * @param  Collection|null  $lastSalesCache  Cache de últimas vendas por produto (opcional)
+     * @param  string|null  $storeId  Loja da análise; recorta as métricas de `product_store` no fallback
      */
     private function calculatePercentagesAndClassification(
         Collection $products,
         string $categoryId,
         ?Collection $productsCache = null,
-        ?Collection $lastSalesCache = null
+        ?Collection $lastSalesCache = null,
+        ?string $storeId = null
     ): Collection {
         // Calcula total ponderado da categoria
         $totalPonderado = $products->sum('media_ponderada');
@@ -579,7 +589,7 @@ class AbcAnalysisService
 
             foreach ($products as $product) {
                 $productModel = $productsCache?->get($product['product_id'])
-                    ?? Product::with(['category'])->find($product['product_id']);
+                    ?? Product::query()->forStore($storeId)->with(['category'])->find($product['product_id']);
 
                 $fullPath = $productModel?->category?->full_path ?? 'Sem categoria';
                 $categoryName = $this->limitCategoryPathToFiveLevels($fullPath);
@@ -628,7 +638,7 @@ class AbcAnalysisService
 
             // Busca informações do produto (usa cache se disponível)
             $productModel = $productsCache?->get($product['product_id'])
-                ?? Product::with(['category'])->find($product['product_id']);
+                ?? Product::query()->forStore($storeId)->with(['category'])->find($product['product_id']);
 
             // Obtém o full_path e limita aos 5 primeiros níveis
             $fullPath = $productModel?->category?->full_path ?? 'Sem categoria';
@@ -894,17 +904,15 @@ class AbcAnalysisService
      *                                                   Inativo se estoque = 0, Ativo se > 0
      *
      * A implementação anterior era uma "lógica simplificada": só olhava a última venda e
-     * tratava o estoque como 0 fixo, então nunca chegava aos casos de compra. As datas
-     * saem de `products.last_purchase_date` e o estoque de `products.current_stock`.
+     * tratava o estoque como 0 fixo, então nunca chegava aos casos de compra.
      *
-     * ATENÇÃO: `last_purchase_date` ainda NÃO é populada pela importação (0 de 8.592
-     * produtos no tenant de dev). Enquanto isso, os dois casos que dependem de compra não
-     * disparam e todo produto vendido recentemente cai em "Venda recente, sem compra" —
-     * que é exatamente o que o VBA faz quando a data de compra vem vazia. A lógica está
-     * correta; falta o dado (a tabela `purchases` do legado tem `last_purchase_date` e
-     * `current_stock` por produto).
+     * As duas métricas vêm de `product_store`, não mais das colunas homônimas de
+     * `products`: são POR LOJA no feed do ERP e a importação passou a gravá-las só na
+     * pivot. Quem carrega o produto aplica `forStore($storeId)`, que recorta os valores
+     * pela loja da análise — sem isso, `$product->current_stock` volta nulo e todo
+     * produto sem venda recente cai em Inativo.
      *
-     * @param  Product|null  $product  Modelo do produto (traz last_purchase_date e current_stock)
+     * @param  Product|null  $product  Produto carregado com forStore(); traz as métricas da loja
      * @param  object|null  $lastSaleData  Última venda pré-carregada (evita N+1)
      * @return array{status: string, motivo: string}
      */
