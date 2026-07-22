@@ -2,9 +2,9 @@
 
 namespace App\Listeners\Tenant;
 
-use App\Events\Tenant\TenantIsolationCheckEvent;
 use App\Models\Tenant;
 use App\Models\User;
+use Callcocam\LaravelIntegrations\Events\TenantIsolationCheckEvent;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\SetPermissionTeamContext;
 use App\Models\EanReference;
 use App\Models\Product;
 use App\Models\Store;
@@ -46,10 +47,24 @@ return [
     ],
 
     /*
+     * Grupo das rotas landlord do motor, registrado pelo IntegrationsServiceProvider.
+     *
+     * O `SetPermissionTeamContext` é obrigatório aqui: sem ele o spatie/laravel-permission
+     * resolve as permissões fora do time do tenant e a autorização passa a decidir errado.
+     * O pacote não conhece esse middleware — o default dele é só `['web', 'auth']`.
+     *
+     * `domain` null cai em `config('app.landlord_domain')`.
+     */
+    'routes' => [
+        'domain' => null,
+        'middleware' => ['web', 'auth', SetPermissionTeamContext::class],
+    ],
+
+    /*
      * Critério de "loja importável", aplicado pelo ConfiguredStoresProvider: nome de um
      * scope local do model de loja (string vazia = sem filtro) e a coluna que guarda o
      * CNPJ/CPF enviado ao ERP. Quem precisar de outra regra rebinda o contrato
-     * App\Services\Integrations\Contracts\StoresProvider no container.
+     * Callcocam\LaravelIntegrations\Contracts\StoresProvider no container.
      */
     'store_scope' => 'published',
 
@@ -65,7 +80,7 @@ return [
     /*
      * Nomes reais das tabelas do tenant que o motor lê e escreve. O motor é genérico,
      * mas alcança tabelas do domínio da aplicação; a chave é o papel, o valor é o nome
-     * no banco. Resolvido por App\Services\Integrations\Support\IntegrationTables.
+     * no banco. Resolvido por Callcocam\LaravelIntegrations\Services\Support\IntegrationTables.
      */
     'tables' => [
         'products' => 'products',

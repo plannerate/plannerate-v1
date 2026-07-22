@@ -1,6 +1,6 @@
 <?php
 
-use App\Jobs\Cleanup\RestoreSoldProductsJob;
+use Callcocam\LaravelIntegrations\Jobs\Cleanup\RestoreSoldProductsJob;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;

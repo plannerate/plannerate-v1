@@ -1,15 +1,15 @@
 <?php
 
-use App\Events\Tenant\ProductSalesSynced;
-use App\Jobs\Integrations\SyncSingleProductJob;
-use App\Models\IntegrationApi;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\Store;
 use App\Models\Tenant;
-use App\Models\TenantIntegration;
 use App\Models\User;
-use App\Services\Integrations\Lookup\SingleProductFetchService;
+use Callcocam\LaravelIntegrations\Events\ProductSalesSynced;
+use Callcocam\LaravelIntegrations\Jobs\SyncSingleProductJob;
+use Callcocam\LaravelIntegrations\Models\IntegrationApi;
+use Callcocam\LaravelIntegrations\Models\TenantIntegration;
+use Callcocam\LaravelIntegrations\Services\Lookup\SingleProductFetchService;
 use Callcocam\LaravelRaptorPlannerate\Models\Sale;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
@@ -28,6 +28,8 @@ beforeEach(function (): void {
         '--force' => true,
         '--no-interaction' => true,
     ]);
+
+    migrateIntegrationsLandlord();
 
     Artisan::call('db:seed', [
         '--class' => LandlordRbacSeeder::class,

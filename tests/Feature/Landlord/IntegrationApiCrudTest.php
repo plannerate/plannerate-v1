@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\IntegrationApi;
 use App\Models\User;
+use Callcocam\LaravelIntegrations\Models\IntegrationApi;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -17,6 +17,8 @@ beforeEach(function (): void {
         '--force' => true,
         '--no-interaction' => true,
     ]);
+
+    migrateIntegrationsLandlord();
 
     $this->actingAs(User::factory()->create());
 });

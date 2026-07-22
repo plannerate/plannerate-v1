@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Tenant;
-use App\Services\Integrations\Support\DeterministicIdGenerator;
+use Callcocam\LaravelIntegrations\Services\Support\DeterministicIdGenerator;
 use Illuminate\Console\Command;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Config;

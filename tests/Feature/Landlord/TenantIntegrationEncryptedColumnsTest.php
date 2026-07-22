@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Tenant;
-use App\Models\TenantIntegration;
+use Callcocam\LaravelIntegrations\Models\TenantIntegration;
 use Illuminate\Support\Facades\Artisan;
 
 beforeEach(function (): void {
@@ -15,6 +15,8 @@ beforeEach(function (): void {
         '--force' => true,
         '--no-interaction' => true,
     ]);
+
+    migrateIntegrationsLandlord();
 });
 
 test('tenant integration encrypted arrays can be stored on landlord connection', function (): void {

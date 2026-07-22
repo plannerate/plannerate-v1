@@ -63,6 +63,12 @@
             ],
             "@plannerate/*": [
                 "./vendor/callcocam/laravel-raptor-plannerate/resources/js/*"
+            ],
+            "@integrations": [
+                "./vendor/callcocam/laravel-integrations/resources/js/types/index.ts"
+            ],
+            "@integrations/*": [
+                "./vendor/callcocam/laravel-integrations/resources/js/*"
             ]
         },
         // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
@@ -162,6 +168,9 @@
         "packages/callcocam/laravel-raptor-plannerate/resources/js/**/*.ts",
         "packages/callcocam/laravel-raptor-plannerate/resources/js/**/*.d.ts",
         "packages/callcocam/laravel-raptor-plannerate/resources/js/**/*.tsx",
-        "packages/callcocam/laravel-raptor-plannerate/resources/js/**/*.vue"
+        "packages/callcocam/laravel-raptor-plannerate/resources/js/**/*.vue",
+        "vendor/callcocam/laravel-integrations/resources/js/**/*.ts",
+        "vendor/callcocam/laravel-integrations/resources/js/**/*.d.ts",
+        "vendor/callcocam/laravel-integrations/resources/js/**/*.vue"
     ]
 }

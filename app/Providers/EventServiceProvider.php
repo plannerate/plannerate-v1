@@ -3,10 +3,10 @@
 namespace App\Providers;
 
 use App\Events\Tenant\ProductImageProcessed;
-use App\Events\Tenant\TenantIsolationCheckEvent;
 use App\Listeners\Landlord\CreateTenantIsolationCheckNotification;
 use App\Listeners\Tenant\CreateTenantIsolationTenantNotification;
 use App\Listeners\Tenant\SaveEanReferenceOnProductImageProcessed;
+use Callcocam\LaravelIntegrations\Events\TenantIsolationCheckEvent;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider

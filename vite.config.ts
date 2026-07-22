@@ -36,6 +36,7 @@ export default defineConfig({
         include: [ 
             'vendor/callcocam/laravel-raptor-flow/resources/js/**/*.vue',
             'vendor/callcocam/laravel-raptor-plannerate/resources/js/**/*.vue',
+            'vendor/callcocam/laravel-integrations/resources/js/**/*.vue',
         ],
     },
     resolve: {
@@ -44,7 +45,8 @@ export default defineConfig({
             '@/components/planogram-templates': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js/components/planogram-templates'),
             '@/composables/plannerate': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js/composables/plannerate'),
             '@/types/planogram': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js/types/planogram.ts'),
-            '@plannerate': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js'), 
+            '@plannerate': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js'),
+            '@integrations': path.resolve(__dirname, './vendor/callcocam/laravel-integrations/resources/js'),
             '@': path.resolve(__dirname, './resources/js'),
         },
     },

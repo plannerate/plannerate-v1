@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\Modules\ModuleSlug;
+use Callcocam\LaravelIntegrations\Models\Concerns\HasIntegration;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -17,7 +18,7 @@ use Spatie\Multitenancy\Models\Tenant as ModelsTenant;
 class Tenant extends ModelsTenant
 {
     /** @use HasFactory<TenantFactory> */
-    use HasFactory, HasUlids;
+    use HasFactory, HasIntegration, HasUlids;
 
     /**
      * The database connection used by the model.
@@ -167,11 +168,6 @@ class Tenant extends ModelsTenant
     public function domains(): HasMany
     {
         return $this->hasMany(TenantDomain::class);
-    }
-
-    public function integration(): HasOne
-    {
-        return $this->hasOne(TenantIntegration::class);
     }
 
     public function socialiteProvider(): HasOne

@@ -3,9 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\Tenant;
-use App\Models\TenantIntegration;
 use App\Models\User;
 use App\Support\Database\DatabaseCreator;
+use Callcocam\LaravelIntegrations\Models\TenantIntegration;
 use Illuminate\Console\Command;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Artisan;

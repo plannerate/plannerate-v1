@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
 use Tests\Concerns\FastRefreshDatabase;
 use Tests\TestCase;
@@ -88,4 +89,17 @@ function buildReoptimizationProposalsTable(): void
         $table->timestamps();
         $table->softDeletes();
     });
+}
+
+/**
+ * Roda as migrations landlord do pacote `callcocam/laravel-integrations`.
+ *
+ * As tabelas do motor (`integration_apis`, `tenant_integrations`,
+ * `integration_import_runs`) deixaram de viver em `database/migrations/landlord` quando
+ * o motor virou pacote. Todo teste do app que as toca precisa deste passo A MAIS do
+ * `migrate` de sempre — em produção o mesmo trabalho é feito por `integrations:migrate`.
+ */
+function migrateIntegrationsLandlord(): void
+{
+    Artisan::call('integrations:migrate', ['--force' => true]);
 }

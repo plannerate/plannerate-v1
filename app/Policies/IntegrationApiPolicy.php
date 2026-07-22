@@ -2,10 +2,10 @@
 
 namespace App\Policies;
 
-use App\Models\IntegrationApi;
 use App\Models\User;
 use App\Policies\Concerns\ChecksRbacPermission;
 use App\Support\Authorization\PermissionName;
+use Callcocam\LaravelIntegrations\Models\IntegrationApi;
 
 class IntegrationApiPolicy
 {

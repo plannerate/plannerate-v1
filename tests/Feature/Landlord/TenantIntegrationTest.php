@@ -1,12 +1,33 @@
 <?php
 
-use App\Models\IntegrationApi;
 use App\Models\Tenant;
-use App\Models\TenantIntegration;
 use App\Models\User;
+use Callcocam\LaravelIntegrations\Models\IntegrationApi;
+use Callcocam\LaravelIntegrations\Models\TenantIntegration;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia as Assert;
+
+/*
+ * ATENÇÃO: arquivo parcialmente DESATUALIZADO — e já estava antes da extração do motor
+ * para o pacote. Nunca esteve em nenhum job do CI, então apodreceu em silêncio enquanto
+ * a API mudava.
+ *
+ * Corrigido nesta passagem (eram erros objetivos, com resposta única):
+ * - `integration_type` guarda o ID da IntegrationApi, não o slug — é assim em produção
+ *   e é o que o whitelist do request valida;
+ * - o tenant da fixture precisa de domínio, senão o HandleInertiaRequests do app lê
+ *   `$tenant->domain->host` em null e toda página do tenant responde 500.
+ *
+ * Ainda falha, por expectativas de uma API que mudou em refatorações anteriores:
+ * - `test-connection` hoje devolve RedirectResponse (convenção do projeto: `back()` para
+ *   mutação), e os testes esperam 200 com JSON;
+ * - `products_path`/`sales_path` deixaram de ser persistidos como estavam.
+ *
+ * Consertar isso é decidir o que a API DEVE fazer, não trabalho de renomeação — por isso
+ * ficou de fora do corte. A fronteira app↔pacote que importa está coberta por
+ * tests/Feature/Integrations/IntegrationsPackageContractTest.php, esse sim no CI.
+ */
 
 beforeEach(function (): void {
     config([
@@ -19,6 +40,8 @@ beforeEach(function (): void {
         '--force' => true,
         '--no-interaction' => true,
     ]);
+
+    migrateIntegrationsLandlord();
 
     $this->actingAs(User::factory()->create());
 });
@@ -37,7 +60,7 @@ test('authenticated user can view tenant integration page', function () {
 });
 
 test('tenant integration page lists active integration apis from landlord cadastro', function () {
-    IntegrationApi::query()->create([
+    $api = IntegrationApi::query()->create([
         'name' => 'ACME ERP',
         'slug' => 'acme-erp',
         'requests' => [
@@ -54,12 +77,14 @@ test('tenant integration page lists active integration apis from landlord cadast
 
     $response = $this->get(route('landlord.tenants.integration.edit', $tenant));
 
+    // A opção do select é identificada pelo ID; o slug vai junto, à parte.
     $response
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('landlord/tenants/Integration')
-            ->where('integration_types.0.value', 'acme-erp')
-            ->where('integration_types.0.label', 'ACME ERP'));
+            ->where('integration_types.0.value', (string) $api->id)
+            ->where('integration_types.0.label', 'ACME ERP')
+            ->where('integration_types.0.slug', 'acme-erp'));
 });
 
 test('put creates tenant integration when absent and stores encrypted config', function () {
@@ -71,7 +96,7 @@ test('put creates tenant integration when absent and stores encrypted config', f
 
     $this->assertDatabaseHas('tenant_integrations', [
         'tenant_id' => $tenant->id,
-        'integration_type' => 'acme-erp',
+        'integration_type' => IntegrationApi::query()->where('slug', 'acme-erp')->value('id'),
         'is_active' => 1,
     ], 'landlord');
 
@@ -146,7 +171,7 @@ test('put stores generic bearer token fetch configuration', function () {
 
     $integration = TenantIntegration::query()->where('tenant_id', $tenant->id)->firstOrFail();
 
-    expect($integration->integration_type)->toBe('token-api')
+    expect($integration->integration_type)->toBe(IntegrationApi::query()->where('slug', 'token-api')->value('id'))
         ->and($integration->config['auth']['type'])->toBe('bearer')
         ->and($integration->config['auth']['token_mode'])->toBe('fetch')
         ->and($integration->config['auth']['credentials'])->toMatchArray([
@@ -286,7 +311,16 @@ function createTenantForIntegration(): Tenant
         ]);
     });
 
-    return $tenant;
+    // O HandleInertiaRequests do app lê `$tenant->domain->host` em toda rota que recebe
+    // {tenant}; sem domínio, qualquer página do tenant responde 500.
+    $tenant->domains()->create([
+        'host' => $tenant->slug.'.plannerate.test',
+        'type' => 'subdomain',
+        'is_primary' => true,
+        'is_active' => true,
+    ]);
+
+    return $tenant->refresh();
 }
 
 /**
@@ -295,12 +329,12 @@ function createTenantForIntegration(): Tenant
  */
 function integrationPayload(array $overrides = []): array
 {
-    $integrationType = (string) ($overrides['integration_type'] ?? 'acme-erp');
+    $slug = (string) ($overrides['integration_type'] ?? 'acme-erp');
 
-    IntegrationApi::query()->firstOrCreate(
-        ['slug' => $integrationType],
+    $api = IntegrationApi::query()->firstOrCreate(
+        ['slug' => $slug],
         [
-            'name' => str($integrationType)->headline()->toString(),
+            'name' => str($slug)->headline()->toString(),
             'requests' => [
                 'method' => 'GET',
                 'payload' => 'query',
@@ -320,8 +354,11 @@ function integrationPayload(array $overrides = []): array
         ],
     );
 
+    // `integration_type` guarda o ID da IntegrationApi, não o slug — é assim que a
+    // coluna vive em produção e é o que o whitelist do UpdateTenantIntegrationRequest
+    // valida. O slug identifica o blueprint só na fixture.
     return array_merge([
-        'integration_type' => $integrationType,
+        'integration_type' => (string) $api->id,
         'api_url' => 'https://acme.example.com',
         'auth_type' => 'basic',
         'auth_username' => 'planner-user',

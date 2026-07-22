@@ -1,11 +1,11 @@
 <?php
 
-use App\Models\IntegrationApi;
 use App\Models\Module;
 use App\Models\Plan;
 use App\Models\Tenant;
-use App\Models\TenantIntegration;
 use App\Models\User;
+use Callcocam\LaravelIntegrations\Models\IntegrationApi;
+use Callcocam\LaravelIntegrations\Models\TenantIntegration;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -17,6 +17,8 @@ beforeEach(function (): void {
         '--force' => true,
         '--no-interaction' => true,
     ]);
+
+    migrateIntegrationsLandlord();
 
     $this->actingAs(User::factory()->create());
 });

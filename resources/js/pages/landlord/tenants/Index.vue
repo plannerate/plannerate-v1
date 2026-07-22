@@ -4,7 +4,7 @@ import { FolderTree, KeyRound, Layers, Link2, Ruler, Users } from 'lucide-vue-ne
 import { computed, ref } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantGondolaDefaultsController from '@/actions/App/Http/Controllers/Landlord/TenantGondolaDefaultsController';
-import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord/TenantIntegrationController';
+import TenantIntegrationController from '@/actions/Callcocam/LaravelIntegrations/Http/Controllers/TenantIntegrationController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
 import ImportFileButton from '@/components/imports/ImportFileButton.vue';

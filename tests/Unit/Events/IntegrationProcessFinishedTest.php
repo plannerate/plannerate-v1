@@ -1,6 +1,6 @@
 <?php
 
-use App\Events\Tenant\IntegrationProcessFinished;
+use Callcocam\LaravelIntegrations\Events\IntegrationProcessFinished;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 

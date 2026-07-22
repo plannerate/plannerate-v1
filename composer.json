@@ -11,6 +11,7 @@
     "require": {
         "php": "^8.3",
         "barryvdh/laravel-dompdf": "^3.1",
+        "callcocam/laravel-integrations": "dev-main",
         "callcocam/laravel-raptor-plannerate": "dev-main",
         "callcocam/tall-sluggable": "dev-main",
         "inertiajs/inertia-laravel": "^3.0",
@@ -48,7 +49,10 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "app/Support/legacy-integration-class-aliases.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
@@ -122,9 +126,13 @@
     },
     "minimum-stability": "dev",
     "repositories": [
-       {
-        "type":"path",
-        "url": "./packages/callcocam/laravel-raptor-plannerate"
-       }
+        {
+            "type": "path",
+            "url": "./packages/callcocam/laravel-raptor-plannerate"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/callcocam/laravel-integrations.git"
+        }
     ]
 }

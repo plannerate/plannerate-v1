@@ -1,13 +1,13 @@
 <?php
 
-use App\Jobs\Integrations\SyncSingleProductJob;
-use App\Models\IntegrationApi;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\Store;
 use App\Models\Tenant;
-use App\Models\TenantIntegration;
 use App\Models\User;
+use Callcocam\LaravelIntegrations\Jobs\SyncSingleProductJob;
+use Callcocam\LaravelIntegrations\Models\IntegrationApi;
+use Callcocam\LaravelIntegrations\Models\TenantIntegration;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;
@@ -24,6 +24,8 @@ beforeEach(function (): void {
         '--force' => true,
         '--no-interaction' => true,
     ]);
+
+    migrateIntegrationsLandlord();
 
     Artisan::call('db:seed', [
         '--class' => LandlordRbacSeeder::class,

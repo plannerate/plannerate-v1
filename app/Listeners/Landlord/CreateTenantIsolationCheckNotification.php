@@ -2,8 +2,8 @@
 
 namespace App\Listeners\Landlord;
 
-use App\Events\Tenant\TenantIsolationCheckEvent;
 use App\Models\User;
+use Callcocam\LaravelIntegrations\Events\TenantIsolationCheckEvent;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 

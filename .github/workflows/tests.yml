@@ -77,7 +77,11 @@ jobs:
   # reconcile → pós-import). Grupos em invocações separadas porque testes
   # config-override (database.default + DB::purge) contaminam a conexão dos
   # vizinhos — cada `php artisan test` é um processo novo, isolando o estado.
-  integration-import:
+  # O pipeline de importação virou o pacote `callcocam/laravel-integrations` e é
+  # testado lá (215 testes, repo próprio). O que sobra aqui é o que o pacote NÃO
+  # consegue cobrir: as rotas landlord reais, com o middleware, as policies e o RBAC
+  # da aplicação, mais o contrato de schema entre as duas partes.
+  integration-boundary:
     runs-on: ubuntu-latest
 
     steps:
@@ -92,6 +96,11 @@ jobs:
           tools: composer:v2
           coverage: none
 
+      # O pacote é privado: sem esta credencial o composer install falha no clone.
+      # Configure o secret COMPOSER_GITHUB_TOKEN com um PAT de leitura em `repo`.
+      - name: Authenticate private packages
+        run: composer config --global github-oauth.github.com "${{ secrets.COMPOSER_GITHUB_TOKEN }}"
+
       - name: Install Composer Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
@@ -100,42 +109,8 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
-      - name: 'Import — core pipeline (fetch → process → reconcile → E2E)'
-        run: |
-          php artisan test --compact \
-            tests/Feature/Integrations/ImportPipelineEndToEndTest.php \
-            tests/Feature/Integrations/IntegrationHealthCommandTest.php \
-            tests/Feature/Integrations/IntegrationImportRunTest.php \
-            tests/Feature/Integrations/ImportRunReconcilerTest.php \
-            tests/Feature/Integrations/BackfillIntegrationCommandTest.php \
-            tests/Feature/Integrations/FetchIntegrationPageJobRetryTest.php \
-            tests/Feature/Integrations/FetchIntegrationPageJobExtensionTest.php \
-            tests/Feature/Integrations/ProcessPageResponseJobQuarantineTest.php \
-            tests/Feature/Integrations/RunDailyPostImportCommandTest.php \
-            tests/Feature/Integrations/PruneImportFilesCommandTest.php \
-            tests/Feature/Integrations/DiscoverIntegrationPagesJobFailureTest.php \
-            tests/Feature/Integrations/ImportDiscardMetricsTest.php \
-            tests/Feature/Integrations/IntegrationHttpClientTokenCacheTest.php \
-            tests/Feature/Integrations/CleanupCommandQueueGuardTest.php \
-            tests/Feature/Integrations/ImportLegacyDimensionsToEanReferencesCommandTest.php \
-            tests/Feature/Integrations/TenantEventTestCommandTest.php \
-            tests/Feature/Integrations/TenantNaturalKeyReconcilerTest.php
-
-      - name: 'Import — unit (mapping, id, persister, reconciler, http client)'
-        run: |
-          php artisan test --compact \
-            tests/Unit/Services/Integrations \
-            tests/Unit/Jobs/Integrations
-
-      # Cada linha é um processo próprio: estes testes trocam database.default +
-      # DB::purge, então contaminam-se se rodados na mesma invocação.
-      - name: 'Import — pós-import (cleanup, link-sales, ean-refs; isolados)'
-        run: |
-          php artisan test --compact tests/Feature/Integrations/CleanupCommandTest.php
-          php artisan test --compact tests/Feature/Integrations/CleanupCommandFreshnessGuardTest.php
-          php artisan test --compact tests/Feature/Integrations/CleanupJobsCriteriaTest.php
-          php artisan test --compact tests/Feature/Integrations/LinkSalesProductsCommandRelinkTest.php
-          php artisan test --compact tests/Feature/Integrations/SyncProductsFromEanReferencesServiceChunkTest.php
+      - name: 'Fronteira — contrato de schema app ↔ pacote'
+        run: php artisan test --compact tests/Feature/Integrations/IntegrationsPackageContractTest.php
 
   frontend-build:
     runs-on: ubuntu-latest
