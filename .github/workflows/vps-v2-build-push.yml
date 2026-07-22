@@ -68,14 +68,26 @@ jobs:
           } >> "${GITHUB_OUTPUT}"
 
       - name: Build and push
+        env:
+          COMPOSER_GITHUB_TOKEN: ${{ secrets.COMPOSER_GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
           TAG_SHA="${IMAGE}:${{ steps.context.outputs.tag_channel_sha }}"
           TAG_LATEST="${IMAGE}:${{ steps.context.outputs.tag_channel_latest }}"
 
+          # O composer.json depende de um repo VCS privado (callcocam/laravel-integrations).
+          # Sem o secret COMPOSER_GITHUB_TOKEN (PAT com leitura em `repo`) o composer install
+          # do Dockerfile falha no clone — falha aqui, com mensagem clara.
+          if [[ -z "${COMPOSER_GITHUB_TOKEN:-}" ]]; then
+            echo "Missing COMPOSER_GITHUB_TOKEN: set it as a GitHub repository secret (gh secret set COMPOSER_GITHUB_TOKEN --repo <owner/repo>)"
+            exit 1
+          fi
+          export COMPOSER_AUTH="{\"github-oauth\":{\"github.com\":\"${COMPOSER_GITHUB_TOKEN}\"}}"
+
           docker buildx build \
             --file ./Dockerfile.prod \
+            --secret id=composer_auth,env=COMPOSER_AUTH \
             --build-arg WAYFINDER_LANDLORD_DOMAIN=${{ steps.context.outputs.wayfinder_landlord_domain }} \
             --tag "${TAG_SHA}" \
             --tag "${TAG_LATEST}" \
