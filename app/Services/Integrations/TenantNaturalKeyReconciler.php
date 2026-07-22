@@ -47,12 +47,12 @@ class TenantNaturalKeyReconciler
     private const KEY_SEPARATOR = "\x1F";
 
     /**
-     * Chaves naturais protegidas por índice único além da PK. As colunas espelham
-     * o índice único do banco (sem o tenant_id, aplicado como filtro à parte).
+     * Fallback usado quando `integrations.natural_keys` não está publicado. As colunas
+     * espelham o índice único do banco (sem o tenant_id, aplicado como filtro à parte).
      *
      * @var array<string, array{columns: array<int, string>, soft_deletes: bool}>
      */
-    private const NATURAL_KEYS = [
+    private const DEFAULT_NATURAL_KEYS = [
         'products' => ['columns' => ['ean'], 'soft_deletes' => true],
         'sales' => ['columns' => ['store_id', 'codigo_erp', 'sale_date', 'promotion'], 'soft_deletes' => true],
     ];
@@ -63,7 +63,7 @@ class TenantNaturalKeyReconciler
      */
     public static function reconcile(Connection $connection, string $targetTable, array $records): array
     {
-        $naturalKey = self::NATURAL_KEYS[$targetTable] ?? null;
+        $naturalKey = self::naturalKeyFor($targetTable);
 
         if ($naturalKey === null || $records === []) {
             return $records;
@@ -85,6 +85,42 @@ class TenantNaturalKeyReconciler
         }
 
         return $remapped;
+    }
+
+    /**
+     * Chave natural configurada para a tabela, ou null quando a tabela não tem índice
+     * único além da PK (o lote passa intacto).
+     *
+     * @return array{columns: array<int, string>, soft_deletes: bool}|null
+     */
+    private static function naturalKeyFor(string $targetTable): ?array
+    {
+        /** @var array<string, array{columns?: array<int, string>, soft_deletes?: bool}> $configured */
+        $configured = config('integrations.natural_keys', self::DEFAULT_NATURAL_KEYS);
+
+        $naturalKey = $configured[$targetTable] ?? null;
+
+        if (! is_array($naturalKey)) {
+            return null;
+        }
+
+        $columns = array_values(array_filter(
+            $naturalKey['columns'] ?? [],
+            fn (mixed $column): bool => is_string($column) && $column !== '',
+        ));
+
+        if ($columns === []) {
+            Log::warning('TenantNaturalKeyReconciler: chave natural configurada sem colunas válidas', [
+                'table' => $targetTable,
+            ]);
+
+            return null;
+        }
+
+        return [
+            'columns' => $columns,
+            'soft_deletes' => (bool) ($naturalKey['soft_deletes'] ?? false),
+        ];
     }
 
     /**

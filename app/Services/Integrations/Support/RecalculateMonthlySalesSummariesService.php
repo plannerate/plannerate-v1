@@ -2,10 +2,10 @@
 
 namespace App\Services\Integrations\Support;
 
-use App\Models\Tenant;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Spatie\Multitenancy\Models\Tenant;
 
 class RecalculateMonthlySalesSummariesService
 {
@@ -46,7 +46,7 @@ class RecalculateMonthlySalesSummariesService
     {
         $database = DB::connection($connection);
         $query = $database
-            ->table('monthly_sales_summaries')
+            ->table(IntegrationTables::name('monthly_sales_summaries'))
             ->where('tenant_id', $tenantId);
 
         if ($month) {
@@ -66,7 +66,7 @@ class RecalculateMonthlySalesSummariesService
         $saleMonthExpression = $this->monthStartExpression($driver, 'sale_date');
 
         $query = $database
-            ->table('sales')
+            ->table(IntegrationTables::name('sales'))
             ->select([
                 'tenant_id',
                 'store_id',
@@ -188,7 +188,7 @@ class RecalculateMonthlySalesSummariesService
                 ];
             })->toArray();
 
-            DB::connection($connection)->table('monthly_sales_summaries')->insert($data);
+            DB::connection($connection)->table(IntegrationTables::name('monthly_sales_summaries'))->insert($data);
             $inserted += count($data);
         }
 

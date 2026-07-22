@@ -45,6 +45,8 @@ use App\Policies\UserPolicy;
 use App\Policies\WorkflowExecutionPolicy;
 use App\Policies\WorkflowTemplatePolicy;
 use App\Services\GeminiProductImageEditor;
+use App\Services\Integrations\Contracts\StoresProvider;
+use App\Services\Integrations\Support\ConfiguredStoresProvider;
 use App\Support\Navigation\Menu\Contracts\ResolvesMenuAuthorization;
 use App\Support\Navigation\Menu\MenuAuthorizationResolver;
 use App\Support\Translation\MergingFileLoader;
@@ -69,6 +71,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(ResolvesMenuAuthorization::class, MenuAuthorizationResolver::class);
         $this->app->bind(ProductImageAiEditor::class, GeminiProductImageEditor::class);
+        $this->app->bind(StoresProvider::class, ConfiguredStoresProvider::class);
         $this->registerTranslationLoader();
     }
 

@@ -4,6 +4,7 @@ namespace App\Jobs\Integrations;
 
 use App\Models\IntegrationImportRun;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Support\IntegrationTables;
 use App\Services\Integrations\TenantRecordPersister;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -257,7 +258,7 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
                     ->all();
             }
 
-            if ($table === 'product_store' && ! in_array('tenant_id', $uniqueBy, true)) {
+            if (IntegrationTables::is($table, 'product_store') && ! in_array('tenant_id', $uniqueBy, true)) {
                 $uniqueBy = ['tenant_id', ...$uniqueBy];
             }
 

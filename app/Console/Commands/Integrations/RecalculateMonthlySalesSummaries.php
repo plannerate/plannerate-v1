@@ -3,11 +3,13 @@
 namespace App\Console\Commands\Integrations;
 
 use App\Jobs\Integrations\Maintenance\RecalculateTenantMonthlySalesSummariesJob;
-use App\Models\Tenant;
+use App\Services\Integrations\Support\IntegrationModels;
+use App\Services\Integrations\Support\IntegrationTables;
 use App\Services\Integrations\Support\RecalculateMonthlySalesSummariesService;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Spatie\Multitenancy\Models\Tenant;
 
 class RecalculateMonthlySalesSummaries extends Command
 {
@@ -97,7 +99,7 @@ class RecalculateMonthlySalesSummaries extends Command
      */
     private function getTenants(?string $tenantId): Collection
     {
-        $query = Tenant::query()->where('status', 'active');
+        $query = IntegrationModels::tenant()::query()->where('status', 'active');
 
         if ($tenantId) {
             $query->whereKey($tenantId);
@@ -112,7 +114,7 @@ class RecalculateMonthlySalesSummaries extends Command
             $connection = $this->tenantConnectionName();
 
             return DB::connection($connection)
-                ->table('sales')
+                ->table(IntegrationTables::name('sales'))
                 ->whereNull('deleted_at')
                 ->exists();
         });
@@ -156,7 +158,7 @@ class RecalculateMonthlySalesSummaries extends Command
         // Calcula totais diretamente no banco para evitar esgotamento de memória
         $this->info('📊 Calculando totais de sales...');
         $salesTotals = DB::connection($connection)
-            ->table('sales')
+            ->table(IntegrationTables::name('sales'))
             ->select([
                 DB::raw('SUM(total_sale_quantity) as total_quantity'),
                 DB::raw('SUM(total_sale_value) as total_value'),
@@ -178,7 +180,7 @@ class RecalculateMonthlySalesSummaries extends Command
 
         $this->info('📊 Calculando totais de monthly_sales_summaries...');
         $summaryTotals = DB::connection($connection)
-            ->table('monthly_sales_summaries')
+            ->table(IntegrationTables::name('monthly_sales_summaries'))
             ->select([
                 DB::raw('SUM(total_sale_quantity) as total_quantity'),
                 DB::raw('SUM(total_sale_value) as total_value'),

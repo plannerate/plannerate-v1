@@ -1,5 +1,11 @@
 <?php
 
+use App\Models\EanReference;
+use App\Models\Product;
+use App\Models\Store;
+use App\Models\User;
+use App\Notifications\AppNotification;
+
 return [
     'timeout' => env('INTEGRATION_TIMEOUT', 60),
 
@@ -23,6 +29,67 @@ return [
     'import_clear_tables' => [
         'products' => ['product_store', 'products'],
         'sales' => ['sales'],
+    ],
+
+    /*
+     * Models da aplicação que o motor precisa alcançar via Eloquent. O pipeline de
+     * importação não usa nenhum deles (opera sobre Connection/arrays); são os pontos de
+     * lookup avulso, sync com a base de EANs e notificação de conclusão.
+     *
+     * O model de tenant NÃO entra aqui: vem de `multitenancy.tenant_model` (Spatie).
+     */
+    'models' => [
+        'product' => Product::class,
+        'store' => Store::class,
+        'user' => User::class,
+        'ean_reference' => EanReference::class,
+    ],
+
+    /*
+     * Critério de "loja importável", aplicado pelo ConfiguredStoresProvider: nome de um
+     * scope local do model de loja (string vazia = sem filtro) e a coluna que guarda o
+     * CNPJ/CPF enviado ao ERP. Quem precisar de outra regra rebinda o contrato
+     * App\Services\Integrations\Contracts\StoresProvider no container.
+     */
+    'store_scope' => 'published',
+
+    'store_document_column' => 'document',
+
+    /*
+     * Notificação disparada ao fim de comandos de manutenção (sync:link-sales).
+     * Precisa aceitar os argumentos nomeados `title`, `message` e `type`.
+     * `null` desliga o envio.
+     */
+    'notification' => AppNotification::class,
+
+    /*
+     * Nomes reais das tabelas do tenant que o motor lê e escreve. O motor é genérico,
+     * mas alcança tabelas do domínio da aplicação; a chave é o papel, o valor é o nome
+     * no banco. Resolvido por App\Services\Integrations\Support\IntegrationTables.
+     */
+    'tables' => [
+        'products' => 'products',
+        'sales' => 'sales',
+        'stores' => 'stores',
+        'categories' => 'categories',
+        'layers' => 'layers',
+        'product_store' => 'product_store',
+        'monthly_sales_summaries' => 'monthly_sales_summaries',
+    ],
+
+    /*
+     * Chaves naturais protegidas por índice único além da PK, usadas pelo
+     * TenantNaturalKeyReconciler para realinhar o id determinístico do lote com a linha
+     * que já é dona daquela chave. As colunas espelham o índice único do banco, sem o
+     * tenant_id (aplicado como filtro à parte).
+     *
+     * `soft_deletes` precisa refletir a realidade da tabela: com true, a linha apagada
+     * dona da chave é reusada e restaurada; com false (ou ausente), o reconciler insere
+     * uma linha nova e o índice único parcial estoura duplicate key.
+     */
+    'natural_keys' => [
+        'products' => ['columns' => ['ean'], 'soft_deletes' => true],
+        'sales' => ['columns' => ['store_id', 'codigo_erp', 'sale_date', 'promotion'], 'soft_deletes' => true],
     ],
 
     'field_map_tables' => [

@@ -2,7 +2,7 @@
 
 namespace App\Jobs\Integrations\Maintenance;
 
-use App\Models\Tenant;
+use App\Services\Integrations\Support\IntegrationModels;
 use App\Services\Integrations\Support\RecalculateMonthlySalesSummariesService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -24,7 +24,7 @@ class RecalculateTenantMonthlySalesSummariesJob implements NotTenantAware, Shoul
 
     public function handle(RecalculateMonthlySalesSummariesService $recalculateMonthlySalesSummariesService): void
     {
-        $tenant = Tenant::query()
+        $tenant = IntegrationModels::tenant()::query()
             ->whereKey($this->tenantId)
             ->where('status', 'active')
             ->first();

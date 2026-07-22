@@ -69,12 +69,12 @@ class SyncSalesProductReferencesService
         }
 
         // Fallback compatível com SQLite para ambiente de testes.
-        return $connection->table('sales')
+        return $connection->table(IntegrationTables::name('sales'))
             ->where('tenant_id', $tenantId)
             ->whereIn('codigo_erp', $erpCodes)
             ->whereExists(function ($query): void {
                 $query->selectRaw('1')
-                    ->from('products')
+                    ->from(IntegrationTables::name('products'))
                     ->whereColumn('products.tenant_id', 'sales.tenant_id')
                     ->whereColumn('products.codigo_erp', 'sales.codigo_erp')
                     ->whereNull('products.deleted_at');
@@ -122,11 +122,11 @@ class SyncSalesProductReferencesService
         }
 
         // Fallback compatível com SQLite para ambiente de testes.
-        return $connection->table('sales')
+        return $connection->table(IntegrationTables::name('sales'))
             ->where('tenant_id', $tenantId)
             ->whereExists(function ($query): void {
                 $query->selectRaw('1')
-                    ->from('products')
+                    ->from(IntegrationTables::name('products'))
                     ->whereColumn('products.tenant_id', 'sales.tenant_id')
                     ->whereColumn('products.codigo_erp', 'sales.codigo_erp')
                     ->whereNull('products.deleted_at');

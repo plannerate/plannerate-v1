@@ -3,7 +3,7 @@
 namespace App\Services\Integrations\Support;
 
 use App\Enums\DimensionStatus;
-use App\Models\EanReference;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -54,7 +54,7 @@ class SyncProductsFromEanReferencesService
         $this->loadTenantCategoryMaps($tenantConnectionName, $tenantId);
 
         $connection
-            ->table('products')
+            ->table(IntegrationTables::name('products'))
             ->where('tenant_id', $tenantId)
             ->whereNotNull('ean')
             ->where('ean', '!=', '')
@@ -69,13 +69,13 @@ class SyncProductsFromEanReferencesService
                 $updatesById = [];
 
                 foreach ($products as $product) {
-                    $ean = EanReference::normalizeEan((string) ($product->ean ?? ''));
+                    $ean = IntegrationModels::eanReference()::normalizeEan((string) ($product->ean ?? ''));
                     if ($ean === '') {
                         continue;
                     }
 
                     $reference = $referencesByEan->get($ean);
-                    if (! $reference instanceof EanReference) {
+                    if (! $reference instanceof Model) {
                         continue;
                     }
 
@@ -104,7 +104,7 @@ class SyncProductsFromEanReferencesService
                 $connection->transaction(function () use ($connection, $updatesById, &$updated, &$remaining): void {
                     foreach ($updatesById as $productId => $updates) {
                         $connection
-                            ->table('products')
+                            ->table(IntegrationTables::name('products'))
                             ->where('id', $productId)
                             ->update($updates);
 
@@ -123,14 +123,14 @@ class SyncProductsFromEanReferencesService
 
     /**
      * @param  Collection<int, object>  $products
-     * @return Collection<string, EanReference>
+     * @return Collection<string, Model>
      */
     private function loadReferencesByEan(Collection $products): Collection
     {
         $eans = $products
             ->pluck('ean')
             ->filter(fn (mixed $ean): bool => is_string($ean) && trim($ean) !== '')
-            ->map(fn (string $ean): string => EanReference::normalizeEan($ean))
+            ->map(fn (string $ean): string => IntegrationModels::eanReference()::normalizeEan($ean))
             ->filter(fn (string $ean): bool => $ean !== '')
             ->unique()
             ->values();
@@ -139,7 +139,7 @@ class SyncProductsFromEanReferencesService
             return collect();
         }
 
-        return EanReference::query()
+        return IntegrationModels::query('ean_reference')
             ->whereIn('ean', $eans->all())
             ->whereNull('deleted_at')
             ->get()
@@ -153,7 +153,7 @@ class SyncProductsFromEanReferencesService
         $this->tenantCategoryIdByName = [];
 
         $categories = DB::connection($tenantConnectionName)
-            ->table('categories')
+            ->table(IntegrationTables::name('categories'))
             ->where('tenant_id', $tenantId)
             ->whereNull('deleted_at')
             ->get(['id', 'slug', 'name']);
@@ -182,7 +182,7 @@ class SyncProductsFromEanReferencesService
     /**
      * @return array<string, mixed>
      */
-    private function updatesForProduct(object $product, EanReference $reference): array
+    private function updatesForProduct(object $product, Model $reference): array
     {
         $updates = [];
 
@@ -253,7 +253,7 @@ class SyncProductsFromEanReferencesService
         return $updates;
     }
 
-    private function resolveTenantCategoryId(EanReference $reference): ?string
+    private function resolveTenantCategoryId(Model $reference): ?string
     {
         $referenceCategoryId = is_string($reference->category_id) ? trim($reference->category_id) : '';
         if ($referenceCategoryId !== '' && isset($this->tenantCategoryIds[$referenceCategoryId])) {

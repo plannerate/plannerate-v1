@@ -10,14 +10,14 @@
 
 namespace App\Console\Commands\Integrations;
 
-use App\Models\Tenant;
-use App\Models\User;
-use App\Notifications\AppNotification;
+use App\Services\Integrations\Support\IntegrationModels;
+use App\Services\Integrations\Support\IntegrationTables;
 use App\Services\Integrations\Support\SyncSalesProductReferencesService;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Spatie\Multitenancy\Models\Tenant;
 
 class LinkSalesProductsCommand extends Command
 {
@@ -66,7 +66,7 @@ class LinkSalesProductsCommand extends Command
      */
     protected function getTenants(): Collection
     {
-        $query = Tenant::query()->where('status', 'active');
+        $query = IntegrationModels::tenant()::query()->where('status', 'active');
 
         $tenantId = $this->option('tenant');
         if (is_string($tenantId) && $tenantId !== '') {
@@ -83,15 +83,21 @@ class LinkSalesProductsCommand extends Command
      */
     protected function sendLinkSalesCompletedNotification(bool $preview, array $results, int $totalTenants): void
     {
+        $notificationClass = config('integrations.notification');
+
+        if (! is_string($notificationClass) || ! class_exists($notificationClass)) {
+            return;
+        }
+
         try {
-            $users = User::all();
+            $users = IntegrationModels::query('user')->get();
             if ($users->isEmpty()) {
                 return;
             }
 
             $linked = array_sum(array_column($results, 'linked'));
             $remaining = array_sum(array_column($results, 'remaining'));
-            $notification = new AppNotification(
+            $notification = new $notificationClass(
                 title: $preview ? 'Preview da vinculação de vendas' : 'Vinculação de vendas concluída',
                 message: sprintf(
                     '%d tenant(s) processado(s), %d venda(s) vinculada(s), %d pendente(s).',
@@ -170,7 +176,7 @@ class LinkSalesProductsCommand extends Command
         // 1. Contar vendas sem product_id (o re-vínculo também cobre vendas
         // apontando para produto errado, então isso não é gate de execução)
         $salesWithoutProduct = DB::connection($connection)
-            ->table('sales')
+            ->table(IntegrationTables::name('sales'))
             ->where('tenant_id', $tenantId)
             ->whereNull('product_id')
             ->whereNotNull('codigo_erp')
@@ -191,7 +197,7 @@ class LinkSalesProductsCommand extends Command
 
         // 3. Verificar vendas que não puderam ser vinculadas
         $remaining = DB::connection($connection)
-            ->table('sales')
+            ->table(IntegrationTables::name('sales'))
             ->where('tenant_id', $tenantId)
             ->whereNull('product_id')
             ->whereNotNull('codigo_erp')
@@ -216,7 +222,7 @@ class LinkSalesProductsCommand extends Command
         // Pegar amostra de vendas que seriam vinculadas
         $sampleSales = DB::connection($connection)
             ->table('sales as s')
-            ->join('products as p', 's.codigo_erp', '=', 'p.codigo_erp')
+            ->join(IntegrationTables::name('products').' as p', 's.codigo_erp', '=', 'p.codigo_erp')
             ->where('s.tenant_id', $tenantId)
             ->whereColumn('p.tenant_id', 's.tenant_id')
             ->whereNull('s.product_id')
@@ -233,7 +239,7 @@ class LinkSalesProductsCommand extends Command
         // Contar quantas poderiam ser vinculadas
         $linkable = DB::connection($connection)
             ->table('sales as s')
-            ->join('products as p', 's.codigo_erp', '=', 'p.codigo_erp')
+            ->join(IntegrationTables::name('products').' as p', 's.codigo_erp', '=', 'p.codigo_erp')
             ->where('s.tenant_id', $tenantId)
             ->whereColumn('p.tenant_id', 's.tenant_id')
             ->whereNull('s.product_id')
@@ -261,7 +267,7 @@ class LinkSalesProductsCommand extends Command
     private function tenantHasSales(string $connection, string $tenantId): bool
     {
         return DB::connection($connection)
-            ->table('sales')
+            ->table(IntegrationTables::name('sales'))
             ->where('tenant_id', $tenantId)
             ->whereNull('deleted_at')
             ->exists();

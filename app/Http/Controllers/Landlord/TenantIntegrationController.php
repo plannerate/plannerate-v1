@@ -7,9 +7,9 @@ use App\Http\Requests\Landlord\UpdateTenantIntegrationRequest;
 use App\Jobs\Integrations\RunIntegrationPipelineJob;
 use App\Models\IntegrationApi;
 use App\Models\IntegrationImportRun;
-use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Contracts\StoresProvider;
 use App\Services\Integrations\IntegrationHttpClient;
 use App\Services\Integrations\IntegrationPayloadBuilder;
 use App\Services\Integrations\Support\IntegrationPaginationMode;
@@ -434,16 +434,12 @@ class TenantIntegrationController extends Controller
     private function firstStoreDocument(Tenant $tenant): ?string
     {
         try {
-            $document = $tenant->execute(fn (): mixed => Store::published()
-                ->whereNotNull('document')
-                ->value('document'));
+            return $tenant->execute(
+                fn (): ?string => app(StoresProvider::class)->firstDocument(),
+            );
         } catch (Throwable) {
             return null;
         }
-
-        $digits = preg_replace('/\D/', '', (string) $document) ?? '';
-
-        return $digits !== '' ? $digits : null;
     }
 
     /**
