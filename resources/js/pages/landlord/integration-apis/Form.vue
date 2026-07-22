@@ -40,6 +40,7 @@ const supportedTransforms = new Set([
     'max_date',
     'not_null',
     'round2',
+    'date_dmy',
 ]);
 
 const props = defineProps<{
@@ -57,12 +58,16 @@ const integrationApisIndexPath = IntegrationApiController.index.url().replace(/^
 const initialRequests = parseObject(props.integrationApi?.requests_json ?? props.defaults.requests_json);
 const initialResponse = parseObject(props.integrationApi?.response_json ?? props.defaults.response_json);
 const requestMethod = ref(valueToInput(initialRequests.method || 'POST'));
+const paginationMode = ref(valueToInput(initialRequests.pagination_mode || 'page'));
 const pageField = ref(valueToInput(initialRequests.page_field || 'pagina'));
 const pageValueType = ref(valueToInput(initialRequests.page_value_type || 'string'));
 const pageSizeField = ref(valueToInput(initialRequests.page_size_field || 'tamanho_pagina'));
 const storeDocumentField = ref(valueToInput(initialRequests.store_document_field || 'empresa'));
 const requestPaths = ref<RequestPathRow[]>(objectToRequestPaths(initialRequests));
 const responseItemsPath = ref(valueToInput(initialResponse.items_path || 'data'));
+const errorStatusPath = ref(valueToInput(initialResponse.error_status_path));
+const errorStatusValues = ref(arrayOfStrings(initialResponse.error_status_values).join(', '));
+const errorMessagePath = ref(valueToInput(initialResponse.error_message_path));
 const initialPagination = parseObjectValue(initialResponse.pagination);
 const currentPagePath = ref(valueToInput(initialPagination.current_page_path || 'pagination.current_page'));
 const perPagePath = ref(valueToInput(initialPagination.per_page_path || 'pagination.per_page'));
@@ -130,6 +135,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
         'max_page_size',
         'store_document_field',
         'fixed_query',
+        'pagination_mode',
     ]);
 
     const configuredPaths = parseObjectValue(source.paths);
@@ -159,6 +165,11 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 changed_since: valueToInput(parseObjectValue(pathConfig.date_fields).changed_since),
                 start: valueToInput(parseObjectValue(pathConfig.date_fields).start),
                 end: valueToInput(parseObjectValue(pathConfig.date_fields).end),
+                items_path: valueToInput(pathConfig.items_path),
+                cursor_item_path: valueToInput(pathConfig.cursor_item_path),
+                cursor_initial: valueToInput(pathConfig.cursor_initial),
+                date_query_format: valueToInput(pathConfig.date_query_format),
+                pivot_only_targets: arrayOfStrings(pathConfig.pivot_only_targets).join(', '),
                 field_map: objectToFieldMapRows(pathConfig.field_map),
                 pivot_tables: objectToPivotRows(pathConfig.pivot_tables),
                 validations: objectToValidationRows(pathConfig.validations),
@@ -184,6 +195,11 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 changed_since: 'data_ultima_alteracao',
                 start: '',
                 end: '',
+                items_path: '',
+                cursor_item_path: '',
+                cursor_initial: '',
+                date_query_format: '',
+                pivot_only_targets: '',
                 field_map: [],
                 pivot_tables: [],
                 validations: [],
@@ -204,6 +220,11 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 changed_since: '',
                 start: 'data_inicial',
                 end: 'data_final',
+                items_path: '',
+                cursor_item_path: '',
+                cursor_initial: '',
+                date_query_format: '',
+                pivot_only_targets: '',
                 field_map: [],
                 pivot_tables: [],
                 validations: [],
@@ -225,6 +246,7 @@ function objectToPivotRows(value: unknown): PivotTableRow[] {
             foreign_key: valueToInput(row.foreign_key),
             related_key: valueToInput(row.related_key),
             unique_by: arrayOfStrings(row.unique_by).join(', '),
+            update_columns: arrayOfStrings(row.update_columns).join(', '),
         }));
 }
 
@@ -274,6 +296,13 @@ function normalizeTransforms(value: unknown): string[] {
         .filter((item) => item !== '' && supportedTransforms.has(item));
 }
 
+function commaList(value: string): string[] {
+    return value
+        .split(',')
+        .map((item) => item.trim())
+        .filter((item) => item !== '');
+}
+
 function numberValue(value: string): number {
     const parsed = Number(value);
 
@@ -289,6 +318,7 @@ function buildRequestsPayload(): Record<string, unknown> {
         page_size_field: pageSizeField.value,
         page_size_payload: 'body',
         store_document_field: storeDocumentField.value,
+        pagination_mode: paginationMode.value,
     };
     const paths: Record<string, unknown> = {};
 
@@ -316,6 +346,13 @@ function buildRequestsPayload(): Record<string, unknown> {
             ...(requestPath.max_page.trim() !== '' ? { max_page: numberValue(requestPath.max_page) } : {}),
             ...(requestPath.min_page_size.trim() !== '' ? { min_page_size: numberValue(requestPath.min_page_size) } : {}),
             ...(requestPath.max_page_size.trim() !== '' ? { max_page_size: numberValue(requestPath.max_page_size) } : {}),
+            ...(requestPath.items_path.trim() !== '' ? { items_path: requestPath.items_path.trim() } : {}),
+            ...(requestPath.cursor_item_path.trim() !== '' ? { cursor_item_path: requestPath.cursor_item_path.trim() } : {}),
+            ...(requestPath.cursor_initial.trim() !== '' ? { cursor_initial: requestPath.cursor_initial.trim() } : {}),
+            ...(requestPath.date_query_format.trim() !== '' ? { date_query_format: requestPath.date_query_format.trim() } : {}),
+            ...(commaList(requestPath.pivot_only_targets).length > 0
+                ? { pivot_only_targets: commaList(requestPath.pivot_only_targets) }
+                : {}),
         };
 
         const dateFields = {
@@ -348,10 +385,8 @@ function buildRequestsPayload(): Record<string, unknown> {
         const pivotTables = requestPath.pivot_tables
             .filter((pivot) => pivot.table.trim() !== '' && pivot.foreign_key.trim() !== '' && pivot.related_key.trim() !== '')
             .map((pivot) => {
-                const uniqueBy = pivot.unique_by
-                    .split(',')
-                    .map((s) => s.trim())
-                    .filter((s) => s !== '');
+                const uniqueBy = commaList(pivot.unique_by);
+                const updateColumns = commaList(pivot.update_columns);
 
                 return {
                     table: pivot.table.trim(),
@@ -359,6 +394,7 @@ function buildRequestsPayload(): Record<string, unknown> {
                     foreign_key: pivot.foreign_key.trim(),
                     related_key: pivot.related_key.trim(),
                     ...(uniqueBy.length > 0 ? { unique_by: uniqueBy } : {}),
+                    ...(updateColumns.length > 0 ? { update_columns: updateColumns } : {}),
                 };
             });
 
@@ -393,6 +429,11 @@ function buildRequestsPayload(): Record<string, unknown> {
 }
 
 function buildResponsePayload(): Record<string, unknown> {
+    const errorValues = errorStatusValues.value
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s !== '');
+
     return {
         items_path: responseItemsPath.value,
         pagination: {
@@ -401,6 +442,9 @@ function buildResponsePayload(): Record<string, unknown> {
             total_path: totalPath.value,
             last_page_path: lastPagePath.value,
         },
+        ...(errorStatusPath.value.trim() !== '' ? { error_status_path: errorStatusPath.value.trim() } : {}),
+        ...(errorValues.length > 0 ? { error_status_values: errorValues } : {}),
+        ...(errorMessagePath.value.trim() !== '' ? { error_message_path: errorMessagePath.value.trim() } : {}),
     };
 }
 
@@ -456,7 +500,16 @@ function newPathId(): string {
                                     <option value="DELETE">DELETE</option>
                                 </select>
                             </div>
-                            <div class="grid gap-2 md:col-span-5">
+                            <div class="grid gap-2 md:col-span-3">
+                                <Label for="pagination_mode">{{ t('app.landlord.integration_apis.fields.pagination_mode') }}</Label>
+                                <select id="pagination_mode" v-model="paginationMode"
+                                    class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
+                                    <option value="page">{{ t('app.landlord.integration_apis.pagination_modes.page') }}</option>
+                                    <option value="cursor">{{ t('app.landlord.integration_apis.pagination_modes.cursor') }}</option>
+                                </select>
+                                <p class="text-xs text-muted-foreground">{{ t('app.landlord.integration_apis.hints.pagination_mode') }}</p>
+                            </div>
+                            <div class="grid gap-2 md:col-span-2">
                                 <Label for="page_field">{{ t('app.landlord.integration_apis.fields.page_field') }}</Label>
                                 <Input id="page_field" v-model="pageField" />
                             </div>
@@ -490,6 +543,19 @@ function newPathId(): string {
                             <div class="grid gap-2 md:col-span-4">
                                 <Label for="items_path">{{ t('app.landlord.integration_apis.fields.items_path') }}</Label>
                                 <Input id="items_path" v-model="responseItemsPath" />
+                            </div>
+                            <div class="grid gap-2 md:col-span-4">
+                                <Label for="error_status_path">{{ t('app.landlord.integration_apis.fields.error_status_path') }}</Label>
+                                <Input id="error_status_path" v-model="errorStatusPath" />
+                                <p class="text-xs text-muted-foreground">{{ t('app.landlord.integration_apis.hints.error_status_path') }}</p>
+                            </div>
+                            <div class="grid gap-2 md:col-span-2">
+                                <Label for="error_status_values">{{ t('app.landlord.integration_apis.fields.error_status_values') }}</Label>
+                                <Input id="error_status_values" v-model="errorStatusValues" placeholder="error" />
+                            </div>
+                            <div class="grid gap-2 md:col-span-2">
+                                <Label for="error_message_path">{{ t('app.landlord.integration_apis.fields.error_message_path') }}</Label>
+                                <Input id="error_message_path" v-model="errorMessagePath" />
                             </div>
                         </div>
                         <InputError :message="errors.response_json" />

@@ -22,6 +22,7 @@ class TenantRecordPersister
     /**
      * @param  array<int, array<string, mixed>>  $records
      * @param  array<int, array<string, mixed>>  $pivotConfigs
+     * @param  array<int, string>  $pivotOnlyTargets  Alvos mapeados que só alimentam as pivots
      * @return int Registros upsertados (0 quando nada a persistir)
      */
     public static function persist(
@@ -29,6 +30,7 @@ class TenantRecordPersister
         string $targetTable,
         array $records,
         array $pivotConfigs = [],
+        array $pivotOnlyTargets = [],
     ): int {
         if (self::shouldSkipPersist($targetTable, $records)) {
             return 0;
@@ -38,7 +40,7 @@ class TenantRecordPersister
 
         self::logPersistStart($integrationId, $targetTable, $records, $pivotConfigs);
 
-        $upserted = self::persistWithinTenant($integration, $targetTable, $records, $pivotConfigs);
+        $upserted = self::persistWithinTenant($integration, $targetTable, $records, $pivotConfigs, $pivotOnlyTargets);
 
         self::logPersistFinished($integrationId, $targetTable, $upserted);
 
@@ -83,16 +85,18 @@ class TenantRecordPersister
      *
      * @param  array<int, array<string, mixed>>  $records
      * @param  array<int, array<string, mixed>>  $pivotConfigs
+     * @param  array<int, string>  $pivotOnlyTargets
      */
     private static function persistWithinTenant(
         TenantIntegration $integration,
         string $targetTable,
         array $records,
         array $pivotConfigs,
+        array $pivotOnlyTargets = [],
     ): int {
         $upserted = 0;
 
-        $integration->tenant->execute(function () use ($targetTable, $records, $pivotConfigs, &$upserted): void {
+        $integration->tenant->execute(function () use ($targetTable, $records, $pivotConfigs, $pivotOnlyTargets, &$upserted): void {
             if (! self::tenantTableExists($targetTable)) {
                 Log::warning('TenantRecordPersister: tabela não encontrada', ['table' => $targetTable]);
 
@@ -100,7 +104,7 @@ class TenantRecordPersister
             }
 
             $upserted = DB::connection(self::TENANT_CONNECTION)->transaction(
-                function () use ($targetTable, $records, $pivotConfigs): int {
+                function () use ($targetTable, $records, $pivotConfigs, $pivotOnlyTargets): int {
                     $reconciledRecords = TenantNaturalKeyReconciler::reconcile(
                         self::tenantConnection(),
                         $targetTable,
@@ -108,7 +112,12 @@ class TenantRecordPersister
                     );
 
                     $tableColumns = self::tenantTableColumns($targetTable);
-                    $preparedRecords = TenantUpsertRecordPreparer::prepare($reconciledRecords, $tableColumns, $targetTable);
+
+                    // A pivot recebe os registros reconciliados (sem filtro): é de
+                    // lá que ela lê as métricas por loja.
+                    $preparedRecords = TenantUpsertRecordPreparer::prepare(
+                        $reconciledRecords, $tableColumns, $targetTable, $pivotOnlyTargets,
+                    );
 
                     $upserted = self::upsertTargetRecords($targetTable, $preparedRecords);
 

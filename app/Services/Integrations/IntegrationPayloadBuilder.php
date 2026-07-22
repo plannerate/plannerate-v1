@@ -2,12 +2,17 @@
 
 namespace App\Services\Integrations;
 
+use App\Services\Integrations\Support\IntegrationPaginationMode;
+use App\Services\Integrations\Support\IntegrationUrlBuilder;
+use Illuminate\Support\Carbon;
+
 /**
  * Monta o array de parâmetros para uma chamada de integração.
  *
  * Combina três fontes:
  *   1. Params/body base do config da integração
- *   2. Campos de paginação (page=1, page_size=max)
+ *   2. Campos de paginação (page=1, page_size=max) — pulados no modo cursor,
+ *      onde a posição vai no path via {cursor}
  *   3. Campos de data do path (start/end ou changed_since)
  */
 class IntegrationPayloadBuilder
@@ -32,7 +37,13 @@ class IntegrationPayloadBuilder
         $method = strtolower((string) data_get($this->requests, 'method', 'get'));
 
         $payload = $this->baseParams($method);
-        $payload = $this->applyPagination($payload, $useMinPageSize, $page);
+
+        // No modo cursor a posição vai no path ({cursor}); mandar page/per_page
+        // junto só polui a query com parâmetros que a API não conhece.
+        if (! IntegrationPaginationMode::isCursor($this->requests, $this->pathConfig)) {
+            $payload = $this->applyPagination($payload, $useMinPageSize, $page);
+        }
+
         $payload = $this->applyDateFields($payload, $dateStart, $dateEnd);
         $payload = $this->applyStoreDocument($payload, $storeDocument);
 
@@ -101,17 +112,37 @@ class IntegrationPayloadBuilder
 
         if ($dateStart !== null) {
             if (isset($dateFields['start'])) {
-                $payload[$dateFields['start']] = $dateStart;
+                $payload[$dateFields['start']] = $this->formatDateForQuery($dateStart);
             } elseif (isset($dateFields['changed_since'])) {
-                $payload[$dateFields['changed_since']] = $dateStart;
+                $payload[$dateFields['changed_since']] = $this->formatDateForQuery($dateStart);
             }
         }
 
         if ($dateEnd !== null && isset($dateFields['end'])) {
-            $payload[$dateFields['end']] = $dateEnd;
+            $payload[$dateFields['end']] = $this->formatDateForQuery($dateEnd);
         }
 
         return $payload;
+    }
+
+    /**
+     * O motor trabalha internamente em `Y-m-d`. APIs que exigem outro formato
+     * declaram `date_query_format` no path config (ex.: RP Info só aceita
+     * `d-m-Y` — com ISO ela responde HTTP 200 e `status: error`).
+     */
+    private function formatDateForQuery(string $date): string
+    {
+        $format = (string) data_get($this->pathConfig, 'date_query_format', '');
+
+        if ($format === '') {
+            return $date;
+        }
+
+        try {
+            return Carbon::parse($date)->format($format);
+        } catch (\Throwable) {
+            return $date;
+        }
     }
 
     // ─── Loja ────────────────────────────────────────────────────────────────
@@ -121,6 +152,8 @@ class IntegrationPayloadBuilder
      * definido em requests.store_document_field.
      *
      * Só aplica quando a API exige filtro por loja e um documento foi fornecido.
+     * Quando o path já consome o documento via {store_document}, não repete o
+     * valor na query — a API rejeitaria (ou ignoraria) o parâmetro duplicado.
      *
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
@@ -129,9 +162,15 @@ class IntegrationPayloadBuilder
     {
         $field = (string) data_get($this->requests, 'store_document_field', '');
 
-        if ($field !== '' && $storeDocument !== null) {
-            $payload[$field] = $storeDocument;
+        if ($field === '' || $storeDocument === null) {
+            return $payload;
         }
+
+        if (IntegrationUrlBuilder::consumesStoreDocumentInPath($this->pathConfig)) {
+            return $payload;
+        }
+
+        $payload[$field] = $storeDocument;
 
         return $payload;
     }

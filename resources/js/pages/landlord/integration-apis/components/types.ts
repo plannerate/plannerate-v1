@@ -19,6 +19,8 @@ export type PivotTableRow = {
     foreign_key: string;
     related_key: string;
     unique_by: string;
+    /** Colunas atualizadas quando a linha da pivot já existe (além de updated_at). */
+    update_columns: string;
 };
 
 export type RequestPathRow = {
@@ -37,6 +39,16 @@ export type RequestPathRow = {
     changed_since: string;
     start: string;
     end: string;
+    /** Caminho dos itens neste endpoint; vazio usa o items_path global da resposta. */
+    items_path: string;
+    /** Modo cursor: campo do item que guarda o id usado no placeholder {cursor}. */
+    cursor_item_path: string;
+    /** Modo cursor: valor inicial do cursor (a RP Info usa "0"). */
+    cursor_initial: string;
+    /** Formato de data exigido na query (ex.: d-m-Y); vazio mantém ISO. */
+    date_query_format: string;
+    /** Alvos mapeados que alimentam só as pivots (métrica por loja). */
+    pivot_only_targets: string;
     field_map: FieldMapRow[];
     pivot_tables: PivotTableRow[];
     validations: ValidationRow[];

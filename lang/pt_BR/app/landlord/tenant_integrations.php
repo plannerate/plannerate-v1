@@ -45,6 +45,7 @@ return [
         'sales_path' => 'Path de vendas',
         'auth_type' => 'Tipo de autenticação',
         'auth_bearer_mode' => 'Modo do token',
+        'auth_token_header' => 'Header do token',
         'auth_token' => 'Token',
         'auth_token_method' => 'Método do token',
         'auth_token_path' => 'Path do token',
@@ -88,12 +89,14 @@ return [
     ],
     'hints' => [
         'auth_password' => 'Ao editar, preencha apenas se quiser trocar a senha atual.',
+        'auth_token_header' => 'Deixe em branco para enviar como Authorization: Bearer.',
         'separate_by_store' => 'Quando marcado, produtos e vendas serão buscados por loja. Quando desmarcado, a mesma busca será aplicada para todas as lojas no vínculo product_store.',
     ],
     'placeholders' => [
         'integration_type' => 'Selecione uma API cadastrada',
         'keep_password' => 'Deixe em branco para manter a senha atual',
         'keep_token' => 'Deixe em branco para manter o token atual',
+        'auth_token_header' => 'token',
         'test_body' => '{"filtro":"valor"}',
     ],
 ];

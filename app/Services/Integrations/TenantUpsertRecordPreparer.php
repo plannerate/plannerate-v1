@@ -15,12 +15,19 @@ class TenantUpsertRecordPreparer
     /**
      * @param  array<int, array<string, mixed>>  $records
      * @param  array<int, string>  $tableColumns
+     * @param  array<int, string>  $pivotOnlyTargets  Alvos mapeados que só alimentam as pivots
      * @return array<int, array<string, mixed>>
      */
-    public static function prepare(array $records, array $tableColumns, string $targetTable): array
+    public static function prepare(array $records, array $tableColumns, string $targetTable, array $pivotOnlyTargets = []): array
     {
+        // Métrica por loja (estoque, última compra) existe como coluna na tabela
+        // principal por herança, mas o valor vem da unidade consultada. Mantê-la
+        // no upsert faria a última cadeia de importação a terminar sobrescrever
+        // as demais. Fica só na pivot, que tem uma linha por loja.
+        $allowedColumns = array_values(array_diff($tableColumns, $pivotOnlyTargets));
+
         $filteredRecords = array_values(array_map(
-            fn (array $record): array => array_intersect_key($record, array_flip($tableColumns)),
+            fn (array $record): array => array_intersect_key($record, array_flip($allowedColumns)),
             $records,
         ));
 

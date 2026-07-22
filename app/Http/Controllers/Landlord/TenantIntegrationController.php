@@ -5,9 +5,13 @@ namespace App\Http\Controllers\Landlord;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\UpdateTenantIntegrationRequest;
 use App\Models\IntegrationApi;
+use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\IntegrationHttpClient;
+use App\Services\Integrations\IntegrationPayloadBuilder;
+use App\Services\Integrations\Support\IntegrationPaginationMode;
+use App\Services\Integrations\Support\IntegrationUrlBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -49,6 +53,7 @@ class TenantIntegrationController extends Controller
             // Auth
             'auth_type' => $authType,
             'auth_bearer_mode' => (string) ($auth['token_mode'] ?? 'manual'),
+            'auth_token_header' => (string) ($auth['token_header'] ?? ''),
             'auth_username' => (string) ($credentials['username'] ?? ''),
             'auth_password' => '',
             'auth_token' => '',
@@ -181,18 +186,15 @@ class TenantIntegrationController extends Controller
         }
 
         $config = is_array($integration->config) ? $integration->config : [];
-        $baseUrl = rtrim((string) data_get($config, 'connection.base_url', ''), '/');
-        $testPath = '/'.ltrim((string) $request->input('test_path', '/'), '/');
-        $url = $baseUrl.$testPath;
+        $requests = is_array($integration->api?->requests) ? $integration->api->requests : [];
+        $pathConfig = (array) (data_get($requests, 'paths.'.(string) $request->input('test_path_key', '')) ?? []);
         $method = strtolower((string) $request->input('test_method', 'post'));
 
-        $savedBody = [];
-        foreach (data_get($config, 'connection.body', []) as $param) {
-            if ($param['enabled'] ?? false) {
-                $savedBody[(string) $param['key']] = $param['value'];
-            }
-        }
-        $body = array_merge($savedBody, $this->testBody($request));
+        [$url, $payload] = $pathConfig === []
+            ? $this->legacyTestRequest($request, $config)
+            : $this->pathTestRequest($request, $tenant, $config, $requests, $pathConfig);
+
+        $body = array_merge($payload, $this->testBody($request));
 
         try {
             $client = new IntegrationHttpClient($config);
@@ -256,6 +258,91 @@ class TenantIntegrationController extends Controller
             'message' => '',
             'meta' => [],
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    /**
+     * Monta a chamada de teste do jeito que o import faria: resolve os
+     * placeholders do `fallback_path` ({cursor}, {store_document}) e usa o
+     * mesmo IntegrationPayloadBuilder do FetchIntegrationPageJob.
+     *
+     * Sem isso o teste enviava o path cru — a URL saía com "{cursor}" literal
+     * e a resposta não dizia nada sobre a integração de verdade.
+     *
+     * @param  array<string, mixed>  $config
+     * @param  array<string, mixed>  $requests
+     * @param  array<string, mixed>  $pathConfig
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private function pathTestRequest(Request $request, Tenant $tenant, array $config, array $requests, array $pathConfig): array
+    {
+        $storeDocument = $this->firstStoreDocument($tenant);
+
+        $cursor = IntegrationPaginationMode::isCursor($requests, $pathConfig)
+            ? IntegrationPaginationMode::initialCursor($pathConfig)
+            : null;
+
+        // A janela de datas é obrigatória em alguns endpoints (vendas): sem ela
+        // a API erra. Hoje/hoje é o teste mais barato e representativo.
+        $dateFields = (array) data_get($pathConfig, 'date_fields', []);
+        $today = now()->toDateString();
+        $dateStart = $dateFields === [] ? null : $today;
+        $dateEnd = isset($dateFields['end']) ? $today : null;
+
+        $payload = (new IntegrationPayloadBuilder($config, $requests, $pathConfig))
+            ->build($dateStart, $dateEnd, $storeDocument, useMinPageSize: true);
+
+        return [
+            IntegrationUrlBuilder::build($config, $pathConfig, $cursor, $storeDocument),
+            $payload,
+        ];
+    }
+
+    /**
+     * Blueprint sem path selecionado (ou legado): concatena o caminho informado
+     * e manda o body fixo da conexão, como antes.
+     *
+     * @param  array<string, mixed>  $config
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private function legacyTestRequest(Request $request, array $config): array
+    {
+        $baseUrl = rtrim((string) data_get($config, 'connection.base_url', ''), '/');
+        $testPath = '/'.ltrim((string) $request->input('test_path', '/'), '/');
+
+        $payload = [];
+
+        foreach (data_get($config, 'connection.body', []) as $param) {
+            if ($param['enabled'] ?? false) {
+                $payload[(string) $param['key']] = $param['value'];
+            }
+        }
+
+        return [$baseUrl.$testPath, $payload];
+    }
+
+    /**
+     * Documento (só dígitos) da primeira loja publicada — mesma fonte do import.
+     *
+     * Defensivo de propósito: este é um painel de diagnóstico. Tenant sem banco
+     * provisionado ou sem loja não pode estourar 500 e esconder o resultado do
+     * teste de conexão, que é justamente o que se quer ver.
+     */
+    private function firstStoreDocument(Tenant $tenant): ?string
+    {
+        try {
+            $document = $tenant->execute(fn (): mixed => Store::published()
+                ->whereNotNull('document')
+                ->value('document'));
+        } catch (Throwable) {
+            return null;
+        }
+
+        $digits = preg_replace('/\D/', '', (string) $document) ?? '';
+
+        return $digits !== '' ? $digits : null;
     }
 
     /**

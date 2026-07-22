@@ -80,7 +80,12 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
 
         $pivotConfigs = $this->normalizePivotConfigs((array) data_get($pathConfig, 'pivot_tables', []));
 
-        $persisted = TenantRecordPersister::persist($integration, $targetTable, $records, $pivotConfigs);
+        $pivotOnlyTargets = array_values(array_filter(
+            (array) data_get($pathConfig, 'pivot_only_targets', []),
+            static fn (mixed $target): bool => is_string($target) && $target !== '',
+        ));
+
+        $persisted = TenantRecordPersister::persist($integration, $targetTable, $records, $pivotConfigs, $pivotOnlyTargets);
 
         // Progresso do run — nunca deixa o tracking quebrar a persistência.
         // ?? null: jobs enfileirados antes do deploy que adicionou $runId

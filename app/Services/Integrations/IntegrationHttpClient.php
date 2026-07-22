@@ -64,6 +64,10 @@ class IntegrationHttpClient
      * Aplica autenticação conforme o tipo configurado:
      * - basic  → HTTP Basic Auth
      * - bearer → token estático ou obtido via request separado (token_mode: fetch)
+     *
+     * Com `auth.token_header` preenchido, o token vai nesse header em vez de
+     * `Authorization: Bearer` — algumas APIs (RP Info, p.ex.) exigem um header
+     * próprio (`token: <jwt>`) e ignoram o Authorization.
      */
     private function applyAuth(PendingRequest $http): PendingRequest
     {
@@ -74,9 +78,19 @@ class IntegrationHttpClient
                 (string) data_get($this->config, 'auth.credentials.username', ''),
                 (string) data_get($this->config, 'auth.credentials.password', ''),
             ),
-            'bearer' => $http->withToken($this->resolveBearerToken()),
+            'bearer' => $this->applyBearerToken($http),
             default => $http,
         };
+    }
+
+    private function applyBearerToken(PendingRequest $http): PendingRequest
+    {
+        $token = $this->resolveBearerToken();
+        $tokenHeader = trim((string) data_get($this->config, 'auth.token_header', ''));
+
+        return $tokenHeader !== ''
+            ? $http->withHeaders([$tokenHeader => $token])
+            : $http->withToken($token);
     }
 
     /**

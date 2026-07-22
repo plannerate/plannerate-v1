@@ -14,8 +14,8 @@ use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-#[Provider(Lab::Groq)]
-#[Model('llama-3.3-70b-versatile')]
+#[Provider(Lab::Gemini)]
+#[Model('gemini-flash-latest')]
 #[MaxSteps(15)]
 class ProductDimensionResearcher implements Agent, HasTools
 {

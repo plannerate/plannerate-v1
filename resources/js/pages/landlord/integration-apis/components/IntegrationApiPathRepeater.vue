@@ -45,6 +45,11 @@ function newPath(): RequestPathRow {
         changed_since: '',
         start: '',
         end: '',
+        items_path: '',
+        cursor_item_path: '',
+        cursor_initial: '',
+        date_query_format: '',
+        pivot_only_targets: '',
         field_map: [],
         pivot_tables: [],
         validations: [],
@@ -219,6 +224,58 @@ onMounted(() => {
                         <Input :id="`path-end-${requestPath.id}`" :model-value="requestPath.end"
                             :placeholder="t('app.landlord.integration_apis.placeholders.date_end')"
                             @update:model-value="updatePath(pathIndex, { end: String($event) })" />
+                    </div>
+                </div>
+
+                <!-- Linha 2b: envelope da resposta, cursor e formato de data da query -->
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
+                    <div class="grid gap-2 md:col-span-3">
+                        <Label :for="`path-items-path-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.path_items_path') }}</Label>
+                        <Input :id="`path-items-path-${requestPath.id}`" :model-value="requestPath.items_path"
+                            :placeholder="t('app.landlord.integration_apis.placeholders.path_items_path')"
+                            @update:model-value="updatePath(pathIndex, { items_path: String($event) })" />
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('app.landlord.integration_apis.hints.path_items_path') }}
+                        </p>
+                    </div>
+                    <div class="grid gap-2 md:col-span-3">
+                        <Label :for="`path-cursor-item-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.cursor_item_path') }}</Label>
+                        <Input :id="`path-cursor-item-${requestPath.id}`" :model-value="requestPath.cursor_item_path"
+                            :placeholder="t('app.landlord.integration_apis.placeholders.cursor_item_path')"
+                            @update:model-value="updatePath(pathIndex, { cursor_item_path: String($event) })" />
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('app.landlord.integration_apis.hints.cursor_item_path') }}
+                        </p>
+                    </div>
+                    <div class="grid gap-2 md:col-span-2">
+                        <Label :for="`path-cursor-initial-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.cursor_initial') }}</Label>
+                        <Input :id="`path-cursor-initial-${requestPath.id}`" :model-value="requestPath.cursor_initial"
+                            placeholder="0"
+                            @update:model-value="updatePath(pathIndex, { cursor_initial: String($event) })" />
+                    </div>
+                    <div class="grid gap-2 md:col-span-2">
+                        <Label :for="`path-date-format-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.date_query_format') }}</Label>
+                        <Input :id="`path-date-format-${requestPath.id}`" :model-value="requestPath.date_query_format"
+                            :placeholder="t('app.landlord.integration_apis.placeholders.date_query_format')"
+                            @update:model-value="updatePath(pathIndex, { date_query_format: String($event) })" />
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('app.landlord.integration_apis.hints.date_query_format') }}
+                        </p>
+                    </div>
+                    <div class="grid gap-2 md:col-span-2">
+                        <Label :for="`path-pivot-only-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.pivot_only_targets') }}</Label>
+                        <Input :id="`path-pivot-only-${requestPath.id}`"
+                            :model-value="requestPath.pivot_only_targets"
+                            :placeholder="t('app.landlord.integration_apis.placeholders.pivot_only_targets')"
+                            @update:model-value="updatePath(pathIndex, { pivot_only_targets: String($event) })" />
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('app.landlord.integration_apis.hints.pivot_only_targets') }}
+                        </p>
                     </div>
                 </div>
 

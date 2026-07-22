@@ -15,6 +15,8 @@ export type IntegrationPayload = {
     api_url: string;
     auth_type: string;
     auth_bearer_mode: string;
+    /** Header onde o token é enviado; vazio usa Authorization: Bearer. */
+    auth_token_header: string;
     auth_token: string;
     auth_username: string;
     auth_password: string;

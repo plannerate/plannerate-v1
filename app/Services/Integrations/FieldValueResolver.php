@@ -201,6 +201,7 @@ class FieldValueResolver
             'integer' => $value !== null ? (int) $value : null,
             'alnum' => $value !== null ? preg_replace('/[^a-zA-Z0-9]/', '', (string) $value) : null,
             'date' => $this->toDate($value),
+            'date_dmy' => $this->toDateFromDayFirst($value),
             'first' => is_array($value) ? ($value[0] ?? null) : $value,
             'filter_filled' => is_array($value) ? array_values(array_filter($value, fn (mixed $v): bool => $v !== null && $v !== '')) : $value,
             'max_date' => $this->maxDate($value),
@@ -222,6 +223,36 @@ class FieldValueResolver
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    /**
+     * Data no formato brasileiro com barra: "15/07/2026", opcionalmente com
+     * hora ("15/07/2026 06:01:19.000").
+     *
+     * O transform `date` não serve: `Carbon::parse('15/07/2026')` interpreta
+     * barra como `m/d/Y`, vê mês 15 e lança InvalidFormatException — o valor
+     * viraria null e, com `not_null` no mapeamento, descartaria o registro
+     * inteiro em silêncio.
+     */
+    private function toDateFromDayFirst(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $datePart = trim(explode(' ', trim((string) $value))[0]);
+
+        try {
+            $date = Carbon::createFromFormat('d/m/Y', $datePart);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        // createFromFormat aceita overflow (32/13/2026 vira 2027-02-01): só
+        // confiamos no resultado que reproduz a entrada exatamente.
+        return $date !== false && $date->format('d/m/Y') === $datePart
+            ? $date->toDateString()
+            : null;
     }
 
     private function maxDate(mixed $values): ?string

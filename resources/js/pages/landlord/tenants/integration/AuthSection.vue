@@ -12,6 +12,7 @@ const props = defineProps<{
         IntegrationPayload,
         | 'auth_type'
         | 'auth_bearer_mode'
+        | 'auth_token_header'
         | 'auth_token'
         | 'auth_username'
         | 'auth_password'
@@ -119,6 +120,29 @@ const authTokenBody = ref<KeyValueRow[]>(
                         </option>
                     </select>
                 </div>
+
+                <FormTextField
+                    id="auth_token_header"
+                    name="auth_token_header"
+                    class="md:col-span-4"
+                    :label="
+                        t(
+                            'app.landlord.tenant_integrations.fields.auth_token_header',
+                        )
+                    "
+                    :placeholder="
+                        t(
+                            'app.landlord.tenant_integrations.placeholders.auth_token_header',
+                        )
+                    "
+                    :hint="
+                        t(
+                            'app.landlord.tenant_integrations.hints.auth_token_header',
+                        )
+                    "
+                    :default-value="formData.auth_token_header"
+                    :error="errors.auth_token_header"
+                />
             </div>
 
             <div

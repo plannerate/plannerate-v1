@@ -5,6 +5,7 @@ namespace App\Jobs\Integrations;
 use App\Models\IntegrationApi;
 use App\Models\Store;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Discovery\CursorModeDiscoverer;
 use App\Services\Integrations\Discovery\DailyModeDiscoverer;
 use App\Services\Integrations\Discovery\PageModeDiscoverer;
 use Illuminate\Bus\Queueable;
@@ -62,14 +63,26 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         $requests = $api->requests ?? [];
 
         $dailyDiscoverer = new DailyModeDiscoverer($this->integrationId, $this->pathKey);
+        $cursorDiscoverer = new CursorModeDiscoverer($this->integrationId, $this->pathKey);
         $pageDiscoverer = new PageModeDiscoverer($this->integrationId, $this->pathKey);
 
         $stores = $this->loadStores($integration, $requests);
         $failedStores = [];
 
         foreach ($stores as $store) {
+            // O modo diário tem precedência sobre o cursor: quando o path tem
+            // janela de datas, uma cadeia por dia dá paralelismo entre dias e
+            // cobertura por dia — a cadeia de cursor roda dentro de cada dia.
             if ($dailyDiscoverer->isApplicable($pathConfig)) {
-                $dailyDiscoverer->discover($integration, $pathConfig, $store, $this->forceFull);
+                $dailyDiscoverer->discover($integration, $pathConfig, $store, $this->forceFull, $requests);
+
+                continue;
+            }
+
+            // Cursor não tem o que sondar (a API não informa total de páginas):
+            // semeia a cadeia e cada fetch encadeia o próximo.
+            if ($cursorDiscoverer->isApplicable($requests, $pathConfig)) {
+                $cursorDiscoverer->discover($integration, $pathConfig, $store, $this->forceFull);
 
                 continue;
             }

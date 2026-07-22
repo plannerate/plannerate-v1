@@ -5,6 +5,7 @@ namespace App\Services\Integrations\Discovery;
 use App\Jobs\Integrations\FetchIntegrationPageJob;
 use App\Models\IntegrationImportRun;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Support\IntegrationPaginationMode;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -38,8 +39,9 @@ class DailyModeDiscoverer
      *
      * @param  array<string, mixed>  $pathConfig
      * @param  array{id: string, document: string}|null  $store
+     * @param  array<string, mixed>  $requests  IntegrationApi->requests (para o modo de paginação)
      */
-    public function discover(TenantIntegration $integration, array $pathConfig, ?array $store, bool $forceFull = false): void
+    public function discover(TenantIntegration $integration, array $pathConfig, ?array $store, bool $forceFull = false, array $requests = []): void
     {
         $storeId = data_get($store, 'id');
         $storeDocument = data_get($store, 'document');
@@ -67,7 +69,13 @@ class DailyModeDiscoverer
 
         $runId = $this->recordRun($integration, $store, $missingDays, $forceFull);
 
-        $this->dispatchJobs($missingDays, $storeId, $storeDocument, $runId);
+        // Cursor mode: cada dia é uma cadeia própria, semeada no cursor inicial.
+        // Sem isso o placeholder {cursor} da URL viria vazio.
+        $initialCursor = IntegrationPaginationMode::isCursor($requests, $pathConfig)
+            ? IntegrationPaginationMode::initialCursor($pathConfig)
+            : null;
+
+        $this->dispatchJobs($missingDays, $storeId, $storeDocument, $runId, $initialCursor);
     }
 
     /**
@@ -195,8 +203,13 @@ class DailyModeDiscoverer
     }
 
     /** @param array<int, string> $missingDays */
-    private function dispatchJobs(array $missingDays, ?string $storeId, ?string $storeDocument, ?string $runId): void
-    {
+    private function dispatchJobs(
+        array $missingDays,
+        ?string $storeId,
+        ?string $storeDocument,
+        ?string $runId,
+        ?string $initialCursor = null,
+    ): void {
         $delaySeconds = (int) config('integrations.fetch_delay', 3);
 
         foreach ($missingDays as $index => $day) {
@@ -205,6 +218,7 @@ class DailyModeDiscoverer
                 $day, $day, $storeId, $storeDocument,
                 autoPage: true,
                 runId: $runId,
+                cursor: $initialCursor,
             )->delay(now()->addSeconds($index * $delaySeconds));
         }
     }

@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Tenant;
 use App\Support\Database\DatabaseCreator;
+use App\Support\Database\TenantConnectionSwitcher;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Artisan;
@@ -34,14 +35,15 @@ class ProvisionTenantDatabaseJob implements NotTenantAware, ShouldQueue
 
         $connectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: 'tenant');
         $originalDatabase = config("database.connections.{$connectionName}.database");
+        $originalDatabase = is_string($originalDatabase) ? $originalDatabase : null;
         $landlordConnection = DB::connection('landlord');
         $landlordDatabase = DB::connection('landlord')->getDatabaseName();
+        $connectionSwitcher = app(TenantConnectionSwitcher::class);
 
         try {
             app(DatabaseCreator::class)->ensureExists($landlordConnection, $this->tenant->database);
 
-            config(["database.connections.{$connectionName}.database" => $this->tenant->database]);
-            DB::purge($connectionName);
+            $connectionSwitcher->useDatabase($connectionName, $this->tenant->database);
 
             $resolvedTenantDatabase = DB::connection($connectionName)->getDatabaseName();
 
@@ -72,8 +74,7 @@ class ProvisionTenantDatabaseJob implements NotTenantAware, ShouldQueue
 
             throw $e;
         } finally {
-            config(["database.connections.{$connectionName}.database" => $originalDatabase]);
-            DB::purge($connectionName);
+            $connectionSwitcher->useDatabase($connectionName, $originalDatabase);
         }
     }
 }

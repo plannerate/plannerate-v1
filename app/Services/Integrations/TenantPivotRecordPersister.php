@@ -41,6 +41,7 @@ class TenantPivotRecordPersister
         $foreignKey = $normalizedConfig['foreign_key'];
         $relatedKey = $normalizedConfig['related_key'];
         $uniqueBy = $normalizedConfig['unique_by'];
+        $updateColumns = $normalizedConfig['update_columns'];
 
         if (! self::isValidPivotConfig($normalizedConfig)) {
             Log::warning('TenantPivotRecordPersister: pivot config incompleta', [
@@ -78,7 +79,7 @@ class TenantPivotRecordPersister
         );
 
         foreach (array_chunk($rows, self::CHUNK_SIZE) as $chunk) {
-            self::upsertPivotChunk($connection, $table, $chunk, $uniqueBy, $pivotColumns);
+            self::upsertPivotChunk($connection, $table, $chunk, $uniqueBy, $pivotColumns, $updateColumns);
         }
 
         Log::info('TenantPivotRecordPersister: pivot persistida', [
@@ -101,13 +102,18 @@ class TenantPivotRecordPersister
     }
 
     /**
-     * @param  array{table?: mixed, local_key?: mixed, foreign_key?: mixed, related_key?: mixed, unique_by?: mixed}  $pivotConfig
-     * @return array{table: string, local_key: string, foreign_key: string, related_key: string, unique_by: array<int, string>}
+     * @param  array{table?: mixed, local_key?: mixed, foreign_key?: mixed, related_key?: mixed, unique_by?: mixed, update_columns?: mixed}  $pivotConfig
+     * @return array{table: string, local_key: string, foreign_key: string, related_key: string, unique_by: array<int, string>, update_columns: array<int, string>}
      */
     private static function normalizePivotConfig(array $pivotConfig): array
     {
         $foreignKey = (string) ($pivotConfig['foreign_key'] ?? '');
         $relatedKey = (string) ($pivotConfig['related_key'] ?? '');
+
+        $updateColumns = array_values(array_filter(
+            (array) ($pivotConfig['update_columns'] ?? []),
+            static fn (mixed $column): bool => is_string($column) && $column !== '',
+        ));
 
         return [
             'table' => (string) ($pivotConfig['table'] ?? ''),
@@ -115,6 +121,9 @@ class TenantPivotRecordPersister
             'foreign_key' => $foreignKey,
             'related_key' => $relatedKey,
             'unique_by' => array_values((array) ($pivotConfig['unique_by'] ?? [$foreignKey, $relatedKey])),
+            // `updated_at` sempre presente: sem ele o upsert não teria o que
+            // atualizar e a linha existente ficaria intocada.
+            'update_columns' => array_values(array_unique(['updated_at', ...$updateColumns])),
         ];
     }
 
@@ -152,7 +161,38 @@ class TenantPivotRecordPersister
             $rows[] = $row;
         }
 
-        return $rows;
+        return self::normalizeRowShape($rows);
+    }
+
+    /**
+     * Garante que todas as linhas do lote tenham exatamente as mesmas chaves.
+     *
+     * Colunas opcionais da pivot (métricas por loja, p.ex.) só aparecem quando o
+     * registro traz valor. Sem normalizar, um lote com linhas de formatos
+     * diferentes estoura no upsert com
+     * "VALUES lists must all be the same length".
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return array<int, array<string, mixed>>
+     */
+    private static function normalizeRowShape(array $rows): array
+    {
+        if ($rows === []) {
+            return [];
+        }
+
+        $allKeys = [];
+
+        foreach ($rows as $row) {
+            foreach (array_keys($row) as $key) {
+                $allKeys[$key] = null;
+            }
+        }
+
+        return array_map(
+            static fn (array $row): array => array_merge($allKeys, $row),
+            $rows,
+        );
     }
 
     /**
@@ -175,8 +215,10 @@ class TenantPivotRecordPersister
             $pivotConfig['related_key'] => $relatedValue,
         ];
 
+        // array_key_exists, não isset: valor null é dado legítimo (o ERP diz que
+        // aquela loja não tem estoque) e precisa ser gravado, não ignorado.
         foreach ($pivotColumns as $column) {
-            if (isset($record[$column]) && ! isset($row[$column])) {
+            if (array_key_exists($column, $record) && ! array_key_exists($column, $row)) {
                 $row[$column] = $record[$column];
             }
         }
@@ -192,14 +234,25 @@ class TenantPivotRecordPersister
      * @param  array<int, array<string, mixed>>  $chunk
      * @param  array<int, string>  $uniqueBy
      * @param  array<int, string>  $pivotColumns
+     * @param  array<int, string>  $updateColumns  Colunas atualizadas quando a linha já existe
      */
-    private static function upsertPivotChunk(Connection $connection, string $table, array $chunk, array $uniqueBy, array $pivotColumns): void
-    {
+    private static function upsertPivotChunk(
+        Connection $connection,
+        string $table,
+        array $chunk,
+        array $uniqueBy,
+        array $pivotColumns,
+        array $updateColumns = ['updated_at'],
+    ): void {
+        // Só colunas que existem na tabela: um update_columns desatualizado no
+        // blueprint quebraria o upsert inteiro.
+        $updateColumns = array_values(array_intersect($updateColumns, $pivotColumns));
+
         try {
             $connection->table($table)->upsert(
                 $chunk,
                 $uniqueBy,
-                ['updated_at'],
+                $updateColumns,
             );
 
             return;
@@ -226,7 +279,7 @@ class TenantPivotRecordPersister
             $connection->table($table)->upsert(
                 $dedupedChunk,
                 $fallbackUniqueBy,
-                ['updated_at'],
+                $updateColumns,
             );
         }
     }

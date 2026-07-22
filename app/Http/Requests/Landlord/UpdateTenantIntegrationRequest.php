@@ -46,6 +46,8 @@ class UpdateTenantIntegrationRequest extends FormRequest
             // Auth
             'auth_type' => ['nullable', 'string', Rule::in(['none', 'bearer', 'bearer_fetch', 'basic'])],
             'auth_bearer_mode' => ['nullable', 'string', Rule::in(['manual', 'fetch'])],
+            // Nome de header HTTP: sem espaço nem dois-pontos.
+            'auth_token_header' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9!#$%&\'*+.^_`|~-]+$/'],
             'auth_token' => ['nullable', 'string', 'max:2000'],
             'auth_username' => ['nullable', 'string', 'max:255'],
             'auth_password' => ['nullable', 'string', 'max:255'],
@@ -99,6 +101,9 @@ class UpdateTenantIntegrationRequest extends FormRequest
                 'auth' => [
                     'type' => $authType === 'bearer_fetch' ? 'bearer' : $authType,
                     'token_mode' => $authType === 'bearer' || $authType === 'bearer_fetch' ? $bearerMode : null,
+                    // Vazio = Authorization: Bearer (padrão). Preenchido, o token
+                    // vai nesse header — a RP Info exige "token: <jwt>".
+                    'token_header' => trim((string) ($validated['auth_token_header'] ?? '')),
                     'credentials' => $credentials,
                     'token_request' => $usesFetchedBearer ? [
                         'method' => (string) ($validated['auth_token_method'] ?? 'POST'),

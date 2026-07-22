@@ -23,6 +23,7 @@ function newRow(): PivotTableRow {
         foreign_key: '',
         related_key: '',
         unique_by: '',
+        update_columns: '',
     };
 }
 
@@ -94,6 +95,16 @@ function removeRow(index: number): void {
                         :placeholder="t('app.landlord.integration_apis.placeholders.pivot_unique_by')"
                         @update:model-value="updateRow(index, { unique_by: String($event) })"
                     />
+                </div>
+                <div class="grid gap-2 md:col-span-2">
+                    <Label :for="`pivot-update-columns-${row.id}`">{{ t('app.landlord.integration_apis.fields.pivot_update_columns') }}</Label>
+                    <Input
+                        :id="`pivot-update-columns-${row.id}`"
+                        :model-value="row.update_columns"
+                        :placeholder="t('app.landlord.integration_apis.placeholders.pivot_update_columns')"
+                        @update:model-value="updateRow(index, { update_columns: String($event) })"
+                    />
+                    <p class="text-xs text-muted-foreground">{{ t('app.landlord.integration_apis.hints.pivot_update_columns') }}</p>
                 </div>
                 <div class="flex items-end justify-end md:col-span-1">
                     <button

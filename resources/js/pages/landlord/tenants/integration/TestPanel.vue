@@ -69,6 +69,9 @@ function run(): void {
         ),
         {
             test_path: testPath.value,
+            // A chave permite o backend resolver {cursor}/{store_document} e
+            // montar a query igual ao import, em vez de mandar o path cru.
+            test_path_key: selectedPathKey.value,
             test_method: testMethod.value,
             test_body: testBody.value,
         },

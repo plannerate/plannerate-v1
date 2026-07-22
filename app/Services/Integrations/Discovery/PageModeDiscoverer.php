@@ -8,6 +8,8 @@ use App\Models\IntegrationImportRun;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\IntegrationHttpClient;
 use App\Services\Integrations\IntegrationPayloadBuilder;
+use App\Services\Integrations\Support\IntegrationResponseGuard;
+use App\Services\Integrations\Support\IntegrationUrlBuilder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -50,7 +52,7 @@ class PageModeDiscoverer
 
         [$effectiveDateStart, $effectiveDateEnd] = $this->resolveEffectiveDates($integration, $pathConfig, $store, $forceFull);
 
-        $url = $this->buildUrl($config, $pathConfig);
+        $url = IntegrationUrlBuilder::build($config, $pathConfig, null, $storeDocument);
         $method = strtolower((string) data_get($requests, 'method', 'get'));
 
         $payload = (new IntegrationPayloadBuilder($config, $requests, $pathConfig))
@@ -79,8 +81,24 @@ class PageModeDiscoverer
             throw new RuntimeException(sprintf('HTTP %d ao acessar %s', $response->status(), $url));
         }
 
-        $responseData = $response->json();
+        $responseData = (array) $response->json();
         $responseMeta = $api->response ?? [];
+
+        // Erro lógico com HTTP 200: sem isso a sondagem leria last_page = 1 e o
+        // import inteiro se resumiria a uma página, sem nenhum sinal de falha.
+        $logicalError = IntegrationResponseGuard::logicalErrorMessage($responseData, $responseMeta);
+
+        if ($logicalError !== null) {
+            Log::error('PageModeDiscoverer: erro lógico na resposta (HTTP 2xx)', [
+                'integration_id' => $this->integrationId,
+                'path_key' => $this->pathKey,
+                'store_id' => $storeId,
+                'url' => $url,
+                'error' => $logicalError,
+            ]);
+
+            throw new RuntimeException(sprintf('Erro na resposta de %s: %s', $url, $logicalError));
+        }
 
         $lastPageAtMinSize = $this->readLastPage($responseData, $responseMeta);
         $actualPerPage = $this->readPerPage($responseData, $responseMeta, $minPageSize);
@@ -370,16 +388,5 @@ class PageModeDiscoverer
                 runId: $runId,
             )->delay(now()->addSeconds(($page - 1) * $delaySeconds));
         }
-    }
-
-    // ─── Helpers ─────────────────────────────────────────────────────────────
-
-    /** @param array<string, mixed> $config */
-    private function buildUrl(array $config, array $pathConfig): string
-    {
-        $baseUrl = (string) data_get($config, 'connection.base_url', '');
-        $fallbackPath = (string) data_get($pathConfig, 'fallback_path', '');
-
-        return rtrim($baseUrl, '/').$fallbackPath;
     }
 }

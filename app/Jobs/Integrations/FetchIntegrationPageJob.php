@@ -11,6 +11,9 @@ use App\Services\Integrations\IntegrationPayloadBuilder;
 use App\Services\Integrations\RecordMapper;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
 use App\Services\Integrations\Support\ImportDiscardMetrics;
+use App\Services\Integrations\Support\IntegrationPaginationMode;
+use App\Services\Integrations\Support\IntegrationResponseGuard;
+use App\Services\Integrations\Support\IntegrationUrlBuilder;
 use App\Services\Integrations\TenantUpsertRecordPreparer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -65,6 +68,12 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         public readonly bool $autoPage = false,
         public readonly ?int $knownLastPage = null,
         public readonly ?string $runId = null,
+        /**
+         * Posição na paginação por cursor (`pagination_mode: cursor`). Null nos
+         * modos página/diário. Default explícito para que jobs enfileirados
+         * antes do deploy desserializem sem a propriedade — sempre lido com `?? null`.
+         */
+        public readonly ?string $cursor = null,
     ) {
         $this->onQueue('imports-fetch');
     }
@@ -87,7 +96,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         $config = $integration->config ?? [];
         $requests = $api->requests ?? [];
 
-        $url = $this->buildUrl($config, $pathConfig);
+        $url = IntegrationUrlBuilder::build($config, $pathConfig, $this->cursor ?? null, $this->storeDocument);
         $method = strtolower((string) data_get($requests, 'method', 'get'));
 
         $payload = (new IntegrationPayloadBuilder($config, $requests, $pathConfig))
@@ -97,6 +106,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             'integration_id' => $this->integrationId,
             'path_key' => $this->pathKey,
             'page' => $this->page,
+            'cursor' => $this->cursor ?? null,
             'store_id' => $this->storeId,
             'url' => $url,
             'payload' => $payload,
@@ -127,12 +137,17 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             throw new RuntimeException($message);
         }
 
-        $responseData = $response->json();
+        $responseData = (array) $response->json();
         $responseMeta = $api->response ?? [];
 
-        $records = $this->mapResponse(
-            $response->body(),
-            $responseMeta,
+        // Erro lógico com HTTP 200: sem isso o job leria zero itens, trataria
+        // como página vazia e marcaria o dia como coberto — buraco invisível.
+        $this->failOnLogicalError($responseData, $responseMeta, $url);
+
+        $rawItems = $this->extractItems($responseData, $responseMeta, $pathConfig);
+
+        $records = $this->mapItems(
+            $rawItems,
             $pathConfig,
             (string) $integration->tenant_id,
             (string) $integration->id,
@@ -147,7 +162,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         // Antes do early-return de página vazia: a checagem de extensão precisa
         // rodar mesmo quando a última página planejada não mapeou registros.
         if (! $this->autoPage && $this->knownLastPage !== null && $this->page >= $this->knownLastPage) {
-            $this->dispatchPagesBeyondKnownLast((array) $responseData, $responseMeta, $pathConfig);
+            $this->dispatchPagesBeyondKnownLast($responseData, $responseMeta, $pathConfig);
         }
 
         if ($records === []) {
@@ -156,7 +171,13 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
                 'path_key' => $this->pathKey,
                 'page' => $this->page,
                 'store_id' => $this->storeId,
+                'raw_items' => count($rawItems),
             ]);
+
+            // Sem `return`: uma página inteira rejeitada pelas validações (lote
+            // de cancelados) ainda precisa encadear a próxima — senão o import
+            // para no meio do catálogo.
+            $this->dispatchContinuation($rawItems, $responseData, $responseMeta, $requests, $pathConfig);
 
             return;
         }
@@ -180,6 +201,56 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             // desserializam sem a propriedade (typed prop não-inicializada).
             $this->runId ?? null,
         );
+
+        $this->dispatchContinuation($rawItems, $responseData, $responseMeta, $requests, $pathConfig);
+    }
+
+    /**
+     * @param  array<string, mixed>  $responseData
+     * @param  array<string, mixed>  $responseMeta
+     */
+    private function failOnLogicalError(array $responseData, array $responseMeta, string $url): void
+    {
+        $error = IntegrationResponseGuard::logicalErrorMessage($responseData, $responseMeta);
+
+        if ($error === null) {
+            return;
+        }
+
+        Log::error('FetchIntegrationPageJob: erro lógico na resposta (HTTP 2xx)', [
+            'integration_id' => $this->integrationId,
+            'path_key' => $this->pathKey,
+            'page' => $this->page,
+            'cursor' => $this->cursor ?? null,
+            'store_id' => $this->storeId,
+            'url' => $url,
+            'error' => $error,
+        ]);
+
+        throw new RuntimeException(sprintf('Erro na resposta de %s: %s', $url, $error));
+    }
+
+    /**
+     * Encadeia a próxima busca conforme o modo de paginação do path.
+     *
+     * @param  array<int, array<string, mixed>>  $rawItems
+     * @param  array<string, mixed>  $responseData
+     * @param  array<string, mixed>  $responseMeta
+     * @param  array<string, mixed>  $requests
+     * @param  array<string, mixed>  $pathConfig
+     */
+    private function dispatchContinuation(
+        array $rawItems,
+        array $responseData,
+        array $responseMeta,
+        array $requests,
+        array $pathConfig,
+    ): void {
+        if (IntegrationPaginationMode::isCursor($requests, $pathConfig)) {
+            $this->dispatchNextCursorIfNeeded($rawItems, $pathConfig);
+
+            return;
+        }
 
         if ($this->autoPage) {
             $this->dispatchNextPageIfNeeded($responseData, $responseMeta, $pathConfig);
@@ -267,6 +338,72 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
     }
 
     /**
+     * Paginação por cursor: a resposta não diz quantas páginas existem, então a
+     * cadeia é sequencial — cada job lê o id do último item bruto e despacha o
+     * seguinte. Para em página vazia (fim) ou cursor repetido (guarda contra
+     * loop infinito se a API ignorar o cursor).
+     *
+     * `$page` continua incrementando como contador da cadeia: alimenta os logs,
+     * a tag do Horizon e a chave de overlap.
+     *
+     * @param  array<int, array<string, mixed>>  $rawItems
+     * @param  array<string, mixed>  $pathConfig
+     */
+    private function dispatchNextCursorIfNeeded(array $rawItems, array $pathConfig): void
+    {
+        if ($rawItems === []) {
+            Log::info('FetchIntegrationPageJob: fim da cadeia de cursor (página vazia)', [
+                'integration_id' => $this->integrationId,
+                'path_key' => $this->pathKey,
+                'page' => $this->page,
+                'cursor' => $this->cursor ?? null,
+                'store_id' => $this->storeId,
+            ]);
+
+            return;
+        }
+
+        $nextCursor = IntegrationPaginationMode::nextCursor($rawItems, $pathConfig);
+        $currentCursor = $this->cursor ?? null;
+
+        if ($nextCursor === null || $nextCursor === $currentCursor) {
+            Log::warning('FetchIntegrationPageJob: cursor não avançou; interrompendo a cadeia', [
+                'integration_id' => $this->integrationId,
+                'path_key' => $this->pathKey,
+                'page' => $this->page,
+                'cursor' => $currentCursor,
+                'next_cursor' => $nextCursor,
+                'cursor_item_path' => data_get($pathConfig, 'cursor_item_path'),
+                'store_id' => $this->storeId,
+            ]);
+
+            return;
+        }
+
+        $maxPage = (int) data_get($pathConfig, 'max_page', 0);
+
+        if ($maxPage > 0 && $this->page >= $maxPage) {
+            Log::info('FetchIntegrationPageJob: max_page atingido na cadeia de cursor', [
+                'integration_id' => $this->integrationId,
+                'path_key' => $this->pathKey,
+                'page' => $this->page,
+                'max_page' => $maxPage,
+                'store_id' => $this->storeId,
+            ]);
+
+            return;
+        }
+
+        self::dispatch(
+            $this->integrationId, $this->pathKey, $this->page + 1,
+            $this->dateStart, $this->dateEnd, $this->storeId, $this->storeDocument,
+            autoPage: true,
+            runId: $this->runId ?? null,
+            cursor: $nextCursor,
+        );
+    }
+
+    /**
      * Lê o last_page da resposta e despacha o próximo FetchIntegrationPageJob
      * quando ainda há páginas a buscar. Usado somente no modo diário.
      *
@@ -315,38 +452,42 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
     // ─── Mapping e persistência em arquivo ───────────────────────────────────
 
     /**
-     * Extrai itens da resposta e aplica o field_map, retornando registros prontos para upsert.
+     * Localiza a lista de itens dentro da resposta.
      *
+     * `items_path` é lido do path config primeiro e só depois do `response`
+     * global: APIs com um endpoint por recurso usam caminhos diferentes para
+     * cada um (RP Info: `response.produtos` × `response.movimentos`).
+     *
+     * @param  array<string, mixed>  $responseData
      * @param  array<string, mixed>  $responseMeta
      * @param  array<string, mixed>  $pathConfig
      * @return array<int, array<string, mixed>>
      */
-    private function mapResponse(
-        string $body,
-        array $responseMeta,
-        array $pathConfig,
-        string $tenantId,
-        string $integrationId,
-    ): array {
-        $data = json_decode($body, true);
-
-        if (! is_array($data)) {
-            return [];
-        }
-
-        $itemsPath = (string) data_get($responseMeta, 'items_path', '');
-        $raw = $itemsPath !== '' ? data_get($data, $itemsPath) : $data;
+    private function extractItems(array $responseData, array $responseMeta, array $pathConfig): array
+    {
+        $itemsPath = (string) (data_get($pathConfig, 'items_path') ?? data_get($responseMeta, 'items_path', ''));
+        $raw = $itemsPath !== '' ? data_get($responseData, $itemsPath) : $responseData;
 
         if (! is_array($raw) || $raw === []) {
             return [];
         }
 
-        if (array_keys($raw) !== range(0, count($raw) - 1)) {
-            $raw = array_values($raw);
-        }
+        return array_values(array_filter($raw, fn (mixed $item): bool => is_array($item)));
+    }
 
-        $items = array_filter($raw, fn (mixed $item): bool => is_array($item));
-
+    /**
+     * Aplica o field_map aos itens brutos, retornando registros prontos para upsert.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @param  array<string, mixed>  $pathConfig
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapItems(
+        array $items,
+        array $pathConfig,
+        string $tenantId,
+        string $integrationId,
+    ): array {
         if ($items === []) {
             return [];
         }
@@ -454,14 +595,6 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         return $pathConfig;
     }
 
-    private function buildUrl(array $config, array $pathConfig): string
-    {
-        $baseUrl = (string) data_get($config, 'connection.base_url', '');
-        $fallbackPath = (string) data_get($pathConfig, 'fallback_path', '');
-
-        return rtrim($baseUrl, '/').$fallbackPath;
-    }
-
     // ─── Horizon tags ────────────────────────────────────────────────────────
 
     /** @return array<int, mixed> */
@@ -485,6 +618,8 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             $this->pathKey,
             'page',
             (string) $this->page,
+            'cursor',
+            $this->cursor ?? 'none',
             'store',
             $this->storeId ?? $this->storeDocument ?? 'all',
             'date',

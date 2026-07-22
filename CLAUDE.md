@@ -372,3 +372,4 @@ Guia completo: `storage/app/private/prompts/auto-planogram/00 prerequisitos.md`
 ## Ver Também
 
 - `.claude/dimension-research.md` — pipeline AI de pesquisa de dimensões de produto
+- `.claude/nova-integracao.md` — **LER ANTES** de cadastrar/alterar integração de ERP. O motor é config-driven (blueprint em `integration_apis` + config por tenant); não se escreve classe por provider. Contém passo a passo, referência de transforms/colunas e as armadilhas destrutivas (mapear campo vazio apaga dado bom).

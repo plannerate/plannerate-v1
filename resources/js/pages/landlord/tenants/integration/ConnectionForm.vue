@@ -43,6 +43,7 @@ const formData = computed(() => ({
     api_url: props.integration?.api_url ?? '',
     auth_type: props.integration?.auth_type ?? 'none',
     auth_bearer_mode: props.integration?.auth_bearer_mode ?? 'manual',
+    auth_token_header: props.integration?.auth_token_header ?? '',
     auth_username: props.integration?.auth_username ?? '',
     auth_password: props.integration?.auth_password ?? '',
     auth_token: props.integration?.auth_token ?? '',
