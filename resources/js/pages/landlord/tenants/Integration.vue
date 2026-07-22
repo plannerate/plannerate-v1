@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { Form, Head, router } from '@inertiajs/vue3';
-import { Link2, ListChecks, Play, Plug, PowerOff, Power } from 'lucide-vue-next';
+import {
+    Link2,
+    ListChecks,
+    Play,
+    Plug,
+    Power,
+    PowerOff,
+    TriangleAlert,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import IntegrationApiController from '@/actions/App/Http/Controllers/Landlord/IntegrationApiController';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
@@ -8,6 +16,14 @@ import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord
 import DeleteButton from '@/components/DeleteButton.vue';
 import FormCard from '@/components/FormCard.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import WayfinderLink from '@/components/WayfinderLink.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
@@ -60,26 +76,68 @@ const testPanelRef = ref<InstanceType<typeof TestPanel>>();
 
 const canRun = computed(() => props.integration?.is_active === true);
 
+type PipelineStep = 'import' | 'post-import';
+
+/** Etapa aguardando confirmação; null com o modal fechado. */
+const pendingStep = ref<PipelineStep | null>(null);
+
+const dialogOpen = computed({
+    get: () => pendingStep.value !== null,
+    set: (open: boolean) => {
+        if (!open) {
+            pendingStep.value = null;
+        }
+    },
+});
+
 /**
- * Dispara importação/pós-importação sob demanda, sem esperar o agendamento das
- * 06:00. O backend só enfileira — o trabalho leva minutos e roda no Horizon.
+ * Conteúdo do modal por etapa. As duas disparam trabalho pesado contra a API do
+ * ERP, então ambas confirmam — mas só a pós-importação apaga algo, e o tom do
+ * aviso reflete isso (âmbar de atenção, não vermelho de destrutivo: o
+ * soft-delete é revertido pelo próprio feed no import seguinte).
  */
-function runPipeline(step: 'import' | 'post-import'): void {
+const dialogContent = computed(() => {
+    const prefix =
+        pendingStep.value === 'post-import'
+            ? 'app.landlord.tenant_integrations.post_import_dialog'
+            : 'app.landlord.tenant_integrations.import_dialog';
+
+    const stepKeys =
+        pendingStep.value === 'post-import'
+            ? ['step_link_sales', 'step_cleanup', 'step_ean_references', 'step_summaries']
+            : ['step_discover', 'step_fetch', 'step_persist'];
+
+    return {
+        title: t(`${prefix}.title`),
+        description: t(`${prefix}.description`),
+        steps: stepKeys.map((key) => t(`${prefix}.${key}`)),
+        note: t(`${prefix}.warning`),
+        destructive: pendingStep.value === 'post-import',
+        confirmLabel:
+            pendingStep.value === 'post-import'
+                ? t('app.landlord.tenant_integrations.actions.run_post_import')
+                : t('app.landlord.tenant_integrations.actions.run_import'),
+    };
+});
+
+function confirmRun(step: PipelineStep): void {
     if (!canRun.value || runLoading.value !== null) {
         return;
     }
 
-    // A pós-importação faz soft-delete de produtos sem venda no período; não é
-    // um botão para clicar por engano.
-    if (
-        step === 'post-import' &&
-        !window.confirm(
-            t('app.landlord.tenant_integrations.confirmations.run_post_import'),
-        )
-    ) {
+    pendingStep.value = step;
+}
+
+/**
+ * Dispara importação/pós-importação sob demanda, sem esperar o agendamento das
+ * 06:00. O backend só enfileira — o trabalho leva minutos e roda no Horizon.
+ */
+function runPipeline(step: PipelineStep): void {
+    if (!canRun.value || runLoading.value !== null) {
         return;
     }
 
+    pendingStep.value = null;
     runLoading.value = step;
 
     const action =
@@ -175,7 +233,7 @@ function toggleStatus(): void {
                                     'app.landlord.tenant_integrations.actions.run_import',
                                 )
                             "
-                            @click="runPipeline('import')"
+                            @click="confirmRun('import')"
                         >
                             <Play class="size-4" />
                             {{
@@ -189,7 +247,7 @@ function toggleStatus(): void {
                             variant="outline"
                             size="sm"
                             :disabled="!canRun || runLoading !== null"
-                            @click="runPipeline('post-import')"
+                            @click="confirmRun('post-import')"
                         >
                             <ListChecks class="size-4" />
                             {{
@@ -256,5 +314,69 @@ function toggleStatus(): void {
                 </FormCard>
             </Form>
         </div>
+
+        <Dialog v-model:open="dialogOpen">
+            <DialogContent class="sm:max-w-lg">
+                <DialogHeader>
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="flex size-10 shrink-0 items-center justify-center rounded-full"
+                            :class="
+                                dialogContent.destructive
+                                    ? 'bg-amber-500/10'
+                                    : 'bg-primary/10'
+                            "
+                        >
+                            <TriangleAlert
+                                v-if="dialogContent.destructive"
+                                class="size-5 text-amber-600"
+                            />
+                            <Play v-else class="size-5 text-primary" />
+                        </div>
+                        <div>
+                            <DialogTitle>{{ dialogContent.title }}</DialogTitle>
+                            <DialogDescription class="mt-0.5">
+                                {{ dialogContent.description }}
+                            </DialogDescription>
+                        </div>
+                    </div>
+                </DialogHeader>
+
+                <ol
+                    class="list-decimal space-y-1.5 rounded-lg bg-muted/40 py-3 pr-4 pl-8 text-sm text-muted-foreground"
+                >
+                    <li v-for="step in dialogContent.steps" :key="step">
+                        {{ step }}
+                    </li>
+                </ol>
+
+                <p
+                    class="rounded-lg border p-3 text-sm"
+                    :class="
+                        dialogContent.destructive
+                            ? 'border-amber-500/30 bg-amber-500/5 text-foreground'
+                            : 'border-border bg-muted/30 text-muted-foreground'
+                    "
+                >
+                    {{ dialogContent.note }}
+                </p>
+
+                <DialogFooter>
+                    <Button
+                        variant="outline"
+                        :disabled="runLoading !== null"
+                        @click="pendingStep = null"
+                    >
+                        {{ t('app.common.actions.cancel') }}
+                    </Button>
+                    <Button
+                        :disabled="runLoading !== null || pendingStep === null"
+                        @click="pendingStep && runPipeline(pendingStep)"
+                    >
+                        {{ dialogContent.confirmLabel }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </AppLayout>
 </template>

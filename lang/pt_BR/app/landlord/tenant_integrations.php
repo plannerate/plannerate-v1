@@ -93,8 +93,22 @@ return [
         'process_started_detail' => 'Processo :resource (:date) iniciado.',
         'process_finished_detail' => 'Processo :resource (:date) finalizado com status :status.',
     ],
-    'confirmations' => [
-        'run_post_import' => 'A pós-importação vincula vendas, recalcula resumos e APAGA (soft-delete) produtos sem venda no período. Confirma?',
+    'import_dialog' => [
+        'title' => 'Executar importação',
+        'description' => 'Busca produtos e vendas no ERP agora, sem esperar o agendamento das 06:00.',
+        'step_discover' => 'Descobre o que buscar para cada loja publicada com CNPJ.',
+        'step_fetch' => 'Percorre as páginas da API do ERP, loja por loja.',
+        'step_persist' => 'Grava produtos, vendas e os vínculos por loja.',
+        'warning' => 'Nada é apagado: a gravação é idempotente, então rodar de novo atualiza os registros existentes em vez de duplicar. Pode levar alguns minutos.',
+    ],
+    'post_import_dialog' => [
+        'title' => 'Executar pós-importação',
+        'description' => 'Quatro etapas, enfileiradas na fila de manutenção. Pode levar alguns minutos.',
+        'step_link_sales' => 'Vincula as vendas importadas aos produtos pelo código do ERP.',
+        'step_cleanup' => 'Limpeza: remove vendas órfãs e produtos inativos.',
+        'step_ean_references' => 'Padroniza produtos pelo catálogo global de EAN.',
+        'step_summaries' => 'Recalcula os resumos mensais de venda.',
+        'warning' => 'A limpeza faz soft-delete dos produtos sem venda nos últimos 120 dias que não estejam em nenhum planograma. Eles voltam no próximo import se ainda vierem no feed do ERP.',
     ],
     'hints' => [
         'auth_password' => 'Ao editar, preencha apenas se quiser trocar a senha atual.',
