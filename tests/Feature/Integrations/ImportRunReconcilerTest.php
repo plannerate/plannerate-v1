@@ -69,13 +69,38 @@ test('dia de feriado (fetch rodou, zero venda) conta como coberto → sem falso-
         ->and($run->fresh()->covered_units)->toBe(5);
 });
 
-test('não reconcilia runs já concluídos nem de outra data', function (): void {
+test('não reconcilia runs já concluídos', function (): void {
     $done = startTestRun(1);
     $done->update(['status' => 'complete']);
-    $otherDay = startTestRun(1, ['reference_date' => now()->subDay()->toDateString()]);
+
+    $summary = ImportRunReconciler::reconcileForDate(now()->toDateString());
+
+    expect($summary['reconciled'])->toBe(0);
+});
+
+test('fecha runs que ficaram para trás em datas anteriores', function (): void {
+    // Importação longa que atravessa a meia-noite: o run nasce com a data de
+    // ontem e o post-import do dia seguinte procurava só por hoje, deixando-o
+    // 'running' para sempre — aparecendo na UI como se ainda estivesse rodando.
+    $ontem = startTestRun(2, ['reference_date' => now()->subDay()->toDateString()]);
+    IntegrationImportRun::recordCovered($ontem->id);
+    IntegrationImportRun::recordCovered($ontem->id);
+
+    $antigoIncompleto = startTestRun(4, ['reference_date' => now()->subDays(5)->toDateString()]);
+    IntegrationImportRun::recordCovered($antigoIncompleto->id);
+
+    $summary = ImportRunReconciler::reconcileForDate(now()->toDateString());
+
+    expect($summary)->toMatchArray(['reconciled' => 2, 'complete' => 1, 'partial' => 1])
+        ->and($ontem->fresh()->status)->toBe('complete')
+        ->and($antigoIncompleto->fresh()->status)->toBe('partial');
+});
+
+test('não toca em run de data futura', function (): void {
+    $futuro = startTestRun(1, ['reference_date' => now()->addDay()->toDateString()]);
 
     $summary = ImportRunReconciler::reconcileForDate(now()->toDateString());
 
     expect($summary['reconciled'])->toBe(0)
-        ->and($otherDay->fresh()->status)->toBe('running');
+        ->and($futuro->fresh()->status)->toBe('running');
 });

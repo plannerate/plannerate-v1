@@ -14,7 +14,8 @@ use function Laravel\Prompts\select;
 
 class IntegrationStatusCommand extends Command
 {
-    protected $signature = 'integration:status';
+    protected $signature = 'integration:status
+        {--tenant= : ID ou slug do tenant. Informado, o comando roda sem prompts (cron, CI, exec -T)}';
 
     protected $description = 'Inspeciona e gerencia dados das tabelas de integração por tenant';
 
@@ -27,14 +28,18 @@ class IntegrationStatusCommand extends Command
             return self::SUCCESS;
         }
 
-        // 2 — ação: visualizar ou excluir
-        $action = select(
-            label: 'O que deseja fazer?',
-            options: [
-                'view' => 'Visualizar stats + amostra de dados',
-                'delete' => 'Excluir registros (filtra por loja e tabela)',
-            ],
-        );
+        // 2 — ação: visualizar ou excluir. Com --tenant o comando é de
+        // diagnóstico e roda sem prompt algum; exclusão continua exigindo a
+        // sessão interativa, com seus pickers de loja/tabela e a confirmação.
+        $action = $this->runsWithoutPrompts()
+            ? 'view'
+            : select(
+                label: 'O que deseja fazer?',
+                options: [
+                    'view' => 'Visualizar stats + amostra de dados',
+                    'delete' => 'Excluir registros (filtra por loja e tabela)',
+                ],
+            );
 
         if ($action === 'view') {
             // 3 — carrega integrações do tenant e descobre tabelas
@@ -47,12 +52,14 @@ class IntegrationStatusCommand extends Command
             }
 
             // 4 — seleciona tabelas
-            $selected = multiselect(
-                label: 'Quais tabelas você quer inspecionar?',
-                options: $tables,
-                default: $tables,
-                required: true,
-            );
+            $selected = $this->runsWithoutPrompts()
+                ? $tables
+                : multiselect(
+                    label: 'Quais tabelas você quer inspecionar?',
+                    options: $tables,
+                    default: $tables,
+                    required: true,
+                );
 
             $this->showStats($tenant, $selected);
         } else {
@@ -62,18 +69,32 @@ class IntegrationStatusCommand extends Command
         return self::SUCCESS;
     }
 
+    private function runsWithoutPrompts(): bool
+    {
+        return trim((string) $this->option('tenant')) !== '';
+    }
+
     // ─── Tenant selection ────────────────────────────────────────────────────
 
     private function pickTenant(): ?Tenant
     {
         $tenants = Tenant::query()
             ->orderBy('name')
-            ->get(['id', 'name', 'database']);
+            ->get(['id', 'name', 'slug', 'database']);
 
         if ($tenants->isEmpty()) {
             $this->warn('Nenhum tenant encontrado.');
 
             return null;
+        }
+
+        // Sem --tenant o comando abre um select() e morre fora de terminal
+        // interativo (cron, CI, `docker compose exec -T`) — justamente onde um
+        // comando de diagnóstico precisa funcionar.
+        $requested = trim((string) $this->option('tenant'));
+
+        if ($requested !== '') {
+            return $this->resolveRequestedTenant($tenants, $requested);
         }
 
         if ($tenants->count() === 1) {
@@ -113,6 +134,32 @@ class IntegrationStatusCommand extends Command
         );
 
         return $eligibleTenants->firstWhere('id', $tenantId);
+    }
+
+    /**
+     * @param  Collection<int, Tenant>  $tenants
+     */
+    private function resolveRequestedTenant(Collection $tenants, string $requested): ?Tenant
+    {
+        $tenant = $tenants->first(
+            fn (Tenant $t): bool => (string) $t->id === $requested || (string) $t->slug === $requested,
+        );
+
+        if ($tenant === null) {
+            $this->error("Tenant não encontrado: {$requested}");
+
+            return null;
+        }
+
+        if (! $this->hasDatabaseConfigured($tenant)) {
+            $this->warn("Tenant {$tenant->name} sem database configurado.");
+
+            return null;
+        }
+
+        $this->line("Tenant: <info>{$tenant->name}</info>");
+
+        return $tenant;
     }
 
     private function hasDatabaseConfigured(Tenant $tenant): bool

@@ -20,15 +20,31 @@ use Throwable;
 class ImportRunReconciler
 {
     /**
-     * Reconcilia todos os runs ainda 'running' de uma data de referência.
+     * Reconcilia os runs ainda 'running' da data de referência **e os que
+     * ficaram para trás** em datas anteriores.
+     *
+     * A varredura das datas antigas existe porque o par import (06:00) →
+     * post-import (07:30) só cobre o mesmo dia: uma importação longa que
+     * atravessa a meia-noite abre runs com a data de ontem, o post-import do dia
+     * seguinte procura pela data de hoje e aqueles ficam 'running' para sempre —
+     * aparecendo na UI como se ainda estivessem rodando.
+     *
+     * É seguro fechar os antigos aqui porque este método roda **depois da
+     * barreira de filas** do sync:post-import: com as filas vazias, run de dia
+     * anterior está necessariamente encerrado.
      *
      * @return array{reconciled: int, complete: int, partial: int}
      */
     public static function reconcileForDate(string $referenceDate): array
     {
+        $runs = IntegrationImportRun::query()
+            ->where('status', 'running')
+            ->where('reference_date', '<=', $referenceDate)
+            ->get();
+
         $summary = ['reconciled' => 0, 'complete' => 0, 'partial' => 0];
 
-        foreach (IntegrationImportRun::query()->runningOn($referenceDate)->get() as $run) {
+        foreach ($runs as $run) {
             try {
                 $status = self::reconcileRun($run);
                 $summary['reconciled']++;
@@ -61,6 +77,7 @@ class ImportRunReconciler
                 'integration_id' => $run->integration_id,
                 'path' => $run->path_key,
                 'store_id' => $run->store_id,
+                'reference_date' => $run->reference_date,
                 'expected_units' => $run->expected_units,
                 'covered_units' => $covered,
                 'persisted_records' => $run->persisted_records,

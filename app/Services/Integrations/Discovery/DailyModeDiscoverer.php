@@ -111,9 +111,19 @@ class DailyModeDiscoverer
     }
 
     /**
-     * Gera [hoje, ontem, ..., hoje − initial_days] e remove os dias já no banco.
-     * Com $forceFull, retorna o range completo sem descontar os dias já no banco.
-     * Dias dentro da janela de recheck são sempre re-buscados (ver applyRecheckWindow).
+     * Gera [hoje − lag_days, ..., hoje − lag_days − initial_days] e remove os
+     * dias já no banco. Com $forceFull, retorna o range completo sem descontar
+     * os dias já no banco. Dias dentro da janela de recheck são sempre
+     * re-buscados (ver applyRecheckWindow).
+     *
+     * `lag_days` existe porque alguns ERPs só materializam o movimento do dia
+     * depois do fechamento: a RP Info responde HTTP 200 com
+     * "Não localizada tabela de movimento ... para a data:<hoje>" quando o
+     * import roda às 06:00. O guard trata isso como falha (correto — senão o dia
+     * entraria como coberto e vazio), mas o resultado é retentativa com backoff
+     * e ruído de erro todo dia. Com `lag_days: 1` a busca começa em ontem; nada
+     * se perde, porque a janela de recheck re-busca os últimos dias de qualquer
+     * forma.
      *
      * @param  array<string, mixed>  $pathConfig
      * @param  array{id: string, document: string}|null  $store
@@ -122,15 +132,16 @@ class DailyModeDiscoverer
     private function resolveMissingDays(TenantIntegration $integration, array $pathConfig, ?array $store, bool $forceFull = false): array
     {
         $initialDays = (int) data_get($pathConfig, 'initial_days', 0);
+        $lagDays = max(0, (int) data_get($pathConfig, 'lag_days', 0));
         $lastDateColumn = (string) data_get($pathConfig, 'last_date_column', '');
         $targetTable = (string) data_get($pathConfig, 'target_table', '');
         $storeId = data_get($store, 'id');
 
         $today = now()->toDateString();
-        $rangeStart = now()->subDays($initialDays)->toDateString();
+        $rangeStart = now()->subDays($initialDays + $lagDays)->toDateString();
 
         $allDates = [];
-        $cursor = now();
+        $cursor = now()->subDays($lagDays);
 
         for ($i = 0; $i <= $initialDays; $i++) {
             $allDates[] = $cursor->toDateString();

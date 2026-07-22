@@ -134,6 +134,34 @@ no path, ele **não** é repetido na query (`IntegrationUrlBuilder::consumesStor
 O motor manda datas em `Y-m-d`. APIs que exigem outro formato declaram no path:
 `"date_query_format": "d-m-Y"`. Sem essa chave nada muda.
 
+#### `lag_days`
+
+Desloca a janela do modo diário para trás: `"lag_days": 1` faz a busca começar em ontem.
+Use quando o ERP só fecha o movimento no dia seguinte (§7.9). Default 0.
+
+#### Métrica por loja: `pivot_only_targets` + `update_columns`
+
+Coluna que existe na tabela principal mas cujo valor é **por unidade** (estoque, última
+compra) não pode ficar em `products`: o id do produto deriva de `tenant + ean`, sem loja, e
+a última cadeia de importação a terminar sobrescreve as demais. Medido na RP Info: 52% dos
+produtos com estoque diferente entre as lojas.
+
+```jsonc
+"paths": { "products": {
+  "field_map": [ {"target": "current_stock", "source": "Estoque1", "transforms": ["decimal"]} ],
+  "pivot_only_targets": ["current_stock", "last_purchase_date"],   // removidos do upsert de products
+  "pivot_tables": [{
+    "table": "product_store", "local_key": "id",
+    "foreign_key": "product_id", "related_key": "store_id",
+    "unique_by": ["tenant_id", "product_id", "store_id"],
+    "update_columns": ["current_stock", "last_purchase_date"]      // sem isso o valor congela
+  }]
+}}
+```
+
+O `update_columns` é o detalhe fácil de esquecer: o upsert da pivot atualiza só
+`updated_at` por padrão, então a métrica ficaria travada no primeiro import.
+
 ### Passo 4 — Montar `response`
 
 Aponte para onde estão os itens e a paginação:
@@ -318,7 +346,18 @@ no `response` (§Passo 4). Sem a chave, o comportamento antigo continua.
 Foi assim que a RP Info reprovou data em ISO: `datainicial=2026-07-15` → HTTP 200 +
 `"Exception: date must not be null"`, zero movimentos, nenhum sinal de erro.
 
-### 7.9. Editar blueprint pela UI apaga chave desconhecida
+### 7.9. Buscar o dia corrente pode dar erro no ERP
+
+Alguns ERPs só materializam o movimento do dia depois do fechamento. A RP Info
+responde HTTP 200 com `Não localizada tabela de movimento ... para a data:<hoje>` quando o
+import roda às 06:00 — e responde normal algumas horas depois. O guard de §7.8 trata como
+falha (correto: senão o dia entraria como coberto e vazio), mas o custo é retentativa com
+backoff e um ERROR no log por loja, todo dia.
+
+Solução: `lag_days: 1` no path — a janela do modo diário começa em ontem. Nada se perde,
+porque `integrations.recheck_days` (3) re-busca a janela recente em toda execução.
+
+### 7.10. Editar blueprint pela UI apaga chave desconhecida
 
 `Form.vue` → `buildRequestsPayload()` **reconstrói `requests` do zero** a partir dos campos
 do formulário. Chave que a UI não conhece some ao salvar. Ao acrescentar uma chave nova no
@@ -341,7 +380,7 @@ em `components/types.ts` — senão abrir e salvar o blueprint quebra a integra�
 - [ ] Migration rodada com `--path=database/migrations/landlord`
 - [ ] `TenantIntegration` configurada pela UI, `is_active = true`
 - [ ] Mapeamento validado com `RecordMapper` contra o payload real
-- [ ] Chave nova do motor também exposta na UI (§7.9)
+- [ ] Chave nova do motor também exposta na UI (§7.10)
 - [ ] `error_status_path` configurado se a API erra com HTTP 200 (§7.8)
 - [ ] Teste escrito e rodando (um arquivo por invocação)
 - [ ] `vendor/bin/pint --dirty --format agent`
