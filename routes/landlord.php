@@ -177,6 +177,10 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->name('landlord.tenants.integration.test-connection');
     Route::patch('tenants/{tenant}/integration/toggle-status', [Landlord\TenantIntegrationController::class, 'toggleStatus'])
         ->name('landlord.tenants.integration.toggle-status');
+    Route::post('tenants/{tenant}/integration/run-import', [Landlord\TenantIntegrationController::class, 'runImport'])
+        ->name('landlord.tenants.integration.run-import');
+    Route::post('tenants/{tenant}/integration/run-post-import', [Landlord\TenantIntegrationController::class, 'runPostImport'])
+        ->name('landlord.tenants.integration.run-post-import');
     Route::delete('tenants/{tenant}/integration', [Landlord\TenantIntegrationController::class, 'destroy'])
         ->name('landlord.tenants.integration.destroy');
 

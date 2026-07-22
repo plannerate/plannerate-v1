@@ -24,7 +24,8 @@ class RunIntegrationImportCommand extends Command
     /** TTL do lock em segundos — cobre com folga a janela de despacho. */
     public const DISPATCH_LOCK_SECONDS = 600;
 
-    protected $signature = 'integration:run';
+    protected $signature = 'integration:run
+        {--tenant= : Roda apenas a integração deste tenant (id). Sem isso, roda todas as ativas}';
 
     protected $description = 'Executa importação de dados via integrações ativas';
 
@@ -115,9 +116,12 @@ class RunIntegrationImportCommand extends Command
     /** @return Collection<int, TenantIntegration> */
     private function getActiveIntegrations(): Collection
     {
+        $tenantId = trim((string) $this->option('tenant'));
+
         return TenantIntegration::query()
             ->with(['api', 'tenant'])
             ->where('is_active', true)
+            ->when($tenantId !== '', fn ($q) => $q->where('tenant_id', $tenantId))
             ->whereHas('api', fn ($q) => $q->where('is_active', true))
             ->get();
     }

@@ -5,6 +5,8 @@ return [
     'title' => 'Integração API',
     'description' => 'Configure a integração de API deste tenant.',
     'actions' => [
+        'run_import' => 'Executar importação',
+        'run_post_import' => 'Executar pós-importação',
         'test_connection' => 'Testar conexão',
         'run_test' => 'Executar teste',
         'delete' => 'Excluir integração',
@@ -84,8 +86,15 @@ return [
         'missing_configuration' => 'Salve a configuração da integração antes de testar a conexão.',
         'connection_success' => 'Conexão validada com sucesso.',
         'connection_failed' => 'Falha ao testar conexão: :error',
+        'import_queued' => 'Importação enfileirada. Acompanhe pelo Horizon; pode levar alguns minutos.',
+        'post_import_queued' => 'Pós-importação enfileirada. Ela espera as filas de importação esvaziarem antes de agir.',
+        'import_already_running' => 'Já existe uma importação em andamento para este tenant. Aguarde ela terminar.',
+        'integration_inactive' => 'Integração ou API inativa. Ative antes de executar.',
         'process_started_detail' => 'Processo :resource (:date) iniciado.',
         'process_finished_detail' => 'Processo :resource (:date) finalizado com status :status.',
+    ],
+    'confirmations' => [
+        'run_post_import' => 'A pós-importação vincula vendas, recalcula resumos e APAGA (soft-delete) produtos sem venda no período. Confirma?',
     ],
     'hints' => [
         'auth_password' => 'Ao editar, preencha apenas se quiser trocar a senha atual.',

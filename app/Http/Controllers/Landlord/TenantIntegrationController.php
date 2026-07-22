@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\UpdateTenantIntegrationRequest;
+use App\Jobs\Integrations\RunIntegrationPipelineJob;
 use App\Models\IntegrationApi;
+use App\Models\IntegrationImportRun;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
@@ -21,6 +23,12 @@ use Throwable;
 
 class TenantIntegrationController extends Controller
 {
+    /**
+     * Espera máxima do sync:post-import pelas filas de importação, em minutos.
+     * Abaixo do timeout do supervisor `maintenance` (1860s) com folga.
+     */
+    private const POST_IMPORT_WAIT_MINUTES = 20;
+
     public function edit(Tenant $tenant): Response
     {
         $this->authorize('update', $tenant);
@@ -167,6 +175,99 @@ class TenantIntegrationController extends Controller
         ]);
 
         return $this->toLandlordRoute('landlord.tenants.integration.edit', ['tenant' => $tenant]);
+    }
+
+    /**
+     * Dispara a importação deste tenant sob demanda, sem esperar o agendamento
+     * das 06:00.
+     *
+     * Enfileirado, nunca síncrono: a descoberta faz chamadas HTTP por loja e o
+     * fan-out de fetch dura minutos — não cabe num request.
+     */
+    public function runImport(Tenant $tenant): RedirectResponse
+    {
+        $this->authorize('update', $tenant);
+
+        if (! $this->hasRunnableIntegration($tenant)) {
+            return $this->toLandlordRoute('landlord.tenants.integration.edit', ['tenant' => $tenant]);
+        }
+
+        // Um import em andamento re-disparado duplicaria o fan-out de páginas.
+        if (IntegrationImportRun::query()->where('tenant_id', $tenant->id)->where('status', 'running')->exists()) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('app.landlord.tenant_integrations.messages.import_already_running'),
+            ]);
+
+            return $this->toLandlordRoute('landlord.tenants.integration.edit', ['tenant' => $tenant]);
+        }
+
+        RunIntegrationPipelineJob::dispatch(
+            RunIntegrationPipelineJob::STEP_IMPORT,
+            (string) $tenant->id,
+        );
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.tenant_integrations.messages.import_queued'),
+        ]);
+
+        return $this->toLandlordRoute('landlord.tenants.integration.edit', ['tenant' => $tenant]);
+    }
+
+    /**
+     * Dispara o pipeline pós-importação (vincula vendas, limpa, recalcula).
+     *
+     * `--wait-minutes` fica abaixo do timeout do supervisor `maintenance`
+     * (config/horizon.php: 1860s): o comando espera as filas de importação
+     * esvaziarem, e se essa espera passar do timeout o worker mata o job no meio.
+     */
+    public function runPostImport(Tenant $tenant): RedirectResponse
+    {
+        $this->authorize('update', $tenant);
+
+        if (! $this->hasRunnableIntegration($tenant)) {
+            return $this->toLandlordRoute('landlord.tenants.integration.edit', ['tenant' => $tenant]);
+        }
+
+        RunIntegrationPipelineJob::dispatch(
+            RunIntegrationPipelineJob::STEP_POST_IMPORT,
+            (string) $tenant->id,
+            self::POST_IMPORT_WAIT_MINUTES,
+        );
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.tenant_integrations.messages.post_import_queued'),
+        ]);
+
+        return $this->toLandlordRoute('landlord.tenants.integration.edit', ['tenant' => $tenant]);
+    }
+
+    /** Integração configurada e ativa dos dois lados; sinaliza o motivo quando não. */
+    private function hasRunnableIntegration(Tenant $tenant): bool
+    {
+        $integration = $tenant->integration()->with('api')->first();
+
+        if (! $integration instanceof TenantIntegration) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('app.landlord.tenant_integrations.messages.missing_configuration'),
+            ]);
+
+            return false;
+        }
+
+        if (! $integration->is_active || $integration->api === null || ! $integration->api->is_active) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('app.landlord.tenant_integrations.messages.integration_inactive'),
+            ]);
+
+            return false;
+        }
+
+        return true;
     }
 
     public function testConnection(Request $request, Tenant $tenant): RedirectResponse

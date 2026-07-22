@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, router } from '@inertiajs/vue3';
-import { Link2, Plug, PowerOff, Power } from 'lucide-vue-next';
+import { Link2, ListChecks, Play, Plug, PowerOff, Power } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import IntegrationApiController from '@/actions/App/Http/Controllers/Landlord/IntegrationApiController';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
@@ -55,7 +55,49 @@ const updateForm = computed(() => {
 });
 
 const statusLoading = ref(false);
+const runLoading = ref<'import' | 'post-import' | null>(null);
 const testPanelRef = ref<InstanceType<typeof TestPanel>>();
+
+const canRun = computed(() => props.integration?.is_active === true);
+
+/**
+ * Dispara importação/pós-importação sob demanda, sem esperar o agendamento das
+ * 06:00. O backend só enfileira — o trabalho leva minutos e roda no Horizon.
+ */
+function runPipeline(step: 'import' | 'post-import'): void {
+    if (!canRun.value || runLoading.value !== null) {
+        return;
+    }
+
+    // A pós-importação faz soft-delete de produtos sem venda no período; não é
+    // um botão para clicar por engano.
+    if (
+        step === 'post-import' &&
+        !window.confirm(
+            t('app.landlord.tenant_integrations.confirmations.run_post_import'),
+        )
+    ) {
+        return;
+    }
+
+    runLoading.value = step;
+
+    const action =
+        step === 'import'
+            ? TenantIntegrationController.runImport
+            : TenantIntegrationController.runPostImport;
+
+    router.post(
+        tenantWayfinderPath(action.url(props.tenant.id)),
+        {},
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                runLoading.value = null;
+            },
+        },
+    );
+}
 
 function toggleStatus(): void {
     if (!props.integration || statusLoading.value) {
@@ -120,6 +162,39 @@ function toggleStatus(): void {
                             {{
                                 t(
                                     'app.landlord.tenant_integrations.actions.test_connection',
+                                )
+                            }}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            :disabled="!canRun || runLoading !== null"
+                            :title="
+                                t(
+                                    'app.landlord.tenant_integrations.actions.run_import',
+                                )
+                            "
+                            @click="runPipeline('import')"
+                        >
+                            <Play class="size-4" />
+                            {{
+                                t(
+                                    'app.landlord.tenant_integrations.actions.run_import',
+                                )
+                            }}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            :disabled="!canRun || runLoading !== null"
+                            @click="runPipeline('post-import')"
+                        >
+                            <ListChecks class="size-4" />
+                            {{
+                                t(
+                                    'app.landlord.tenant_integrations.actions.run_post_import',
                                 )
                             }}
                         </Button>
