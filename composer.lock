@@ -355,12 +355,12 @@
             "source": {
                 "type": "git",
                 "url": "git@github.com:callcocam/laravel-integrations.git",
-                "reference": "e7e0ca765574aa7ae7bd226a5484c88665505d60"
+                "reference": "e92fdc62481e40c0ebfc2a977627ab586cf99dc3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/callcocam/laravel-integrations/zipball/e7e0ca765574aa7ae7bd226a5484c88665505d60",
-                "reference": "e7e0ca765574aa7ae7bd226a5484c88665505d60",
+                "url": "https://api.github.com/repos/callcocam/laravel-integrations/zipball/e92fdc62481e40c0ebfc2a977627ab586cf99dc3",
+                "reference": "e92fdc62481e40c0ebfc2a977627ab586cf99dc3",
                 "shasum": ""
             },
             "require": {
@@ -410,7 +410,7 @@
                 "source": "https://github.com/callcocam/laravel-integrations/tree/main",
                 "issues": "https://github.com/callcocam/laravel-integrations/issues"
             },
-            "time": "2026-07-22T17:53:38+00:00"
+            "time": "2026-07-22T21:55:19+00:00"
         },
         {
             "name": "callcocam/laravel-raptor-plannerate",
