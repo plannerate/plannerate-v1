@@ -26,36 +26,37 @@ defineProps<{
 
             <!-- Conteúdo sobreposto -->
             <div class="relative z-10 flex h-full flex-col p-12 xl:p-16">
-                <!-- Logo -->
-                <Link :href="home()">
-                    <AppLogoIcon class="h-32 w-auto" />
-                </Link>
+                <!-- Bloco central: logo + tagline centralizados verticalmente -->
+                <div class="flex flex-1 flex-col justify-center">
+                    <!-- Logo -->
+                    <Link :href="home()" class="w-fit">
+                        <AppLogoIcon class="h-32 w-auto" />
+                    </Link>
 
-                <!-- Tagline principal -->
-                <div class="mt-0 max-w-xl">
-                    <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-5 py-2">
-                        <span class="size-1.5 rounded-full bg-primary" />
-                        <span class="text-xs font-bold uppercase tracking-widest text-primary">
-                            {{ t('app.auth_layout.badge') }}
-                        </span>
+                    <!-- Tagline principal -->
+                    <div class="mt-0 max-w-xl">
+                        <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-5 py-2">
+                            <span class="size-1.5 rounded-full bg-primary" />
+                            <span class="text-xs font-bold uppercase tracking-widest text-primary">
+                                {{ t('app.auth_layout.badge') }}
+                            </span>
+                        </div>
+
+                        <h1 class="mb-2 text-4xl font-bold leading-[1.12] tracking-tight text-white xl:text-5xl">
+                            {{ t('app.auth_layout.headline_line_1') }}<br />
+                            {{ t('app.auth_layout.headline_line_2') }}<br />
+                            <span class="text-primary italic">
+                                {{ t('app.auth_layout.headline_highlight_line_1') }}<br />
+                                {{ t('app.auth_layout.headline_highlight_line_2') }}
+                            </span>
+                        </h1>
+
+                        <p class="max-w-md text-lg leading-relaxed text-white/55" v-html="t('app.auth_layout.description')" />
                     </div>
-
-                    <h1 class="mb-2 text-4xl font-bold leading-[1.12] tracking-tight text-white xl:text-5xl">
-                        {{ t('app.auth_layout.headline_line_1') }}<br />
-                        {{ t('app.auth_layout.headline_line_2') }}<br />
-                        <span class="text-primary italic">
-                            {{ t('app.auth_layout.headline_highlight_line_1') }}<br />
-                            {{ t('app.auth_layout.headline_highlight_line_2') }}
-                        </span>
-                    </h1>
-
-                    <p class="max-w-md text-lg leading-relaxed text-white/55" v-html="t('app.auth_layout.description')">
-                        
-                    </p>
                 </div>
 
-                <!-- Stats -->
-                <div class="mt-auto flex flex-wrap gap-12 border-t border-white/10 pt-9">
+                <!-- Stats (fixo no rodapé) -->
+                <div class="mt-12 flex flex-wrap gap-12 border-t border-white/10 pt-9">
                     <div>
                         <div class="text-3xl font-bold text-primary">{{ t('app.auth_layout.stats.inventory_precision_value') }}</div>
                         <div class="mt-1 text-[11px] font-semibold uppercase tracking-widest text-white/40">

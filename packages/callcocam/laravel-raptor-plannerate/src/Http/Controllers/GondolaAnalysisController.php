@@ -201,7 +201,7 @@ class GondolaAnalysisController extends Controller
     }
 
     /**
-     * Análise BCG: matriz de quadrantes com eixos configuráveis, período único.
+     * Análise de Quadrante: matriz de quadrantes com eixos configuráveis, período único.
      *
      * Ao contrário da Análise de Papel, não busca período anterior (não há eixo de
      * crescimento), e cruza o resultado com o espaço ocupado na gôndola — é o
@@ -267,7 +267,7 @@ class GondolaAnalysisController extends Controller
         } catch (\Exception $e) {
             Log::error('BcgAnalysis failed', ['gondola' => $gondola, 'error' => $e->getMessage()]);
 
-            return redirect()->back()->with('flash', ['error' => 'Erro ao calcular Análise BCG: '.$e->getMessage()]);
+            return redirect()->back()->with('flash', ['error' => 'Erro ao calcular Análise de Quadrante: '.$e->getMessage()]);
         }
 
         return redirect()->back();
@@ -372,7 +372,7 @@ class GondolaAnalysisController extends Controller
     }
 
     /**
-     * Agrega os resultados da Análise BCG por quadrante.
+     * Agrega os resultados da Análise de Quadrante por quadrante.
      *
      * `espaco_mal_alocado` é a contagem que interessa ao merchandiser: produtos cujo
      * espaço na gôndola está desalinhado do valor que entregam (para mais ou para menos).

@@ -136,7 +136,7 @@ return [
         'lagging_desc' => 'Baixo share e baixo crescimento: candidato a revisao de mix.',
     ],
     'bcg_params' => [
-        'title' => 'Parâmetros da Análise BCG',
+        'title' => 'Parâmetros da Análise de Quadrante',
         'description' => 'Matriz de quadrantes: escolha duas métricas e o nível da hierarquia onde a comparação é feita.',
         'axis_title' => 'Métricas dos Eixos',
         'x_axis' => 'Eixo X (Horizontal)',
@@ -157,12 +157,12 @@ return [
         'display_by_hint' => 'Granularidade dos resultados. Acima de produto, os itens são somados no nível escolhido e cada grupo vira um ponto — só ficam disponíveis níveis abaixo do "Classificar por".',
         'threshold_title' => 'Linha de Corte',
         'threshold_method' => 'Método de corte',
-        'threshold_median' => 'Mediana (recomendado)',
-        'threshold_mean' => 'Média (planilha original)',
+        'threshold_median' => 'Mediana',
+        'threshold_mean' => 'Média',
         'threshold_hint' => 'Vendas de varejo têm cauda longa: a média é puxada por poucos líderes e joga quase todo o sortimento abaixo dela. A mediana resiste a isso. Use a média para reproduzir a planilha número a número.',
         'period_title' => 'Período',
-        'period_hint' => 'A BCG compara duas métricas no MESMO período — não há eixo de crescimento, então não existe período anterior.',
-        'run_analysis' => 'Executar Análise BCG',
+        'period_hint' => 'A Análise de Quadrante compara duas métricas no MESMO período — não há eixo de crescimento, então não existe período anterior.',
+        'run_analysis' => 'Executar Análise de Quadrante',
     ],
     'bcg_results' => [
         'ean' => 'EAN',
@@ -182,7 +182,7 @@ return [
         'negative_margin_tooltip' => 'Vendido com margem de contribuição negativa.',
         'no_dimension_tooltip' => 'Produto sem largura cadastrada: o espaço não pôde ser medido, então não há recomendação.',
 
-        // Rótulos do preset canônico X=quantidade, Y=margem.
+        // Rótulos dos quadrantes — valem para qualquer combinação de eixos.
         // O nome aponta o que o produto PRECISA, não o eixo em que ele já é forte:
         //   forte_x = vende muito com margem baixa  → precisa de Margem
         //   forte_y = margem boa mas vende pouco    → precisa de Giro
@@ -195,9 +195,7 @@ return [
 
         'actions_title' => 'Ações recomendadas',
 
-        // Ações por quadrante. Só valem no preset canônico (quantidade × margem):
-        // fora dele, "revisar preço" ou "aumentar frentes" viram conselho sem lastro,
-        // porque o eixo fraco não é mais margem nem giro.
+        // Ações por quadrante — acompanham o rótulo, em qualquer combinação de eixos.
         'canonical_actions' => [
             'alto_alto' => [
                 'Manter a disponibilidade',
@@ -232,14 +230,6 @@ return [
             ],
         ],
 
-        // Fora do preset canônico o rótulo é derivado dos eixos escolhidos, senão mentiria
-        'derived' => [
-            'alto_alto' => 'Alto em :x e :y',
-            'forte_x' => 'Alto em :x, baixo em :y',
-            'forte_y' => 'Alto em :y, baixo em :x',
-            'baixo_baixo' => 'Baixo em :x e :y',
-        ],
-
         'action' => [
             'aumentar' => 'Aumentar frentes',
             'reduzir' => 'Reduzir frentes',
@@ -247,8 +237,8 @@ return [
         ],
     ],
     'bcg_chart' => [
-        'title' => 'Matriz BCG',
-        'aria' => 'Matriz BCG: dispersão dos produtos nos dois eixos, com o tamanho da bolha proporcional ao espaço ocupado na gôndola. Os mesmos dados estão na tabela abaixo.',
+        'title' => 'Matriz de Quadrantes',
+        'aria' => 'Matriz de Quadrantes: dispersão dos produtos nos dois eixos, com o tamanho da bolha proporcional ao espaço ocupado na gôndola. Os mesmos dados estão na tabela abaixo.',
         'group' => 'Grupo',
         'no_group' => 'Sem grupo',
         'cut_line' => 'corte',

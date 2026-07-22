@@ -19,7 +19,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Service da Análise BCG (matriz de quadrantes com eixos configuráveis).
+ * Service da Análise de Quadrante (matriz de quadrantes com eixos configuráveis).
  *
  * Porta da macro VBA de docs/BCG.md, com divergências deliberadas (ver abaixo).
  * Classifica cada produto comparando-o ao seu grupo mercadológico em DOIS eixos de
@@ -130,14 +130,14 @@ class BcgAnalysisService
         foreach ([$xAxis, $yAxis] as $axis) {
             if (! isset(self::AXIS_COLUMNS[$axis])) {
                 throw new \InvalidArgumentException(
-                    "Eixo inválido para a Análise BCG: '{$axis}'. Válidos: ".implode(', ', array_keys(self::AXIS_COLUMNS))
+                    "Eixo inválido para a Análise de Quadrante: '{$axis}'. Válidos: ".implode(', ', array_keys(self::AXIS_COLUMNS))
                 );
             }
         }
 
         if ($xAxis === $yAxis) {
             throw new \InvalidArgumentException(
-                "Os eixos X e Y da Análise BCG devem ser métricas diferentes (ambos são '{$xAxis}')."
+                "Os eixos X e Y da Análise de Quadrante devem ser métricas diferentes (ambos são '{$xAxis}')."
             );
         }
 
@@ -156,7 +156,7 @@ class BcgAnalysisService
     {
         if (! in_array($method, [self::THRESHOLD_MEDIAN, self::THRESHOLD_MEAN], true)) {
             throw new \InvalidArgumentException(
-                "Método de corte inválido para a Análise BCG: '{$method}'. Válidos: median, mean."
+                "Método de corte inválido para a Análise de Quadrante: '{$method}'. Válidos: median, mean."
             );
         }
 
@@ -174,7 +174,7 @@ class BcgAnalysisService
     {
         if (! isset(self::HIERARCHY_LEVELS[$level])) {
             throw new \InvalidArgumentException(
-                "Nível de classificação inválido para a Análise BCG: '{$level}'. Válidos: ".implode(', ', array_keys(self::HIERARCHY_LEVELS))
+                "Nível de classificação inválido para a Análise de Quadrante: '{$level}'. Válidos: ".implode(', ', array_keys(self::HIERARCHY_LEVELS))
             );
         }
 
@@ -201,7 +201,7 @@ class BcgAnalysisService
 
         if (! in_array($mode, $validModes, true)) {
             throw new \InvalidArgumentException(
-                "Modo de exibição inválido para a Análise BCG: '{$mode}'. Válidos: ".implode(', ', $validModes).'.'
+                "Modo de exibição inválido para a Análise de Quadrante: '{$mode}'. Válidos: ".implode(', ', $validModes).'.'
             );
         }
 
@@ -259,7 +259,7 @@ class BcgAnalysisService
 
         if (! isset($filters['tenant_id']) || empty($filters['tenant_id'])) {
             Log::error('BcgAnalysis - tenant_id é obrigatório');
-            throw new \InvalidArgumentException('tenant_id é obrigatório para a Análise BCG');
+            throw new \InvalidArgumentException('tenant_id é obrigatório para a Análise de Quadrante');
         }
 
         // Busca codigo_erp dos produtos para join com as tabelas de venda
@@ -418,7 +418,7 @@ class BcgAnalysisService
     }
 
     /**
-     * Etapa pura da Análise BCG: calcula os limiares do grupo, o percentil de cada
+     * Etapa pura da Análise de Quadrante: calcula os limiares do grupo, o percentil de cada
      * produto e o quadrante. Não consulta o banco.
      *
      * Regras:

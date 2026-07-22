@@ -174,7 +174,7 @@ const markerPadding = computed(() => Math.max(2, Math.min(8, props.scale * 2)));
                             </ul>
                         </div>
 
-                        <!-- Eixos usados: o rótulo do quadrante é derivado deles -->
+                        <!-- Eixos usados no cálculo do quadrante -->
                         <div class="rounded-lg border border-border bg-accent/50 p-2 text-[11px]">
                             <p class="mb-1 font-semibold text-muted-foreground">
                                 {{ t('plannerate.analysis.bcg_params.axis_title') }}

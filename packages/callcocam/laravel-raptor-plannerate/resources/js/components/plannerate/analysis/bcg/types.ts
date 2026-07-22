@@ -115,18 +115,9 @@ export interface BcgSummary {
     espaco_mal_alocado: number
 }
 
-/** Rótulo curto de cada métrica de eixo, para compor os nomes dos quadrantes. */
+/** Rótulo curto de cada métrica de eixo — usado nos títulos dos eixos e no CSV. */
 export const AXIS_LABEL_KEYS: Record<BcgAxis, string> = {
     valor: 'plannerate.analysis.bcg_params.axis_valor',
     quantidade: 'plannerate.analysis.bcg_params.axis_quantidade',
     margem: 'plannerate.analysis.bcg_params.axis_margem',
 }
-
-/**
- * O preset canônico da planilha: X = quantidade, Y = margem.
- * Só nesta combinação os rótulos originais ("Alto valor – manutenção", "Incentivo –
- * volume", "Incentivo – lucro") descrevem a realidade — em qualquer outra, o rótulo
- * é derivado dos eixos escolhidos.
- */
-export const isCanonicalPreset = (xAxis: BcgAxis, yAxis: BcgAxis): boolean =>
-    xAxis === 'quantidade' && yAxis === 'margem'

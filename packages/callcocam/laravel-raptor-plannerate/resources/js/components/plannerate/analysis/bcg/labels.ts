@@ -1,18 +1,18 @@
 import { useT } from '@/composables/useT'
-import { AXIS_LABEL_KEYS, isCanonicalPreset    } from './types'
+import { AXIS_LABEL_KEYS } from './types'
 import type {BcgAxis, BcgQuadrant, BcgSpaceAction} from './types';
 
 /**
- * Rótulos, cores e descrições dos quadrantes da Análise BCG.
+ * Rótulos, cores e descrições dos quadrantes da Análise de Quadrante.
  *
  * Fica num só lugar porque a lista, o painel de seleção e o selo da gôndola precisam
- * exatamente da mesma composição — e ela não é trivial: o rótulo DEPENDE DOS EIXOS.
+ * exatamente da mesma composição.
  *
- * Os quatro nomes da planilha VBA ("Alto valor – manutenção", "Incentivo – volume",
- * "Incentivo – lucro", "Baixo valor") só descrevem a realidade quando X = quantidade
- * e Y = margem. Se o usuário escolher X = valor e Y = quantidade, "Incentivo – lucro"
- * vira um rótulo sem eixo de lucro — mentira pura. Fora do preset canônico, o rótulo
- * é derivado das métricas escolhidas ("Alto em Valor, baixo em Quantidade").
+ * O rótulo é FIXO: os quatro nomes ("Alto desempenho — Proteger", "Incentivo — Margem",
+ * "Incentivo — Giro", "Baixo desempenho — Revisar") valem em qualquer combinação de
+ * eixos. É a nomenclatura que o usuário reconhece; trocá-la por um texto derivado das
+ * métricas ("Alto em Valor de Venda e Margem") quebra o reconhecimento sem ganhar
+ * precisão.
  */
 export function useBcgLabels() {
     const { t, tList } = useT()
@@ -20,49 +20,28 @@ export function useBcgLabels() {
     const axisLabel = (axis: BcgAxis): string => t(AXIS_LABEL_KEYS[axis])
 
     /**
-     * Rótulo do quadrante. Usa os nomes da planilha no preset canônico (que o usuário
-     * reconhece) e os deriva dos eixos em qualquer outra combinação.
+     * Rótulo do quadrante — sempre os mesmos nomes, independentemente dos eixos.
+     *
+     * Os eixos continuam na assinatura porque as chamadas os passam e porque a
+     * granularidade de eixo pode voltar a importar; hoje não influenciam o rótulo.
      */
-    const quadrantLabel = (quadrant: BcgQuadrant, xAxis: BcgAxis, yAxis: BcgAxis): string => {
-        if (isCanonicalPreset(xAxis, yAxis)) {
-            return t(`plannerate.analysis.bcg_results.canonical.${quadrant}`)
-        }
-
-        const x = axisLabel(xAxis)
-        const y = axisLabel(yAxis)
-
-        switch (quadrant) {
-            case 'alto_alto':
-                return t('plannerate.analysis.bcg_results.derived.alto_alto', { x, y })
-            case 'forte_x':
-                return t('plannerate.analysis.bcg_results.derived.forte_x', { x, y })
-            case 'forte_y':
-                return t('plannerate.analysis.bcg_results.derived.forte_y', { x, y })
-            default:
-                return t('plannerate.analysis.bcg_results.derived.baixo_baixo', { x, y })
-        }
-    }
+    const quadrantLabel = (quadrant: BcgQuadrant, _xAxis?: BcgAxis, _yAxis?: BcgAxis): string =>
+        t(`plannerate.analysis.bcg_results.canonical.${quadrant}`)
 
     /** Descrição estratégica do quadrante (não é ordem de ação — ver docs/BCG-PLANO.md). */
     const quadrantDescription = (quadrant: BcgQuadrant): string =>
         t(`plannerate.analysis.bcg_selection.${quadrant}_desc`)
 
     /**
-     * Ações recomendadas do quadrante.
+     * Ações recomendadas do quadrante — sempre presentes, como o rótulo.
      *
-     * Só existem no preset canônico (X = quantidade, Y = margem) — pela mesma razão dos
-     * rótulos: as ações nomeiam o eixo FRACO ("revisar preço" para quem tem margem baixa,
-     * "aumentar frentes" para quem gira pouco). Com outros eixos esse eixo fraco não é
-     * mais margem nem giro, e a lista viraria conselho sem lastro. Fora do preset devolve
-     * lista vazia, e a UI mostra apenas a descrição do quadrante.
+     * A lista acompanha o quadrante, não o par de eixos: se o produto é lido como
+     * "Incentivo — Margem" em qualquer configuração, a recomendação que vem junto
+     * também tem de aparecer. Deixá-la vazia fora de quantidade × margem dava um
+     * painel com diagnóstico e sem encaminhamento.
      */
-    const quadrantActions = (quadrant: BcgQuadrant, xAxis: BcgAxis, yAxis: BcgAxis): string[] => {
-        if (!isCanonicalPreset(xAxis, yAxis)) {
-            return []
-        }
-
-        return tList(`plannerate.analysis.bcg_results.canonical_actions.${quadrant}`)
-    }
+    const quadrantActions = (quadrant: BcgQuadrant, _xAxis?: BcgAxis, _yAxis?: BcgAxis): string[] =>
+        tList(`plannerate.analysis.bcg_results.canonical_actions.${quadrant}`)
 
     /** Título da lista de ações recomendadas. */
     const actionsTitle = (): string => t('plannerate.analysis.bcg_results.actions_title')

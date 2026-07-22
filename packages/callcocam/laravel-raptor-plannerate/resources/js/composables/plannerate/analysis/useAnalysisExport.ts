@@ -183,9 +183,9 @@ export function useAnalysisExport() {
      * um CSV com cabeçalho "Eixo X" é ilegível fora da tela que o gerou.
      *
      * @param results - Resultados BCG (normalmente os filtrados/exibidos na tela)
-     * @param filename - Prefixo do nome do arquivo; padrão: 'analise_bcg'
+     * @param filename - Prefixo do nome do arquivo; padrão: 'analise_quadrante'
      */
-    function exportBcgToCsv(results: BcgResult[], filename: string = 'analise_bcg'): void {
+    function exportBcgToCsv(results: BcgResult[], filename: string = 'analise_quadrante'): void {
         const axisLabels: Record<BcgAxis, string> = {
             valor: 'Valor de Venda',
             quantidade: 'Venda em Quantidade',
@@ -193,10 +193,10 @@ export function useAnalysisExport() {
         };
 
         const quadrantLabels: Record<string, string> = {
-            alto_alto: 'Alto nos dois eixos',
-            forte_x: 'Alto so no eixo X',
-            forte_y: 'Alto so no eixo Y',
-            baixo_baixo: 'Baixo nos dois eixos',
+            alto_alto: 'Alto desempenho - Proteger',
+            forte_x: 'Incentivo - Margem',
+            forte_y: 'Incentivo - Giro',
+            baixo_baixo: 'Baixo desempenho - Revisar',
         };
 
         const actionLabels: Record<string, string> = {
