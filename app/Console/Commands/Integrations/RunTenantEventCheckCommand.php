@@ -3,8 +3,9 @@
 namespace App\Console\Commands\Integrations;
 
 use App\Events\Tenant\TenantIsolationCheckEvent;
-use App\Models\Tenant;
+use App\Services\Integrations\Support\IntegrationModels;
 use Illuminate\Console\Command;
+use Spatie\Multitenancy\Models\Tenant;
 
 class RunTenantEventCheckCommand extends Command
 {
@@ -31,7 +32,7 @@ class RunTenantEventCheckCommand extends Command
             $resource = 'isolation_test';
         }
 
-        $tenant = Tenant::query()->find($tenantId);
+        $tenant = IntegrationModels::tenant()::query()->find($tenantId);
 
         if (! $tenant instanceof Tenant) {
             $this->error(sprintf('Tenant nao encontrado: %s', $tenantId));
@@ -42,7 +43,7 @@ class RunTenantEventCheckCommand extends Command
         $testedAt = now()->toIso8601String();
 
         $isolationOk = (bool) $tenant->execute(function () use ($tenantId, $resource, $testedAt): bool {
-            $currentTenant = Tenant::current();
+            $currentTenant = IntegrationModels::tenant()::current();
             $currentTenantId = (string) ($currentTenant?->getKey() ?? '');
             $currentTenantSlug = (string) ($currentTenant?->getAttribute('slug') ?? '');
             $status = $currentTenantId === $tenantId ? 'ok' : 'mismatch';
@@ -84,7 +85,7 @@ class RunTenantEventCheckCommand extends Command
             return null;
         }
 
-        $tenants = Tenant::query()
+        $tenants = IntegrationModels::tenant()::query()
             ->orderBy('name')
             ->get(['id', 'name', 'slug']);
 

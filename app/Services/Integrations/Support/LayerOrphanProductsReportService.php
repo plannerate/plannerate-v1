@@ -83,10 +83,10 @@ class LayerOrphanProductsReportService
             ->all();
 
         $legacyProducts = DB::connection($legacyConnectionName)
-            ->table('products')
+            ->table(IntegrationTables::name('products'))
             ->whereIn('id', $legacyIds)
             ->when(
-                Schema::connection($legacyConnectionName)->hasColumn('products', 'deleted_at'),
+                Schema::connection($legacyConnectionName)->hasColumn(IntegrationTables::name('products'), 'deleted_at'),
                 static fn ($query) => $query->whereNull('deleted_at')
             )
             ->select(['id', 'ean'])
@@ -103,7 +103,7 @@ class LayerOrphanProductsReportService
         $tenantProductsByEan = $candidateEans === []
             ? collect()
             : DB::connection($tenantConnectionName)
-                ->table('products')
+                ->table(IntegrationTables::name('products'))
                 ->where('tenant_id', $tenantId)
                 ->whereIn('ean', $candidateEans)
                 ->whereNull('deleted_at')

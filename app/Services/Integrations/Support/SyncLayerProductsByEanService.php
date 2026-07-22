@@ -21,7 +21,7 @@ class SyncLayerProductsByEanService
 
         DB::connection($tenantConnectionName)
             ->table('layers as l')
-            ->join('products as p', function ($join): void {
+            ->join(IntegrationTables::name('products').' as p', function ($join): void {
                 $join->on('p.tenant_id', '=', 'l.tenant_id')
                     ->on('p.ean', '=', 'l.ean');
             })
@@ -69,7 +69,7 @@ class SyncLayerProductsByEanService
 
                     if (! $preview) {
                         DB::connection($tenantConnectionName)
-                            ->table('layers')
+                            ->table(IntegrationTables::name('layers'))
                             ->upsert($layerUpdates, ['id'], ['product_id', 'updated_at']);
                     }
                 }
@@ -82,7 +82,7 @@ class SyncLayerProductsByEanService
                     }
 
                     $summary['products_restored'] += DB::connection($tenantConnectionName)
-                        ->table('products')
+                        ->table(IntegrationTables::name('products'))
                         ->whereIn('id', $productIdsToRestore)
                         ->whereNotNull('deleted_at')
                         ->update([

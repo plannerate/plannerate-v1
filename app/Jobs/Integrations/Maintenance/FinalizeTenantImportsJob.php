@@ -2,7 +2,8 @@
 
 namespace App\Jobs\Integrations\Maintenance;
 
-use App\Models\Tenant;
+use App\Services\Integrations\Support\IntegrationModels;
+use App\Services\Integrations\Support\IntegrationTables;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
+use Spatie\Multitenancy\Models\Tenant;
 
 class FinalizeTenantImportsJob implements NotTenantAware, ShouldBeUnique, ShouldQueue
 {
@@ -32,7 +34,7 @@ class FinalizeTenantImportsJob implements NotTenantAware, ShouldBeUnique, Should
 
     public function handle(): void
     {
-        $tenant = Tenant::query()
+        $tenant = IntegrationModels::tenant()::query()
             ->whereKey($this->tenantId)
             ->where('status', 'active')
             ->first();
@@ -45,7 +47,7 @@ class FinalizeTenantImportsJob implements NotTenantAware, ShouldBeUnique, Should
             $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
 
             return DB::connection($connection)
-                ->table('sales')
+                ->table(IntegrationTables::name('sales'))
                 ->where('tenant_id', (string) $tenant->id)
                 ->whereNull('deleted_at')
                 ->exists();

@@ -2,11 +2,13 @@
 
 namespace App\Console\Commands\Integrations;
 
-use App\Models\Tenant;
+use App\Services\Integrations\Support\IntegrationModels;
+use App\Services\Integrations\Support\IntegrationTables;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Multitenancy\Models\Tenant;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\multiselect;
@@ -78,7 +80,7 @@ class IntegrationStatusCommand extends Command
 
     private function pickTenant(): ?Tenant
     {
-        $tenants = Tenant::query()
+        $tenants = IntegrationModels::tenant()::query()
             ->orderBy('name')
             ->get(['id', 'name', 'slug', 'database']);
 
@@ -291,11 +293,11 @@ class IntegrationStatusCommand extends Command
             $connection = DB::connection('tenant');
 
             $connection->transaction(function () use ($connection, $storeIds, $tables, &$summary, $tenantId): void {
-                if (in_array('sales', $tables, true) && Schema::connection('tenant')->hasTable('sales')) {
+                if (in_array('sales', $tables, true) && Schema::connection('tenant')->hasTable(IntegrationTables::name('sales'))) {
                     $this->line('  Limpando [sales]...');
 
                     $summary['sales_deleted'] = $connection
-                        ->table('sales')
+                        ->table(IntegrationTables::name('sales'))
                         ->where('tenant_id', $tenantId)
                         ->whereIn('store_id', $storeIds)
                         ->delete();
@@ -303,11 +305,11 @@ class IntegrationStatusCommand extends Command
 
                 $productIdsFromSelectedStores = collect();
 
-                if (in_array('product_store', $tables, true) && Schema::connection('tenant')->hasTable('product_store')) {
+                if (in_array('product_store', $tables, true) && Schema::connection('tenant')->hasTable(IntegrationTables::name('product_store'))) {
                     $this->line('  Mapeando produtos vinculados nas lojas selecionadas...');
 
                     $productIdsFromSelectedStores = $connection
-                        ->table('product_store')
+                        ->table(IntegrationTables::name('product_store'))
                         ->where('tenant_id', $tenantId)
                         ->whereIn('store_id', $storeIds)
                         ->pluck('product_id')
@@ -318,20 +320,20 @@ class IntegrationStatusCommand extends Command
                     $this->line('  Limpando [product_store]...');
 
                     $summary['product_store_deleted'] = $connection
-                        ->table('product_store')
+                        ->table(IntegrationTables::name('product_store'))
                         ->where('tenant_id', $tenantId)
                         ->whereIn('store_id', $storeIds)
                         ->delete();
                 }
 
-                if (! in_array('products', $tables, true) || ! Schema::connection('tenant')->hasTable('products') || $productIdsFromSelectedStores->isEmpty()) {
+                if (! in_array('products', $tables, true) || ! Schema::connection('tenant')->hasTable(IntegrationTables::name('products')) || $productIdsFromSelectedStores->isEmpty()) {
                     return;
                 }
 
                 $this->line('  Limpando [products] órfãos...');
 
                 $summary['products_deleted'] = $connection
-                    ->table('products')
+                    ->table(IntegrationTables::name('products'))
                     ->where('tenant_id', $tenantId)
                     ->whereIn('id', $productIdsFromSelectedStores->values()->all())
                     ->whereNotExists(function ($query) use ($tenantId): void {
@@ -384,12 +386,12 @@ class IntegrationStatusCommand extends Command
     {
         /** @var Collection<int, object{id: string, name: string|null}> $stores */
         $stores = $tenant->execute(function (): Collection {
-            if (! Schema::connection('tenant')->hasTable('stores')) {
+            if (! Schema::connection('tenant')->hasTable(IntegrationTables::name('stores'))) {
                 return collect();
             }
 
             return DB::connection('tenant')
-                ->table('stores')
+                ->table(IntegrationTables::name('stores'))
                 ->whereNull('deleted_at')
                 ->orderBy('name')
                 ->get(['id', 'name']);

@@ -2,8 +2,6 @@
 
 namespace App\Services\Integrations\Lookup;
 
-use App\Models\Product;
-use App\Models\Store;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\FieldValueResolver;
 use App\Services\Integrations\IntegrationHttpClient;
@@ -12,6 +10,7 @@ use App\Services\Integrations\Support\DeterministicIdGenerator;
 use App\Services\Integrations\Support\ImportDiscardMetrics;
 use App\Services\Integrations\TenantRecordPersister;
 use App\Services\Integrations\TenantUpsertRecordPreparer;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -40,8 +39,8 @@ class SingleProductFetchService
 
     public function fetch(
         TenantIntegration $integration,
-        Product $product,
-        Store $store,
+        Model $product,
+        Model $store,
         bool $updateProduct = false,
         ?string $dateFrom = null,
         ?string $dateTo = null,
@@ -139,8 +138,8 @@ class SingleProductFetchService
         array $config,
         array $requests,
         array $lookup,
-        Product $product,
-        Store $store,
+        Model $product,
+        Model $store,
         SingleProductFetchResult $result,
     ): void {
         try {
@@ -188,8 +187,8 @@ class SingleProductFetchService
         array $config,
         array $requests,
         array $lookup,
-        Product $product,
-        Store $store,
+        Model $product,
+        Model $store,
         SingleProductFetchResult $result,
         ?string $dateFrom = null,
         ?string $dateTo = null,
@@ -371,7 +370,7 @@ class SingleProductFetchService
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     /** @param array<string, mixed> $lookup */
-    private function productCode(array $lookup, Product $product): string
+    private function productCode(array $lookup, Model $product): string
     {
         $key = (string) data_get($lookup, 'lookup_key', 'ean');
 
@@ -389,7 +388,7 @@ class SingleProductFetchService
      *
      * @param  array<string, mixed>  $lookup
      */
-    private function storeValue(array $lookup, Store $store): ?string
+    private function storeValue(array $lookup, Model $store): ?string
     {
         $key = (string) data_get($lookup, 'store_key', 'document');
         $value = trim((string) ($store->{$key} ?? ''));

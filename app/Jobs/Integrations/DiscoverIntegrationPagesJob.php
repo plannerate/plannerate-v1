@@ -3,8 +3,8 @@
 namespace App\Jobs\Integrations;
 
 use App\Models\IntegrationApi;
-use App\Models\Store;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Contracts\StoresProvider;
 use App\Services\Integrations\Discovery\CursorModeDiscoverer;
 use App\Services\Integrations\Discovery\DailyModeDiscoverer;
 use App\Services\Integrations\Discovery\PageModeDiscoverer;
@@ -131,17 +131,9 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
             return [null];
         }
 
-        $stores = $integration->tenant->execute(function (): array {
-            return Store::published()
-                ->get(['id', 'document'])
-                ->map(fn (Store $store): array => [
-                    'id' => (string) $store->id,
-                    'document' => preg_replace('/\D/', '', (string) $store->document) ?? '',
-                ])
-                ->filter(fn (array $s): bool => $s['document'] !== '')
-                ->values()
-                ->all();
-        });
+        $stores = $integration->tenant->execute(
+            fn (): array => app(StoresProvider::class)->stores(),
+        );
 
         if ($stores === []) {
             Log::warning('DiscoverIntegrationPagesJob: nenhuma loja publicada encontrada', [

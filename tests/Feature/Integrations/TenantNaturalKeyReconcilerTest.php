@@ -238,6 +238,40 @@ test('tabelas sem chave natural configurada passam intactas', function (): void 
     DB::connection('tenant')->disableQueryLog();
 });
 
+test('a chave natural vem da config, não de constante no código', function (): void {
+    $tenantId = (string) str()->ulid();
+    $existingId = (string) str()->ulid();
+    $newId = (string) str()->ulid();
+
+    insertReconcilerProduct($tenantId, $existingId, '7891035017060', ['codigo_erp' => 'ERP-60']);
+
+    // Reconciliar por codigo_erp em vez de ean: EAN diferente, codigo_erp igual.
+    config(['integrations.natural_keys' => [
+        'products' => ['columns' => ['codigo_erp'], 'soft_deletes' => true],
+    ]]);
+
+    $records = [reconcilerRecord($tenantId, $newId, '7891035017061', 'ERP-60')];
+
+    $reconciled = TenantNaturalKeyReconciler::reconcile(DB::connection('tenant'), 'products', $records);
+
+    expect($reconciled[0]['id'])->toBe($existingId);
+});
+
+test('tabela removida da config passa intacta', function (): void {
+    $tenantId = (string) str()->ulid();
+    $newId = (string) str()->ulid();
+
+    insertReconcilerProduct($tenantId, (string) str()->ulid(), '7891035017062');
+
+    config(['integrations.natural_keys' => []]);
+
+    $records = [reconcilerRecord($tenantId, $newId, '7891035017062', 'ERP-1')];
+
+    $reconciled = TenantNaturalKeyReconciler::reconcile(DB::connection('tenant'), 'products', $records);
+
+    expect($reconciled[0]['id'])->toBe($newId);
+});
+
 // ─── Sales (chave natural composta) ─────────────────────────────────────────
 
 /**

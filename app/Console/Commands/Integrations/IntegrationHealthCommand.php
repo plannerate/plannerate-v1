@@ -3,10 +3,10 @@
 namespace App\Console\Commands\Integrations;
 
 use App\Models\IntegrationImportRun;
-use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Support\ImportDiscardMetrics;
 use App\Services\Integrations\Support\ImportQueueMonitor;
+use App\Services\Integrations\Support\IntegrationTables;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Multitenancy\Models\Tenant;
 
 /**
  * Relatório de saúde do pipeline de importação — não-interativo e scriptável.
@@ -176,7 +177,7 @@ class IntegrationHealthCommand extends Command
 
         $lastDate = $data['last_date'] !== null ? Carbon::parse((string) $data['last_date']) : null;
         $ageDays = $lastDate !== null ? $lastDate->startOfDay()->diffInDays(now()->startOfDay()) : null;
-        $stale = $targetTable === 'sales' && ($lastDate === null || $ageDays > self::SALES_STALE_DAYS);
+        $stale = IntegrationTables::is($targetTable, 'sales') && ($lastDate === null || $ageDays > self::SALES_STALE_DAYS);
 
         return [
             'tenant' => $tenant->name,

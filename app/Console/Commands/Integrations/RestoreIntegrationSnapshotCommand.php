@@ -3,10 +3,11 @@
 namespace App\Console\Commands\Integrations;
 
 use App\Models\IntegrationApi;
-use App\Models\Tenant;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Support\IntegrationModels;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Multitenancy\Models\Tenant;
 use Throwable;
 
 /**
@@ -22,6 +23,11 @@ use Throwable;
  * o id do blueprint, então recriar com id novo quebraria o vínculo.
  *
  * Idempotente: `updateOrCreate` por id. Rode com `--dry-run` antes.
+ *
+ * O snapshot grava, junto dos dados, a chave `model` com o FQCN do model que os
+ * produziu. Ela é metadado descritivo e **não** é usada para resolver classe alguma:
+ * a restauração sempre passa pelos models desta versão do código. É isso que faz um
+ * snapshot antigo continuar restaurável depois de o motor mudar de namespace.
  */
 class RestoreIntegrationSnapshotCommand extends Command
 {
@@ -93,7 +99,7 @@ class RestoreIntegrationSnapshotCommand extends Command
             return false;
         }
 
-        if (Tenant::query()->whereKey($tenantId)->doesntExist()) {
+        if (IntegrationModels::tenant()::query()->whereKey($tenantId)->doesntExist()) {
             $this->warn("  {$tenantId}: tenant não existe no landlord — crie-o antes de restaurar a integração.");
 
             return false;

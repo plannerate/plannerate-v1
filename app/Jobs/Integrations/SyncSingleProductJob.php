@@ -3,11 +3,9 @@
 namespace App\Jobs\Integrations;
 
 use App\Events\Tenant\ProductSalesSynced;
-use App\Models\Product;
-use App\Models\Store;
-use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Lookup\SingleProductFetchService;
+use App\Services\Integrations\Support\IntegrationModels;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -69,8 +67,8 @@ class SyncSingleProductJob implements ShouldQueue, TenantAware
             return;
         }
 
-        $product = Product::query()->find($this->productId);
-        $store = Store::query()->find($this->storeId);
+        $product = IntegrationModels::query('product')->find($this->productId);
+        $store = IntegrationModels::query('store')->find($this->storeId);
 
         if ($product === null || $store === null) {
             $this->broadcast('failed', message: __('app.tenant.products.sync.not_found'));
@@ -98,7 +96,7 @@ class SyncSingleProductJob implements ShouldQueue, TenantAware
     public function failed(Throwable $e): void
     {
         // No failed() o tenant pode não estar restaurado — re-seleciona antes de transmitir.
-        Tenant::query()->find($this->tenantId)?->makeCurrent();
+        IntegrationModels::tenant()::query()->find($this->tenantId)?->makeCurrent();
 
         ProductSalesSynced::dispatch($this->tenantId, $this->productId, 'failed', 0, 0, $e->getMessage());
     }

@@ -7,15 +7,16 @@ use App\Jobs\Cleanup\CleanupOrphanSalesJob;
 use App\Jobs\Cleanup\DeactivateInactiveProductsJob;
 use App\Jobs\Cleanup\NotifyCleanupCompletedJob;
 use App\Jobs\Cleanup\RestoreSoldProductsJob;
-use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Support\ImportQueueMonitor;
+use App\Services\Integrations\Support\IntegrationTables;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Spatie\Multitenancy\Models\Tenant;
 use Throwable;
 
 class CleanupCommand extends Command
@@ -229,7 +230,7 @@ class CleanupCommand extends Command
     protected function salesDataIsFresh(string $tenantId, string $connection): bool
     {
         $maxSaleDate = DB::connection($connection)
-            ->table('sales')
+            ->table(IntegrationTables::name('sales'))
             ->where('tenant_id', $tenantId)
             ->max('sale_date');
 
@@ -275,7 +276,7 @@ class CleanupCommand extends Command
     protected function countOldSales(string $tenantId, string $connection, string $cutoffDate, array $retentionsByPath): int
     {
         $count = DB::connection($connection)
-            ->table('sales')
+            ->table(IntegrationTables::name('sales'))
             ->where('tenant_id', $tenantId)
             ->where('sale_date', '<', $cutoffDate)
             ->count();
@@ -301,7 +302,7 @@ class CleanupCommand extends Command
     protected function countOrphanSales(string $tenantId, string $connection): int
     {
         $totalProducts = DB::connection($connection)
-            ->table('products')
+            ->table(IntegrationTables::name('products'))
             ->where('tenant_id', $tenantId)
             ->count();
 
@@ -312,12 +313,12 @@ class CleanupCommand extends Command
         }
 
         $count = DB::connection($connection)
-            ->table('sales')
+            ->table(IntegrationTables::name('sales'))
             ->where('tenant_id', $tenantId)
             ->whereNotNull('product_id')
             ->whereNotExists(function ($query): void {
                 $query->select(DB::raw(1))
-                    ->from('products')
+                    ->from(IntegrationTables::name('products'))
                     ->whereColumn('products.id', 'sales.product_id')
                     ->whereColumn('products.tenant_id', 'sales.tenant_id');
             })
@@ -342,7 +343,7 @@ class CleanupCommand extends Command
     protected function countInactiveProducts(string $tenantId, string $connection, string $cutoffDate): int
     {
         $totalSales = DB::connection($connection)
-            ->table('sales')
+            ->table(IntegrationTables::name('sales'))
             ->where('tenant_id', $tenantId)
             ->count();
 
@@ -353,19 +354,19 @@ class CleanupCommand extends Command
         }
 
         $count = DB::connection($connection)
-            ->table('products')
+            ->table(IntegrationTables::name('products'))
             ->where('tenant_id', $tenantId)
             ->whereNull('deleted_at')
             ->whereNotExists(function ($query) use ($cutoffDate): void {
                 $query->select(DB::raw(1))
-                    ->from('sales')
+                    ->from(IntegrationTables::name('sales'))
                     ->whereColumn('sales.product_id', 'products.id')
                     ->whereColumn('sales.tenant_id', 'products.tenant_id')
                     ->where('sales.sale_date', '>=', $cutoffDate);
             })
             ->whereNotExists(function ($query): void {
                 $query->select(DB::raw(1))
-                    ->from('layers')
+                    ->from(IntegrationTables::name('layers'))
                     ->whereColumn('layers.product_id', 'products.id')
                     ->whereColumn('layers.tenant_id', 'products.tenant_id')
                     ->whereNull('layers.deleted_at');
@@ -397,19 +398,19 @@ class CleanupCommand extends Command
         $cutoffDate = now()->subDays($days)->toDateString();
 
         $deletedWithSales = DB::connection($connection)
-            ->table('products')
+            ->table(IntegrationTables::name('products'))
             ->where('tenant_id', $tenantId)
             ->whereNotNull('deleted_at')
             ->where(function ($query) use ($cutoffDate): void {
                 $query->whereExists(function ($salesQuery) use ($cutoffDate): void {
                     $salesQuery->select(DB::raw(1))
-                        ->from('sales')
+                        ->from(IntegrationTables::name('sales'))
                         ->whereColumn('sales.product_id', 'products.id')
                         ->whereColumn('sales.tenant_id', 'products.tenant_id')
                         ->where('sales.sale_date', '>=', $cutoffDate);
                 })->orWhereExists(function ($layersQuery): void {
                     $layersQuery->select(DB::raw(1))
-                        ->from('layers')
+                        ->from(IntegrationTables::name('layers'))
                         ->whereColumn('layers.product_id', 'products.id')
                         ->whereColumn('layers.tenant_id', 'products.tenant_id')
                         ->whereNull('layers.deleted_at');
