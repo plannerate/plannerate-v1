@@ -227,6 +227,20 @@ jobs:
               exit 1
             fi
 
+            # O motor de integrações virou pacote: suas migrations landlord vivem em
+            # vendor/ e o `migrate --path=database/migrations/landlord` acima não as
+            # alcança. `integrations:migrate` roda o conjunto do pacote — idempotente
+            # (migration já aplicada é pulada pelo nome do arquivo). Guardado porque o
+            # app pré-corte não registra o comando, e aí o deploy não pode falhar.
+            docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
+              set -e
+              if php artisan list --raw 2>/dev/null | grep -q "^integrations:migrate"; then
+                php artisan integrations:migrate --force
+              else
+                echo "integrations:migrate indisponível (app sem o pacote) — pulando"
+              fi
+            '
+
             set +e
             TENANTS_OUTPUT="$(docker compose -p "plannerate-${APP_SLUG}" exec -T app php artisan tenants:artisan "migrate --force --database=tenant" 2>&1)"
             TENANTS_STATUS=$?
