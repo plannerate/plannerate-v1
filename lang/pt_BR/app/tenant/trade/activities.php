@@ -1,0 +1,142 @@
+<?php
+
+return [
+    'navigation' => 'Atividades',
+    'title' => 'Atividades de campo',
+    'kanban_title' => 'Atividades — kanban',
+    'description' => 'Planeje e acompanhe as execuções na loja: montagem, verificação, auditoria e comprovação por foto.',
+
+    'actions' => [
+        'new' => 'Nova atividade',
+        'edit' => 'Editar atividade',
+        'kanban' => 'Kanban',
+        'list' => 'Lista',
+        'back_to_list' => 'Voltar para a lista',
+        'start' => 'Iniciar',
+        'complete' => 'Concluir',
+        'cancel' => 'Cancelar',
+        'approve' => 'Aprovar',
+        'reject' => 'Rejeitar',
+        'reset_approval' => 'Reabrir aprovação',
+        'approve_proof' => 'Aprovar comprovação',
+        'reject_proof' => 'Reprovar comprovação',
+        'add_photos' => 'Adicionar fotos',
+        'submit_proof' => 'Enviar comprovação',
+        'update_space_image' => 'Atualizar foto do espaço',
+        'generate_share' => 'Gerar link público',
+        'revoke_share' => 'Revogar link',
+    ],
+
+    'fields' => [
+        'titulo' => 'Título',
+        'tipo' => 'Tipo',
+        'target_type' => 'Público',
+        'prioridade' => 'Prioridade',
+        'data_inicio' => 'Início',
+        'data_fim' => 'Prazo',
+        'period' => 'Período',
+        'responsavel' => 'Responsável',
+        'store' => 'Loja',
+        'supplier' => 'Fornecedor',
+        'space' => 'Espaço',
+        'reservation' => 'Ação vinculada',
+        'requires_photo_proof' => 'Exige comprovação por foto',
+        'observacoes_internas' => 'Observações internas',
+        'situacao' => 'Situação',
+        'proof_rejection_reason' => 'Motivo da reprovação',
+        'share_password' => 'Senha do link (opcional)',
+    ],
+
+    'sections' => [
+        'checklist' => 'Checklist',
+        'workflow' => 'Workflow',
+        'approval' => 'Aprovação do planejamento',
+        'proof' => 'Comprovação por foto',
+        'proof_review' => 'Análise da comprovação',
+        'share' => 'Link público de execução',
+        'space_image' => 'Foto do espaço',
+        'photos_before' => 'Fotos — antes',
+        'photos_after' => 'Fotos — depois',
+    ],
+
+    'placeholders' => [
+        'all_statuses' => 'Todas as situações',
+        'all_types' => 'Todos os tipos',
+        'all_priorities' => 'Todas as prioridades',
+        'all_proof' => 'Toda comprovação',
+        'all_stores' => 'Todas as lojas',
+        'select_user' => 'Selecione o responsável',
+        'select_store' => 'Selecione a loja',
+        'select_supplier' => 'Selecione o fornecedor',
+        'select_space' => 'Selecione o espaço',
+        'select_reservation' => 'Selecione a ação',
+        'rejection_reason' => 'Informe o motivo da rejeição',
+        'proof_rejection' => 'Informe o motivo da reprovação',
+        'proof_note' => 'Observação da execução (opcional)',
+        'share_password' => 'Defina uma senha para o link (opcional)',
+    ],
+
+    'hints' => [
+        'no_checklist' => 'Sem itens de checklist.',
+        'complete_reason' => 'Sem comprovação por foto: justifique o motivo para concluir.',
+    ],
+
+    'metrics' => [
+        'total' => 'Atividades',
+        'em_andamento' => 'Em andamento',
+        'atrasadas' => 'Atrasadas',
+        'comprovacoes_em_analise' => 'Comprovações em análise',
+    ],
+
+    'share' => [
+        'active' => 'Link ativo',
+    ],
+
+    'public' => [
+        'execution' => 'Execução de atividade',
+        'password_prompt' => 'Este link é protegido por senha.',
+        'unlock' => 'Acessar',
+        'wrong_password' => 'Senha incorreta.',
+        'invalid_link' => 'Link inválido.',
+        'expired_link' => 'Este link expirou.',
+        'locked' => 'Acesso não liberado.',
+    ],
+
+    'generated' => [
+        'montagem_title' => 'Montagem — :client',
+    ],
+
+    'messages' => [
+        'created' => 'Atividade criada com sucesso.',
+        'updated' => 'Atividade atualizada com sucesso.',
+        'deleted' => 'Atividade excluída com sucesso.',
+        'force_deleted' => 'Atividade excluída definitivamente.',
+        'restored' => 'Atividade restaurada com sucesso.',
+        'approved' => 'Planejamento aprovado.',
+        'rejected' => 'Planejamento rejeitado.',
+        'approval_reset' => 'Aprovação reaberta.',
+        'started' => 'Atividade iniciada.',
+        'completed' => 'Atividade concluída.',
+        'cancelled' => 'Atividade cancelada.',
+        'photos_uploaded' => 'Fotos enviadas.',
+        'proof_submitted' => 'Comprovação enviada. Aguardando análise do gestor.',
+        'proof_approved' => 'Comprovação aprovada e atividade concluída.',
+        'proof_rejected' => 'Comprovação reprovada. O executor será solicitado a reenviar.',
+        'space_image_updated' => 'Foto do espaço atualizada.',
+        'share_generated' => 'Link público gerado.',
+        'share_revoked' => 'Link público revogado.',
+        'proof_reviewer_conflict' => 'A comprovação é analisada pelo time de gestão, e não por quem a enviou.',
+        'proof_not_reviewable' => 'Esta comprovação não está em análise.',
+        'no_space' => 'Esta atividade não tem um espaço vinculado.',
+        'invalid_transition' => [
+            'start' => 'Só atividades pendentes podem ser iniciadas.',
+            'complete' => 'Só atividades pendentes ou em andamento podem ser concluídas.',
+            'cancel' => 'Esta atividade não pode ser cancelada.',
+        ],
+    ],
+
+    'validation' => [
+        'rejection_reason_required' => 'O motivo é obrigatório para rejeitar.',
+        'proof_photo_or_note' => 'Envie ao menos uma foto — ou justifique o motivo de não ter.',
+    ],
+];

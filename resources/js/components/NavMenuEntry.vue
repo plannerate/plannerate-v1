@@ -7,6 +7,7 @@ import {
     Cable,
     CalendarCheck,
     ChevronRight,
+    ClipboardCheck,
     Eye,
     FileSpreadsheet,
     FileText,
@@ -17,17 +18,20 @@ import {
     LayoutGrid,
     LayoutTemplate,
     Layers,
+    ListChecks,
     ListTree,
     Map as MapIcon,
     Package,
     PackageOpen,
     Ruler,
+    Shapes,
     ShieldCheck,
     ShoppingBag,
     Store,
     Tag,
     Truck,
     Users,
+    Workflow,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -75,6 +79,10 @@ const iconMap = {
     'badge-dollar-sign': BadgeDollarSign,
     'file-spreadsheet': FileSpreadsheet,
     'file-text': FileText,
+    'clipboard-check': ClipboardCheck,
+    'list-checks': ListChecks,
+    shapes: Shapes,
+    workflow: Workflow,
 } as const;
 
 const isItemNode = computed(() => props.node.type === 'item');

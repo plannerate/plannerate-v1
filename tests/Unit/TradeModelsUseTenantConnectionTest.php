@@ -1,5 +1,8 @@
 <?php
 
+use Callcocam\LaravelRaptorTrade\Models\Activity;
+use Callcocam\LaravelRaptorTrade\Models\ActivityAudit;
+use Callcocam\LaravelRaptorTrade\Models\ActivityType;
 use Callcocam\LaravelRaptorTrade\Models\Contract;
 use Callcocam\LaravelRaptorTrade\Models\ContractAttachment;
 use Callcocam\LaravelRaptorTrade\Models\ContractInternalApproval;
@@ -17,6 +20,8 @@ use Callcocam\LaravelRaptorTrade\Models\SpacePrefix;
 use Callcocam\LaravelRaptorTrade\Models\SpaceType;
 use Callcocam\LaravelRaptorTrade\Models\SpaceTypeLibraryItem;
 use Callcocam\LaravelRaptorTrade\Models\StoreProfile;
+use Callcocam\LaravelRaptorTrade\Models\WorkflowStep;
+use Callcocam\LaravelRaptorTrade\Models\WorkflowStepTemplate;
 
 /**
  * As tabelas `trade_*` vivem no banco do tenant. Um model do pacote que não
@@ -28,6 +33,9 @@ it('resolve os models do trade na conexão de tenant', function (string $model):
     expect((new $model)->getConnectionName())
         ->toBe(config('multitenancy.tenant_database_connection_name'));
 })->with([
+    Activity::class,
+    ActivityAudit::class,
+    ActivityType::class,
     Contract::class,
     ContractAttachment::class,
     ContractInternalApproval::class,
@@ -45,4 +53,6 @@ it('resolve os models do trade na conexão de tenant', function (string $model):
     SpaceType::class,
     SpaceTypeLibraryItem::class,
     StoreProfile::class,
+    WorkflowStep::class,
+    WorkflowStepTemplate::class,
 ]);

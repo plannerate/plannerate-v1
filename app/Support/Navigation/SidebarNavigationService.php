@@ -24,12 +24,15 @@ use App\Support\Navigation\Menu\MenuPayloadAdapter;
 use Callcocam\LaravelIntegrations\Models\IntegrationApi;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Reoptimization\ReoptimizationInboxController;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
+use Callcocam\LaravelRaptorTrade\Models\Activity;
+use Callcocam\LaravelRaptorTrade\Models\ActivityType;
 use Callcocam\LaravelRaptorTrade\Models\Contract;
 use Callcocam\LaravelRaptorTrade\Models\Map;
 use Callcocam\LaravelRaptorTrade\Models\PurchaseIntention;
 use Callcocam\LaravelRaptorTrade\Models\Reservation;
 use Callcocam\LaravelRaptorTrade\Models\Space;
 use Callcocam\LaravelRaptorTrade\Models\SpaceType;
+use Callcocam\LaravelRaptorTrade\Models\WorkflowStepTemplate;
 use Illuminate\Http\Request;
 
 class SidebarNavigationService
@@ -303,6 +306,38 @@ class SidebarNavigationService
                             ->icon('file-text')
                             ->authorize('viewAny', Contract::class)
                             ->setOrder(60);
+                    })
+                    ->item('tenant.trade.activities', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.activities.navigation'))
+                            ->href(route('tenant.trade.activities.index', [], false))
+                            ->icon('clipboard-check')
+                            ->authorize('viewAny', Activity::class)
+                            ->setOrder(70);
+                    })
+                    ->item('tenant.trade.my-activities', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.my_activities.navigation'))
+                            ->href(route('tenant.trade.my-activities.index', [], false))
+                            ->icon('list-checks')
+                            ->authorize('viewAny', Activity::class)
+                            ->setOrder(75);
+                    })
+                    ->item('tenant.trade.activity-types', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.activity_types.navigation'))
+                            ->href(route('tenant.trade.activity-types.index', [], false))
+                            ->icon('shapes')
+                            ->authorize('viewAny', ActivityType::class)
+                            ->setOrder(80);
+                    })
+                    ->item('tenant.trade.workflow-templates', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.workflow_templates.navigation'))
+                            ->href(route('tenant.trade.workflow-templates.index', [], false))
+                            ->icon('workflow')
+                            ->authorize('viewAny', WorkflowStepTemplate::class)
+                            ->setOrder(90);
                     });
             })
             ->group('tenant.planograms-section', function ($group): void {
