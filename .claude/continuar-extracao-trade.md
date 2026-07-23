@@ -137,11 +137,78 @@ docker run --rm -v "$PWD":/app -w /app -u 1000:1000 php:8.4-cli php -l src/<arqu
 | 3 | Reservas + intenções de compra | **pronta** |
 | 4 | Contratos (+ anexos, aprovações internas, rounds de negociação) | **pronta** |
 | 5 | Atividades, workflow/kanban, proofs, execução pública por token | **pronta** |
-| 6 | Portal do Fornecedor | a fazer |
+| 6 | Portal do Fornecedor | **pronta** |
 | 7 | Dashboards | a fazer |
 | 8 | PWA `/campo` + web push | a fazer |
 | 9 | API interna Gomark (feature flag) | a fazer |
 | 10 | Paridade rota-a-rota e endurecimento | a fazer |
+
+## O que a Fase 6 entregou
+
+- **Migrations** (pacote): `trade_provider_user` e `trade_store_user` — pivôs
+  usuário↔fornecedor/loja (D7), substituem `parceiro_user`/`loja_user` da origem.
+  PK ULID + escopo → models `Pivot` com `->using()` (armadilha 23502).
+- **Models**: `ProviderUser`, `StoreUser`.
+- **`TradeUserContext`** (D9, `Support/Tenancy/`): resolve os fornecedores/lojas
+  do usuário pelos pivôs — com **fallback para `Provider.user_id`** que o host já
+  usa como dono único —, `isSupplier`/`isStoreExecutor`/`primaryProvider`.
+  Substitui toda leitura de `User.type` da origem.
+- **Gate de acesso**: middleware `EnsureTradeSupplier` (portão do portal) + Gate
+  `trade-supplier-portal` (menu do host, sem model — via `Gate::check`).
+- **Controllers** (`Supplier/`): `SupplierPortalController` (panel consolidado:
+  espaços/negociações/comprovações + contratos pendentes), `SupplierContractController`
+  (index/accept/reject — **reaproveita `ContractWorkflow` da Fase 4**),
+  `SupplierReservationController`, `SupplierActivityController` (index/show; a
+  execução reusa os endpoints de my-activities), `SupplierIntentionController`
+  (index/respond — **reaproveita `PurchaseIntentionFlow` da Fase 3**).
+  `SupplierPayloadService` escopa tudo por `provider_ids`.
+- **`ActivityPolicy` estendida**: reconhece o fornecedor pelo `supplier_id` (via
+  `TradeUserContext`), não só `supplier_user_id` — faz o my-activities/execução
+  funcionar para o portal sem duplicar lógica.
+- **Lado do gestor**: `ProviderUserController` (tela de vínculo usuário↔fornecedor)
+  + permission `tenant.trade-providers.link` (Gestor Trade/admin).
+- **Notificação ao fornecedor** (fecha a pendência da Fase 5): `ActivitySupplierNotifier`
+  + `ActivityAssignedSupplierMail` (markdown `trade::mail.activity-assigned`),
+  disparado no `ActivityController@store` quando a atividade é para fornecedor.
+  Resolve destinatários pelo pivô (+ dono único). **Push fica na Fase 8.**
+- **Rotas**: `supplier.php` (8, com o gate) + `providers.php` (3, grupo do gestor).
+- **Frontend**: supplier Panel/Contracts/Reservations/Activities/ActivityShow/
+  Intentions + providers/Links; grupo de menu "Portal do fornecedor" (gate) e
+  item "Acessos do fornecedor" (permission). i18n `supplier.php`/`provider_links.php`.
+
+**Decisões/desvios importantes desta fase:**
+- **`isSupplier` = tem vínculo** (pivô OU `Provider.user_id`), não uma coluna
+  `type` — o host não tem `User.type`. O fallback ao dono único evita religar à
+  mão os fornecedores que o host já criou.
+- **Aceite reflete no tenant reaproveitando a Fase 4**: `recordSupplierResponse`
+  + `refreshApprovalState` já levam o contrato a `approved` quando a aprovação
+  interna também terminou — verificado no smoke (accept → `status=approved`).
+- **Portal reusa serviços dos dois lados da mesa** (contrato/intenção/execução):
+  nada de regra de negócio reimplementada no portal, só payloads escopados.
+- **Execução do fornecedor pelos endpoints de my-activities**: a policy passou a
+  reconhecer o fornecedor, então não há um segundo conjunto de rotas de execução.
+- **E-mail só no `@store`** (fora de transação); a montagem gerada pelo observer
+  não dispara e-mail para não emitir efeito dentro da transação do workflow — o
+  fornecedor vê a montagem no portal.
+
+**Verificado:** migrations nos tenants (2 pivôs), `route:list` (8 supplier + 3
+provider-links), `trade:permissions:sync` (55 permissions), pint, eslint (fixes
+de estilo + 1 unused-var real corrigido), `npm run build` (7 páginas do portal
+no manifest), `TradeModelsUseTenantConnectionTest` (24 models). Tinker numa
+transação com rollback: pivô ULID sem 23502 (owner/id preenchidos), `isSupplier`
+false→true, `providerIds` resolvido, contrato enviado→pending→`can_respond`,
+**aceite do fornecedor → `supplier_approval_status=accepted` e `status=approved`**,
+`pending_contracts` esvazia, `panel`/`reservationRows` sem erro, notifier
+resolvendo o destinatário pelo pivô.
+
+**Pendências conhecidas:** sem testes automatizados de feature (padrão das fases
+anteriores); **push web** ao fornecedor fica para a **Fase 8** (só e-mail agora);
+`trade_store_user` criado (D7 completo) mas sem portal de executor de loja
+próprio — o my-activities da Fase 5 já serve o executor por responsável/etapa;
+`supplier_user_id` continua sem seletor nos formulários de gestão (agora
+possível com o pivô, mas não priorizado); render HTTP real das telas não rodou
+pelo harness de tinker. A mudança **não relacionada** `config/filesystems.php`
+(+ teste) segue fora dos commits das fases.
 
 ## O que a Fase 5 entregou
 
