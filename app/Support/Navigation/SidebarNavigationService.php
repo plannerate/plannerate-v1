@@ -24,6 +24,11 @@ use App\Support\Navigation\Menu\MenuPayloadAdapter;
 use Callcocam\LaravelIntegrations\Models\IntegrationApi;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Reoptimization\ReoptimizationInboxController;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
+use Callcocam\LaravelRaptorTrade\Models\Map;
+use Callcocam\LaravelRaptorTrade\Models\PurchaseIntention;
+use Callcocam\LaravelRaptorTrade\Models\Reservation;
+use Callcocam\LaravelRaptorTrade\Models\Space;
+use Callcocam\LaravelRaptorTrade\Models\SpaceType;
 use Illuminate\Http\Request;
 
 class SidebarNavigationService
@@ -244,6 +249,51 @@ class SidebarNavigationService
                             ->icon('blocks')
                             ->authorize('viewAny', Cluster::class)
                             ->setOrder(20);
+                    });
+            })
+            ->group('tenant.trade', function ($group): void {
+                $group
+                    ->label('Trade Marketing')
+                    ->setOrder(35)
+                    ->item('tenant.trade.spaces', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.spaces.navigation'))
+                            ->href(route('tenant.trade.spaces.index', [], false))
+                            ->icon('shopping-bag')
+                            ->authorize('viewAny', Space::class)
+                            ->setOrder(10);
+                    })
+                    ->item('tenant.trade.space-types', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.space_types.navigation'))
+                            ->href(route('tenant.trade.space-types.index', [], false))
+                            ->icon('tag')
+                            ->authorize('viewAny', SpaceType::class)
+                            ->setOrder(20);
+                    })
+                    ->item('tenant.trade.maps', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.maps.navigation'))
+                            ->href(route('tenant.trade.maps.index', [], false))
+                            ->icon('map')
+                            ->authorize('viewAny', Map::class)
+                            ->setOrder(30);
+                    })
+                    ->item('tenant.trade.reservations', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.reservations.navigation'))
+                            ->href(route('tenant.trade.reservations.index', [], false))
+                            ->icon('calendar-check')
+                            ->authorize('viewAny', Reservation::class)
+                            ->setOrder(40);
+                    })
+                    ->item('tenant.trade.purchase-intentions', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.purchase_intentions.navigation'))
+                            ->href(route('tenant.trade.purchase-intentions.index', [], false))
+                            ->icon('handshake')
+                            ->authorize('viewAny', PurchaseIntention::class)
+                            ->setOrder(50);
                     });
             })
             ->group('tenant.planograms-section', function ($group): void {

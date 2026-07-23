@@ -3,6 +3,14 @@
 @import 'tw-animate-css';
 @import './plannerate.css';
 
+/*
+ * O pacote de integrações é instalado em vendor/, que está no .gitignore — e a
+ * detecção automática de fontes do Tailwind v4 respeita o .gitignore. Sem esta linha
+ * ele nunca varre os componentes do pacote, e as classes que o app não usa por conta
+ * própria não geram CSS nenhum: o layout quebra sem erro de build.
+ */
+@source '../../vendor/callcocam/laravel-integrations/resources/js/**/*.{vue,ts}';
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 

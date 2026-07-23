@@ -13,6 +13,7 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "callcocam/laravel-integrations": "dev-main",
         "callcocam/laravel-raptor-plannerate": "dev-main",
+        "callcocam/laravel-raptor-trade": "dev-main",
         "callcocam/tall-sluggable": "dev-main",
         "inertiajs/inertia-laravel": "^3.0",
         "intervention/image-laravel": "^4.0",
@@ -126,6 +127,10 @@
         {
             "type": "path",
             "url": "./packages/callcocam/laravel-raptor-plannerate"
+        },
+        {
+            "type": "path",
+            "url": "./packages/callcocam/laravel-raptor-trade"
         },
         {
             "type": "vcs",

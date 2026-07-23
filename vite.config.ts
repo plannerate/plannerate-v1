@@ -37,6 +37,7 @@ export default defineConfig({
             'vendor/callcocam/laravel-raptor-flow/resources/js/**/*.vue',
             'vendor/callcocam/laravel-raptor-plannerate/resources/js/**/*.vue',
             'vendor/callcocam/laravel-integrations/resources/js/**/*.vue',
+            'vendor/callcocam/laravel-raptor-trade/resources/js/**/*.vue',
         ],
     },
     resolve: {
@@ -47,6 +48,7 @@ export default defineConfig({
             '@/types/planogram': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js/types/planogram.ts'),
             '@plannerate': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js'),
             '@integrations': path.resolve(__dirname, './vendor/callcocam/laravel-integrations/resources/js'),
+            '@trade': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-trade/resources/js'),
             '@': path.resolve(__dirname, './resources/js'),
         },
     },
