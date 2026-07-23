@@ -259,6 +259,14 @@ class SidebarNavigationService
                 $group
                     ->label('Trade Marketing')
                     ->setOrder(35)
+                    ->item('tenant.trade.dashboard', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.dashboard.navigation'))
+                            ->href(route('tenant.trade.dashboard', [], false))
+                            ->icon('layout-dashboard')
+                            ->authorize('tenant.trade-dashboard.view')
+                            ->setOrder(5);
+                    })
                     ->item('tenant.trade.spaces', function ($item): void {
                         $item
                             ->label(__('app.tenant.trade.spaces.navigation'))
