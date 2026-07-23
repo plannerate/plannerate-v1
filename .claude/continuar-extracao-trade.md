@@ -135,13 +135,97 @@ docker run --rm -v "$PWD":/app -w /app -u 1000:1000 php:8.4-cli php -l src/<arqu
 | 1 | Espaços + `trade_store_profiles` + aditiva no `Provider` do host | **pronta** |
 | 2 | Mapas / planta da loja (konva + vue-konva) — **maior risco** | **pronta** |
 | 3 | Reservas + intenções de compra | **pronta** |
-| 4 | Contratos (+ anexos, aprovações internas, rounds de negociação) | a fazer |
+| 4 | Contratos (+ anexos, aprovações internas, rounds de negociação) | **pronta** |
 | 5 | Atividades, workflow/kanban, proofs, execução pública por token | a fazer |
 | 6 | Portal do Fornecedor | a fazer |
 | 7 | Dashboards | a fazer |
 | 8 | PWA `/campo` + web push | a fazer |
 | 9 | API interna Gomark (feature flag) | a fazer |
 | 10 | Paridade rota-a-rota e endurecimento | a fazer |
+
+## O que a Fase 4 entregou
+
+- **Migrations** (pacote): `trade_contracts` (consolida as 10 migrations
+  incrementais da origem), `trade_contract_reservation` (pivô, `unique` em
+  reservation_id — uma ação só num contrato), `trade_contract_attachments`,
+  `trade_contract_internal_approvals`.
+- **Enums**: `ContractStatus` (draft→pending→approved→active→completed +
+  cancelled/suspended, com `canEdit/canActivate/canComplete/canSuspend/canCancel/
+  canDelete`), `AgreementType` (from_actions/fixed_monthly/one_off, com
+  `usesFixedAmount/usesStoreScope/requiresReservations`), `ContractScope`,
+  `ContractScopeApply`, `BillingType`, `AdjustmentIndex`, `AdjustmentFrequency`,
+  `SupplierApprovalStatus`, `ContractApprovalStep` (mapeia etapa→permission),
+  `ContractApprovalStatus`, `ContractDocumentType`.
+- **Models**: `Contract` (2 trilhas: `status` = vigência, `supplier_approval_status`
+  = fornecedor; `hasAllInternalApprovals`, `appendToChangeLog/NegotiationHistory`,
+  scopes live/forSupplier/inPeriod), `ContractReservation` (pivô ULID),
+  `ContractAttachment`, `ContractInternalApproval`. `Reservation` ganhou
+  `contracts()`.
+- **Serviços** (`Services/Contracts/`): `ContractNumberGenerator` (sequencial
+  por cliente/mês, `CONT-AAAAMM0001` — sem o sorteio-que-colide da origem),
+  `ContractPricing` (backend calcula total/final; das ações ou do valor fixo),
+  `ContractApprovalFlow` (4 estágios em ordem, `ensureSteps` idempotente,
+  `reopenAfterRejection`), `ContractWorkflow` (sendToSupplier/recordSupplierResponse/
+  registerRenegotiation/refreshApprovalState/activate/complete/suspend/cancel/
+  cancelDefinitively), `ContractAttachmentService`, `ContractMetricsService`,
+  `ContractPayloadService` (row/show/formData/termSheet).
+- **Policies**: `ContractPolicy` (view/create/update/delete + `manage` para
+  vigência + `approveStep` resolvendo permission por etapa). 11 permissions
+  novas (48 no total); 4 roles de aprovação (analista/gerente-comercial/
+  financeiro/diretoria); Comprador Trade monta o contrato mas não aprova.
+- **Controllers + `routes/contracts.php`** (19 rotas): `ContractController`
+  (index deferido/create/store/show/edit/update/destroy/restore +
+  sendToSupplier/recordSupplierResponse/activate/complete/suspend/cancel/
+  cancelDefinitively), `ContractAttachmentController` (store/destroy),
+  `ContractApprovalController` (approve/reject).
+- **Frontend**: páginas contracts Index/Form/Show; componentes
+  `ContractApprovalsCard`, `ContractAttachmentsCard` (upload multipart via
+  router.post), `ContractNegotiationCard`; term sheet na Show. i18n
+  `contracts.php`; item de menu "Contratos" (ícone `file-text`).
+
+**Decisões/desvios importantes desta fase:**
+- **Backend calcula os valores** (ContractPricing) — a origem deixava o frontend
+  mandar total/final. A tela mostra prévia com a mesma regra em TS.
+- **Número sequencial por cliente/mês**, lido com `withTrashed` para um contrato
+  apagado não devolver o número ao bolo — a origem sorteava 4 dígitos contra
+  uma coluna única (colisão só na hora de salvar).
+- **Uma permission por estágio** de aprovação, em vez dos slugs de role fixos
+  na base landlord da origem: o pacote autoriza sem saber como o host nomeia
+  papéis (`ContractApprovalStep::permission()` + `ContractPolicy::approveStep`).
+- **Duas trilhas separadas**: aprovação interna (4 etapas) × aceite do fornecedor.
+  `refreshApprovalState` só marca `approved` quando as duas terminam; `activate`
+  reexige as duas (a tela pode estar velha).
+- **Registrar resposta do fornecedor pelo gestor** (aceite/recusa por telefone/
+  e-mail) — o portal da Fase 6 chama o mesmo `recordSupplierResponse`.
+- **Reabre as etapas internas** ao reeditar um contrato recusado
+  (`reopenAfterRejection`); a origem travava para sempre nesse caso.
+- **`unique(reservation_id)`** no pivô garante 1 ação = 1 contrato no banco; o
+  form request traduz o 23505 em erro de formulário (validateReservationsAreFree,
+  ignorando o próprio contrato em edição).
+- **Ações de estado devolvem `back()` + toast**, não JSON como na origem.
+
+**Verificado:** migrations em todos os tenants (4 novas), `route:list`
+(19 rotas contracts), `trade:permissions:sync` (48 permissions, 4 roles novas),
+pint, eslint (cascas), `npm run build` (3 páginas + ContractController chunk no
+manifest), `TradeModelsUseTenantConnectionTest` (17 models na conexão de tenant,
+falha comprovada sem a correção). Tinker numa transação com rollback cobrindo:
+tenant_id preenchido pelo BelongsToTradeOwner, número sequencial + incremento,
+pricing (fixo e das ações), 4 etapas idempotentes, aprovar fora de ordem
+recusado, ciclo completo interno→envio→ativar-sem-aceite-recusado→aceite→approved
+→vigência→encerramento, pivô ULID com escopo não-nulo, availableReservations
+excluindo ação já vinculada (mas mantendo a do próprio contrato) e policy
+negando usuário sem role; `ContractPayloadService::{formData,show}` e
+`ContractMetricsService::build` exercitados contra o schema do tenant.
+
+**Pendências conhecidas:** sem testes automatizados de feature (ambiente local
+quebrado — sqlite sem schema landlord; verificação por tinker + build, padrão
+das Fases 1–3); render HTTP real das 3 páginas GET não rodou (o harness de
+tinker esbarra em auth-guard na conexão de tenant), mas os builders de payload
+que as telas consomem foram exercitados direto; **notificação ao fornecedor**
+(sininho Gomark + e-mail do `ContractSupplierNotifier` da origem) fica para a
+Fase 6 (portal do fornecedor), junto com `supplier_user_id` no formulário
+(depende do pivô provider↔user, D7); wiring de deploy das migrations de tenant
+continua pendente (ver memory `trade-tenant-migrations-path`).
 
 ## O que a Fase 3 entregou
 
