@@ -106,6 +106,13 @@ return [
         'montagem_title' => 'Montagem — :client',
     ],
 
+    'mail' => [
+        'assigned_subject' => 'Nova atividade para você: :title',
+        'assigned_greeting' => 'Você tem uma nova atividade',
+        'assigned_intro' => 'A atividade ":title" foi atribuída à sua empresa. Confira os detalhes e execute pelo portal.',
+        'assigned_cta' => 'Abrir no portal',
+    ],
+
     'messages' => [
         'created' => 'Atividade criada com sucesso.',
         'updated' => 'Atividade atualizada com sucesso.',

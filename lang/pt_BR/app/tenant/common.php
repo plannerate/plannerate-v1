@@ -26,6 +26,7 @@ return [
     'confirm' => 'Confirmar',
     'close' => 'Fechar',
     'none' => 'Nenhum',
+    'thanks' => 'Obrigado!',
     'plan_limit' => [
         'title' => 'Limite do plano atingido',
         'upgrade' => 'Fazer upgrade',

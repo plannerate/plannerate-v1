@@ -8,6 +8,7 @@ use Callcocam\LaravelRaptorTrade\Models\ContractAttachment;
 use Callcocam\LaravelRaptorTrade\Models\ContractInternalApproval;
 use Callcocam\LaravelRaptorTrade\Models\ContractReservation;
 use Callcocam\LaravelRaptorTrade\Models\Map;
+use Callcocam\LaravelRaptorTrade\Models\ProviderUser;
 use Callcocam\LaravelRaptorTrade\Models\PurchaseIntention;
 use Callcocam\LaravelRaptorTrade\Models\Reservation;
 use Callcocam\LaravelRaptorTrade\Models\ReservationStoreMap;
@@ -20,6 +21,7 @@ use Callcocam\LaravelRaptorTrade\Models\SpacePrefix;
 use Callcocam\LaravelRaptorTrade\Models\SpaceType;
 use Callcocam\LaravelRaptorTrade\Models\SpaceTypeLibraryItem;
 use Callcocam\LaravelRaptorTrade\Models\StoreProfile;
+use Callcocam\LaravelRaptorTrade\Models\StoreUser;
 use Callcocam\LaravelRaptorTrade\Models\WorkflowStep;
 use Callcocam\LaravelRaptorTrade\Models\WorkflowStepTemplate;
 
@@ -53,6 +55,8 @@ it('resolve os models do trade na conexão de tenant', function (string $model):
     SpaceType::class,
     SpaceTypeLibraryItem::class,
     StoreProfile::class,
+    ProviderUser::class,
+    StoreUser::class,
     WorkflowStep::class,
     WorkflowStepTemplate::class,
 ]);

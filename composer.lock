@@ -456,12 +456,12 @@
             "source": {
                 "type": "git",
                 "url": "git@github.com:callcocam/laravel-raptor-trade.git",
-                "reference": "87a1fef6fe492a663a2b2215040b712f430751bc"
+                "reference": "6d2f8c2c62819e47b42613ddf52e35f57db51f52"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/callcocam/laravel-raptor-trade/zipball/87a1fef6fe492a663a2b2215040b712f430751bc",
-                "reference": "87a1fef6fe492a663a2b2215040b712f430751bc",
+                "url": "https://api.github.com/repos/callcocam/laravel-raptor-trade/zipball/6d2f8c2c62819e47b42613ddf52e35f57db51f52",
+                "reference": "6d2f8c2c62819e47b42613ddf52e35f57db51f52",
                 "shasum": ""
             },
             "require": {
@@ -507,7 +507,7 @@
                 "source": "https://github.com/callcocam/laravel-raptor-trade/tree/main",
                 "issues": "https://github.com/callcocam/laravel-raptor-trade/issues"
             },
-            "time": "2026-07-23T18:33:59+00:00"
+            "time": "2026-07-23T19:26:42+00:00"
         },
         {
             "name": "callcocam/tall-sluggable",

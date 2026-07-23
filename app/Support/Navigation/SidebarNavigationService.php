@@ -338,6 +338,59 @@ class SidebarNavigationService
                             ->icon('workflow')
                             ->authorize('viewAny', WorkflowStepTemplate::class)
                             ->setOrder(90);
+                    })
+                    ->item('tenant.trade.provider-links', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.provider_links.navigation'))
+                            ->href(route('tenant.trade.provider-links.index', [], false))
+                            ->icon('user-cog')
+                            ->authorize('tenant.trade-providers.link')
+                            ->setOrder(100);
+                    });
+            })
+            ->group('tenant.trade-supplier', function ($group): void {
+                $group
+                    ->label(__('app.tenant.trade.supplier.navigation'))
+                    ->setOrder(36)
+                    ->item('tenant.trade.supplier.panel', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.supplier.title'))
+                            ->href(route('tenant.trade.supplier.panel', [], false))
+                            ->icon('layout-dashboard')
+                            ->authorize('trade-supplier-portal')
+                            ->setOrder(10);
+                    })
+                    ->item('tenant.trade.supplier.contracts', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.supplier.contracts.navigation'))
+                            ->href(route('tenant.trade.supplier.contracts.index', [], false))
+                            ->icon('file-text')
+                            ->authorize('trade-supplier-portal')
+                            ->setOrder(20);
+                    })
+                    ->item('tenant.trade.supplier.reservations', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.supplier.reservations.navigation'))
+                            ->href(route('tenant.trade.supplier.reservations.index', [], false))
+                            ->icon('calendar-check')
+                            ->authorize('trade-supplier-portal')
+                            ->setOrder(30);
+                    })
+                    ->item('tenant.trade.supplier.activities', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.supplier.activities.navigation'))
+                            ->href(route('tenant.trade.supplier.activities.index', [], false))
+                            ->icon('list-checks')
+                            ->authorize('trade-supplier-portal')
+                            ->setOrder(40);
+                    })
+                    ->item('tenant.trade.supplier.intentions', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.supplier.intentions.navigation'))
+                            ->href(route('tenant.trade.supplier.intentions.index', [], false))
+                            ->icon('handshake')
+                            ->authorize('trade-supplier-portal')
+                            ->setOrder(50);
                     });
             })
             ->group('tenant.planograms-section', function ($group): void {

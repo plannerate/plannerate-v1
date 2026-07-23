@@ -15,6 +15,7 @@ import {
     FolderTree,
     Handshake,
     KeyRound,
+    LayoutDashboard,
     LayoutGrid,
     LayoutTemplate,
     Layers,
@@ -30,6 +31,7 @@ import {
     Store,
     Tag,
     Truck,
+    UserCog,
     Users,
     Workflow,
 } from 'lucide-vue-next';
@@ -83,6 +85,8 @@ const iconMap = {
     'list-checks': ListChecks,
     shapes: Shapes,
     workflow: Workflow,
+    'user-cog': UserCog,
+    'layout-dashboard': LayoutDashboard,
 } as const;
 
 const isItemNode = computed(() => props.node.type === 'item');
