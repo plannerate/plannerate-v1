@@ -136,12 +136,95 @@ docker run --rm -v "$PWD":/app -w /app -u 1000:1000 php:8.4-cli php -l src/<arqu
 | 2 | Mapas / planta da loja (konva + vue-konva) — **maior risco** | **pronta** |
 | 3 | Reservas + intenções de compra | **pronta** |
 | 4 | Contratos (+ anexos, aprovações internas, rounds de negociação) | **pronta** |
-| 5 | Atividades, workflow/kanban, proofs, execução pública por token | a fazer |
+| 5 | Atividades, workflow/kanban, proofs, execução pública por token | **pronta** |
 | 6 | Portal do Fornecedor | a fazer |
 | 7 | Dashboards | a fazer |
 | 8 | PWA `/campo` + web push | a fazer |
 | 9 | API interna Gomark (feature flag) | a fazer |
 | 10 | Paridade rota-a-rota e endurecimento | a fazer |
+
+## O que a Fase 5 entregou
+
+- **Migrations** (pacote): `trade_activity_types`, `trade_workflow_step_templates`,
+  `trade_activities` (consolida as ~16 incrementais da origem, com SoftDeletes),
+  `trade_workflow_steps`, `trade_activity_audits`.
+- **Enums**: `ActivityStatus` (pendente→em_andamento→concluida/cancelada, com
+  canStart/canComplete/canCancel/isClosed), `ActivityPriority`,
+  `ActivityTargetType` (loja/fornecedor), `ActivityApprovalStatus`, `ProofStatus`
+  (submitted/approved/rejected, `canReview`), `WorkflowStepStatus`,
+  `ActivityAuditEvent`.
+- **Models**: `Activity` (**três eixos independentes**: `status` = andamento,
+  `approval_status` = aprovação do planejamento, `proof_status` = comprovação por
+  foto; `situacao` unificada; link público `share_token`+senha com validade
+  início+7d; `scopeForUser`/`scopeForSupplier`; `userIsSupplierExecutor`;
+  moveToStep/moveToNext/Previous), `ActivityType` (slug por dono; `is_audit`+
+  `audit_config`), `WorkflowStep`, `WorkflowStepTemplate` (allowed_users,
+  duplicate), `ActivityAudit`.
+- **Serviços** (`Services/Activities/`): `ActivityWorkflow` (start/complete/cancel
+  + submitProof/reviewProof — aprovar comprovação conclui a atividade),
+  `WorkflowStepService` (addStep/applyTemplateCategory/reorder + **recálculo em
+  cascata das datas**: cada etapa começa no dia seguinte ao fim da anterior),
+  `SupplierActivityGenerator` (montagem a partir da reserva, idempotente),
+  `ActivityPayloadService`, `ActivityMetricsService`, `ActivityMediaService`
+  (fotos + foto do espaço com histórico próprio), `ActivityAuditLogger`.
+- **Observer**: `ReservationObserver` registrado no provider — confirmar uma
+  reserva gera a atividade de montagem do fornecedor (o gancho comercial→operacional).
+- **Policies**: `ActivityPolicy` (gestão por permission; ver/editar liberam
+  também por instância — responsável, executor do fornecedor, ou responsável de
+  etapa; aprovar **nunca** por quem executa), `ActivityTypePolicy`,
+  `WorkflowStepTemplatePolicy`. **+17 permissions** (71 no total); Comprador Trade
+  planeja atividades e Executor Loja ganhou view/update/execute.
+- **Controllers + rotas** (`activities.php`, 55 rotas + `public.php`, 9):
+  `ActivityController` (index deferido/kanban/CRUD + approve/reject/resetApproval
+  + start/complete/cancel), `WorkflowStepController` (store/applyTemplate/reorder/
+  recalculate/move + transições de etapa), `MyActivityController` (execução:
+  checklist/status/fotos/proof/reviewProof/spaceImage/share),
+  `ActivityTypeController`, `WorkflowStepTemplateController` (+duplicate/toggle),
+  `Public\PublicActivityController` (show/unlock + mutações guardadas por token).
+- **Frontend**: activities Index/Kanban/Form/Show, my-activities Index/Show,
+  activity-types Index/Form, workflow-templates Index/Form, public Lock/Execution;
+  componentes `ActivityChecklist`, `WorkflowStepsCard`, `ActivityExecutionPanel`.
+  i18n em 5 arquivos; menu com Atividades/Minhas atividades/Tipos/Templates.
+
+**Decisões/desvios importantes desta fase:**
+- **Execução pública sem middleware de token**: o host é subdomínio-por-tenant,
+  então o `NeedsTenant` resolve o tenant pelo domínio do próprio link antes de o
+  controller procurar o `share_token` — o D13 (`ResolveTenantFromShareToken`) foi
+  desnecessário. `public.php` roda com `['web', NeedsTenant]`, sem `auth`.
+- **Backend calcula/guarda o estado da comprovação**: aprovar a comprovação
+  conclui a atividade; reprovar exige motivo e devolve para novo envio; reenvio
+  limpa a decisão anterior. A comprovação é analisada por quem **não** enviou.
+- **Foto do espaço ≠ evidência**: a foto do espaço tem histórico próprio em
+  `trade_space_images` e é o estado atual do espaço; não entra em `activities.fotos`.
+- **Ações de estado devolvem `back()` + toast** (não JSON como a origem).
+- **Kanban dependency-free**: colunas por status com ações inline
+  (start/complete/cancel), sem `vue-draggable-plus` (não instalado no host).
+- **`ActivityChecklistTemplates::mergeActions`**: o cliente só decide `completed`;
+  a `action` (metadado do servidor, ex.: troca da foto do espaço) é preservada.
+
+**Verificado:** migrations em todos os tenants (5 novas), `route:list`
+(55 activities/workflow + 9 públicas), `trade:permissions:sync` (54 permissions,
+já com as de atividades), pint, eslint (21 correções de estilo aplicadas),
+`npm run build` (Kanban + Form chunks no manifest), `TradeModelsUseTenantConnectionTest`
+(22 models na conexão de tenant). Tinker numa transação com rollback cobrindo:
+tipo/template com slug por dono, checklist semeado, `applyTemplateCategory` +
+datas em cascata, transições de etapa, mover etapa atual, andamento + ciclo da
+comprovação (submitted→rejected→reenvio→approved→concluída), link público com
+senha (validade/checagem), e o **observer reserva-confirmada→montagem** gerando 1
+atividade idempotente (alvo fornecedor, checklist de 6 itens, requires_photo_proof);
+`ActivityPayloadService::{show,metrics,options}` exercitados contra o schema do tenant.
+
+**Pendências conhecidas:** sem testes automatizados de feature (ambiente local
+quebrado — padrão das fases anteriores); render HTTP real das telas não rodou pelo
+harness de tinker, mas os builders de payload foram exercitados direto;
+**notificação ao fornecedor** (e-mail do `ActivitySupplierNotifier` + push
+`FieldPush` da origem) fica para a **Fase 6** (portal do fornecedor, depende do
+pivô `trade_provider_user`, D7); **PWA `/campo`** para a **Fase 8**;
+`supplier_user_id` tem coluna mas ainda sem seletor no formulário (mesma D7);
+wiring de deploy das migrations de tenant continua pendente (ver memory
+`trade-tenant-migrations-path`). Há uma mudança **não relacionada** pendente no
+host (`config/filesystems.php` + `PublicDiskUrlIsRootRelativeTest`, URL
+root-relative do disco público para CORS do Konva) deixada fora do commit da Fase 5.
 
 ## O que a Fase 4 entregou
 
