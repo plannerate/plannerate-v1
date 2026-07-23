@@ -1,0 +1,30 @@
+{
+    "name": "Trade — Campo",
+    "short_name": "Campo",
+    "start_url": "/trade/campo",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "theme_color": "#0f172a",
+    "background_color": "#ffffff",
+    "icons": [
+        {
+            "src": "/vendor/trade/icons/trade-icon.svg",
+            "sizes": "192x192",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        },
+        {
+            "src": "/vendor/trade/icons/trade-icon.svg",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        },
+        {
+            "src": "/vendor/trade/icons/trade-icon.svg",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "maskable"
+        }
+    ]
+}

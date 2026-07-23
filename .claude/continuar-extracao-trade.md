@@ -139,9 +139,65 @@ docker run --rm -v "$PWD":/app -w /app -u 1000:1000 php:8.4-cli php -l src/<arqu
 | 5 | Atividades, workflow/kanban, proofs, execução pública por token | **pronta** |
 | 6 | Portal do Fornecedor | **pronta** |
 | 7 | Dashboards | **pronta** |
-| 8 | PWA `/campo` + web push | a fazer |
-| 9 | API interna Gomark (feature flag) | a fazer |
+| 8 | PWA `/campo` + web push | **pronta** |
+| 9 | API interna Gomark (feature flag) | **adiada** — fora de escopo por ora (23/07/2026) |
 | 10 | Paridade rota-a-rota e endurecimento | a fazer |
+
+## O que a Fase 8 entregou
+
+- **PWA `/campo`** (`FieldController` + `campo/Index.vue`): rampa de lançamento
+  móvel do executor. Lista as atividades abertas do usuário (próprias, de etapa
+  ou do fornecedor — resolvidas por `TradeUserContext`) e **entrega a execução às
+  telas de my-activities** (mesma `ActivityPolicy`, sem duplicar regra). O
+  `<Head>` liga manifest + service worker; `useFieldPwa`/`push.ts` registram o SW
+  e assinam o push (fetch standalone, exceção permitida ao `router`).
+- **Web push** via `laravel-notification-channels/webpush`:
+  - `Model PushSubscription` estende o do webpush **preso à conexão de tenant**
+    (tabela `trade_push_subscriptions`); o provider prende `webpush.model`/
+    `table_name` no `packageRegistered`. VAPID vem do `.env` do host.
+  - `PushSubscriptionController` (store/destroy, 204) grava via trait
+    `HasPushSubscriptions` **adicionada ao `User` do host**.
+  - `FieldPushNotifier` + `FieldPush` (canal WebPush) — guard de feature
+    (`features.webpush` + canal instalado + VAPID) e try/catch: **falha de push
+    nunca derruba a operação** que a disparou.
+- **Push ligado nos ganchos que já existiam** — fecha a pendência arrastada das
+  Fases 5/6: atribuição de atividade ao fornecedor (`ActivitySupplierNotifier`,
+  agora e-mail **+** push) e resultado da comprovação
+  (`MyActivityController@reviewProof` avisa quem enviou).
+- **`PublishTradePwaCommand`** (`trade:publish-pwa`): copia sw + ícones e **gera**
+  o `manifest-trade.webmanifest` a partir de `config('trade.pwa')` + prefixo de
+  rota (start_url acompanha o prefixo sem editar arquivo).
+- **Host**: casca `campo/Index.vue`, i18n `field.php`, item de menu "Campo"
+  (ícone `smartphone`, gate `viewAny` de Activity) no `SidebarNavigationService`
+  + `NavMenuEntry.vue`. `routes/field.php` só carrega com `features.pwa`.
+
+**Decisões/desvios importantes desta fase:**
+- **Reusa my-activities para executar** — o `/campo` é só a listagem móvel sem
+  sidebar; a execução (checklist/fotos/proof) são as mesmas telas da Fase 5,
+  porque a policy já reconhece executor e fornecedor.
+- **Assinaturas na conexão de tenant** — as subscriptions pertencem a usuários do
+  cliente, não ao landlord; por isso o model do webpush é reamarrado ao escopo.
+- **Push é aditivo e silencioso** — sem a flag, sem VAPID ou em erro de
+  transporte, o notifier não faz nada; o e-mail das Fases 5/6 continua o canal
+  garantido.
+- **Manifest gerado, não estático** — o `scope` fica na raiz (`/`) para a tela de
+  execução, fora do prefixo `/campo`, seguir dentro do app instalado.
+
+**Verificado:** migration `trade_push_subscriptions` nos tenants (schema
+correto), `route:list` (3 rotas campo/push), `npm run build` (casca do `/campo`
+no manifest), `types:check` **limpo nos arquivos da Fase 8** (`push.ts` corrigido:
+`Uint8Array<ArrayBuffer>` para satisfazer `BufferSource`), eslint `--no-ignore`
+limpo nos arquivos do pacote, pint passed. Pacote em `48b80b8`, `composer.lock`
+do host movido para esse commit.
+
+**Pendências conhecidas:** o PWA **não foi aberto num browser** (registrar SW,
+assinar push, receber notificação de verdade) — é a parte de maior risco e o
+harness de tinker não cobre; sem testes automatizados (padrão das fases); os
+erros de `types:check` em páginas das Fases 5–7 e no pacote plannerate seguem
+como **dívida pré-existente** (o build os tolera); a mudança **não relacionada**
+`config/filesystems.php` (+ `PublicDiskUrlIsRootRelativeTest`) continua fora dos
+commits das fases. Falta a **Fase 10** (paridade rota-a-rota + endurecimento); a
+Fase 9 (Gomark) está **adiada**.
 
 ## O que a Fase 7 entregou
 

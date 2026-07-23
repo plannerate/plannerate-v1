@@ -28,6 +28,7 @@ import {
     Shapes,
     ShieldCheck,
     ShoppingBag,
+    Smartphone,
     Store,
     Tag,
     Truck,
@@ -87,6 +88,7 @@ const iconMap = {
     workflow: Workflow,
     'user-cog': UserCog,
     'layout-dashboard': LayoutDashboard,
+    smartphone: Smartphone,
 } as const;
 
 const isItemNode = computed(() => props.node.type === 'item');

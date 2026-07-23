@@ -331,6 +331,14 @@ class SidebarNavigationService
                             ->authorize('viewAny', Activity::class)
                             ->setOrder(75);
                     })
+                    ->item('tenant.trade.field', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.field.navigation'))
+                            ->href(route('tenant.trade.field.index', [], false))
+                            ->icon('smartphone')
+                            ->authorize('viewAny', Activity::class)
+                            ->setOrder(76);
+                    })
                     ->item('tenant.trade.activity-types', function ($item): void {
                         $item
                             ->label(__('app.tenant.trade.activity_types.navigation'))

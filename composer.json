@@ -17,6 +17,7 @@
         "callcocam/tall-sluggable": "dev-main",
         "inertiajs/inertia-laravel": "^3.0",
         "intervention/image-laravel": "^4.0",
+        "laravel-notification-channels/webpush": "^9.0|^10.0|^11.0",
         "laravel/ai": "0.x-dev",
         "laravel/fortify": "^1.34",
         "laravel/framework": "^13.0",
