@@ -113,6 +113,9 @@ class HandleInertiaRequests extends Middleware
                 // criação de gôndolas no Index/Kanban dos planogramas.
                 'settings' => fn (): ?array => $this->resolveTenantFromContext($request)?->settings,
             ],
+            // Home do host para o primeiro breadcrumb das telas do pacote de trade:
+            // o pacote não pode resolver a rota do host por conta própria.
+            'tradeHomeUrl' => fn (): string => route('tenant.dashboard', [], false),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'navigation' => app(SidebarNavigationService::class)->build($request),
             'impersonation' => fn (): ?array => $this->resolveImpersonationBanner($request),

@@ -24,6 +24,7 @@ use App\Support\Navigation\Menu\MenuPayloadAdapter;
 use Callcocam\LaravelIntegrations\Models\IntegrationApi;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Reoptimization\ReoptimizationInboxController;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
+use Callcocam\LaravelRaptorTrade\Models\Contract;
 use Callcocam\LaravelRaptorTrade\Models\Map;
 use Callcocam\LaravelRaptorTrade\Models\PurchaseIntention;
 use Callcocam\LaravelRaptorTrade\Models\Reservation;
@@ -294,6 +295,14 @@ class SidebarNavigationService
                             ->icon('handshake')
                             ->authorize('viewAny', PurchaseIntention::class)
                             ->setOrder(50);
+                    })
+                    ->item('tenant.trade.contracts', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.contracts.navigation'))
+                            ->href(route('tenant.trade.contracts.index', [], false))
+                            ->icon('file-text')
+                            ->authorize('viewAny', Contract::class)
+                            ->setOrder(60);
                     });
             })
             ->group('tenant.planograms-section', function ($group): void {
