@@ -1,57 +1,129 @@
 # Continuar a extração do domínio Trade
 
-Passagem de bastão entre sessões. **Fase 0 (fundação) está pronta e verificada.** Cada fase
-seguinte é executada numa sessão nova, sempre a partir deste repositório.
+Passagem de bastão entre sessões. **Fases 0 a 3 prontas e verificadas.** Cada fase seguinte é
+executada numa sessão nova.
 
-Plano completo (10 fases, decisões arquiteturais, riscos), versionado com o código:
-`packages/callcocam/laravel-raptor-trade/docs/PLANO.md`
+> **O pacote saiu do monorepo (23/07/2026).** Deixou de ser `packages/callcocam/laravel-raptor-trade`
+> (path repository + symlink) e virou o repositório privado
+> **`github.com/callcocam/laravel-raptor-trade`**, consumido por `repositories` VCS igual ao
+> `laravel-integrations`. O código agora se escreve em `~/projects/laravel-raptor-trade` e chega
+> ao app por `composer update`.
 
-## Como abrir a sessão de uma fase
-
-Rode o Claude **daqui** (`/home/caltj/projects/plannerate-v1`) e peça, por exemplo:
-
-> Execute a Fase 1 do plano em `.claude/continuar-extracao-trade.md`. O código-fonte de
-> origem está em `/home/caltj/projects/space-trade` (React) e vai ser reescrito em Vue.
-
-A leitura de `/home/caltj/projects/space-trade/**` já está liberada em
-`.claude/settings.local.json` — não precisa de `--add-dir`.
-
----
+Plano completo (10 fases, decisões arquiteturais, riscos): `docs/PLANO.md` **no pacote**.
+Regras de código, ciclo de trabalho e armadilhas do pacote: `CLAUDE.md` **no pacote**
+(`~/projects/laravel-raptor-trade/CLAUDE.md`) — leia junto com este arquivo antes de abrir uma fase.
 
 ## Onde as coisas estão
 
 | O quê | Onde |
 |---|---|
-| Pacote | `packages/callcocam/laravel-raptor-trade` (path repository, symlink em `vendor/`) |
+| Pacote (repo) | `github.com/callcocam/laravel-raptor-trade` — **privado**, branch `main` |
+| Clone local do pacote | `/home/caltj/projects/laravel-raptor-trade` ← **é aqui que se edita** |
+| Cópia instalada no app | `vendor/callcocam/laravel-raptor-trade` (dist do Composer; **não editar**) |
+| App host | `/home/caltj/projects/plannerate-v1` — cascas, i18n, menu, migrations sincronizadas |
 | Projeto de origem | `/home/caltj/projects/space-trade` — Laravel 12 + Inertia + **React 19** |
 | Docs de negócio da origem | `space-trade/docs/contrato.md`, `docs/contracts.md`, `docs/workflow/*` |
-| Padrão de backend | `packages/callcocam/laravel-raptor-plannerate` |
-| Padrão de frontend (cascas + alias) | `/home/caltj/projects/laravel-integrations` |
+| Padrão de backend | `packages/callcocam/laravel-raptor-plannerate` (esse **continua** no monorepo) |
+| Padrão de pacote-fora-do-app | `/home/caltj/projects/laravel-integrations` |
 | Rotas de origem (fonte da paridade) | `space-trade/routes/{web,maps,supplier,api}.php` — 131 + 67 + 25 rotas |
+
+## Como abrir a sessão de uma fase
+
+Rode o Claude **do app host** (`/home/caltj/projects/plannerate-v1`) e peça, por exemplo:
+
+> Execute a Fase 4 do plano em `.claude/continuar-extracao-trade.md`. O código do pacote está
+> em `~/projects/laravel-raptor-trade`; o código-fonte de origem está em
+> `~/projects/space-trade` (React) e vai ser reescrito em Vue.
+
+Rodar do app host (e não do pacote) é o certo: metade de cada fase é trabalho **no host** —
+cascas publicadas, i18n, item de menu, `wayfinder:generate`, build, migrations por tenant — e
+só do host dá para verificar o resultado de verdade.
+
+A leitura de `~/projects/space-trade/**` e `~/projects/laravel-raptor-trade/**` já está liberada
+em `.claude/settings.local.json` — não precisa de `--add-dir`.
+
+## O que fica em cada lado
+
+| No pacote (`~/projects/laravel-raptor-trade`) | No app host (`plannerate-v1`) |
+|---|---|
+| migrations (`database/migrations/clients/`) | cópia sincronizada em `database/migrations/clients/` |
+| models, enums, services, policies, requests, controllers | — |
+| rotas (`routes/*.php`) + registro no provider | — |
+| páginas/componentes Vue reais (`resources/js/`) | cascas de 5 linhas em `resources/js/pages/tenant/trade/` |
+| stubs das cascas (`resources/stubs/pages/`) | — |
+| permissions (`TradePermission`) | — |
+| — | traduções `lang/pt_BR/app/tenant/trade/*.php` |
+| — | item de menu (`SidebarNavigationService`) + ícone (`NavMenuEntry.vue`) |
+| — | alias `@trade` (`vite.config.ts`, `tsconfig.json`) |
+
+Regra prática: **texto visível e navegação são do host; regra de negócio e tela são do pacote.**
 
 ## Rodar as coisas
 
-Não há PHP nem Composer no host — tudo via container `plannerate-v1-php-1`:
+Não há PHP nem Composer no host — tudo via container do app:
 
 ```bash
-docker exec plannerate-v1-php-1 sh -lc 'cd /var/www && php artisan route:list --path=trade'
-docker exec plannerate-v1-php-1 sh -lc 'cd /var/www && ./vendor/bin/pint packages/callcocam/laravel-raptor-trade'
-docker exec plannerate-v1-php-1 sh -lc 'cd /var/www && php artisan test --compact <path>'
+docker compose exec php php artisan route:list --path=trade
+docker compose exec php php artisan trade:migrations:sync
+docker compose exec php php artisan trade:permissions:sync
+docker compose exec php php artisan trade:publish-pages          # --force para sobrescrever
+docker compose exec php php artisan tenants:artisan "migrate --database=tenant --path=database/migrations/clients"
+docker compose exec php ./vendor/bin/pint vendor/callcocam/laravel-raptor-trade --format agent
 ```
 
-Composer **exige** o token do GitHub (o repositório VCS privado de `laravel-integrations`
-bloqueia a resolução inteira sem credencial):
+Frontend, **no host** (nunca `-u root` no wayfinder — ver CLAUDE.md):
+
+```bash
+docker compose exec php php artisan wayfinder:generate --with-form
+VITE_ENABLE_WAYFINDER=false npm run build
+npm run types:check && npx eslint resources/js vendor/callcocam/laravel-raptor-trade/resources/js
+```
+
+Composer **exige** o token do GitHub — `laravel-integrations` e `laravel-raptor-trade` são
+repos VCS privados, e sem credencial o Composer aborta antes de resolver qualquer pacote:
 
 ```bash
 TOKEN=$(gh auth token)
-docker exec -e COMPOSER_HOME=/tmp/composer \
+docker compose exec -e COMPOSER_HOME=/tmp/composer \
   -e COMPOSER_AUTH="{\"github-oauth\":{\"github.com\":\"$TOKEN\"}}" \
-  plannerate-v1-php-1 sh -lc 'cd /var/www && composer update callcocam/laravel-raptor-trade'
+  php composer update callcocam/laravel-raptor-trade
 ```
 
-Frontend, no host: `VITE_ENABLE_WAYFINDER=false npm run build`.
+## Ciclo de trabalho de uma fase
 
-Comandos do pacote: `trade:publish-pages`, `trade:migrations:sync`, `trade:permissions:sync`.
+1. **Escrever no pacote**: `~/projects/laravel-raptor-trade` (migrations → models/enums →
+   services → policies/requests → controllers → rotas → páginas Vue → stubs das cascas).
+2. **Espelhar no `vendor/` do host** para testar sem push:
+   ```bash
+   rsync -a --delete --exclude .git ~/projects/laravel-raptor-trade/ \
+     ~/projects/plannerate-v1/vendor/callcocam/laravel-raptor-trade/
+   ```
+   Serve para os dois lados: o PHP roda no container (que monta a raiz do app) e o Vite roda no
+   host — ambos leem `vendor/`. **Nunca editar direto no `vendor/`**: o próximo `composer update`
+   apaga tudo. Editar no clone, espelhar, e ao terminar commitar no clone.
+3. **Verificar no host**: `route:list` → `trade:migrations:sync` + migrate por tenant →
+   `trade:permissions:sync` → `trade:publish-pages` → `wayfinder:generate --with-form` → build,
+   `types:check`, eslint, pint.
+4. **Fechar**: commit + push no pacote, `composer update callcocam/laravel-raptor-trade` no host
+   (isso substitui o espelho pelo dist real e move o `composer.lock`), e commit no host com as
+   cascas, i18n, menu e `composer.lock`.
+
+**Armadilha da ordem**: o Wayfinder só gera os helpers TS depois que as rotas existem, e as
+páginas Vue importam esses helpers. Sempre backend/rotas → `wayfinder:generate` → páginas.
+
+### Testar o pacote isoladamente
+
+O pacote ainda **não tem suíte de testes** (dívida conhecida — falta `pest` + `orchestra/testbench`).
+Enquanto isso, a verificação é a do passo 3 mais exercícios de tinker no app numa transação com
+rollback — foi assim nas Fases 1, 2 e 3. O ambiente de teste local do app está quebrado (sqlite
+sem schema landlord), então `php artisan test` falha por motivo alheio à mudança.
+
+Para rodar ferramenta PHP dentro do clone (não há PHP no host):
+
+```bash
+cd ~/projects/laravel-raptor-trade
+docker run --rm -v "$PWD":/app -w /app -u 1000:1000 php:8.4-cli php -l src/<arquivo>.php
+```
 
 ---
 
@@ -247,7 +319,12 @@ do pacote (ver memory `trade-tenant-migrations-path`); factories/seeders e um se
   spatie/permission (`TradePermission`) + serviço `TradeUserContext`. **Ao portar qualquer
   controller, faça grep por `->type`** — a coluna não existe no host.
 - **Migrations** ficam em `database/migrations/clients/` do pacote, não são auto-executadas:
-  `trade:migrations:sync` e depois `tenants:artisan "migrate --database=tenant"`.
+  `trade:migrations:sync` e depois
+  `tenants:artisan "migrate --database=tenant --path=database/migrations/clients"`
+  (o `--path` é obrigatório — ver memory `trade-tenant-migrations-path`).
+- **Pivô com PK ULID + `tenant_id` precisa de model `Pivot` + `->using()`** — `attach()`/`sync()`
+  fazem insert cru e o `id` sai `null` (23502). Ver `ReservationStoreMap` e a memory
+  `trade-ulid-pivot-needs-model`.
 - **Sem API Resources**: payloads Inertia montados por Services.
 - **Ordem dentro da fase**: backend/rotas → build (Wayfinder gera os helpers) → páginas Vue.
 

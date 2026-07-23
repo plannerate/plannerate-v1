@@ -129,8 +129,8 @@
             "url": "./packages/callcocam/laravel-raptor-plannerate"
         },
         {
-            "type": "path",
-            "url": "./packages/callcocam/laravel-raptor-trade"
+            "type": "vcs",
+            "url": "https://github.com/callcocam/laravel-raptor-trade.git"
         },
         {
             "type": "vcs",

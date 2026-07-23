@@ -21,7 +21,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 COPY composer.json composer.lock ./
 COPY packages ./packages
-# callcocam/laravel-integrations vem de um repo VCS privado: sem o secret o clone falha.
+# callcocam/laravel-integrations e callcocam/laravel-raptor-trade vêm de repos VCS
+# privados: sem o secret o clone falha.
 # O secret carrega um JSON no formato COMPOSER_AUTH e nunca entra em nenhuma layer.
 RUN --mount=type=cache,target=/tmp/composer-cache,sharing=locked \
     --mount=type=secret,id=composer_auth \

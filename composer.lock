@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "354b843cb4455586459022ca1b0ee396",
+    "content-hash": "22eef3f35b6f03d261a189966532e459",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -453,10 +453,16 @@
         {
             "name": "callcocam/laravel-raptor-trade",
             "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:callcocam/laravel-raptor-trade.git",
+                "reference": "41f217c17f727c8e2a44f0fe81e15febc1dca7ef"
+            },
             "dist": {
-                "type": "path",
-                "url": "./packages/callcocam/laravel-raptor-trade",
-                "reference": "2946de9e9caa3fd8891a82f2dd3ed739942e294a"
+                "type": "zip",
+                "url": "https://api.github.com/repos/callcocam/laravel-raptor-trade/zipball/41f217c17f727c8e2a44f0fe81e15febc1dca7ef",
+                "reference": "41f217c17f727c8e2a44f0fe81e15febc1dca7ef",
+                "shasum": ""
             },
             "require": {
                 "illuminate/contracts": "^12.0|^13.0",
@@ -465,6 +471,7 @@
                 "spatie/laravel-multitenancy": "^4.1",
                 "spatie/laravel-package-tools": "^1.16"
             },
+            "default-branch": true,
             "type": "library",
             "extra": {
                 "laravel": {
@@ -482,9 +489,11 @@
                 "proprietary"
             ],
             "description": "Private Trade package: promotional spaces, store maps, reservations, contracts, activities and supplier portal.",
-            "transport-options": {
-                "relative": true
-            }
+            "support": {
+                "source": "https://github.com/callcocam/laravel-raptor-trade/tree/main",
+                "issues": "https://github.com/callcocam/laravel-raptor-trade/issues"
+            },
+            "time": "2026-07-23T13:12:36+00:00"
         },
         {
             "name": "callcocam/tall-sluggable",

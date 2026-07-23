@@ -180,9 +180,6 @@
         "vendor/callcocam/laravel-integrations/resources/js/**/*.vue",
         "vendor/callcocam/laravel-raptor-trade/resources/js/**/*.ts",
         "vendor/callcocam/laravel-raptor-trade/resources/js/**/*.d.ts",
-        "vendor/callcocam/laravel-raptor-trade/resources/js/**/*.vue",
-        "packages/callcocam/laravel-raptor-trade/resources/js/**/*.ts",
-        "packages/callcocam/laravel-raptor-trade/resources/js/**/*.d.ts",
-        "packages/callcocam/laravel-raptor-trade/resources/js/**/*.vue"
+        "vendor/callcocam/laravel-raptor-trade/resources/js/**/*.vue"
     ]
 }

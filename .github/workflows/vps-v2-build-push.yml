@@ -76,7 +76,8 @@ jobs:
           TAG_SHA="${IMAGE}:${{ steps.context.outputs.tag_channel_sha }}"
           TAG_LATEST="${IMAGE}:${{ steps.context.outputs.tag_channel_latest }}"
 
-          # O composer.json depende de um repo VCS privado (callcocam/laravel-integrations).
+          # O composer.json depende de repos VCS privados (callcocam/laravel-integrations
+          # e callcocam/laravel-raptor-trade).
           # Sem o secret COMPOSER_GITHUB_TOKEN (PAT com leitura em `repo`) o composer install
           # do Dockerfile falha no clone — falha aqui, com mensagem clara.
           if [[ -z "${COMPOSER_GITHUB_TOKEN:-}" ]]; then
