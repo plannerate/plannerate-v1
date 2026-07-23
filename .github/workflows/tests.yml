@@ -33,6 +33,10 @@ jobs:
           tools: composer:v2
           coverage: none
 
+      # O pacote é privado: sem esta credencial o composer install falha no clone.
+      - name: Authenticate private packages
+        run: composer config --global github-oauth.github.com "${{ secrets.COMPOSER_GITHUB_TOKEN }}"
+
       - name: Install Composer Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
@@ -125,6 +129,10 @@ jobs:
           php-version: '8.4'
           tools: composer:v2
           coverage: none
+
+      # O pacote é privado: sem esta credencial o composer install falha no clone.
+      - name: Authenticate private packages
+        run: composer config --global github-oauth.github.com "${{ secrets.COMPOSER_GITHUB_TOKEN }}"
 
       # vendor/ é necessário: os aliases do Vite apontam para
       # vendor/callcocam/laravel-raptor-plannerate (path repo symlinkado)
