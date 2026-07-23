@@ -138,10 +138,58 @@ docker run --rm -v "$PWD":/app -w /app -u 1000:1000 php:8.4-cli php -l src/<arqu
 | 4 | Contratos (+ anexos, aprovações internas, rounds de negociação) | **pronta** |
 | 5 | Atividades, workflow/kanban, proofs, execução pública por token | **pronta** |
 | 6 | Portal do Fornecedor | **pronta** |
-| 7 | Dashboards | a fazer |
+| 7 | Dashboards | **pronta** |
 | 8 | PWA `/campo` + web push | a fazer |
 | 9 | API interna Gomark (feature flag) | a fazer |
 | 10 | Paridade rota-a-rota e endurecimento | a fazer |
+
+## O que a Fase 7 entregou
+
+- **`TradeDashboardService`** (`Services/Dashboard/`): substitui o placeholder
+  "hello" da Fase 0 por um dashboard de verdade. Visão geral cruzando os
+  domínios (ocupação, ações ativas + valor, negociações abertas, atividades
+  abertas/atrasadas, comprovações a revisar, vencendo em 7d) + três abas:
+  - **Ações**: KPIs (ativas/valor/agendadas/vencendo/fornecedores) + rank por
+    fornecedor/loja/tipo (contagem + valor) + linha de vencimentos (dias
+    restantes).
+  - **Atividades**: KPIs (abertas/atrasadas/concluídas 30d/taxa no prazo/tempo
+    médio/reprovadas) + distribuição por situação/tipo/loja.
+  - **Foto Check**: KPIs (fila/aprovadas/reprovadas/taxa/tempo de revisão/
+    aguardando envio) + fila de revisão + reprovadas recentes.
+- **`SpaceAnalyticsBuilder`** (`Services/Dashboard/`): aba **Performance** —
+  receita por mês (6 meses), top clientes, desempenho por tipo de espaço,
+  tendência de ocupação (mês atual × anterior), sobre reservas efetivas.
+- **`TradeDashboardController`** guardado pela permission
+  `tenant.trade-dashboard.view` (via `TradeAuthorization`).
+- **Frontend**: `dashboard/Index.vue` com abas + componentes `StatCard` e
+  `BarList` (barras horizontais sem lib de gráfico, alinhado ao DS do host).
+  Item de menu "Dashboard" no topo do grupo Trade (permission), i18n `dashboard.php`.
+
+**Decisões/desvios importantes desta fase:**
+- **Sem lib de gráfico** (o host não tem chart.js/apexcharts): KPIs em cards +
+  ranks em barras horizontais próprias (`BarList`). Cobre a intenção do plano
+  sem nova dependência.
+- **Tudo calculado no backend** (D11): a tela só apresenta; cada aba é uma seção
+  do payload. Escopo pelo dono via global scope (sem `scopeTenant` manual).
+- **`por_tipo` usa o slug do tipo do espaço** (`space.type`), não um label
+  cadastrado — o dashboard não resolve o nome do tipo para não puxar mais joins;
+  a tela mostra o slug.
+- **Redirecionamento por perfil da origem descartado**: a origem redirecionava
+  fornecedor/loja para outros painéis; aqui o menu já é gateado por permission/
+  vínculo, então o controller só verifica a permission de dashboard.
+
+**Verificado:** `route:list` (dashboard em `trade`), pint, eslint, `npm run build`
+(casca do dashboard no manifest). Tinker: `build()` monta o payload das 4 abas +
+performance sem erro (6 meses de receita, ocupação). **Fixtures numa transação
+com rollback provaram os números batendo**: 1 ação confirmada ativa + 1 pending
+agendada → ocupação 1/1=100%, ações ativas 1/valor 500, agendadas 1, vencendo_7d
+1, `por_fornecedor` total 2/valor 800; 2 atividades abertas (1 atrasada); 1
+comprovação na fila; 1 negociação aberta — tudo conferido contra os fixtures.
+
+**Pendências conhecidas:** sem filtros de período/loja/fornecedor no dashboard
+(a origem tinha; a versão atual mostra o consolidado — dá para adicionar depois);
+sem export de relatório (a origem tinha `spaces/analytics/export`); render HTTP
+real da tela não rodou pelo harness de tinker (payload exercitado direto).
 
 ## O que a Fase 6 entregou
 
