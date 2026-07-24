@@ -48,4 +48,24 @@ return [
         'counter_prompt' => 'Informe o valor da sua contraproposta:',
         'responded' => 'Resposta enviada ao gestor.',
     ],
+
+    'map' => [
+        'navigation' => 'Mapa das lojas',
+        'title' => 'Mapa das lojas',
+        'description' => 'Onde ficam os seus espaços na planta de cada loja.',
+        'mine' => 'Seus espaços',
+        'empty' => 'Você ainda não tem espaços em nenhuma planta.',
+    ],
+
+    'reports' => [
+        'navigation' => 'Relatórios',
+        'title' => 'Relatórios',
+        'description' => 'Resumo das suas ações, atividades e receita.',
+        'reservations_active' => 'Ações ativas',
+        'revenue' => 'Receita',
+        'activities_open' => 'Atividades abertas',
+        'contracts_total' => 'Contratos',
+        'reservations' => 'Ações',
+        'activities' => 'Atividades',
+    ],
 ];

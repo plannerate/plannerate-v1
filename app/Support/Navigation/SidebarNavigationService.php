@@ -275,6 +275,14 @@ class SidebarNavigationService
                             ->authorize('viewAny', Space::class)
                             ->setOrder(10);
                     })
+                    ->item('tenant.trade.spaces.analytics', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.spaces.analytics.navigation'))
+                            ->href(route('tenant.trade.spaces.analytics', [], false))
+                            ->icon('chart-column')
+                            ->authorize('viewAny', Space::class)
+                            ->setOrder(15);
+                    })
                     ->item('tenant.trade.space-types', function ($item): void {
                         $item
                             ->label(__('app.tenant.trade.space_types.navigation'))
@@ -306,6 +314,14 @@ class SidebarNavigationService
                             ->icon('handshake')
                             ->authorize('viewAny', PurchaseIntention::class)
                             ->setOrder(50);
+                    })
+                    ->item('tenant.trade.calendar', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.calendar.navigation'))
+                            ->href(route('tenant.trade.calendar.reservations', [], false))
+                            ->icon('calendar-days')
+                            ->authorize('viewAny', Reservation::class)
+                            ->setOrder(55);
                     })
                     ->item('tenant.trade.contracts', function ($item): void {
                         $item
@@ -407,6 +423,22 @@ class SidebarNavigationService
                             ->icon('handshake')
                             ->authorize('trade-supplier-portal')
                             ->setOrder(50);
+                    })
+                    ->item('tenant.trade.supplier.map', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.supplier.map.navigation'))
+                            ->href(route('tenant.trade.supplier.map', [], false))
+                            ->icon('map')
+                            ->authorize('trade-supplier-portal')
+                            ->setOrder(60);
+                    })
+                    ->item('tenant.trade.supplier.reports', function ($item): void {
+                        $item
+                            ->label(__('app.tenant.trade.supplier.reports.navigation'))
+                            ->href(route('tenant.trade.supplier.reports', [], false))
+                            ->icon('chart-column')
+                            ->authorize('trade-supplier-portal')
+                            ->setOrder(70);
                     });
             })
             ->group('tenant.planograms-section', function ($group): void {
