@@ -141,7 +141,57 @@ docker run --rm -v "$PWD":/app -w /app -u 1000:1000 php:8.4-cli php -l src/<arqu
 | 7 | Dashboards | **pronta** |
 | 8 | PWA `/campo` + web push | **pronta** |
 | 9 | API interna Gomark (feature flag) | **adiada** — fora de escopo por ora (23/07/2026) |
-| 10 | Paridade rota-a-rota e endurecimento | a fazer |
+| 10 | Paridade rota-a-rota e endurecimento | **pronta** (features A/B/C/D; E/F backlog; G descartado) |
+
+## O que a Fase 10 entregou
+
+Auditoria de paridade + fechamento das lacunas. Detalhe completo em
+`docs/PARIDADE-FASE-10.md` **no pacote**.
+
+- **Paridade rota-a-rota**: 242 rotas da origem × 150 do pacote — o delta era
+  **~85% descarte consciente** (os `api/*` de leitura viraram props SSR; o CRUD
+  por-espaço do editor de mapa virou batch `saveLayout`; `stores`/perfil/
+  dashboard genérico são do host). Todos os fluxos de negócio cobertos.
+- **Features construídas** (reusam permissions existentes, nenhuma nova):
+  - **A — Calendários**: `CalendarController` + `CalendarPayloadService` +
+    `calendar/Index.vue` (toggle reservas/atividades, mês por `?month=`) +
+    `CalendarMonth.vue` (grade dependency-free). Menu "Calendário".
+  - **B — Analytics de espaços**: `SpaceAnalyticsController` (index + **export
+    CSV** streamed) reusando o `SpaceAnalyticsBuilder` da Fase 7 +
+    `spaces/Analytics.vue`. Menu próprio.
+  - **C — Detalhe do espaço**: `SpaceController@show`/`@updateImage` +
+    `spaces/Show.vue` (imagem atual + upload + histórico de imagens/ocupações/
+    reservas). Nome na lista vira link.
+  - **D — Portal do fornecedor: Mapa + Relatórios**: `SupplierMapController` +
+    `SupplierReportController` + `SupplierPayloadService::{supplierMaps,
+    supplierReports}`. Map = overlay read-only por % (**sem Konva**) destacando
+    os espaços do fornecedor; Reports = KPIs + listas. Itens de menu no grupo.
+- **Endurecimento**: revisão de permissions (RBAC completo, 8 roles, sem gaps —
+  Fornecedor sem permission é por vínculo/middleware); docs de negócio da origem
+  copiados para `docs/origem/`.
+- **Backlog/descartes**: E (lista de pendentes de aprovação) e F (reorder/
+  attach-detach de prefixos) → **backlog**, baixo valor; **G (análise de planta
+  por IA, 8 rotas) → descartado formalmente** (feature de IA, fase própria).
+
+**Desvios/decisões:** sem lib de calendário (grade própria) e sem Konva no mapa
+do fornecedor (overlay de divs por %) — read-only não precisa do editor.
+Analytics reusa o builder da Fase 7 (nada recalculado); export é CSV streamed.
+Upload de imagem do espaço **não apaga** as anteriores (o histórico as preserva).
+
+**Verificado:** `route:list` (calendar, spaces/analytics+export, spaces/show+
+image, supplier/map+reports), `npm run build` (todas as telas no manifest),
+`types:check` **limpo nas telas novas** (BarList exige `title`; corrigido),
+eslint `--no-ignore` limpo, pint passed. Smokes por tinker: payload de
+calendário (recorte por mês + evento de teste), `showPayload`, `SpaceAnalyticsBuilder`,
+`supplierReports`/`supplierMaps`. Pacote em `cf9398d`; host commitado e enviado.
+
+**Pendências conhecidas:** sem suíte de testes do pacote (dívida mantida — não
+priorizada); erros de `types:check` das Fases 5–7 e do pacote plannerate seguem
+como dívida pré-existente (o build tolera); render HTTP real das telas novas não
+rodou pelo harness (payloads exercitados direto); a mudança **não relacionada**
+`config/filesystems.php` (+ `PublicDiskUrlIsRootRelativeTest`) continua fora dos
+commits das fases. **A extração do domínio Trade está concluída** (Fases 0–8 e
+10; a 9/Gomark segue adiada).
 
 ## O que a Fase 8 entregou
 
