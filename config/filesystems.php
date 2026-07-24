@@ -41,7 +41,11 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            // URL root-relative para servir os arquivos sempre a partir do mesmo
+            // host que renderiza a página (subdomínio do tenant ou domínio central),
+            // evitando bloqueio de CORS ao carregar imagens em canvas/crossOrigin.
+            // Um ASSET_URL absoluto (CDN) continua sendo respeitado quando definido.
+            'url' => env('ASSET_URL') ? rtrim(env('ASSET_URL'), '/').'/storage' : '/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
